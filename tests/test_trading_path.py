@@ -334,3 +334,140 @@ def test_rejected_paper_broker_ack_does_not_persist_accepted_order() -> None:
             now=NOW,
         )
     assert gateway.orders == ()
+
+
+def test_partial_fills_persist_and_cannot_overfill_order(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent(exposure="100")
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path)
+    order = gateway.submit(
+        trade, risk.evaluate(trade, market(), now=NOW), idempotency_key="fill-order", now=NOW
+    )
+    first = gateway.record_fill(
+        fill_id="fill-1",
+        order_id=order.order_id,
+        quantity=Decimal("60"),
+        price=Decimal("1.10"),
+        fee=Decimal("0.10"),
+        observed_at=NOW,
+    )
+    assert gateway.orders[0].status == "PARTIALLY_FILLED"
+    assert (
+        gateway.record_fill(
+            fill_id="fill-1",
+            order_id=order.order_id,
+            quantity=Decimal("60"),
+            price=Decimal("1.10"),
+            fee=Decimal("0.10"),
+            observed_at=NOW,
+        )
+        == first
+    )
+    with pytest.raises(ValueError, match="exceeds order quantity"):
+        gateway.record_fill(
+            fill_id="fill-2",
+            order_id=order.order_id,
+            quantity=Decimal("41"),
+            price=Decimal("1.10"),
+            fee=Decimal("0"),
+            observed_at=NOW,
+        )
+    second = gateway.record_fill(
+        fill_id="fill-2",
+        order_id=order.order_id,
+        quantity=Decimal("40"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    assert second.quantity == Decimal("40")
+    restarted = PaperExecutionGateway(kernel(), store_path=path)
+    assert len(restarted.fills) == 2
+    assert restarted.orders[0].status == "FILLED"
+    assert restarted.replay(trade, idempotency_key="fill-order").status == "FILLED"
+
+
+def test_changed_fill_retry_is_rejected(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent()
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path)
+    order = gateway.submit(
+        trade, risk.evaluate(trade, market(), now=NOW), idempotency_key="fill-order", now=NOW
+    )
+    gateway.record_fill(
+        fill_id="fill-1",
+        order_id=order.order_id,
+        quantity=Decimal("10"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    with pytest.raises(ValueError, match="fill id reused"):
+        PaperExecutionGateway(kernel(), store_path=path).record_fill(
+            fill_id="fill-1",
+            order_id=order.order_id,
+            quantity=Decimal("11"),
+            price=Decimal("1.10"),
+            fee=Decimal("0"),
+            observed_at=NOW,
+        )
+
+
+def test_parallel_fill_reports_cannot_exceed_order_quantity(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent(exposure="100")
+    risk = kernel()
+    first = PaperExecutionGateway(risk, store_path=path)
+    order = first.submit(
+        trade, risk.evaluate(trade, market(), now=NOW), idempotency_key="fill-order", now=NOW
+    )
+    second = PaperExecutionGateway(kernel(), store_path=path)
+
+    def report(gateway: PaperExecutionGateway, fill_id: str) -> bool:
+        try:
+            gateway.record_fill(
+                fill_id=fill_id,
+                order_id=order.order_id,
+                quantity=Decimal("60"),
+                price=Decimal("1.10"),
+                fee=Decimal("0"),
+                observed_at=NOW,
+            )
+            return True
+        except ValueError:
+            return False
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda args: report(*args), [(first, "a"), (second, "b")]))
+    assert results.count(True) == 1
+    assert sum((fill.quantity for fill in first.fills), Decimal(0)) == Decimal("60")
+
+
+def test_fill_outside_intent_lifetime_is_rejected(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent()
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path)
+    order = gateway.submit(
+        trade, risk.evaluate(trade, market(), now=NOW), idempotency_key="lifetime", now=NOW
+    )
+    with pytest.raises(ValueError, match="before intent"):
+        gateway.record_fill(
+            fill_id="early",
+            order_id=order.order_id,
+            quantity=Decimal("1"),
+            price=Decimal("1.10"),
+            fee=Decimal("0"),
+            observed_at=NOW - timedelta(seconds=1),
+        )
+    with pytest.raises(ValueError, match="after order expiry"):
+        gateway.record_fill(
+            fill_id="late",
+            order_id=order.order_id,
+            quantity=Decimal("1"),
+            price=Decimal("1.10"),
+            fee=Decimal("0"),
+            observed_at=NOW + timedelta(minutes=2),
+        )

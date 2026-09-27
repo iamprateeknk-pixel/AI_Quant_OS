@@ -5,10 +5,16 @@ export type PaperOrder = { order_id: string; intent_id: string; risk_id: string;
 export type AuditEvent = { action: string; intent_id: string; reason: string; trace_id?: string };
 export type BrokerView = { broker_id: string; connection_state: string; enabled: boolean; instruments: string[] };
 export type MarketView = { instrument_id: string; bid: string; ask: string; observed_at: string; world_state_version: string; freshness: string; source: string };
+export type PaperFill = { fill_id: string; order_id: string; side: "BUY" | "SELL"; quantity: string; price: string; fee: string; observed_at: string; source: "PAPER_MANUAL" };
+export type PortfolioView = { instrument_id: "EURUSD"; quote_currency: "USD"; mark_available: boolean; mark_price: string | null; net_quantity: string; cash_flow_quote: string; gross_exposure_quote: string | null; net_exposure_quote: string | null; marked_pnl_quote: string | null };
 export type ReadResult<T> = { ok: true; value: T } | { ok: false; reason: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
 }
 
 async function read<T>(path: string, parse: (value: unknown) => T | null): Promise<ReadResult<T>> {
@@ -70,5 +76,24 @@ export function getMarket(instrument: string): Promise<ReadResult<MarketView>> {
   return read(`/api/v1/markets/${encodeURIComponent(instrument)}`, (value) => {
     if (!isRecord(value) || typeof value.instrument_id !== "string" || typeof value.bid !== "string" || typeof value.ask !== "string" || typeof value.observed_at !== "string" || typeof value.world_state_version !== "string" || typeof value.freshness !== "string" || value.source !== "PAPER_SIMULATED") return null;
     return { instrument_id: value.instrument_id, bid: value.bid, ask: value.ask, observed_at: value.observed_at, world_state_version: value.world_state_version, freshness: value.freshness, source: "PAPER_SIMULATED" };
+  });
+}
+
+export function getFills(): Promise<ReadResult<{ fills: PaperFill[] }>> {
+  return read("/api/v1/fills", (value) => {
+    if (!isRecord(value) || !Array.isArray(value.fills)) return null;
+    const fills: PaperFill[] = [];
+    for (const item of value.fills) {
+      if (!isRecord(item) || typeof item.fill_id !== "string" || typeof item.order_id !== "string" || (item.side !== "BUY" && item.side !== "SELL") || typeof item.quantity !== "string" || typeof item.price !== "string" || typeof item.fee !== "string" || typeof item.observed_at !== "string" || item.source !== "PAPER_MANUAL") return null;
+      fills.push({ fill_id: item.fill_id, order_id: item.order_id, side: item.side, quantity: item.quantity, price: item.price, fee: item.fee, observed_at: item.observed_at, source: "PAPER_MANUAL" });
+    }
+    return { fills };
+  });
+}
+
+export function getPortfolio(): Promise<ReadResult<PortfolioView>> {
+  return read("/api/v1/portfolio/snapshot", (value) => {
+    if (!isRecord(value) || value.mode !== "PAPER" || value.instrument_id !== "EURUSD" || value.quote_currency !== "USD" || typeof value.mark_available !== "boolean" || !isNullableString(value.mark_price) || typeof value.net_quantity !== "string" || typeof value.cash_flow_quote !== "string" || !isNullableString(value.gross_exposure_quote) || !isNullableString(value.net_exposure_quote) || !isNullableString(value.marked_pnl_quote)) return null;
+    return { instrument_id: "EURUSD", quote_currency: "USD", mark_available: value.mark_available, mark_price: value.mark_price, net_quantity: value.net_quantity, cash_flow_quote: value.cash_flow_quote, gross_exposure_quote: value.gross_exposure_quote, net_exposure_quote: value.net_exposure_quote, marked_pnl_quote: value.marked_pnl_quote };
   });
 }

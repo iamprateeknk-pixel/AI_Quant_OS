@@ -1,5 +1,5 @@
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -9,6 +9,7 @@ from uuid import uuid4
 from ai_quant_os.broker import BrokerRouter, BrokerUnavailable, SimulatedBroker
 from ai_quant_os.contracts import OrderCommand, RiskDecision, TradeIntent, _require_aware
 from ai_quant_os.order_store import PaperOrderStore
+from ai_quant_os.portfolio import PaperFill
 from ai_quant_os.risk import RiskKernel, SafetyState
 
 
@@ -49,6 +50,14 @@ def _decode_order(raw: str) -> PaperOrder:
     )
 
 
+def _with_fill_status(order: PaperOrder, fills: tuple[PaperFill, ...]) -> PaperOrder:
+    quantity = sum((fill.quantity for fill in fills if fill.order_id == order.order_id), Decimal(0))
+    if quantity == 0:
+        return order
+    status = "FILLED" if quantity == order.command.quantity else "PARTIALLY_FILLED"
+    return replace(order, status=status)
+
+
 class PaperExecutionGateway:
     def __init__(
         self,
@@ -67,7 +76,40 @@ class PaperExecutionGateway:
     @property
     def orders(self) -> tuple[PaperOrder, ...]:
         with self._lock:
-            return tuple(_decode_order(raw) for raw in self._store.all_orders())
+            fills = self._store.all_fills()
+            return tuple(
+                _with_fill_status(_decode_order(raw), fills) for raw in self._store.all_orders()
+            )
+
+    @property
+    def fills(self) -> tuple[PaperFill, ...]:
+        return self._store.all_fills()
+
+    def record_fill(
+        self,
+        *,
+        fill_id: str,
+        order_id: str,
+        quantity: Decimal,
+        price: Decimal,
+        fee: Decimal,
+        observed_at: datetime,
+    ) -> PaperFill:
+        raw = self._store.get_order_by_id(order_id)
+        if raw is None:
+            raise ValueError("Paper order does not exist")
+        command = _decode_order(raw).command
+        fill = PaperFill(
+            fill_id,
+            order_id,
+            command.instrument_id,
+            command.side,
+            quantity,
+            price,
+            fee,
+            observed_at,
+        )
+        return self._store.record_fill(fill)
 
     def replay(self, intent: TradeIntent, *, idempotency_key: str) -> PaperOrder | None:
         with self._lock:
@@ -76,7 +118,7 @@ class PaperExecutionGateway:
                 return None
             if prior[0] != _encode_record(intent):
                 raise ValueError("idempotency key reused for a different intent")
-            return _decode_order(prior[1])
+            return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
 
     def _route(self, command: OrderCommand, *, now: datetime) -> None:
         acknowledgement = self._router.route(command, now=now)
@@ -100,7 +142,7 @@ class PaperExecutionGateway:
             if prior is not None:
                 if prior[0] != intent_json:
                     raise ValueError("idempotency key reused for a different intent")
-                return _decode_order(prior[1])
+                return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
             if self._store.get_by_intent_id(intent.intent_id) is not None:
                 raise ValueError("intent already has a paper order")
             with self._risk.authorization(intent, decision) as authorized:
@@ -136,6 +178,7 @@ class PaperExecutionGateway:
                     intent.intent_id,
                     intent_json,
                     _encode_record(order),
+                    order_id,
                     lambda: self._route(command, now=now),
                 ):
                     prior = self._store.get(idempotency_key)
@@ -145,7 +188,7 @@ class PaperExecutionGateway:
                         raise ValueError("Order receipt conflict")
                     if prior[0] != intent_json:
                         raise ValueError("idempotency key reused for a different intent")
-                    return _decode_order(prior[1])
+                    return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
                 self._risk.consume(decision.risk_id)
                 return order
 

@@ -280,3 +280,100 @@ def test_paper_order_audit_survives_restart(tmp_path) -> None:
     restarted = TestClient(create_app(operator_token="test-secret", paper_db_path=path))
     events = restarted.get("/api/v1/audit").json()["events"]
     assert events == [{"action": "PAPER_ORDER", "intent_id": "audit-intent", "reason": "APPROVE"}]
+
+
+def test_paper_fill_and_portfolio_snapshot_survive_restart(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    headers = {"X-Operator-Token": "test-secret", "Idempotency-Key": "portfolio-order"}
+    quote = {
+        "instrument_id": "EURUSD",
+        "bid": "1.1500",
+        "ask": "1.1501",
+        "observed_at": NOW.isoformat(),
+        "world_state_version": "world-1",
+    }
+    trade = {
+        "intent_id": "portfolio-intent",
+        "strategy_id": "demo",
+        "strategy_version": "1",
+        "instrument_id": "EURUSD",
+        "side": "BUY",
+        "desired_exposure": "100",
+        "risk_budget": "10",
+        "max_spread": "0.0003",
+        "max_slippage": "0.0002",
+        "valid_until": (NOW + timedelta(minutes=1)).isoformat(),
+        "world_state_version": "world-1",
+        "evidence_refs": ["fixture:1"],
+        "created_at": NOW.isoformat(),
+    }
+    client = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    client.post("/api/v1/paper/quotes", json=quote, headers=headers)
+    order = client.post("/api/v1/paper/intents", json=trade, headers=headers).json()
+    payload = {
+        "fill_id": "portfolio-fill",
+        "order_id": order["order_id"],
+        "quantity": "100",
+        "price": "1.10",
+        "fee": "0.10",
+        "observed_at": NOW.isoformat(),
+    }
+    first = client.post("/api/v1/paper/fills", json=payload, headers=headers)
+    retry = client.post("/api/v1/paper/fills", json=payload, headers=headers)
+    assert first.status_code == 200
+    assert retry.json() == first.json()
+    marked = client.get("/api/v1/portfolio/snapshot").json()
+    assert marked["net_quantity"] == "100"
+    assert marked["mark_price"] == "1.1500"
+    assert marked["marked_pnl_quote"] == "4.9000"
+    assert client.get("/api/v1/orders").json()["orders"][0]["status"] == "FILLED"
+
+    restarted = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    unmarked = restarted.get("/api/v1/portfolio/snapshot").json()
+    assert unmarked["net_quantity"] == "100"
+    assert unmarked["mark_price"] is None
+    assert unmarked["marked_pnl_quote"] is None
+    assert len(restarted.get("/api/v1/fills").json()["fills"]) == 1
+    assert restarted.get("/api/v1/orders").json()["orders"][0]["status"] == "FILLED"
+    assert [event["action"] for event in restarted.get("/api/v1/audit").json()["events"]] == [
+        "PAPER_ORDER",
+        "PAPER_FILL",
+    ]
+
+    stale = TestClient(
+        create_app(
+            operator_token="test-secret",
+            clock=lambda: NOW + timedelta(seconds=10),
+            paper_db_path=path,
+        )
+    )
+    stale.post("/api/v1/paper/quotes", json=quote, headers=headers)
+    assert stale.get("/api/v1/portfolio/snapshot").json()["marked_pnl_quote"] is None
+
+
+def test_paper_fill_requires_operator_and_known_order(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    client = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    payload = {
+        "fill_id": "unknown",
+        "order_id": "not-an-order",
+        "quantity": "1",
+        "price": "1.10",
+        "fee": "0",
+        "observed_at": NOW.isoformat(),
+    }
+    assert client.post("/api/v1/paper/fills", json=payload).status_code == 401
+    assert (
+        client.post(
+            "/api/v1/paper/fills",
+            json=payload,
+            headers={"X-Operator-Token": "test-secret"},
+        ).status_code
+        == 409
+    )

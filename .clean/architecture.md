@@ -2,7 +2,7 @@
 
 The current package has three dependency levels:
 
-1. `contracts.py`, `market.py`, `risk.py`, `backtest.py`: deterministic domain policy and immutable values.
+1. `contracts.py`, `market.py`, `portfolio.py`, `risk.py`, `backtest.py`: deterministic domain policy and immutable values.
 2. `execution.py`, `broker.py`, `order_store.py`, `paper_state_store.py`: paper order lifecycle, simulator and SQLite persistence.
 3. `api.py`: HTTP schemas, authorization boundary and composition root.
 

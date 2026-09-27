@@ -6,6 +6,7 @@ export const sections = [
   { href: "/strategies", label: "Strategies", group: "Trading" },
   { href: "/agents", label: "Agents", group: "Trading" },
   { href: "/risk", label: "Risk", group: "Trading" },
+  { href: "/portfolio", label: "Portfolio", group: "Trading" },
   { href: "/orders", label: "Orders", group: "Trading" },
   { href: "/research", label: "Research", group: "Development" },
   { href: "/evolution", label: "Evolution", group: "Development" },
@@ -22,12 +23,13 @@ export const sectionDetails = {
   strategies: ["Strategies", "No strategy is active. Validated candidates and allocation history will appear here."],
   agents: ["Agents", "The 18-agent runtime has not been connected. No agent has capital authority."],
   risk: ["Risk Center", "Deterministic safety state and the paper risk ceiling are shown below."],
-  orders: ["Orders", "Paper order receipts from the control API. Fills and broker reconciliation are not connected."],
+  portfolio: ["Paper Portfolio", "Filled EURUSD units and quote-currency trading P&L from the backend. No account equity is inferred."],
+  orders: ["Orders", "Paper order receipts and manually reported simulated fills. Broker reconciliation is not connected."],
   research: ["Research", "Experiments and validation dossiers will appear after the research pipeline is connected."],
   evolution: ["Evolution", "Champion and challenger promotions require offline, replay, shadow, and canary evidence."],
   incidents: ["Incidents", "Incident timeline and controlled recovery will appear after observability integration."],
   costs: ["Costs", "Model, compute, and data costs are not being collected yet."],
-  audit: ["Audit", "Current control API events are local and reset on restart. Durable audit remains a release gate."],
+  audit: ["Audit", "Paper control events persist when the local SQLite database is configured. Tamper-evident audit remains a release gate."],
   settings: ["Settings", "Only non-capital preferences will be managed here. Live enablement is not a UI toggle."],
 } as const;
 

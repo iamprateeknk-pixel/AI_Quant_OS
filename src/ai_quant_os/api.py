@@ -8,13 +8,14 @@ from typing import Callable, Literal
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.broker import BrokerRouter, SimulatedBroker
 from ai_quant_os.execution import PaperExecutionGateway, PaperOrder
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.paper_state_store import PaperStateStore
+from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 
 
@@ -49,6 +50,16 @@ class ControlInput(BaseModel):
     reason: str
 
 
+class FillInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    fill_id: str
+    order_id: str
+    quantity: Decimal = Field(gt=0)
+    price: Decimal = Field(gt=0)
+    fee: Decimal = Field(ge=0)
+    observed_at: datetime
+
+
 def _order_view(order: PaperOrder) -> dict[str, str]:
     return {
         "order_id": order.order_id,
@@ -56,6 +67,20 @@ def _order_view(order: PaperOrder) -> dict[str, str]:
         "risk_id": order.risk_id,
         "status": order.status,
         "broker_route": "PAPER",
+    }
+
+
+def _fill_view(fill: PaperFill) -> dict[str, str]:
+    return {
+        "fill_id": fill.fill_id,
+        "order_id": fill.order_id,
+        "instrument_id": fill.instrument_id,
+        "side": fill.side,
+        "quantity": str(fill.quantity),
+        "price": str(fill.price),
+        "fee": str(fill.fee),
+        "observed_at": fill.observed_at.isoformat(),
+        "source": "PAPER_MANUAL",
     }
 
 
@@ -90,6 +115,16 @@ def create_app(
         state_store.record_event(
             f"order:{order.order_id}",
             {"action": "PAPER_ORDER", "intent_id": order.intent_id, "reason": "APPROVE"},
+        )
+    for fill in execution.fills:
+        state_store.record_event(
+            f"fill:{fill.fill_id}",
+            {
+                "action": "PAPER_FILL",
+                "intent_id": "",
+                "reason": "SIMULATED",
+                "trace_id": fill.fill_id,
+            },
         )
 
     def require_operator(x_operator_token: str | None = Header(default=None)) -> None:
@@ -137,6 +172,44 @@ def create_app(
     @app.get("/api/v1/orders")
     def orders() -> dict[str, list[dict[str, str]]]:
         return {"orders": [_order_view(order) for order in execution.orders]}
+
+    @app.get("/api/v1/fills")
+    def fills() -> dict[str, list[dict[str, str]]]:
+        return {"fills": [_fill_view(fill) for fill in execution.fills]}
+
+    @app.get("/api/v1/portfolio/snapshot")
+    def portfolio_snapshot() -> dict[str, str | bool | None]:
+        position_fills = execution.fills
+        unmarked = summarize_position(position_fills, mark=None)
+        quote = quotes.get("EURUSD")
+        mark: Decimal | None = None
+        if quote is not None and quote.trusted:
+            age = (current_time() - quote.observed_at).total_seconds()
+            if 0 <= age <= limits.max_quote_age_seconds:
+                mark = quote.bid if unmarked.net_quantity >= 0 else quote.ask
+        position = summarize_position(position_fills, mark=mark) if mark is not None else unmarked
+        return {
+            "mode": "PAPER",
+            "instrument_id": "EURUSD",
+            "quote_currency": "USD",
+            "mark_available": mark is not None,
+            "mark_price": str(mark) if mark is not None else None,
+            "net_quantity": str(position.net_quantity),
+            "cash_flow_quote": str(position.cash_flow_quote),
+            "gross_exposure_quote": (
+                str(position.gross_exposure_quote)
+                if position.gross_exposure_quote is not None
+                else None
+            ),
+            "net_exposure_quote": (
+                str(position.net_exposure_quote)
+                if position.net_exposure_quote is not None
+                else None
+            ),
+            "marked_pnl_quote": (
+                str(position.marked_pnl_quote) if position.marked_pnl_quote is not None else None
+            ),
+        }
 
     @app.get("/api/v1/audit")
     def audit_events() -> dict[str, list[dict[str, str]]]:
@@ -195,6 +268,23 @@ def create_app(
             {"action": "PAPER_ORDER", "intent_id": intent.intent_id, "reason": "APPROVE"},
         )
         return _order_view(order)
+
+    @app.post("/api/v1/paper/fills", dependencies=[Depends(require_operator)])
+    def record_fill(payload: FillInput) -> dict[str, str]:
+        try:
+            fill = execution.record_fill(**payload.model_dump())
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        state_store.record_event(
+            f"fill:{fill.fill_id}",
+            {
+                "action": "PAPER_FILL",
+                "intent_id": "",
+                "reason": "SIMULATED",
+                "trace_id": fill.fill_id,
+            },
+        )
+        return _fill_view(fill)
 
     def transition(state: SafetyState, command: ControlInput, key: str) -> dict[str, str]:
         reason = command.reason.strip()

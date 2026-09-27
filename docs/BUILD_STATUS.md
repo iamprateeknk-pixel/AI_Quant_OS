@@ -9,14 +9,14 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 | P02 Data platform | In progress | UTC bar normalization, CSV import, duplicate detection and deterministic in-process replay; raw store, database schemas and lineage remain. |
 | P03 Nautilus trading core | In progress | Deterministic paper backtest with next-bar execution, fees and slippage; NautilusTrader runtime and full strategy harness remain. |
 | P04 Broker abstraction | In progress | Canonical routing interface, symbol/capability gates and paper simulator; Exness MT5 and alternate live adapters remain absent and disabled. |
-| P05 Portfolio, risk and execution | In progress | Deterministic paper risk checks, SQLite-backed unique intent/order receipts, persistent safety state and audit, and mismatch escalation; portfolio aggregation, fills and full reconciliation remain. |
+| P05 Portfolio, risk and execution | In progress | Deterministic paper risk checks, SQLite-backed unique intent/order receipts and partial simulated fills, derived order fill status, EURUSD position and marked trading P&L, persistent safety state and audit, and mismatch escalation; multi-currency aggregation, broker-sourced fills and full reconciliation remain. |
 | P06–P11 Intelligence, research, recovery and evolution | Not started | Workpacks remain to be implemented and validated. |
-| P12 Mission Control and governance | In progress | Local control API and 15-route Next.js monitoring shell; realtime contract, operator-session auth, observability and cost governance remain. |
+| P12 Mission Control and governance | In progress | Local control API and monitoring shell with paper portfolio and fill views; realtime contract, operator-session auth, observability and cost governance remain. |
 | P13 Restricted live rollout | Blocked by release gates | No broker or live credentials; every `99_RELEASE_GATES/GO_LIVE_GATE.md` item remains open. |
 
 ## Handoff
 
 - Run `python -m pytest -q`, `python -m ruff check src tests`, and `python -m ruff format --check src tests`.
 - Current tests cover stale and untrusted market rejection, randomized exposure limits, safety halt, duplicate retries, changed-payload idempotency, restart persistence, legacy SQLite migration, parallel gateway duplicate intent prevention, broker rejection rollback, mismatch escalation, and API command authorization.
-- The next critical slice is a real portfolio ledger with fills and accounting, plus a durable outbox and reconciliation workflow. Keep live order routing absent until P13.
-- Rollback: preserve the SQLite file before reverting code. The order table adds a nullable `intent_id` column and unique index on startup; existing receipts are backfilled from stored order JSON. No deployed environment exists yet.
+- The next critical slice is broker-sourced fill and OMS state handling with a durable outbox, then reconciliation and multi-currency portfolio accounting. Keep live order routing absent until P13.
+- Rollback: preserve the SQLite file before reverting code. The order table adds indexed `intent_id` and `order_id` columns on startup; existing receipts are backfilled from stored order JSON. The `paper_fills` table stores simulated fills. No deployed environment exists yet.
