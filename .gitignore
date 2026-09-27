@@ -1,0 +1,12 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+dist/
+build/
+.env
+*.sqlite3
+node_modules/
+.next/
+.playwright-cli/
