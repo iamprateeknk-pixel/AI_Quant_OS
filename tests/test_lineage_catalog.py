@@ -8,6 +8,7 @@ import pytest
 from ai_quant_os.data_archive import BarArchive
 from ai_quant_os.data_cli import main
 from ai_quant_os.lineage_catalog import PostgresLineageCatalog
+from ai_quant_os.tick_archive import TickArchive
 
 
 @pytest.fixture
@@ -116,6 +117,88 @@ def test_cli_ingest_and_health_persist_catalog_records(
         == 2
     )
     assert catalog.latest_quality(manifest.archive_id) == (
+        datetime(2026, 1, 1, 0, 10, tzinfo=timezone.utc),
+        600.0,
+        False,
+    )
+
+
+def test_tick_lineage_and_quality_are_durable(catalog, tmp_path) -> None:
+    source_id = f"fixture:{uuid4()}"
+    source = tmp_path / "ticks.csv"
+    source.write_text(
+        "instrument_id,source_id,sequence,observed_at,bid,ask,bid_size,ask_size\n"
+        f"EURUSD,{source_id},1,2026-01-01T00:00:00+00:00,1.09,1.10,100,200\n",
+        encoding="utf-8",
+    )
+    archive = TickArchive(tmp_path / "archive")
+    manifest = archive.ingest_csv(
+        source, source_id=source_id, ingested_at=datetime.now(timezone.utc)
+    )
+    catalog.register_source(source_id, kind="CSV")
+    catalog.record_tick_archive(manifest)
+    catalog.record_tick_archive(manifest)
+    assert catalog.get_tick_archive(manifest.archive_id) == manifest
+    with pytest.raises(ValueError, match="conflict"):
+        catalog.record_tick_archive(replace(manifest, row_count=manifest.row_count + 1))
+    checked_at = datetime(2026, 1, 1, 0, 10, tzinfo=timezone.utc)
+    health = archive.health(manifest.archive_id, now=checked_at, max_age=timedelta(minutes=5))
+    catalog.record_tick_quality(manifest.archive_id, health, checked_at=checked_at, trace_id="tick")
+    assert catalog.latest_tick_quality(manifest.archive_id) == (checked_at, 600.0, False)
+
+
+def test_tick_cli_catalog_records(catalog, tmp_path, monkeypatch, capsys) -> None:
+    monkeypatch.setenv("AI_QUANT_DATA_DATABASE_URL", catalog._dsn)
+    source_id = f"fixture:{uuid4()}"
+    source = tmp_path / "ticks.csv"
+    source.write_text(
+        "instrument_id,source_id,sequence,observed_at,bid,ask,bid_size,ask_size\n"
+        f"EURUSD,{source_id},1,2026-01-01T00:00:00+00:00,1.09,1.10,100,200\n",
+        encoding="utf-8",
+    )
+    root = tmp_path / "archive"
+    assert (
+        main(
+            [
+                "ingest-ticks",
+                str(source),
+                "--root",
+                str(root),
+                "--source-id",
+                source_id,
+                "--at",
+                "2026-01-01T00:01:00+00:00",
+                "--catalog",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+    manifest = TickArchive(root).ingest_csv(
+        source,
+        source_id=source_id,
+        ingested_at=datetime(2026, 1, 1, 0, 1, tzinfo=timezone.utc),
+    )
+    assert catalog.get_tick_archive(manifest.archive_id) == manifest
+    assert (
+        main(
+            [
+                "health-ticks",
+                manifest.archive_id,
+                "--root",
+                str(root),
+                "--now",
+                "2026-01-01T00:10:00+00:00",
+                "--max-age-seconds",
+                "300",
+                "--catalog",
+                "--trace-id",
+                "tick-cli",
+            ]
+        )
+        == 2
+    )
+    assert catalog.latest_tick_quality(manifest.archive_id) == (
         datetime(2026, 1, 1, 0, 10, tzinfo=timezone.utc),
         600.0,
         False,
