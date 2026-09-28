@@ -1,11 +1,11 @@
 import "server-only";
 
 export type SystemStatus = { mode: "PAPER"; safety_state: string; order_count: number };
-export type PaperOrder = { order_id: string; intent_id: string; risk_id: string; status: string; broker_route: "PAPER" };
+export type PaperOrder = { order_id: string; intent_id: string; risk_id: string; status: string; broker_route: "PAPER"; broker_order_id?: string };
 export type AuditEvent = { action: string; intent_id: string; reason: string; trace_id?: string };
 export type BrokerView = { broker_id: string; connection_state: string; enabled: boolean; instruments: string[] };
 export type MarketView = { instrument_id: string; bid: string; ask: string; observed_at: string; world_state_version: string; freshness: string; source: string };
-export type PaperFill = { fill_id: string; order_id: string; side: "BUY" | "SELL"; quantity: string; price: string; fee: string; observed_at: string; source: "PAPER_MANUAL" };
+export type PaperFill = { fill_id: string; order_id: string; side: "BUY" | "SELL"; quantity: string; price: string; fee: string; observed_at: string; source: "PAPER_MANUAL" | "PAPER_BROKER" };
 export type PortfolioView = { instrument_id: "EURUSD"; quote_currency: "USD"; mark_available: boolean; mark_price: string | null; net_quantity: string; cash_flow_quote: string; gross_exposure_quote: string | null; net_exposure_quote: string | null; marked_pnl_quote: string | null };
 export type RiskView = { safety_state: string; max_order_exposure: string; max_portfolio_exposure: string; worst_case_quantity: string; filled_net_quantity: string; pending_buy_quantity: string; pending_sell_quantity: string; portfolio_snapshot_id: string };
 export type ReadResult<T> = { ok: true; value: T } | { ok: false; reason: string };
@@ -50,7 +50,8 @@ export function getOrders(): Promise<ReadResult<{ orders: PaperOrder[] }>> {
     const orders: PaperOrder[] = [];
     for (const item of value.orders) {
       if (!isRecord(item) || typeof item.order_id !== "string" || typeof item.intent_id !== "string" || typeof item.risk_id !== "string" || typeof item.status !== "string" || item.broker_route !== "PAPER") return null;
-      orders.push({ order_id: item.order_id, intent_id: item.intent_id, risk_id: item.risk_id, status: item.status, broker_route: "PAPER" });
+      if (item.broker_order_id !== undefined && typeof item.broker_order_id !== "string") return null;
+      orders.push({ order_id: item.order_id, intent_id: item.intent_id, risk_id: item.risk_id, status: item.status, broker_route: "PAPER", broker_order_id: item.broker_order_id });
     }
     return { orders };
   });
@@ -92,8 +93,8 @@ export function getFills(): Promise<ReadResult<{ fills: PaperFill[] }>> {
     if (!isRecord(value) || !Array.isArray(value.fills)) return null;
     const fills: PaperFill[] = [];
     for (const item of value.fills) {
-      if (!isRecord(item) || typeof item.fill_id !== "string" || typeof item.order_id !== "string" || (item.side !== "BUY" && item.side !== "SELL") || typeof item.quantity !== "string" || typeof item.price !== "string" || typeof item.fee !== "string" || typeof item.observed_at !== "string" || item.source !== "PAPER_MANUAL") return null;
-      fills.push({ fill_id: item.fill_id, order_id: item.order_id, side: item.side, quantity: item.quantity, price: item.price, fee: item.fee, observed_at: item.observed_at, source: "PAPER_MANUAL" });
+      if (!isRecord(item) || typeof item.fill_id !== "string" || typeof item.order_id !== "string" || (item.side !== "BUY" && item.side !== "SELL") || typeof item.quantity !== "string" || typeof item.price !== "string" || typeof item.fee !== "string" || typeof item.observed_at !== "string" || (item.source !== "PAPER_MANUAL" && item.source !== "PAPER_BROKER")) return null;
+      fills.push({ fill_id: item.fill_id, order_id: item.order_id, side: item.side, quantity: item.quantity, price: item.price, fee: item.fee, observed_at: item.observed_at, source: item.source });
     }
     return { fills };
   });
