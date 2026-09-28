@@ -1,5 +1,9 @@
-from dataclasses import dataclass
+import json
+import sqlite3
+from dataclasses import asdict, dataclass
 from datetime import datetime
+from decimal import Decimal
+from pathlib import Path
 from threading import Lock
 from typing import Protocol
 
@@ -30,20 +34,85 @@ class BrokerAdapter(Protocol):
 
     def place(self, command: OrderCommand) -> BrokerAck: ...
 
+    def lookup(self, command: OrderCommand) -> BrokerAck | None: ...
+
 
 class SimulatedBroker:
-    def __init__(self, broker_id: str, symbol_map: dict[str, str], *, enabled: bool) -> None:
+    def __init__(
+        self,
+        broker_id: str,
+        symbol_map: dict[str, str],
+        *,
+        enabled: bool,
+        store_path: Path | None = None,
+    ) -> None:
         self.broker_id = broker_id
         self.symbol_map = dict(symbol_map)
         self.enabled = enabled
         self.connected = True
         self._orders: dict[str, tuple[OrderCommand, BrokerAck]] = {}
         self._lock = Lock()
+        self._connection = (
+            sqlite3.connect(str(store_path), check_same_thread=False, timeout=30)
+            if store_path is not None
+            else None
+        )
+        if self._connection is not None:
+            self._connection.execute(
+                """CREATE TABLE IF NOT EXISTS simulated_broker_orders (
+                    broker_id TEXT NOT NULL,
+                    idempotency_key TEXT NOT NULL,
+                    command_json TEXT NOT NULL,
+                    ack_json TEXT NOT NULL,
+                    PRIMARY KEY (broker_id, idempotency_key)
+                )"""
+            )
+            self._connection.commit()
+
+    @staticmethod
+    def _encode_command(command: OrderCommand) -> str:
+        def encode(value: Decimal | datetime) -> str:
+            if isinstance(value, Decimal):
+                return str(value.normalize())
+            if isinstance(value, datetime):
+                return value.isoformat()
+            raise TypeError(f"Unsupported broker command value: {type(value)}")
+
+        return json.dumps(asdict(command), default=encode, sort_keys=True)
+
+    def _stored(self, command: OrderCommand) -> BrokerAck | None:
+        if self._connection is None:
+            existing = self._orders.get(command.idempotency_key)
+            if existing is None:
+                return None
+            if existing[0] != command:
+                raise ValueError("Broker idempotency key reused")
+            return existing[1]
+        row = self._connection.execute(
+            """SELECT command_json, ack_json FROM simulated_broker_orders
+            WHERE broker_id = ? AND idempotency_key = ?""",
+            (self.broker_id, command.idempotency_key),
+        ).fetchone()
+        if row is None:
+            return None
+        if row[0] != self._encode_command(command):
+            raise ValueError("Broker idempotency key reused")
+        return BrokerAck(**json.loads(row[1]))
 
     @property
     def orders(self) -> tuple[BrokerAck, ...]:
         with self._lock:
+            if self._connection is not None:
+                rows = self._connection.execute(
+                    "SELECT ack_json FROM simulated_broker_orders WHERE broker_id = ? ORDER BY rowid",
+                    (self.broker_id,),
+                ).fetchall()
+                return tuple(BrokerAck(**json.loads(row[0])) for row in rows)
             return tuple(ack for _, ack in self._orders.values())
+
+    def lookup(self, command: OrderCommand) -> BrokerAck | None:
+        with self._lock:
+            return self._stored(command)
 
     def disconnect(self) -> None:
         self.connected = False
@@ -53,19 +122,38 @@ class SimulatedBroker:
 
     def place(self, command: OrderCommand) -> BrokerAck:
         with self._lock:
-            existing = self._orders.get(command.idempotency_key)
-            if existing is not None:
-                if existing[0] != command:
-                    raise ValueError("Broker idempotency key reused")
-                return existing[1]
-            ack = BrokerAck(
-                self.broker_id,
-                f"{self.broker_id}:{command.order_id}",
-                self.symbol_map[command.instrument_id],
-                "ACCEPTED",
-            )
-            self._orders[command.idempotency_key] = (command, ack)
-            return ack
+            if self._connection is not None:
+                self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                existing = self._stored(command)
+                if existing is not None:
+                    if self._connection is not None:
+                        self._connection.commit()
+                    return existing
+                ack = BrokerAck(
+                    self.broker_id,
+                    f"{self.broker_id}:{command.order_id}",
+                    self.symbol_map[command.instrument_id],
+                    "ACCEPTED",
+                )
+                if self._connection is None:
+                    self._orders[command.idempotency_key] = (command, ack)
+                else:
+                    self._connection.execute(
+                        "INSERT INTO simulated_broker_orders VALUES (?, ?, ?, ?)",
+                        (
+                            self.broker_id,
+                            command.idempotency_key,
+                            self._encode_command(command),
+                            json.dumps(asdict(ack), sort_keys=True),
+                        ),
+                    )
+                    self._connection.commit()
+                return ack
+            except BaseException:
+                if self._connection is not None:
+                    self._connection.rollback()
+                raise
 
 
 class BrokerRouter:
@@ -100,3 +188,9 @@ class BrokerRouter:
             raise BrokerOutcomeUnknown(
                 "Broker outcome is unknown; reconcile before new risk"
             ) from error
+
+    def lookup(self, command: OrderCommand) -> BrokerAck | None:
+        adapter = self._adapters.get(command.broker_route)
+        if adapter is None:
+            raise BrokerUnavailable("Broker route does not exist")
+        return adapter.lookup(command)

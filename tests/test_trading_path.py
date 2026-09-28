@@ -641,6 +641,35 @@ def test_uncertain_broker_outcome_holds_exposure_and_blocks_restart(tmp_path) ->
     assert broker.calls == 1
 
 
+def test_uncertain_paper_order_reconciles_from_durable_simulator_ack(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+
+    class LostAckBroker(SimulatedBroker):
+        def place(self, command):
+            super().place(command)
+            raise RuntimeError("ack lost")
+
+    trade = intent()
+    risk = kernel()
+    lost_ack = LostAckBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)
+    gateway = PaperExecutionGateway(risk, store_path=path, router=BrokerRouter([lost_ack]))
+    with pytest.raises(BrokerOutcomeUnknown):
+        gateway.submit(
+            trade,
+            risk.evaluate(trade, market(), now=NOW),
+            idempotency_key="lost-ack",
+            now=NOW,
+        )
+    assert gateway.orders[0].status == "UNKNOWN"
+
+    simulator = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)
+    restarted = PaperExecutionGateway(kernel(), store_path=path, router=BrokerRouter([simulator]))
+    reconciled = restarted.reconcile_order(gateway.orders[0].order_id)
+    assert reconciled.status == "ACCEPTED"
+    assert reconciled.broker_order_id == f"PAPER:{reconciled.order_id}"
+    assert len(simulator.orders) == 1
+
+
 def test_restart_does_not_resend_order_left_dispatching(tmp_path) -> None:
     path = tmp_path / "paper.sqlite3"
 

@@ -108,11 +108,14 @@ def create_app(
     )
     state_store = PaperStateStore(configured_path)
     risk.set_safety_state(state_store.safety_state())
-    router = BrokerRouter([SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)])
+    router = BrokerRouter(
+        [SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=configured_path)]
+    )
     execution = PaperExecutionGateway(
         risk,
         store_path=configured_path,
         router=router,
+        on_uncertain_order=state_store.record_order_uncertainty,
     )
     quotes: dict[str, MarketSnapshot] = {}
     control_lock = Lock()
@@ -324,6 +327,23 @@ def create_app(
             },
         )
         return _fill_view(fill)
+
+    @app.post("/api/v1/paper/orders/{order_id}/reconcile", dependencies=[Depends(require_operator)])
+    def reconcile_paper_order(order_id: str) -> dict[str, str]:
+        try:
+            order = execution.reconcile_order(order_id)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        if order.status in {"ACCEPTED", "REJECTED"}:
+            state_store.record_event(
+                f"reconcile:{order.order_id}",
+                {
+                    "action": "PAPER_ORDER_RECONCILED",
+                    "intent_id": order.intent_id,
+                    "reason": order.status,
+                },
+            )
+        return _order_view(order)
 
     def transition(state: SafetyState, command: ControlInput, key: str) -> dict[str, str]:
         reason = command.reason.strip()

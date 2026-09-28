@@ -27,13 +27,49 @@ class PaperStateStore:
                     event_json TEXT NOT NULL
                 )"""
             )
+            self._connection.execute(
+                """CREATE TABLE IF NOT EXISTS order_safety_escalations (
+                    order_id TEXT PRIMARY KEY,
+                    safety_state TEXT NOT NULL
+                )"""
+            )
 
     def safety_state(self) -> SafetyState:
         with self._lock:
-            row = self._connection.execute(
-                "SELECT safety_state FROM control_receipts ORDER BY rowid DESC LIMIT 1"
-            ).fetchone()
-            return SafetyState(row[0]) if row else SafetyState.NORMAL
+            controls = self._connection.execute(
+                "SELECT safety_state FROM control_receipts"
+            ).fetchall()
+            orders = self._connection.execute(
+                "SELECT safety_state FROM order_safety_escalations"
+            ).fetchall()
+            severity = list(SafetyState)
+            return max(
+                (SafetyState(row[0]) for row in controls + orders),
+                key=severity.index,
+                default=SafetyState.NORMAL,
+            )
+
+    def record_order_uncertainty(self, order_id: str) -> None:
+        with self._lock, self._connection:
+            self._connection.execute(
+                "INSERT OR IGNORE INTO order_safety_escalations VALUES (?, ?)",
+                (order_id, SafetyState.NO_NEW_RISK.value),
+            )
+            self._connection.execute(
+                "INSERT OR IGNORE INTO audit_events VALUES (?, ?)",
+                (
+                    f"order-uncertain:{order_id}",
+                    json.dumps(
+                        {
+                            "action": SafetyState.NO_NEW_RISK.value,
+                            "intent_id": "",
+                            "reason": "PAPER_ORDER_OUTCOME_UNKNOWN",
+                            "trace_id": order_id,
+                        },
+                        sort_keys=True,
+                    ),
+                ),
+            )
 
     def control_receipt(self, key: str) -> tuple[SafetyState, str, dict[str, str]] | None:
         with self._lock:

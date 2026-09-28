@@ -4,6 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from threading import Lock
+from typing import Callable
 from uuid import uuid4
 
 from ai_quant_os.broker import (
@@ -73,6 +74,7 @@ class PaperExecutionGateway:
         *,
         store_path: Path | None = None,
         router: BrokerRouter | None = None,
+        on_uncertain_order: Callable[[str], None] | None = None,
     ) -> None:
         self._risk = risk
         self._store = PaperOrderStore(store_path)
@@ -80,10 +82,10 @@ class PaperExecutionGateway:
             [SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)]
         )
         self._lock = Lock()
-        if self._risk.safety_state == SafetyState.NORMAL and any(
-            order.status in {"DISPATCHING", "UNKNOWN"} for order in self.orders
-        ):
-            self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
+        self._on_uncertain_order = on_uncertain_order
+        for order in self.orders:
+            if order.status in {"DISPATCHING", "UNKNOWN"}:
+                self._escalate_uncertainty(order.order_id)
 
     @property
     def orders(self) -> tuple[PaperOrder, ...]:
@@ -140,7 +142,25 @@ class PaperExecutionGateway:
         try:
             self._store.transition(order_id, from_status="DISPATCHING", to_status="UNKNOWN")
         finally:
+            self._escalate_uncertainty(order_id)
+
+    def _escalate_uncertainty(self, order_id: str) -> None:
+        if self._risk.safety_state != SafetyState.NORMAL:
+            if self._on_uncertain_order is not None:
+                self._on_uncertain_order(order_id)
+            return
+        try:
+            self._risk.set_safety_state(
+                SafetyState.NO_NEW_RISK,
+                before_change=(
+                    (lambda: self._on_uncertain_order(order_id))
+                    if self._on_uncertain_order is not None
+                    else None
+                ),
+            )
+        except Exception:
             self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
+            raise
 
     def _dispatch(self, order: PaperOrder, *, now: datetime) -> PaperOrder:
         order_id = order.order_id
@@ -170,7 +190,7 @@ class PaperExecutionGateway:
                 broker_order_id=acknowledgement.broker_order_id,
             )
         except Exception:
-            self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
+            self._escalate_uncertainty(order_id)
             raise
         return replace(order, status="ACCEPTED", broker_order_id=acknowledgement.broker_order_id)
 
@@ -224,6 +244,35 @@ class PaperExecutionGateway:
                     return _with_fill_status(_decode_order(current[1]), self._store.all_fills())
                 self._risk.consume(decision.risk_id)
                 return self._dispatch(order, now=now)
+
+    def reconcile_order(self, order_id: str) -> PaperOrder:
+        with self._lock:
+            raw = self._store.get_order_by_id(order_id)
+            if raw is None:
+                raise ValueError("Paper order does not exist")
+            order = _decode_order(raw)
+            if order.status not in {"DISPATCHING", "UNKNOWN"}:
+                return _with_fill_status(order, self._store.all_fills())
+            self._escalate_uncertainty(order_id)
+            acknowledgement = self._router.lookup(order.command)
+            if acknowledgement is None:
+                return order
+            if acknowledgement.broker_id != order.command.broker_route:
+                raise BrokerOutcomeUnknown("Broker acknowledgement route does not match")
+            if acknowledgement.status == "REJECTED":
+                self._store.transition(order_id, from_status=order.status, to_status="REJECTED")
+                return replace(order, status="REJECTED")
+            if acknowledgement.status != "ACCEPTED" or not acknowledgement.broker_order_id:
+                raise BrokerOutcomeUnknown("Broker acknowledgement is ambiguous")
+            self._store.transition(
+                order_id,
+                from_status=order.status,
+                to_status="ACCEPTED",
+                broker_order_id=acknowledgement.broker_order_id,
+            )
+            return replace(
+                order, status="ACCEPTED", broker_order_id=acknowledgement.broker_order_id
+            )
 
     def submit(
         self,

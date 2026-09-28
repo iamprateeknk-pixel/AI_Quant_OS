@@ -66,3 +66,13 @@ def test_simulated_broker_retry_is_idempotent() -> None:
     second = router.route(command(), now=NOW)
     assert first == second
     assert len(paper.orders) == 1
+
+
+def test_simulated_broker_acknowledgement_survives_restart(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    first = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)
+    acknowledged = first.place(command())
+    restarted = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)
+    assert restarted.lookup(command()) == acknowledged
+    assert restarted.place(command()) == acknowledged
+    assert len(restarted.orders) == 1

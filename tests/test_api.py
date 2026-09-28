@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+import json
+import sqlite3
 from unittest.mock import patch
 
 import pytest
@@ -9,7 +11,9 @@ from ai_quant_os.api import IntentInput, QuoteInput, create_app
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.execution import PaperExecutionGateway
 from ai_quant_os.market import MarketSnapshot
+from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.risk import RiskKernel, RiskLimits
+from ai_quant_os.risk import SafetyState
 
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -66,6 +70,78 @@ def test_retry_dispatches_committed_pending_order_after_restart(tmp_path) -> Non
         == recovered.json()
     )
     assert client.get("/api/v1/risk").json()["pending_buy_quantity"] == "1000"
+
+
+def test_reconcile_endpoint_uses_durable_ack_without_resending(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    payload = {
+        "intent_id": "reconcile-intent",
+        "strategy_id": "demo",
+        "strategy_version": "1",
+        "instrument_id": "EURUSD",
+        "side": "BUY",
+        "desired_exposure": "100",
+        "risk_budget": "10",
+        "max_spread": "0.0003",
+        "max_slippage": "0.0002",
+        "valid_until": (NOW + timedelta(minutes=1)).isoformat(),
+        "world_state_version": "world-1",
+        "evidence_refs": ["fixture:1"],
+        "created_at": NOW.isoformat(),
+    }
+    quote = {
+        "instrument_id": "EURUSD",
+        "bid": "1.1000",
+        "ask": "1.1001",
+        "observed_at": NOW.isoformat(),
+        "world_state_version": "world-1",
+    }
+    headers = {"X-Operator-Token": "test-secret", "Idempotency-Key": "reconcile"}
+    client = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    client.post("/api/v1/paper/quotes", json=quote, headers=headers)
+    first = client.post("/api/v1/paper/intents", json=payload, headers=headers).json()
+    with sqlite3.connect(path) as connection:
+        row = connection.execute(
+            "SELECT order_json FROM paper_orders WHERE order_id = ?", (first["order_id"],)
+        ).fetchone()
+        interrupted = json.loads(row[0])
+        interrupted["status"] = "UNKNOWN"
+        interrupted["broker_order_id"] = None
+        connection.execute(
+            "UPDATE paper_orders SET order_json = ? WHERE order_id = ?",
+            (json.dumps(interrupted, sort_keys=True), first["order_id"]),
+        )
+    restarted = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    url = f"/api/v1/paper/orders/{first['order_id']}/reconcile"
+    assert restarted.post(url).status_code == 401
+    result = restarted.post(url, headers={"X-Operator-Token": "test-secret"})
+    assert result.status_code == 200
+    assert result.json()["status"] == "ACCEPTED"
+    assert result.json()["broker_order_id"] == first["broker_order_id"]
+    assert restarted.get("/api/v1/risk").json()["safety_state"] == "NO_NEW_RISK"
+    after_reconciliation_restart = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    assert after_reconciliation_restart.get("/api/v1/risk").json()["safety_state"] == "NO_NEW_RISK"
+    with sqlite3.connect(path) as connection:
+        count = connection.execute("SELECT COUNT(*) FROM simulated_broker_orders").fetchone()[0]
+    assert count == 1
+
+
+def test_order_uncertainty_cannot_downgrade_persisted_halt(tmp_path) -> None:
+    store = PaperStateStore(tmp_path / "paper.sqlite3")
+    store.record_control(
+        "halt",
+        SafetyState.HALT,
+        "operator halt",
+        {"receipt_id": "halt-1", "status": "COMPLETED"},
+    )
+    store.record_order_uncertainty("order-1")
+    assert PaperStateStore(tmp_path / "paper.sqlite3").safety_state() == SafetyState.HALT
 
 
 def test_status_is_paper_only_and_starts_with_no_orders() -> None:
