@@ -1,11 +1,71 @@
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 
-from ai_quant_os.api import create_app
+from ai_quant_os.api import IntentInput, QuoteInput, create_app
+from ai_quant_os.contracts import TradeIntent
+from ai_quant_os.execution import PaperExecutionGateway
+from ai_quant_os.market import MarketSnapshot
+from ai_quant_os.risk import RiskKernel, RiskLimits
 
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+
+def test_retry_dispatches_committed_pending_order_after_restart(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    payload = {
+        "intent_id": "pending-intent",
+        "strategy_id": "demo",
+        "strategy_version": "1",
+        "instrument_id": "EURUSD",
+        "side": "BUY",
+        "desired_exposure": "1000",
+        "risk_budget": "10",
+        "max_spread": "0.0003",
+        "max_slippage": "0.0002",
+        "valid_until": (NOW + timedelta(minutes=1)).isoformat(),
+        "world_state_version": "world-1",
+        "evidence_refs": ["fixture:1"],
+        "created_at": NOW.isoformat(),
+    }
+    quote = {
+        "instrument_id": "EURUSD",
+        "bid": "1.1000",
+        "ask": "1.1001",
+        "observed_at": NOW.isoformat(),
+        "world_state_version": "world-1",
+    }
+    trade = TradeIntent(**IntentInput.model_validate(payload).model_dump())
+    market = MarketSnapshot(**QuoteInput.model_validate(quote).model_dump(), trusted=True)
+    risk = RiskKernel(RiskLimits(Decimal("1000"), Decimal("1500"), 5))
+    gateway = PaperExecutionGateway(risk, store_path=path)
+    with patch.object(gateway._store, "transition", side_effect=RuntimeError("interrupted")):
+        with pytest.raises(RuntimeError, match="interrupted"):
+            gateway.submit(
+                trade,
+                risk.evaluate(trade, market, now=NOW),
+                idempotency_key="pending",
+                now=NOW,
+            )
+    client = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    headers = {"X-Operator-Token": "test-secret", "Idempotency-Key": "pending"}
+    assert client.post("/api/v1/paper/intents", json=payload, headers=headers).status_code == 409
+    client.post("/api/v1/paper/quotes", json=quote, headers=headers)
+    recovered = client.post("/api/v1/paper/intents", json=payload, headers=headers)
+    assert recovered.status_code == 200
+    assert recovered.json()["status"] == "ACCEPTED"
+    assert recovered.json()["broker_order_id"].startswith("PAPER:")
+    assert (
+        client.post("/api/v1/paper/intents", json=payload, headers=headers).json()
+        == recovered.json()
+    )
+    assert client.get("/api/v1/risk").json()["pending_buy_quantity"] == "1000"
 
 
 def test_status_is_paper_only_and_starts_with_no_orders() -> None:

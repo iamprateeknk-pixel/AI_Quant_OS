@@ -4,6 +4,7 @@ from dataclasses import replace
 from concurrent.futures import ThreadPoolExecutor
 import json
 import sqlite3
+from unittest.mock import patch
 
 import pytest
 from hypothesis import given, strategies as st
@@ -670,6 +671,76 @@ def test_restart_does_not_resend_order_left_dispatching(tmp_path) -> None:
     assert restarted_risk.safety_state == SafetyState.NO_NEW_RISK
     assert restarted.replay(trade, idempotency_key="interrupted").status == "DISPATCHING"
     assert broker.calls == 1
+
+
+def test_reserved_order_can_be_dispatched_once_after_restart(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent(exposure="1000")
+    risk = kernel()
+    first = PaperExecutionGateway(risk, store_path=path)
+    with patch.object(first._store, "transition", side_effect=RuntimeError("interrupted")):
+        with pytest.raises(RuntimeError, match="interrupted"):
+            first.submit(
+                trade,
+                risk.evaluate(trade, market(), now=NOW),
+                idempotency_key="pending",
+                now=NOW,
+            )
+    assert first.orders[0].status == "PENDING"
+
+    simulator = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)
+    restarted = PaperExecutionGateway(kernel(), store_path=path, router=BrokerRouter([simulator]))
+    recovered = restarted.recover_pending(
+        trade,
+        idempotency_key="pending",
+        market=market(),
+        now=NOW,
+    )
+    assert recovered.status == "ACCEPTED"
+    assert recovered.broker_order_id == f"PAPER:{recovered.order_id}"
+    assert (
+        restarted.recover_pending(
+            trade,
+            idempotency_key="pending",
+            market=market(),
+            now=NOW,
+        )
+        == recovered
+    )
+    assert len(simulator.orders) == 1
+
+
+def test_pending_recovery_requires_fresh_market_and_unexpired_intent(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent()
+    risk = kernel()
+    first = PaperExecutionGateway(risk, store_path=path)
+    with patch.object(first._store, "transition", side_effect=RuntimeError("interrupted")):
+        with pytest.raises(RuntimeError):
+            first.submit(
+                trade,
+                risk.evaluate(trade, market(), now=NOW),
+                idempotency_key="pending",
+                now=NOW,
+            )
+
+    restarted = PaperExecutionGateway(kernel(), store_path=path)
+    with pytest.raises(BrokerUnavailable, match="market"):
+        restarted.recover_pending(
+            trade,
+            idempotency_key="pending",
+            market=market(age_seconds=10),
+            now=NOW,
+        )
+    assert restarted.orders[0].status == "PENDING"
+    expired = restarted.recover_pending(
+        trade,
+        idempotency_key="pending",
+        market=market(),
+        now=NOW + timedelta(minutes=2),
+    )
+    assert expired.status == "REJECTED"
+    assert restarted.exposure_snapshot.worst_case_quantity == Decimal("0")
 
 
 def test_partial_fills_persist_and_cannot_overfill_order(tmp_path) -> None:

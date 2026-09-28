@@ -254,6 +254,28 @@ def create_app(
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         if previous is not None:
+            if previous.status == "PENDING":
+                quote = quotes.get(intent.instrument_id)
+                if quote is None:
+                    raise HTTPException(status_code=409, detail="No paper market quote")
+                try:
+                    previous = execution.recover_pending(
+                        intent,
+                        idempotency_key=idempotency_key,
+                        market=quote,
+                        now=current_time(),
+                    )
+                except ValueError as error:
+                    raise HTTPException(status_code=409, detail=str(error)) from error
+                if previous.status == "ACCEPTED":
+                    state_store.record_event(
+                        f"order:{previous.order_id}",
+                        {
+                            "action": "PAPER_ORDER",
+                            "intent_id": intent.intent_id,
+                            "reason": "APPROVE",
+                        },
+                    )
             return _order_view(previous)
         quote = quotes.get(intent.instrument_id)
         if quote is None:

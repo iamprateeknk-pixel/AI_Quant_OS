@@ -13,6 +13,7 @@ from ai_quant_os.broker import (
     SimulatedBroker,
 )
 from ai_quant_os.contracts import OrderCommand, RiskDecision, TradeIntent, _require_aware
+from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.order_store import PaperOrderStore
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure
 from ai_quant_os.risk import RiskKernel, SafetyState
@@ -141,6 +142,89 @@ class PaperExecutionGateway:
         finally:
             self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
 
+    def _dispatch(self, order: PaperOrder, *, now: datetime) -> PaperOrder:
+        order_id = order.order_id
+        command = order.command
+        try:
+            acknowledgement = self._router.route(command, now=now)
+        except BrokerOutcomeUnknown:
+            self._mark_unknown(order_id)
+            raise
+        except BrokerUnavailable:
+            self._store.transition(order_id, from_status="DISPATCHING", to_status="REJECTED")
+            raise
+        if acknowledgement.broker_id != command.broker_route:
+            self._mark_unknown(order_id)
+            raise BrokerOutcomeUnknown("Broker acknowledgement route does not match")
+        if acknowledgement.status == "REJECTED":
+            self._store.transition(order_id, from_status="DISPATCHING", to_status="REJECTED")
+            raise BrokerUnavailable("Paper broker rejected order")
+        if acknowledgement.status != "ACCEPTED" or not acknowledgement.broker_order_id:
+            self._mark_unknown(order_id)
+            raise BrokerOutcomeUnknown("Broker acknowledgement is ambiguous")
+        try:
+            self._store.transition(
+                order_id,
+                from_status="DISPATCHING",
+                to_status="ACCEPTED",
+                broker_order_id=acknowledgement.broker_order_id,
+            )
+        except Exception:
+            self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
+            raise
+        return replace(order, status="ACCEPTED", broker_order_id=acknowledgement.broker_order_id)
+
+    def recover_pending(
+        self,
+        intent: TradeIntent,
+        *,
+        idempotency_key: str,
+        market: MarketSnapshot,
+        now: datetime,
+    ) -> PaperOrder:
+        _require_aware(now)
+        with self._lock:
+            prior = self._store.get(idempotency_key)
+            if prior is None:
+                raise ValueError("Paper order does not exist")
+            if prior[0] != _encode_record(intent):
+                raise ValueError("idempotency key reused for a different intent")
+            order = _decode_order(prior[1])
+            if order.status != "PENDING":
+                return _with_fill_status(order, self._store.all_fills())
+            if now >= intent.valid_until:
+                self._store.transition(order.order_id, from_status="PENDING", to_status="REJECTED")
+                return replace(order, status="REJECTED")
+            if self._risk.safety_state != SafetyState.NORMAL:
+                raise BrokerUnavailable("Risk safety state blocks pending order recovery")
+            portfolio = self._store.exposure_snapshot()
+            command = order.command
+            if command.side == "BUY":
+                adjusted = replace(
+                    portfolio,
+                    snapshot_id=f"recovery:{portfolio.snapshot_id}",
+                    pending_buy_quantity=portfolio.pending_buy_quantity - command.quantity,
+                )
+            else:
+                adjusted = replace(
+                    portfolio,
+                    snapshot_id=f"recovery:{portfolio.snapshot_id}",
+                    pending_sell_quantity=portfolio.pending_sell_quantity - command.quantity,
+                )
+            decision = self._risk.evaluate(intent, market, now=now, portfolio=adjusted)
+            with self._risk.authorization(intent, decision) as authorized:
+                if not authorized:
+                    raise BrokerUnavailable("Current market or risk checks block pending recovery")
+                try:
+                    self._store.transition(
+                        order.order_id, from_status="PENDING", to_status="DISPATCHING"
+                    )
+                except ValueError:
+                    current = self._store.get(idempotency_key)
+                    return _with_fill_status(_decode_order(current[1]), self._store.all_fills())
+                self._risk.consume(decision.risk_id)
+                return self._dispatch(order, now=now)
+
     def submit(
         self,
         intent: TradeIntent,
@@ -211,40 +295,7 @@ class PaperExecutionGateway:
                     return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
                 self._risk.consume(decision.risk_id)
                 self._store.transition(order_id, from_status="PENDING", to_status="DISPATCHING")
-                try:
-                    acknowledgement = self._router.route(command, now=now)
-                except BrokerOutcomeUnknown:
-                    self._mark_unknown(order_id)
-                    raise
-                except BrokerUnavailable:
-                    self._store.transition(
-                        order_id, from_status="DISPATCHING", to_status="REJECTED"
-                    )
-                    raise
-                if acknowledgement.broker_id != command.broker_route:
-                    self._mark_unknown(order_id)
-                    raise BrokerOutcomeUnknown("Broker acknowledgement route does not match")
-                if acknowledgement.status == "REJECTED":
-                    self._store.transition(
-                        order_id, from_status="DISPATCHING", to_status="REJECTED"
-                    )
-                    raise BrokerUnavailable("Paper broker rejected order")
-                if acknowledgement.status != "ACCEPTED" or not acknowledgement.broker_order_id:
-                    self._mark_unknown(order_id)
-                    raise BrokerOutcomeUnknown("Broker acknowledgement is ambiguous")
-                try:
-                    self._store.transition(
-                        order_id,
-                        from_status="DISPATCHING",
-                        to_status="ACCEPTED",
-                        broker_order_id=acknowledgement.broker_order_id,
-                    )
-                except Exception:
-                    self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
-                    raise
-                return replace(
-                    order, status="ACCEPTED", broker_order_id=acknowledgement.broker_order_id
-                )
+                return self._dispatch(order, now=now)
 
     def reconcile(
         self,
