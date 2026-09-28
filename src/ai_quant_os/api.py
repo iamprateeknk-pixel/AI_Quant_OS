@@ -366,6 +366,38 @@ def create_app(
                 )
         return {"order_id": order_id, "imported_count": imported}
 
+    @app.post("/api/v1/paper/positions/reconcile", dependencies=[Depends(require_operator)])
+    def reconcile_paper_positions() -> dict[str, str | bool | list[str]]:
+        try:
+            result = execution.compare_paper_positions()
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        state_store.record_event(
+            f"position-reconciliation:{uuid4()}",
+            {
+                "action": "PAPER_POSITION_RECONCILIATION",
+                "intent_id": "",
+                "reason": "MATCH" if result.matches else "MISMATCH",
+                "local_net_quantity": str(result.local_net_quantity),
+                "broker_net_quantity": str(result.broker_net_quantity),
+                "local_cash_flow_quote": str(result.local_cash_flow_quote),
+                "broker_cash_flow_quote": str(result.broker_cash_flow_quote),
+                "local_only_fill_ids": ",".join(result.local_only_fill_ids),
+                "broker_only_fill_ids": ",".join(result.broker_only_fill_ids),
+                "conflicting_fill_ids": ",".join(result.conflicting_fill_ids),
+            },
+        )
+        return {
+            "matches": result.matches,
+            "local_net_quantity": str(result.local_net_quantity),
+            "broker_net_quantity": str(result.broker_net_quantity),
+            "local_cash_flow_quote": str(result.local_cash_flow_quote),
+            "broker_cash_flow_quote": str(result.broker_cash_flow_quote),
+            "local_only_fill_ids": list(result.local_only_fill_ids),
+            "broker_only_fill_ids": list(result.broker_only_fill_ids),
+            "conflicting_fill_ids": list(result.conflicting_fill_ids),
+        }
+
     @app.post("/api/v1/paper/orders/{order_id}/reconcile", dependencies=[Depends(require_operator)])
     def reconcile_paper_order(order_id: str) -> dict[str, str]:
         try:

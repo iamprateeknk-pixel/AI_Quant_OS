@@ -39,6 +39,8 @@ class BrokerAdapter(Protocol):
 
     def fills(self, command: OrderCommand) -> tuple[PaperFill, ...]: ...
 
+    def all_fills(self) -> tuple[PaperFill, ...]: ...
+
 
 class SimulatedBroker:
     def __init__(
@@ -152,6 +154,16 @@ class SimulatedBroker:
                 """SELECT fill_json FROM simulated_broker_fills
                 WHERE broker_id = ? AND order_id = ? ORDER BY rowid""",
                 (self.broker_id, command.order_id),
+            ).fetchall()
+            return tuple(self._decode_fill(row[0]) for row in rows)
+
+    def all_fills(self) -> tuple[PaperFill, ...]:
+        with self._lock:
+            if self._connection is None:
+                return tuple(self._fills.values())
+            rows = self._connection.execute(
+                "SELECT fill_json FROM simulated_broker_fills WHERE broker_id = ? ORDER BY rowid",
+                (self.broker_id,),
             ).fetchall()
             return tuple(self._decode_fill(row[0]) for row in rows)
 
@@ -302,6 +314,12 @@ class BrokerRouter:
         if adapter is None:
             raise BrokerUnavailable("Broker route does not exist")
         return adapter.fills(command)
+
+    def all_fills(self, broker_route: str) -> tuple[PaperFill, ...]:
+        adapter = self._adapters.get(broker_route)
+        if adapter is None:
+            raise BrokerUnavailable("Broker route does not exist")
+        return adapter.all_fills()
 
     def simulate_fill(self, command: OrderCommand, fill: PaperFill) -> PaperFill:
         adapter = self._adapters.get(command.broker_route)

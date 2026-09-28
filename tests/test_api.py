@@ -196,6 +196,26 @@ def test_operator_syncs_durable_simulated_broker_fill(tmp_path) -> None:
     )
     assert restarted.get("/api/v1/fills").json()["fills"][0]["source"] == "PAPER_BROKER"
     assert restarted.get("/api/v1/orders").json()["orders"][0]["status"] == "PARTIALLY_FILLED"
+    reconcile_url = "/api/v1/paper/positions/reconcile"
+    assert restarted.post(reconcile_url).status_code == 401
+    matched = restarted.post(reconcile_url, headers=headers)
+    assert matched.status_code == 200
+    assert matched.json()["matches"] is True
+    assert matched.json()["local_net_quantity"] == "40"
+    assert restarted.get("/api/v1/risk").json()["safety_state"] == "NORMAL"
+
+    manual = {**payload, "fill_id": "manual-extra", "quantity": "10"}
+    assert restarted.post("/api/v1/paper/fills", json=manual, headers=headers).status_code == 200
+    mismatch = restarted.post(reconcile_url, headers=headers)
+    assert mismatch.status_code == 200
+    assert mismatch.json()["matches"] is False
+    assert mismatch.json()["local_only_fill_ids"] == ["manual-extra"]
+    assert mismatch.json()["local_net_quantity"] == "50"
+    assert mismatch.json()["broker_net_quantity"] == "40"
+    after_mismatch_restart = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    assert after_mismatch_restart.get("/api/v1/risk").json()["safety_state"] == "NO_NEW_RISK"
 
 
 def test_status_is_paper_only_and_starts_with_no_orders() -> None:

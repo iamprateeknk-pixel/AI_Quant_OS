@@ -16,7 +16,7 @@ from ai_quant_os.broker import (
 from ai_quant_os.contracts import OrderCommand, RiskDecision, TradeIntent, _require_aware
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.order_store import PaperOrderStore
-from ai_quant_os.portfolio import PaperFill, PortfolioExposure
+from ai_quant_os.portfolio import PaperFill, PortfolioExposure, summarize_position
 from ai_quant_os.risk import RiskKernel, SafetyState
 
 
@@ -28,6 +28,18 @@ class PaperOrder:
     status: str
     command: OrderCommand
     broker_order_id: str | None = None
+
+
+@dataclass(frozen=True)
+class PositionReconciliation:
+    matches: bool
+    local_net_quantity: Decimal
+    broker_net_quantity: Decimal
+    local_cash_flow_quote: Decimal
+    broker_cash_flow_quote: Decimal
+    local_only_fill_ids: tuple[str, ...]
+    broker_only_fill_ids: tuple[str, ...]
+    conflicting_fill_ids: tuple[str, ...]
 
 
 def _encode_value(value: Decimal | datetime) -> str:
@@ -178,6 +190,47 @@ class PaperExecutionGateway:
                 self._escalate_uncertainty(order_id)
                 raise
             return imported
+
+    def compare_paper_positions(self) -> PositionReconciliation:
+        with self._lock:
+            local_fills = self._store.all_fills()
+            try:
+                broker_fills = self._router.all_fills("PAPER")
+                local_position = summarize_position(local_fills, mark=None)
+                broker_position = summarize_position(broker_fills, mark=None)
+                local_by_id = {fill.fill_id: fill for fill in local_fills}
+                broker_by_id = {fill.fill_id: fill for fill in broker_fills}
+                local_only = tuple(sorted(local_by_id.keys() - broker_by_id.keys()))
+                broker_only = tuple(sorted(broker_by_id.keys() - local_by_id.keys()))
+                conflicting = tuple(
+                    sorted(
+                        fill_id
+                        for fill_id in local_by_id.keys() & broker_by_id.keys()
+                        if local_by_id[fill_id] != broker_by_id[fill_id]
+                    )
+                )
+                matches = (
+                    local_position.net_quantity == broker_position.net_quantity
+                    and local_position.cash_flow_quote == broker_position.cash_flow_quote
+                    and not local_only
+                    and not broker_only
+                    and not conflicting
+                )
+            except Exception:
+                self._escalate_uncertainty("position:EURUSD")
+                raise
+            if not matches:
+                self._escalate_uncertainty("position:EURUSD")
+            return PositionReconciliation(
+                matches,
+                local_position.net_quantity,
+                broker_position.net_quantity,
+                local_position.cash_flow_quote,
+                broker_position.cash_flow_quote,
+                local_only,
+                broker_only,
+                conflicting,
+            )
 
     def replay(self, intent: TradeIntent, *, idempotency_key: str) -> PaperOrder | None:
         with self._lock:

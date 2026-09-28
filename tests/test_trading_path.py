@@ -747,6 +747,101 @@ def test_conflicting_broker_fill_escalates_safety_state(tmp_path) -> None:
     assert risk.safety_state == SafetyState.NO_NEW_RISK
 
 
+def test_paper_position_reconciliation_matches_imported_broker_fills(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    simulator = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path, router=BrokerRouter([simulator]))
+    trade = intent(exposure="100")
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW),
+        idempotency_key="position-match",
+        now=NOW,
+    )
+    gateway.simulate_broker_fill(
+        fill_id="broker-1",
+        order_id=order.order_id,
+        quantity=Decimal("40"),
+        price=Decimal("1.10"),
+        fee=Decimal("0.10"),
+        observed_at=NOW,
+    )
+    gateway.sync_broker_fills(order.order_id)
+    result = gateway.compare_paper_positions()
+    assert result.matches
+    assert result.local_net_quantity == result.broker_net_quantity == Decimal("40")
+    assert result.local_cash_flow_quote == result.broker_cash_flow_quote == Decimal("-44.10")
+    assert result.local_only_fill_ids == result.broker_only_fill_ids == ()
+    assert risk.safety_state == SafetyState.NORMAL
+
+
+def test_paper_position_reconciliation_detects_manual_fill_absent_at_broker(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    simulator = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path, router=BrokerRouter([simulator]))
+    trade = intent(exposure="100")
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW),
+        idempotency_key="position-mismatch",
+        now=NOW,
+    )
+    gateway.record_fill(
+        fill_id="manual-1",
+        order_id=order.order_id,
+        quantity=Decimal("40"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    result = gateway.compare_paper_positions()
+    assert not result.matches
+    assert result.local_only_fill_ids == ("manual-1",)
+    assert result.broker_only_fill_ids == ()
+    assert result.local_net_quantity == Decimal("40")
+    assert result.broker_net_quantity == Decimal("0")
+    assert risk.safety_state == SafetyState.NO_NEW_RISK
+
+
+def test_equal_position_totals_do_not_hide_fill_identity_mismatch(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    simulator = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path, router=BrokerRouter([simulator]))
+    trade = intent(exposure="100")
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW),
+        idempotency_key="same-position",
+        now=NOW,
+    )
+    gateway.record_fill(
+        fill_id="local-only",
+        order_id=order.order_id,
+        quantity=Decimal("40"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    gateway.simulate_broker_fill(
+        fill_id="broker-only",
+        order_id=order.order_id,
+        quantity=Decimal("40"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    result = gateway.compare_paper_positions()
+    assert result.local_net_quantity == result.broker_net_quantity == Decimal("40")
+    assert result.local_cash_flow_quote == result.broker_cash_flow_quote
+    assert result.local_only_fill_ids == ("local-only",)
+    assert result.broker_only_fill_ids == ("broker-only",)
+    assert not result.matches
+    assert risk.safety_state == SafetyState.NO_NEW_RISK
+
+
 def test_restart_does_not_resend_order_left_dispatching(tmp_path) -> None:
     path = tmp_path / "paper.sqlite3"
 
