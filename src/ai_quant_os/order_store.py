@@ -278,7 +278,14 @@ class PaperOrderStore:
                 self._connection.rollback()
                 raise
 
-    def transition(self, order_id: str, *, from_status: str, to_status: str) -> str:
+    def transition(
+        self,
+        order_id: str,
+        *,
+        from_status: str,
+        to_status: str,
+        broker_order_id: str | None = None,
+    ) -> str:
         with self._lock:
             self._connection.execute("BEGIN IMMEDIATE")
             try:
@@ -291,6 +298,10 @@ class PaperOrderStore:
                 if order["status"] != from_status:
                     raise ValueError("Paper order state changed")
                 order["status"] = to_status
+                if broker_order_id is not None:
+                    if to_status != "ACCEPTED":
+                        raise ValueError("Broker acknowledgement requires acceptance")
+                    order["broker_order_id"] = broker_order_id
                 encoded = json.dumps(order, sort_keys=True)
                 self._connection.execute(
                     "UPDATE paper_orders SET order_json = ? WHERE order_id = ?",

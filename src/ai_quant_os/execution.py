@@ -25,6 +25,7 @@ class PaperOrder:
     risk_id: str
     status: str
     command: OrderCommand
+    broker_order_id: str | None = None
 
 
 def _encode_value(value: Decimal | datetime) -> str:
@@ -52,6 +53,7 @@ def _decode_order(raw: str) -> PaperOrder:
         risk_id=data["risk_id"],
         status=data["status"],
         command=OrderCommand(**command),
+        broker_order_id=data.get("broker_order_id"),
     )
 
 
@@ -225,12 +227,17 @@ class PaperExecutionGateway:
                     raise BrokerUnavailable("Paper broker rejected order")
                 try:
                     self._store.transition(
-                        order_id, from_status="DISPATCHING", to_status="ACCEPTED"
+                        order_id,
+                        from_status="DISPATCHING",
+                        to_status="ACCEPTED",
+                        broker_order_id=acknowledgement.broker_order_id,
                     )
                 except Exception:
                     self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
                     raise
-                return replace(order, status="ACCEPTED")
+                return replace(
+                    order, status="ACCEPTED", broker_order_id=acknowledgement.broker_order_id
+                )
 
     def reconcile(
         self,

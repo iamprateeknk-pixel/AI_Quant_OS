@@ -556,6 +556,23 @@ def test_order_reservation_is_committed_before_broker_call(tmp_path) -> None:
     assert order.status == "ACCEPTED"
 
 
+def test_accepted_order_retains_broker_acknowledgement_after_restart(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent()
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path)
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW),
+        idempotency_key="ack",
+        now=NOW,
+    )
+    expected = f"PAPER:{order.order_id}"
+    assert order.broker_order_id == expected
+    restarted = PaperExecutionGateway(kernel(), store_path=path)
+    assert restarted.replay(trade, idempotency_key="ack").broker_order_id == expected
+
+
 def test_uncertain_broker_outcome_holds_exposure_and_blocks_restart(tmp_path) -> None:
     path = tmp_path / "paper.sqlite3"
 

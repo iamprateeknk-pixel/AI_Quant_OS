@@ -61,13 +61,16 @@ class FillInput(BaseModel):
 
 
 def _order_view(order: PaperOrder) -> dict[str, str]:
-    return {
+    view = {
         "order_id": order.order_id,
         "intent_id": order.intent_id,
         "risk_id": order.risk_id,
         "status": order.status,
         "broker_route": "PAPER",
     }
+    if order.broker_order_id is not None:
+        view["broker_order_id"] = order.broker_order_id
+    return view
 
 
 def _fill_view(fill: PaperFill) -> dict[str, str]:
