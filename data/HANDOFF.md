@@ -18,4 +18,6 @@ The layout is designed for object storage mirroring: `raw/sha256/<prefix>/<hash>
 
 `migrations/clickhouse/0001_market_bars.sql` defines a UTC analytics bar table; it has not been applied to a running ClickHouse service. PostgreSQL testing was local and ephemeral, not a deployment. Rollback preserves archived objects and database tables; revert readers and writers first, then perform an explicitly reviewed data migration if schema removal is ever necessary.
 
-S3/MinIO object upload, ClickHouse integration, Valkey cache integration, ingest metrics/traces, source adapters, tick ingestion, and independent review remain open. No data service has capital authority.
+S3/MinIO object upload, ClickHouse integration, Valkey cache integration, ingest metrics/traces, production source adapters, durable tick archival, and independent review remain open. No data service has capital authority.
+
+Quote tick CSV normalization is available through `import_ticks_csv` in `ai_quant_os.tick_data`. The file needs `instrument_id,source_id,sequence,observed_at,bid,ask,bid_size,ask_size`. Each source must provide a stable sequence that is unique for that instrument and source ID. Identical repeated keys are counted and collapsed; different payloads at the same key are rejected. Aware timestamps become UTC, replay order and fingerprint are stable, and freshness rejects stale or future ticks. Durable tick archive and ingestion adapters remain open.
