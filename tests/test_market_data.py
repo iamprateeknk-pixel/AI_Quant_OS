@@ -44,6 +44,14 @@ def test_replay_and_fingerprint_are_independent_of_input_order() -> None:
     assert forward.fingerprint == reverse.fingerprint
 
 
+def test_fingerprint_uses_numeric_values_not_decimal_display_scale() -> None:
+    timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    assert (
+        BarDataset([bar(timestamp, close="1.10")]).fingerprint
+        == BarDataset([bar(timestamp, close="1.100000000000000000")]).fingerprint
+    )
+
+
 def test_csv_import_rejects_naive_timestamp(tmp_path) -> None:
     source = tmp_path / "bars.csv"
     source.write_text(

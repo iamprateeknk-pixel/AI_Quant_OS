@@ -1,5 +1,6 @@
 import csv
 import hashlib
+import io
 import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -37,6 +38,7 @@ class Bar:
 class BarDataset:
     def __init__(self, bars: Iterable[Bar]) -> None:
         by_key: dict[tuple[str, datetime], Bar] = {}
+        duplicate_rows = 0
         for item in bars:
             key = (item.instrument_id, item.observed_at)
             previous = by_key.get(key)
@@ -44,7 +46,10 @@ class BarDataset:
                 raise ValueError(
                     f"Conflicting duplicate bar: {item.instrument_id} {item.observed_at}"
                 )
+            if previous is not None:
+                duplicate_rows += 1
             by_key[key] = item
+        self.duplicate_rows = duplicate_rows
         self.bars = tuple(
             sorted(by_key.values(), key=lambda item: (item.observed_at, item.instrument_id))
         )
@@ -55,11 +60,11 @@ class BarDataset:
             [
                 bar.instrument_id,
                 bar.observed_at.isoformat(),
-                str(bar.open),
-                str(bar.high),
-                str(bar.low),
-                str(bar.close),
-                str(bar.volume),
+                str(bar.open.normalize()),
+                str(bar.high.normalize()),
+                str(bar.low.normalize()),
+                str(bar.close.normalize()),
+                str(bar.volume.normalize()),
             ]
             for bar in self.bars
         ]
@@ -70,17 +75,20 @@ class BarDataset:
 
 
 def import_bars_csv(path: Path) -> BarDataset:
-    with path.open(newline="", encoding="utf-8") as source:
-        rows = csv.DictReader(source)
-        return BarDataset(
-            Bar(
-                instrument_id=row["instrument_id"],
-                observed_at=datetime.fromisoformat(row["observed_at"]),
-                open=Decimal(row["open"]),
-                high=Decimal(row["high"]),
-                low=Decimal(row["low"]),
-                close=Decimal(row["close"]),
-                volume=Decimal(row["volume"]),
-            )
-            for row in rows
+    return import_bars_csv_bytes(path.read_bytes())
+
+
+def import_bars_csv_bytes(raw: bytes) -> BarDataset:
+    rows = csv.DictReader(io.StringIO(raw.decode("utf-8"), newline=""))
+    return BarDataset(
+        Bar(
+            instrument_id=row["instrument_id"],
+            observed_at=datetime.fromisoformat(row["observed_at"]),
+            open=Decimal(row["open"]),
+            high=Decimal(row["high"]),
+            low=Decimal(row["low"]),
+            close=Decimal(row["close"]),
+            volume=Decimal(row["volume"]),
         )
+        for row in rows
+    )

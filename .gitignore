@@ -7,6 +7,7 @@ dist/
 build/
 .env
 *.sqlite3
+data-local/
 node_modules/
 .next/
 .playwright-cli/
