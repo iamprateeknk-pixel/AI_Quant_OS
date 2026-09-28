@@ -1,0 +1,12 @@
+title = "AI Quant OS secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "The pinned public Valkey image tag is not a credential"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^compose\.data\.yaml$''']
+regexTarget = "line"
+regexes = ['''^\s*image:\s*valkey/valkey:9\.0\.6-alpine3\.24\s*$''']
