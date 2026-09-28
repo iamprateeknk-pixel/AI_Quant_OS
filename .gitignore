@@ -6,6 +6,7 @@ __pycache__/
 dist/
 build/
 .env
+.local-stack.env
 *.sqlite3
 data-local/
 node_modules/

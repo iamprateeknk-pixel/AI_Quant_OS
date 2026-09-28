@@ -5,7 +5,7 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 | Phase | State | Evidence or next dependency |
 | --- | --- | --- |
 | P00 Architecture and guardrails | In progress | Paper-only boundary, contract types, safety ownership and ADR recorded; full threat model, contract versioning and independent review remain. |
-| P01 Repository and platform | In progress | Python package, tests, lint and CI workflow; container stack, locked dependencies, staging and secret scan remain. |
+| P01 Repository and platform | In progress | Python package, lint and test CI, a pinned Gitleaks history-scan gate, and a one-command local data stack with generated ignored credentials, migration/bootstrap checks, and a CI integration job for PostgreSQL, ClickHouse, Valkey, and S3 emulator; full app startup, locked dependencies, staging deployment, actual hosted CI results, and independent review remain. |
 | P02 Data platform | In progress | UTC bar and tick normalization, duplicate detection, immutable raw CSV and typed Parquet archives for both, checksum-verified deterministic replay, lineage manifests, freshness checks, PostgreSQL bar/tick lineage and quality catalogs verified against a temporary PostgreSQL 18 container, and ClickHouse bar/tick schemas applied with sample inserts in a temporary ClickHouse 26.8 container. An S3-compatible mirror uploads and restores checked archives with conditional immutable writes, tested through in-process and HTTP S3 emulators; a disposable latest-tick cache was tested against Valkey 9.0. MinIO-specific verification, production object-store/Valkey provisioning, ClickHouse publication jobs, production ingestion, metrics/traces, and independent review remain. |
 | P03 Nautilus trading core | In progress | Deterministic paper backtest with next-bar execution, fees and slippage; NautilusTrader runtime and full strategy harness remain. |
 | P04 Broker abstraction | In progress | Canonical routing interface, symbol/capability gates and paper simulator; Exness MT5 and alternate live adapters remain absent and disabled. |
@@ -16,7 +16,7 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 ## Handoff
 
-- Run `python -m pytest -q`, `python -m ruff check src tests`, and `python -m ruff format --check src tests`.
+- Run `python -m pytest -q`, `python -m ruff check src tests scripts`, and `python -m ruff format --check src tests scripts`.
 - Current tests cover stale and untrusted market rejection, randomized per-order and portfolio invariants, aggregate paper exposure including concurrent orders and restarts, concurrent same-key replay, safety halt, changed-payload idempotency, legacy SQLite migration, durable reservation visibility during broker dispatch, definitive rejection exposure release, uncertain acknowledgement retention across restart, mismatch escalation, and API command authorization.
 - The next critical slice is a gated safety recovery workflow and then multi-currency portfolio accounting. Dispatching or unknown orders must never be blindly resent. Keep live order routing absent until P13.
 - The P02 local archives and optional PostgreSQL catalog are documented in `data/HANDOFF.md`. PostgreSQL migration and adapter integration tests passed in a temporary local container; both ClickHouse migrations applied and accepted sample inserts in another temporary local container.

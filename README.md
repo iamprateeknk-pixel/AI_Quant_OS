@@ -29,13 +29,15 @@ Open `http://127.0.0.1:3000`. The frontend reads `AI_QUANT_API_URL` on the serve
 ## Checks
 
 ```powershell
-python -m ruff check src tests
-python -m ruff format --check src tests
+python -m ruff check src tests scripts
+python -m ruff format --check src tests scripts
 python -m pytest -q
 cd apps/web
 npm run lint
 npm run build
 ```
+
+The optional local data stack starts PostgreSQL, ClickHouse, Valkey, and an S3 emulator with `python scripts/start_data_stack.py`. Run `python scripts/check_data_stack.py` to verify the services and integration tests. See [data/LOCAL_STACK.md](data/LOCAL_STACK.md).
 
 ## Current boundaries
 
