@@ -135,6 +135,12 @@ class PaperExecutionGateway:
                 raise ValueError("idempotency key reused for a different intent")
             return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
 
+    def _mark_unknown(self, order_id: str) -> None:
+        try:
+            self._store.transition(order_id, from_status="DISPATCHING", to_status="UNKNOWN")
+        finally:
+            self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
+
     def submit(
         self,
         intent: TradeIntent,
@@ -208,23 +214,24 @@ class PaperExecutionGateway:
                 try:
                     acknowledgement = self._router.route(command, now=now)
                 except BrokerOutcomeUnknown:
-                    try:
-                        self._store.transition(
-                            order_id, from_status="DISPATCHING", to_status="UNKNOWN"
-                        )
-                    finally:
-                        self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
+                    self._mark_unknown(order_id)
                     raise
                 except BrokerUnavailable:
                     self._store.transition(
                         order_id, from_status="DISPATCHING", to_status="REJECTED"
                     )
                     raise
-                if acknowledgement.status != "ACCEPTED":
+                if acknowledgement.broker_id != command.broker_route:
+                    self._mark_unknown(order_id)
+                    raise BrokerOutcomeUnknown("Broker acknowledgement route does not match")
+                if acknowledgement.status == "REJECTED":
                     self._store.transition(
                         order_id, from_status="DISPATCHING", to_status="REJECTED"
                     )
                     raise BrokerUnavailable("Paper broker rejected order")
+                if acknowledgement.status != "ACCEPTED" or not acknowledgement.broker_order_id:
+                    self._mark_unknown(order_id)
+                    raise BrokerOutcomeUnknown("Broker acknowledgement is ambiguous")
                 try:
                     self._store.transition(
                         order_id,

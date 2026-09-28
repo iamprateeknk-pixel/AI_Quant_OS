@@ -528,6 +528,30 @@ def test_rejected_paper_broker_ack_does_not_persist_accepted_order() -> None:
     assert gateway.exposure_snapshot.worst_case_quantity == Decimal("0")
 
 
+def test_unrecognized_broker_ack_keeps_exposure_reserved(tmp_path) -> None:
+    class AmbiguousBroker(SimulatedBroker):
+        def place(self, command):
+            return BrokerAck("PAPER", "ack-1", "EURUSD", "PENDING")
+
+    risk = kernel()
+    trade = intent()
+    gateway = PaperExecutionGateway(
+        risk,
+        store_path=tmp_path / "paper.sqlite3",
+        router=BrokerRouter([AmbiguousBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)]),
+    )
+    with pytest.raises(BrokerOutcomeUnknown):
+        gateway.submit(
+            trade,
+            risk.evaluate(trade, market(), now=NOW),
+            idempotency_key="ambiguous",
+            now=NOW,
+        )
+    assert gateway.orders[0].status == "UNKNOWN"
+    assert gateway.exposure_snapshot.pending_buy_quantity == trade.desired_exposure
+    assert risk.safety_state == SafetyState.NO_NEW_RISK
+
+
 def test_order_reservation_is_committed_before_broker_call(tmp_path) -> None:
     path = tmp_path / "paper.sqlite3"
 
