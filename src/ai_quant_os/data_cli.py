@@ -39,7 +39,27 @@ def main(argv: list[str] | None = None) -> int:
         remote.add_argument("--bucket", required=True)
         remote.add_argument("--prefix", default="")
         remote.add_argument("--endpoint-url", help="S3-compatible service URL")
+    cache = commands.add_parser("cache-ticks", help="Cache latest verified ticks in Valkey")
+    cache.add_argument("archive_id")
+    cache.add_argument("--root", type=Path, required=True)
+    cache.add_argument("--ttl-seconds", type=int, required=True)
     args = parser.parse_args(argv)
+    if args.command == "cache-ticks":
+        import redis
+
+        from ai_quant_os.valkey_cache import LatestTickCache
+
+        valkey_url = os.getenv("AI_QUANT_VALKEY_URL")
+        if not valkey_url:
+            parser.error("Set AI_QUANT_VALKEY_URL to use cache-ticks")
+        client = redis.Redis.from_url(
+            valkey_url, socket_connect_timeout=2, socket_timeout=2, retry_on_timeout=False
+        )
+        updated = LatestTickCache(client).publish(
+            TickArchive(args.root), args.archive_id, ttl_seconds=args.ttl_seconds
+        )
+        print(json.dumps({"archive_id": args.archive_id, "updated": updated}, sort_keys=True))
+        return 0
     if args.command in {"mirror", "restore"}:
         import boto3
 

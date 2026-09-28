@@ -13,6 +13,7 @@ ai-quant-data replay-ticks <tick-archive-id> --root .\data-local
 ai-quant-data health-ticks <tick-archive-id> --root .\data-local --max-age-seconds 5
 ai-quant-data mirror <archive-id> --kind bars --root .\data-local --bucket quant-archives --prefix datasets --endpoint-url http://127.0.0.1:9000
 ai-quant-data restore <archive-id> --kind bars --root .\restored --bucket quant-archives --prefix datasets --endpoint-url http://127.0.0.1:9000
+ai-quant-data cache-ticks <tick-archive-id> --root .\data-local --ttl-seconds 60
 ```
 
 The `health` command exits with code 2 when the newest bar is stale or dated in the future. A fixed dataset replays in the same order and has the same fingerprint. An identical source and source ID return the existing manifest.
@@ -23,6 +24,8 @@ The layout is designed for object storage mirroring: `raw/sha256/<prefix>/<hash>
 
 `migrations/clickhouse/0001_market_bars.sql` and `0002_market_ticks.sql` define UTC analytics tables. Both were applied to a temporary ClickHouse 26.8 service and accepted sample bar and tick rows. PostgreSQL and ClickHouse testing was local and ephemeral, not a deployment. Rollback preserves archived objects and database tables; revert readers and writers first, then perform an explicitly reviewed data migration if schema removal is ever necessary.
 
-Production S3/MinIO provisioning, ClickHouse integration, Valkey cache integration, ingest metrics/traces, production source adapters, and independent review remain open. No data service has capital authority.
+Set `AI_QUANT_VALKEY_URL` in the process environment before `cache-ticks`. `LatestTickCache` verifies the tick archive before updating a short-lived latest-tick entry per instrument and source. It uses an atomic compare-and-set so older sequences cannot replace newer ones; conflicting sequences and timestamp regressions fail. Reads return no value for missing, corrupt, stale, or future entries. The cache is disposable and does not grant capital authority. It was integration-tested against a temporary Valkey 9.0 service. Production Valkey authentication, TLS, provisioning, and monitoring remain open.
+
+Production S3/MinIO provisioning, ClickHouse publication jobs, ingest metrics/traces, production source adapters, and independent review remain open. No data service has capital authority.
 
 Quote tick CSV normalization is available through `import_ticks_csv` in `ai_quant_os.tick_data`. The file needs `instrument_id,source_id,sequence,observed_at,bid,ask,bid_size,ask_size`. Each source must provide a stable sequence that is unique for that instrument and source ID. Identical repeated keys are counted and collapsed; different payloads at the same key are rejected. Aware timestamps become UTC, replay order and fingerprint are stable, and freshness rejects stale or future ticks. `TickArchive` preserves the raw file and typed Parquet copy, with checksum-verified replay. Its manifest lives under `manifests/ticks/` to keep bar and tick identifiers separate. Bar and tick replay also validate the manifest's duplicate count and time range against the preserved raw source.
