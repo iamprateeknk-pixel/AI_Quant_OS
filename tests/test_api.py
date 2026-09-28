@@ -144,6 +144,60 @@ def test_order_uncertainty_cannot_downgrade_persisted_halt(tmp_path) -> None:
     assert PaperStateStore(tmp_path / "paper.sqlite3").safety_state() == SafetyState.HALT
 
 
+def test_operator_syncs_durable_simulated_broker_fill(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    client = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    headers = {"X-Operator-Token": "test-secret", "Idempotency-Key": "broker-sync"}
+    quote = {
+        "instrument_id": "EURUSD",
+        "bid": "1.1000",
+        "ask": "1.1001",
+        "observed_at": NOW.isoformat(),
+        "world_state_version": "world-1",
+    }
+    trade = {
+        "intent_id": "broker-sync",
+        "strategy_id": "demo",
+        "strategy_version": "1",
+        "instrument_id": "EURUSD",
+        "side": "BUY",
+        "desired_exposure": "100",
+        "risk_budget": "10",
+        "max_spread": "0.0003",
+        "max_slippage": "0.0002",
+        "valid_until": (NOW + timedelta(minutes=1)).isoformat(),
+        "world_state_version": "world-1",
+        "evidence_refs": ["fixture:1"],
+        "created_at": NOW.isoformat(),
+    }
+    client.post("/api/v1/paper/quotes", json=quote, headers=headers)
+    order = client.post("/api/v1/paper/intents", json=trade, headers=headers).json()
+    payload = {
+        "fill_id": "broker-fill-1",
+        "order_id": order["order_id"],
+        "quantity": "40",
+        "price": "1.10",
+        "fee": "0.10",
+        "observed_at": NOW.isoformat(),
+    }
+    assert client.post("/api/v1/paper/broker-fills", json=payload).status_code == 401
+    recorded = client.post("/api/v1/paper/broker-fills", json=payload, headers=headers)
+    assert recorded.status_code == 200
+    assert recorded.json()["source"] == "PAPER_BROKER"
+    assert client.get("/api/v1/fills").json()["fills"] == []
+    url = f"/api/v1/paper/orders/{order['order_id']}/sync-fills"
+    assert client.post(url).status_code == 401
+    assert client.post(url, headers=headers).json()["imported_count"] == 1
+    assert client.post(url, headers=headers).json()["imported_count"] == 0
+    restarted = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    assert restarted.get("/api/v1/fills").json()["fills"][0]["source"] == "PAPER_BROKER"
+    assert restarted.get("/api/v1/orders").json()["orders"][0]["status"] == "PARTIALLY_FILLED"
+
+
 def test_status_is_paper_only_and_starts_with_no_orders() -> None:
     client = TestClient(create_app(operator_token="test-secret"))
     response = client.get("/api/v1/system/status")

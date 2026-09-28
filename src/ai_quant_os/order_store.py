@@ -184,50 +184,62 @@ class PaperOrderStore:
                 raise
 
     def record_fill(self, fill: PaperFill) -> PaperFill:
-        encoded = _encode_fill(fill)
+        return self.record_fills((fill,))[0][0]
+
+    def record_fills(self, fills: tuple[PaperFill, ...]) -> tuple[tuple[PaperFill, ...], int]:
         with self._lock:
             self._connection.execute("BEGIN IMMEDIATE")
             try:
-                prior = self._connection.execute(
-                    "SELECT fill_json FROM paper_fills WHERE fill_id = ?", (fill.fill_id,)
-                ).fetchone()
-                if prior is not None:
-                    if prior[0] != encoded:
-                        raise ValueError("fill id reused with different details")
-                    self._connection.commit()
-                    return _decode_fill(prior[0])
-                order = self._connection.execute(
-                    "SELECT order_json, intent_json FROM paper_orders WHERE order_id = ?",
-                    (fill.order_id,),
-                ).fetchone()
-                if order is None:
-                    raise ValueError("Paper order does not exist")
-                order_data = json.loads(order[0])
-                command = order_data["command"]
-                intent_data = json.loads(order[1])
-                if order_data["status"] != "ACCEPTED":
-                    raise ValueError("Paper order is not accepted")
-                if fill.instrument_id != command["instrument_id"] or fill.side != command["side"]:
-                    raise ValueError("Fill does not match paper order")
-                if fill.observed_at < datetime.fromisoformat(intent_data["created_at"]):
-                    raise ValueError("Fill occurred before intent creation")
-                if fill.observed_at > datetime.fromisoformat(command["expires_at"]):
-                    raise ValueError("Fill occurred after order expiry")
-                rows = self._connection.execute(
-                    "SELECT fill_json FROM paper_fills WHERE order_id = ?", (fill.order_id,)
-                ).fetchall()
-                filled_quantity = sum((_decode_fill(row[0]).quantity for row in rows), Decimal(0))
-                if filled_quantity + fill.quantity > Decimal(command["quantity"]):
-                    raise ValueError("Fill exceeds order quantity")
-                self._connection.execute(
-                    "INSERT INTO paper_fills VALUES (?, ?, ?)",
-                    (fill.fill_id, fill.order_id, encoded),
-                )
+                recorded: list[PaperFill] = []
+                imported = 0
+                for fill in fills:
+                    result, inserted = self._record_fill_unlocked(fill)
+                    recorded.append(result)
+                    imported += inserted
                 self._connection.commit()
-                return fill
+                return tuple(recorded), imported
             except BaseException:
                 self._connection.rollback()
                 raise
+
+    def _record_fill_unlocked(self, fill: PaperFill) -> tuple[PaperFill, int]:
+        encoded = _encode_fill(fill)
+        prior = self._connection.execute(
+            "SELECT fill_json FROM paper_fills WHERE fill_id = ?", (fill.fill_id,)
+        ).fetchone()
+        if prior is not None:
+            existing = _decode_fill(prior[0])
+            if existing != fill:
+                raise ValueError("fill id reused with different details")
+            return existing, 0
+        order = self._connection.execute(
+            "SELECT order_json, intent_json FROM paper_orders WHERE order_id = ?",
+            (fill.order_id,),
+        ).fetchone()
+        if order is None:
+            raise ValueError("Paper order does not exist")
+        order_data = json.loads(order[0])
+        command = order_data["command"]
+        intent_data = json.loads(order[1])
+        if order_data["status"] != "ACCEPTED":
+            raise ValueError("Paper order is not accepted")
+        if fill.instrument_id != command["instrument_id"] or fill.side != command["side"]:
+            raise ValueError("Fill does not match paper order")
+        if fill.observed_at < datetime.fromisoformat(intent_data["created_at"]):
+            raise ValueError("Fill occurred before intent creation")
+        if fill.observed_at > datetime.fromisoformat(command["expires_at"]):
+            raise ValueError("Fill occurred after order expiry")
+        rows = self._connection.execute(
+            "SELECT fill_json FROM paper_fills WHERE order_id = ?", (fill.order_id,)
+        ).fetchall()
+        filled_quantity = sum((_decode_fill(row[0]).quantity for row in rows), Decimal(0))
+        if filled_quantity + fill.quantity > Decimal(command["quantity"]):
+            raise ValueError("Fill exceeds order quantity")
+        self._connection.execute(
+            "INSERT INTO paper_fills VALUES (?, ?, ?)",
+            (fill.fill_id, fill.order_id, encoded),
+        )
+        return fill, 1
 
     def insert(
         self,

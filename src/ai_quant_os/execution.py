@@ -129,6 +129,56 @@ class PaperExecutionGateway:
         )
         return self._store.record_fill(fill)
 
+    def simulate_broker_fill(
+        self,
+        *,
+        fill_id: str,
+        order_id: str,
+        quantity: Decimal,
+        price: Decimal,
+        fee: Decimal,
+        observed_at: datetime,
+    ) -> PaperFill:
+        raw = self._store.get_order_by_id(order_id)
+        if raw is None:
+            raise ValueError("Paper order does not exist")
+        order = _decode_order(raw)
+        if order.status != "ACCEPTED":
+            raise ValueError("Paper order is not accepted")
+        fill = PaperFill(
+            fill_id,
+            order_id,
+            order.command.instrument_id,
+            order.command.side,
+            quantity,
+            price,
+            fee,
+            observed_at,
+            "PAPER_BROKER",
+        )
+        return self._router.simulate_fill(order.command, fill)
+
+    def sync_broker_fills(self, order_id: str) -> int:
+        with self._lock:
+            raw = self._store.get_order_by_id(order_id)
+            if raw is None:
+                raise ValueError("Paper order does not exist")
+            order = _decode_order(raw)
+            if order.status != "ACCEPTED":
+                raise ValueError("Paper order is not accepted")
+            try:
+                broker_fills = self._router.fills(order.command)
+                if any(
+                    fill.order_id != order_id or fill.source != "PAPER_BROKER"
+                    for fill in broker_fills
+                ):
+                    raise ValueError("Broker fill does not match requested order")
+                _, imported = self._store.record_fills(broker_fills)
+            except Exception:
+                self._escalate_uncertainty(order_id)
+                raise
+            return imported
+
     def replay(self, intent: TradeIntent, *, idempotency_key: str) -> PaperOrder | None:
         with self._lock:
             prior = self._store.get(idempotency_key)

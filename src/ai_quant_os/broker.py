@@ -8,6 +8,7 @@ from threading import Lock
 from typing import Protocol
 
 from ai_quant_os.contracts import OrderCommand, _require_aware
+from ai_quant_os.portfolio import PaperFill
 
 
 class BrokerUnavailable(ValueError):
@@ -36,6 +37,8 @@ class BrokerAdapter(Protocol):
 
     def lookup(self, command: OrderCommand) -> BrokerAck | None: ...
 
+    def fills(self, command: OrderCommand) -> tuple[PaperFill, ...]: ...
+
 
 class SimulatedBroker:
     def __init__(
@@ -51,6 +54,7 @@ class SimulatedBroker:
         self.enabled = enabled
         self.connected = True
         self._orders: dict[str, tuple[OrderCommand, BrokerAck]] = {}
+        self._fills: dict[str, PaperFill] = {}
         self._lock = Lock()
         self._connection = (
             sqlite3.connect(str(store_path), check_same_thread=False, timeout=30)
@@ -67,18 +71,20 @@ class SimulatedBroker:
                     PRIMARY KEY (broker_id, idempotency_key)
                 )"""
             )
+            self._connection.execute(
+                """CREATE TABLE IF NOT EXISTS simulated_broker_fills (
+                    broker_id TEXT NOT NULL,
+                    fill_id TEXT NOT NULL,
+                    order_id TEXT NOT NULL,
+                    fill_json TEXT NOT NULL,
+                    PRIMARY KEY (broker_id, fill_id)
+                )"""
+            )
             self._connection.commit()
 
     @staticmethod
     def _encode_command(command: OrderCommand) -> str:
-        def encode(value: Decimal | datetime) -> str:
-            if isinstance(value, Decimal):
-                return str(value.normalize())
-            if isinstance(value, datetime):
-                return value.isoformat()
-            raise TypeError(f"Unsupported broker command value: {type(value)}")
-
-        return json.dumps(asdict(command), default=encode, sort_keys=True)
+        return json.dumps(asdict(command), default=SimulatedBroker._encode_value, sort_keys=True)
 
     def _stored(self, command: OrderCommand) -> BrokerAck | None:
         if self._connection is None:
@@ -99,6 +105,26 @@ class SimulatedBroker:
             raise ValueError("Broker idempotency key reused")
         return BrokerAck(**json.loads(row[1]))
 
+    @staticmethod
+    def _encode_fill(fill: PaperFill) -> str:
+        return json.dumps(asdict(fill), default=SimulatedBroker._encode_value, sort_keys=True)
+
+    @staticmethod
+    def _encode_value(value: Decimal | datetime) -> str:
+        if isinstance(value, Decimal):
+            return str(value.normalize())
+        if isinstance(value, datetime):
+            return value.isoformat()
+        raise TypeError(f"Unsupported broker value: {type(value)}")
+
+    @staticmethod
+    def _decode_fill(raw: str) -> PaperFill:
+        data = json.loads(raw)
+        for field in ("quantity", "price", "fee"):
+            data[field] = Decimal(data[field])
+        data["observed_at"] = datetime.fromisoformat(data["observed_at"])
+        return PaperFill(**data)
+
     @property
     def orders(self) -> tuple[BrokerAck, ...]:
         with self._lock:
@@ -113,6 +139,82 @@ class SimulatedBroker:
     def lookup(self, command: OrderCommand) -> BrokerAck | None:
         with self._lock:
             return self._stored(command)
+
+    def fills(self, command: OrderCommand) -> tuple[PaperFill, ...]:
+        with self._lock:
+            if self._stored(command) is None:
+                raise ValueError("Broker order does not exist")
+            if self._connection is None:
+                return tuple(
+                    fill for fill in self._fills.values() if fill.order_id == command.order_id
+                )
+            rows = self._connection.execute(
+                """SELECT fill_json FROM simulated_broker_fills
+                WHERE broker_id = ? AND order_id = ? ORDER BY rowid""",
+                (self.broker_id, command.order_id),
+            ).fetchall()
+            return tuple(self._decode_fill(row[0]) for row in rows)
+
+    def report_fill(self, command: OrderCommand, fill: PaperFill) -> PaperFill:
+        if fill.source != "PAPER_BROKER":
+            raise ValueError("Broker fill source is required")
+        if (
+            fill.order_id != command.order_id
+            or fill.instrument_id != command.instrument_id
+            or fill.side != command.side
+        ):
+            raise ValueError("Broker fill does not match order")
+        with self._lock:
+            if self._connection is not None:
+                self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                if self._stored(command) is None:
+                    raise ValueError("Broker order does not exist")
+                encoded = self._encode_fill(fill)
+                if self._connection is None:
+                    prior = self._fills.get(fill.fill_id)
+                    if prior is not None:
+                        if prior != fill:
+                            raise ValueError("Broker fill id reused with different details")
+                        return prior
+                    existing = tuple(
+                        item for item in self._fills.values() if item.order_id == command.order_id
+                    )
+                else:
+                    row = self._connection.execute(
+                        """SELECT fill_json FROM simulated_broker_fills
+                        WHERE broker_id = ? AND fill_id = ?""",
+                        (self.broker_id, fill.fill_id),
+                    ).fetchone()
+                    if row is not None:
+                        if row[0] != encoded:
+                            raise ValueError("Broker fill id reused with different details")
+                        self._connection.commit()
+                        return self._decode_fill(row[0])
+                    rows = self._connection.execute(
+                        """SELECT fill_json FROM simulated_broker_fills
+                        WHERE broker_id = ? AND order_id = ?""",
+                        (self.broker_id, command.order_id),
+                    ).fetchall()
+                    existing = tuple(self._decode_fill(row[0]) for row in rows)
+                if (
+                    sum((item.quantity for item in existing), Decimal(0)) + fill.quantity
+                    > command.quantity
+                ):
+                    raise ValueError("Broker fills exceed order quantity")
+                if self._connection is None:
+                    self._fills[fill.fill_id] = fill
+                else:
+                    self._connection.execute(
+                        "INSERT INTO simulated_broker_fills VALUES (?, ?, ?, ?)",
+                        (self.broker_id, fill.fill_id, fill.order_id, encoded),
+                    )
+                    self._connection.commit()
+                return fill
+            except BaseException:
+                if self._connection is not None:
+                    self._connection.rollback()
+                raise
 
     def disconnect(self) -> None:
         self.connected = False
@@ -194,3 +296,15 @@ class BrokerRouter:
         if adapter is None:
             raise BrokerUnavailable("Broker route does not exist")
         return adapter.lookup(command)
+
+    def fills(self, command: OrderCommand) -> tuple[PaperFill, ...]:
+        adapter = self._adapters.get(command.broker_route)
+        if adapter is None:
+            raise BrokerUnavailable("Broker route does not exist")
+        return adapter.fills(command)
+
+    def simulate_fill(self, command: OrderCommand, fill: PaperFill) -> PaperFill:
+        adapter = self._adapters.get(command.broker_route)
+        if not isinstance(adapter, SimulatedBroker):
+            raise BrokerUnavailable("Paper simulator is unavailable")
+        return adapter.report_fill(command, fill)

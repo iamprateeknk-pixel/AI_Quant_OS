@@ -16,6 +16,7 @@ class PaperFill:
     price: Decimal
     fee: Decimal
     observed_at: datetime
+    source: Literal["PAPER_MANUAL", "PAPER_BROKER"] = "PAPER_MANUAL"
 
     def __post_init__(self) -> None:
         _require_aware(self.observed_at)
@@ -23,6 +24,8 @@ class PaperFill:
             raise ValueError("Fill identifiers are required")
         if self.side not in ("BUY", "SELL"):
             raise ValueError("Unsupported fill side")
+        if self.source not in ("PAPER_MANUAL", "PAPER_BROKER"):
+            raise ValueError("Unsupported fill source")
         if not all(value.is_finite() for value in (self.quantity, self.price, self.fee)):
             raise ValueError("Fill terms must be finite")
         if self.quantity <= 0 or self.price <= 0 or self.fee < 0:

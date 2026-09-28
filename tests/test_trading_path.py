@@ -670,6 +670,83 @@ def test_uncertain_paper_order_reconciles_from_durable_simulator_ack(tmp_path) -
     assert len(simulator.orders) == 1
 
 
+def test_broker_fill_sync_is_durable_and_idempotent(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    simulator = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path, router=BrokerRouter([simulator]))
+    trade = intent(exposure="100")
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW),
+        idempotency_key="broker-fill",
+        now=NOW,
+    )
+    gateway.simulate_broker_fill(
+        fill_id="broker-fill-1",
+        order_id=order.order_id,
+        quantity=Decimal("40"),
+        price=Decimal("1.10"),
+        fee=Decimal("0.10"),
+        observed_at=NOW,
+    )
+    assert gateway.fills == ()
+    restarted = PaperExecutionGateway(
+        kernel(),
+        store_path=path,
+        router=BrokerRouter(
+            [SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)]
+        ),
+    )
+    assert restarted.sync_broker_fills(order.order_id) == 1
+    assert restarted.sync_broker_fills(order.order_id) == 0
+    assert restarted.fills[0].source == "PAPER_BROKER"
+    assert restarted.orders[0].status == "PARTIALLY_FILLED"
+    assert restarted.exposure_snapshot.pending_buy_quantity == Decimal("60")
+
+
+def test_conflicting_broker_fill_escalates_safety_state(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    simulator = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path, router=BrokerRouter([simulator]))
+    trade = intent(exposure="100")
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW),
+        idempotency_key="conflict",
+        now=NOW,
+    )
+    gateway.record_fill(
+        fill_id="same",
+        order_id=order.order_id,
+        quantity=Decimal("10"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    gateway.simulate_broker_fill(
+        fill_id="new",
+        order_id=order.order_id,
+        quantity=Decimal("20"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    gateway.simulate_broker_fill(
+        fill_id="same",
+        order_id=order.order_id,
+        quantity=Decimal("20"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    with pytest.raises(ValueError, match="fill id reused"):
+        gateway.sync_broker_fills(order.order_id)
+    assert [fill.fill_id for fill in gateway.fills] == ["same"]
+    assert risk.safety_state == SafetyState.NO_NEW_RISK
+
+
 def test_restart_does_not_resend_order_left_dispatching(tmp_path) -> None:
     path = tmp_path / "paper.sqlite3"
 
@@ -853,6 +930,49 @@ def test_changed_fill_retry_is_rejected(tmp_path) -> None:
             fee=Decimal("0"),
             observed_at=NOW,
         )
+
+
+def test_legacy_fill_without_source_replays_as_manual(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent()
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path)
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW),
+        idempotency_key="legacy-fill",
+        now=NOW,
+    )
+    gateway.record_fill(
+        fill_id="old",
+        order_id=order.order_id,
+        quantity=Decimal("10"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    with sqlite3.connect(path) as connection:
+        row = connection.execute(
+            "SELECT fill_json FROM paper_fills WHERE fill_id = ?", ("old",)
+        ).fetchone()
+        legacy = json.loads(row[0])
+        del legacy["source"]
+        connection.execute(
+            "UPDATE paper_fills SET fill_json = ? WHERE fill_id = ?",
+            (json.dumps(legacy, sort_keys=True), "old"),
+        )
+    restarted = PaperExecutionGateway(kernel(), store_path=path)
+    assert (
+        restarted.record_fill(
+            fill_id="old",
+            order_id=order.order_id,
+            quantity=Decimal("10"),
+            price=Decimal("1.10"),
+            fee=Decimal("0"),
+            observed_at=NOW,
+        ).source
+        == "PAPER_MANUAL"
+    )
 
 
 def test_parallel_fill_reports_cannot_exceed_order_quantity(tmp_path) -> None:

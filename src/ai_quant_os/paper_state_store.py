@@ -63,7 +63,7 @@ class PaperStateStore:
                         {
                             "action": SafetyState.NO_NEW_RISK.value,
                             "intent_id": "",
-                            "reason": "PAPER_ORDER_OUTCOME_UNKNOWN",
+                            "reason": "PAPER_RECONCILIATION_REQUIRED",
                             "trace_id": order_id,
                         },
                         sort_keys=True,

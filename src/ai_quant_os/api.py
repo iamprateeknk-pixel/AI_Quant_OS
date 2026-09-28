@@ -83,7 +83,7 @@ def _fill_view(fill: PaperFill) -> dict[str, str]:
         "price": str(fill.price),
         "fee": str(fill.fee),
         "observed_at": fill.observed_at.isoformat(),
-        "source": "PAPER_MANUAL",
+        "source": fill.source,
     }
 
 
@@ -327,6 +327,44 @@ def create_app(
             },
         )
         return _fill_view(fill)
+
+    @app.post("/api/v1/paper/broker-fills", dependencies=[Depends(require_operator)])
+    def simulate_broker_fill(payload: FillInput) -> dict[str, str]:
+        try:
+            fill = execution.simulate_broker_fill(**payload.model_dump())
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        state_store.record_event(
+            f"broker-fill:{fill.fill_id}",
+            {
+                "action": "PAPER_BROKER_FILL_RECORDED",
+                "intent_id": "",
+                "reason": "AWAITING_SYNC",
+                "trace_id": fill.fill_id,
+            },
+        )
+        return _fill_view(fill)
+
+    @app.post(
+        "/api/v1/paper/orders/{order_id}/sync-fills", dependencies=[Depends(require_operator)]
+    )
+    def sync_broker_fills(order_id: str) -> dict[str, str | int]:
+        try:
+            imported = execution.sync_broker_fills(order_id)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        for fill in execution.fills:
+            if fill.order_id == order_id and fill.source == "PAPER_BROKER":
+                state_store.record_event(
+                    f"fill:{fill.fill_id}",
+                    {
+                        "action": "PAPER_FILL",
+                        "intent_id": "",
+                        "reason": "PAPER_BROKER",
+                        "trace_id": fill.fill_id,
+                    },
+                )
+        return {"order_id": order_id, "imported_count": imported}
 
     @app.post("/api/v1/paper/orders/{order_id}/reconcile", dependencies=[Depends(require_operator)])
     def reconcile_paper_order(order_id: str) -> dict[str, str]:
