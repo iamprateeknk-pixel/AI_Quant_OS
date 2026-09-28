@@ -6,7 +6,12 @@ from pathlib import Path
 from threading import Lock
 from uuid import uuid4
 
-from ai_quant_os.broker import BrokerRouter, BrokerUnavailable, SimulatedBroker
+from ai_quant_os.broker import (
+    BrokerOutcomeUnknown,
+    BrokerRouter,
+    BrokerUnavailable,
+    SimulatedBroker,
+)
 from ai_quant_os.contracts import OrderCommand, RiskDecision, TradeIntent, _require_aware
 from ai_quant_os.order_store import PaperOrderStore
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure
@@ -72,6 +77,10 @@ class PaperExecutionGateway:
             [SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)]
         )
         self._lock = Lock()
+        if self._risk.safety_state == SafetyState.NORMAL and any(
+            order.status in {"DISPATCHING", "UNKNOWN"} for order in self.orders
+        ):
+            self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
 
     @property
     def orders(self) -> tuple[PaperOrder, ...]:
@@ -124,11 +133,6 @@ class PaperExecutionGateway:
                 raise ValueError("idempotency key reused for a different intent")
             return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
 
-    def _route(self, command: OrderCommand, *, now: datetime) -> None:
-        acknowledgement = self._router.route(command, now=now)
-        if acknowledgement.status != "ACCEPTED":
-            raise BrokerUnavailable("Paper broker rejected order")
-
     def submit(
         self,
         intent: TradeIntent,
@@ -179,16 +183,13 @@ class PaperExecutionGateway:
                     time_in_force="IOC",
                     expires_at=intent.valid_until,
                 )
-                order = PaperOrder(
-                    order_id, intent.intent_id, decision.risk_id, "ACCEPTED", command
-                )
+                order = PaperOrder(order_id, intent.intent_id, decision.risk_id, "PENDING", command)
                 if not self._store.insert(
                     idempotency_key,
                     intent.intent_id,
                     intent_json,
                     _encode_record(order),
                     order_id,
-                    lambda: self._route(command, now=now),
                     expected_snapshot_id=decision.portfolio_snapshot_id,
                     max_portfolio_exposure=self._risk.max_portfolio_exposure,
                 ):
@@ -201,7 +202,35 @@ class PaperExecutionGateway:
                         raise ValueError("idempotency key reused for a different intent")
                     return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
                 self._risk.consume(decision.risk_id)
-                return order
+                self._store.transition(order_id, from_status="PENDING", to_status="DISPATCHING")
+                try:
+                    acknowledgement = self._router.route(command, now=now)
+                except BrokerOutcomeUnknown:
+                    try:
+                        self._store.transition(
+                            order_id, from_status="DISPATCHING", to_status="UNKNOWN"
+                        )
+                    finally:
+                        self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
+                    raise
+                except BrokerUnavailable:
+                    self._store.transition(
+                        order_id, from_status="DISPATCHING", to_status="REJECTED"
+                    )
+                    raise
+                if acknowledgement.status != "ACCEPTED":
+                    self._store.transition(
+                        order_id, from_status="DISPATCHING", to_status="REJECTED"
+                    )
+                    raise BrokerUnavailable("Paper broker rejected order")
+                try:
+                    self._store.transition(
+                        order_id, from_status="DISPATCHING", to_status="ACCEPTED"
+                    )
+                except Exception:
+                    self._risk.set_safety_state(SafetyState.NO_NEW_RISK)
+                    raise
+                return replace(order, status="ACCEPTED")
 
     def reconcile(
         self,

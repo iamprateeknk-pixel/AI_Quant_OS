@@ -33,7 +33,6 @@ def test_existing_paper_order_database_gains_unique_intent_index(tmp_path) -> No
         '{"intent_id": "legacy-intent", "order_id": "new-order", '
         '"command": {"instrument_id": "EURUSD", "side": "BUY", "quantity": "1"}}',
         "new-order",
-        lambda: None,
         expected_snapshot_id=store.exposure_snapshot().snapshot_id,
         max_portfolio_exposure=Decimal("1500"),
     )

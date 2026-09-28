@@ -10,6 +10,10 @@ class BrokerUnavailable(ValueError):
     pass
 
 
+class BrokerOutcomeUnknown(BrokerUnavailable):
+    pass
+
+
 @dataclass(frozen=True)
 class BrokerAck:
     broker_id: str
@@ -90,4 +94,9 @@ class BrokerRouter:
             raise BrokerUnavailable("Instrument or order type is unsupported")
         if now >= command.expires_at:
             raise BrokerUnavailable("Order command expired")
-        return adapter.place(command)
+        try:
+            return adapter.place(command)
+        except Exception as error:
+            raise BrokerOutcomeUnknown(
+                "Broker outcome is unknown; reconcile before new risk"
+            ) from error

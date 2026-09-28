@@ -6,7 +6,6 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from threading import Lock
-from typing import Callable
 
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure
 
@@ -147,6 +146,8 @@ class PaperOrderStore:
         pending_buy = Decimal(0)
         pending_sell = Decimal(0)
         for order in orders:
+            if order.get("status") == "REJECTED":
+                continue
             command = order["command"]
             if command["instrument_id"] != "EURUSD":
                 raise ValueError("Paper exposure supports EURUSD only")
@@ -235,7 +236,6 @@ class PaperOrderStore:
         intent_json: str,
         order_json: str,
         order_id: str,
-        before_commit: Callable[[], None],
         *,
         expected_snapshot_id: str,
         max_portfolio_exposure: Decimal,
@@ -272,9 +272,32 @@ class PaperOrderStore:
                 if cursor.rowcount == 0:
                     self._connection.commit()
                     return False
-                before_commit()
                 self._connection.commit()
                 return True
+            except BaseException:
+                self._connection.rollback()
+                raise
+
+    def transition(self, order_id: str, *, from_status: str, to_status: str) -> str:
+        with self._lock:
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                row = self._connection.execute(
+                    "SELECT order_json FROM paper_orders WHERE order_id = ?", (order_id,)
+                ).fetchone()
+                if row is None:
+                    raise ValueError("Paper order does not exist")
+                order = json.loads(row[0])
+                if order["status"] != from_status:
+                    raise ValueError("Paper order state changed")
+                order["status"] = to_status
+                encoded = json.dumps(order, sort_keys=True)
+                self._connection.execute(
+                    "UPDATE paper_orders SET order_json = ? WHERE order_id = ?",
+                    (encoded, order_id),
+                )
+                self._connection.commit()
+                return encoded
             except BaseException:
                 self._connection.rollback()
                 raise

@@ -9,7 +9,13 @@ import pytest
 from hypothesis import given, strategies as st
 
 from ai_quant_os.contracts import RiskDecision, TradeIntent
-from ai_quant_os.broker import BrokerAck, BrokerRouter, BrokerUnavailable, SimulatedBroker
+from ai_quant_os.broker import (
+    BrokerAck,
+    BrokerOutcomeUnknown,
+    BrokerRouter,
+    BrokerUnavailable,
+    SimulatedBroker,
+)
 from ai_quant_os.execution import PaperExecutionGateway
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.portfolio import PortfolioExposure
@@ -498,7 +504,8 @@ def test_disabled_paper_adapter_cannot_accept_gateway_order() -> None:
             idempotency_key="blocked",
             now=NOW,
         )
-    assert gateway.orders == ()
+    assert gateway.orders[0].status == "REJECTED"
+    assert gateway.exposure_snapshot.worst_case_quantity == Decimal("0")
 
 
 def test_rejected_paper_broker_ack_does_not_persist_accepted_order() -> None:
@@ -517,7 +524,111 @@ def test_rejected_paper_broker_ack_does_not_persist_accepted_order() -> None:
             idempotency_key="broker-rejected",
             now=NOW,
         )
-    assert gateway.orders == ()
+    assert gateway.orders[0].status == "REJECTED"
+    assert gateway.exposure_snapshot.worst_case_quantity == Decimal("0")
+
+
+def test_order_reservation_is_committed_before_broker_call(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+
+    class ObservingBroker(SimulatedBroker):
+        observed_status: str | None = None
+
+        def place(self, command):
+            with sqlite3.connect(path) as connection:
+                row = connection.execute(
+                    "SELECT order_json FROM paper_orders WHERE order_id = ?", (command.order_id,)
+                ).fetchone()
+            self.observed_status = json.loads(row[0])["status"] if row else None
+            return super().place(command)
+
+    broker = ObservingBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)
+    risk = kernel()
+    trade = intent()
+    gateway = PaperExecutionGateway(risk, store_path=path, router=BrokerRouter([broker]))
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW, portfolio=gateway.exposure_snapshot),
+        idempotency_key="durable",
+        now=NOW,
+    )
+    assert broker.observed_status == "DISPATCHING"
+    assert order.status == "ACCEPTED"
+
+
+def test_uncertain_broker_outcome_holds_exposure_and_blocks_restart(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+
+    class UncertainBroker(SimulatedBroker):
+        calls = 0
+
+        def place(self, command):
+            self.calls += 1
+            super().place(command)
+            raise RuntimeError("ack lost")
+
+    broker = UncertainBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)
+    trade = intent(exposure="1000")
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path, router=BrokerRouter([broker]))
+    with pytest.raises(BrokerOutcomeUnknown):
+        gateway.submit(
+            trade,
+            risk.evaluate(trade, market(), now=NOW, portfolio=gateway.exposure_snapshot),
+            idempotency_key="uncertain",
+            now=NOW,
+        )
+    assert gateway.orders[0].status == "UNKNOWN"
+    assert gateway.exposure_snapshot.pending_buy_quantity == Decimal("1000")
+    assert risk.safety_state == SafetyState.NO_NEW_RISK
+
+    restarted_risk = kernel()
+    restarted = PaperExecutionGateway(
+        restarted_risk, store_path=path, router=BrokerRouter([broker])
+    )
+    assert restarted_risk.safety_state == SafetyState.NO_NEW_RISK
+    assert (
+        restarted.submit(
+            trade,
+            restarted_risk.evaluate(trade, market(), now=NOW),
+            idempotency_key="uncertain",
+            now=NOW,
+        ).status
+        == "UNKNOWN"
+    )
+    assert broker.calls == 1
+
+
+def test_restart_does_not_resend_order_left_dispatching(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+
+    class InterruptedBroker(SimulatedBroker):
+        calls = 0
+
+        def place(self, command):
+            self.calls += 1
+            raise KeyboardInterrupt()
+
+    broker = InterruptedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)
+    trade = intent()
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path, router=BrokerRouter([broker]))
+    with pytest.raises(KeyboardInterrupt):
+        gateway.submit(
+            trade,
+            risk.evaluate(trade, market(), now=NOW),
+            idempotency_key="interrupted",
+            now=NOW,
+        )
+    assert gateway.orders[0].status == "DISPATCHING"
+
+    restarted_risk = kernel()
+    restarted = PaperExecutionGateway(
+        restarted_risk, store_path=path, router=BrokerRouter([broker])
+    )
+    assert restarted_risk.safety_state == SafetyState.NO_NEW_RISK
+    assert restarted.replay(trade, idempotency_key="interrupted").status == "DISPATCHING"
+    assert broker.calls == 1
 
 
 def test_partial_fills_persist_and_cannot_overfill_order(tmp_path) -> None:
