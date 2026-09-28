@@ -61,6 +61,20 @@ def test_archive_rejects_manifest_source_identity_change(tmp_path) -> None:
         archive.replay(manifest.archive_id)
 
 
+def test_archive_rejects_tampered_quality_metadata(tmp_path) -> None:
+    source = tmp_path / "feed.csv"
+    source.write_text(CSV, encoding="utf-8")
+    archive = data_archive.BarArchive(tmp_path / "archive")
+    manifest = archive.ingest_csv(source, source_id="fixture:feed", ingested_at=NOW)
+    path = archive.root / "manifests" / f"{manifest.archive_id}.json"
+    changed = json.loads(path.read_text(encoding="utf-8"))
+    changed["duplicate_rows"] = 0
+    changed["last_observed_at"] = NOW.isoformat()
+    path.write_text(json.dumps(changed), encoding="utf-8")
+    with pytest.raises(ValueError, match="metadata"):
+        archive.replay(manifest.archive_id)
+
+
 def test_archive_health_detects_staleness_and_future_timestamps(tmp_path) -> None:
     source = tmp_path / "feed.csv"
     source.write_text(CSV, encoding="utf-8")

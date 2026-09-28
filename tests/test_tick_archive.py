@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -39,6 +40,20 @@ def test_tick_archive_rejects_corrupt_normalized_file(tmp_path) -> None:
     manifest = archive.ingest_csv(source, source_id="fixture:tick", ingested_at=NOW)
     (archive.root / manifest.parquet_path).write_bytes(b"corrupt")
     with pytest.raises(ValueError, match="checksum"):
+        archive.replay(manifest.archive_id)
+
+
+def test_tick_archive_rejects_tampered_quality_metadata(tmp_path) -> None:
+    source = tmp_path / "ticks.csv"
+    source.write_text(CSV, encoding="utf-8")
+    archive = TickArchive(tmp_path / "archive")
+    manifest = archive.ingest_csv(source, source_id="fixture:tick", ingested_at=NOW)
+    path = archive.root / "manifests" / "ticks" / f"{manifest.archive_id}.json"
+    changed = json.loads(path.read_text(encoding="utf-8"))
+    changed["duplicate_rows"] = 0
+    changed["last_observed_at"] = NOW.isoformat()
+    path.write_text(json.dumps(changed), encoding="utf-8")
+    with pytest.raises(ValueError, match="metadata"):
         archive.replay(manifest.archive_id)
 
 
@@ -93,8 +108,6 @@ def test_tick_cli_ingests_replays_and_reports_health(tmp_path, capsys) -> None:
         )
         == 0
     )
-    import json
-
     manifest = json.loads(capsys.readouterr().out)
     assert manifest["row_count"] == 2
     assert main(["replay-ticks", manifest["archive_id"], "--root", str(root)]) == 0

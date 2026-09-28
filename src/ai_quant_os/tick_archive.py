@@ -168,8 +168,16 @@ class TickArchive:
             or len(dataset.ticks) != manifest.row_count
         ):
             raise ValueError("Normalized dataset fingerprint mismatch")
-        if import_ticks_csv_bytes(raw).fingerprint != manifest.dataset_fingerprint:
+        raw_dataset = import_ticks_csv_bytes(raw)
+        if raw_dataset.fingerprint != manifest.dataset_fingerprint:
             raise ValueError("Raw source and normalized dataset disagree")
+        if (
+            raw_dataset.duplicate_rows != manifest.duplicate_rows
+            or raw_dataset.ticks[0].observed_at != manifest.first_observed_at
+            or raw_dataset.ticks[-1].observed_at != manifest.last_observed_at
+            or any(tick.source_id != manifest.source_id for tick in raw_dataset.ticks)
+        ):
+            raise ValueError("Archive manifest quality metadata mismatch")
         return dataset
 
     def health(self, archive_id: str, *, now: datetime, max_age: timedelta) -> DataHealth:

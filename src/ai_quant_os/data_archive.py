@@ -188,8 +188,15 @@ class BarArchive:
             or len(dataset.bars) != manifest.row_count
         ):
             raise ValueError("Normalized dataset fingerprint mismatch")
-        if import_bars_csv_bytes(raw).fingerprint != manifest.dataset_fingerprint:
+        raw_dataset = import_bars_csv_bytes(raw)
+        if raw_dataset.fingerprint != manifest.dataset_fingerprint:
             raise ValueError("Raw source and normalized dataset disagree")
+        if (
+            raw_dataset.duplicate_rows != manifest.duplicate_rows
+            or raw_dataset.bars[0].observed_at != manifest.first_observed_at
+            or raw_dataset.bars[-1].observed_at != manifest.last_observed_at
+        ):
+            raise ValueError("Archive manifest quality metadata mismatch")
         return dataset
 
     def health(self, archive_id: str, *, now: datetime, max_age: timedelta) -> DataHealth:
