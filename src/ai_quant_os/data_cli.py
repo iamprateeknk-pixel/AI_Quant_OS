@@ -31,7 +31,37 @@ def main(argv: list[str] | None = None) -> int:
         health.add_argument("--max-age-seconds", type=float, required=True)
         health.add_argument("--catalog", action="store_true", help="Save quality to PostgreSQL")
         health.add_argument("--trace-id", help="Trace identifier for a saved quality observation")
+    for name in ("mirror", "restore"):
+        remote = commands.add_parser(name, help=f"{name.title()} an archive through S3")
+        remote.add_argument("archive_id")
+        remote.add_argument("--kind", choices=("bars", "ticks"), required=True)
+        remote.add_argument("--root", type=Path, required=True)
+        remote.add_argument("--bucket", required=True)
+        remote.add_argument("--prefix", default="")
+        remote.add_argument("--endpoint-url", help="S3-compatible service URL")
     args = parser.parse_args(argv)
+    if args.command in {"mirror", "restore"}:
+        import boto3
+
+        from ai_quant_os.s3_archive import S3ArchiveMirror
+
+        client = boto3.client("s3", endpoint_url=args.endpoint_url)
+        mirror = S3ArchiveMirror(client, bucket=args.bucket, prefix=args.prefix)
+        if args.command == "mirror":
+            archive = TickArchive(args.root) if args.kind == "ticks" else BarArchive(args.root)
+            manifest = (
+                mirror.publish_tick(archive, args.archive_id)
+                if args.kind == "ticks"
+                else mirror.publish_bar(archive, args.archive_id)
+            )
+        else:
+            manifest = (
+                mirror.restore_tick(args.archive_id, args.root)
+                if args.kind == "ticks"
+                else mirror.restore_bar(args.archive_id, args.root)
+            )
+        print(json.dumps(asdict(manifest), default=lambda value: value.isoformat(), sort_keys=True))
+        return 0
     is_tick = args.command.endswith("-ticks")
     archive = TickArchive(args.root) if is_tick else BarArchive(args.root)
     use_catalog = getattr(args, "catalog", False)
