@@ -9,7 +9,7 @@ from uuid import uuid4
 from ai_quant_os.broker import BrokerRouter, BrokerUnavailable, SimulatedBroker
 from ai_quant_os.contracts import OrderCommand, RiskDecision, TradeIntent, _require_aware
 from ai_quant_os.order_store import PaperOrderStore
-from ai_quant_os.portfolio import PaperFill
+from ai_quant_os.portfolio import PaperFill, PortfolioExposure
 from ai_quant_os.risk import RiskKernel, SafetyState
 
 
@@ -85,6 +85,10 @@ class PaperExecutionGateway:
     def fills(self) -> tuple[PaperFill, ...]:
         return self._store.all_fills()
 
+    @property
+    def exposure_snapshot(self) -> PortfolioExposure:
+        return self._store.exposure_snapshot()
+
     def record_fill(
         self,
         *,
@@ -144,7 +148,12 @@ class PaperExecutionGateway:
                     raise ValueError("idempotency key reused for a different intent")
                 return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
             if self._store.get_by_intent_id(intent.intent_id) is not None:
-                raise ValueError("intent already has a paper order")
+                prior = self._store.get(idempotency_key)
+                if prior is None:
+                    raise ValueError("intent already has a paper order")
+                if prior[0] != intent_json:
+                    raise ValueError("idempotency key reused for a different intent")
+                return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
             with self._risk.authorization(intent, decision) as authorized:
                 if not authorized:
                     return None
@@ -180,6 +189,8 @@ class PaperExecutionGateway:
                     _encode_record(order),
                     order_id,
                     lambda: self._route(command, now=now),
+                    expected_snapshot_id=decision.portfolio_snapshot_id,
+                    max_portfolio_exposure=self._risk.max_portfolio_exposure,
                 ):
                     prior = self._store.get(idempotency_key)
                     if prior is None:

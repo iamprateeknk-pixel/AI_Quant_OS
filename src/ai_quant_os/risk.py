@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from ai_quant_os.contracts import RiskDecision, TradeIntent, _require_aware
 from ai_quant_os.market import MarketSnapshot
+from ai_quant_os.portfolio import PortfolioExposure
 
 
 class SafetyState(str, Enum):
@@ -21,12 +22,15 @@ class SafetyState(str, Enum):
 @dataclass(frozen=True)
 class RiskLimits:
     max_order_exposure: Decimal
+    max_portfolio_exposure: Decimal
     max_quote_age_seconds: int
 
     def __post_init__(self) -> None:
         if (
             not self.max_order_exposure.is_finite()
             or self.max_order_exposure <= 0
+            or not self.max_portfolio_exposure.is_finite()
+            or self.max_portfolio_exposure <= 0
             or self.max_quote_age_seconds <= 0
         ):
             raise ValueError("Risk limits must be positive")
@@ -44,6 +48,10 @@ class RiskKernel:
     def safety_state(self) -> SafetyState:
         with self._lock:
             return self._safety_state
+
+    @property
+    def max_portfolio_exposure(self) -> Decimal:
+        return self._limits.max_portfolio_exposure
 
     def set_safety_state(
         self, state: SafetyState, *, before_change: Callable[[], None] | None = None
@@ -74,9 +82,15 @@ class RiskKernel:
             self._consumed.add(risk_id)
 
     def evaluate(
-        self, intent: TradeIntent, market: MarketSnapshot, *, now: datetime
+        self,
+        intent: TradeIntent,
+        market: MarketSnapshot,
+        *,
+        now: datetime,
+        portfolio: PortfolioExposure | None = None,
     ) -> RiskDecision:
         _require_aware(now)
+        observed_portfolio = portfolio or PortfolioExposure.empty(intent.instrument_id)
         violations: list[str] = []
         rules = (
             "SAFETY_STATE",
@@ -87,6 +101,7 @@ class RiskKernel:
             "INSTRUMENT",
             "SPREAD",
             "ORDER_EXPOSURE_LIMIT",
+            "PORTFOLIO_EXPOSURE_LIMIT",
         )
         if self._safety_state != SafetyState.NORMAL:
             violations.append(self._safety_state.value)
@@ -105,6 +120,15 @@ class RiskKernel:
             violations.append("SPREAD_LIMIT")
         if intent.desired_exposure > self._limits.max_order_exposure:
             violations.append("ORDER_EXPOSURE_LIMIT")
+        if intent.instrument_id != observed_portfolio.instrument_id:
+            violations.append("PORTFOLIO_INSTRUMENT_MISMATCH")
+        else:
+            resulting_exposure = observed_portfolio.with_order(intent.side, intent.desired_exposure)
+            if (
+                resulting_exposure > self._limits.max_portfolio_exposure
+                and resulting_exposure > observed_portfolio.worst_case_quantity
+            ):
+                violations.append("PORTFOLIO_EXPOSURE_LIMIT")
         with self._lock:
             if (
                 self._safety_state != SafetyState.NORMAL
@@ -125,7 +149,7 @@ class RiskKernel:
                 approved_exposure=intent.desired_exposure if outcome == "APPROVE" else Decimal(0),
                 rules_evaluated=rules,
                 violations=tuple(violations),
-                portfolio_snapshot_id="paper:empty",
+                portfolio_snapshot_id=observed_portfolio.snapshot_id,
                 created_at=now,
             )
             self._issued[decision.risk_id] = (intent, decision)

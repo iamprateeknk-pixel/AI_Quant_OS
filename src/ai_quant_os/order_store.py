@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from hashlib import sha256
 from dataclasses import asdict
 from datetime import datetime
 from decimal import Decimal
@@ -7,7 +8,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Callable
 
-from ai_quant_os.portfolio import PaperFill
+from ai_quant_os.portfolio import PaperFill, PortfolioExposure
 
 
 def _encode_fill(fill: PaperFill) -> str:
@@ -119,6 +120,68 @@ class PaperOrderStore:
             ).fetchall()
             return tuple(_decode_fill(row[0]) for row in rows)
 
+    def _exposure_snapshot_unlocked(self) -> PortfolioExposure:
+        order_rows = self._connection.execute(
+            "SELECT order_json FROM paper_orders ORDER BY order_id"
+        ).fetchall()
+        fill_rows = self._connection.execute(
+            "SELECT fill_json FROM paper_fills ORDER BY fill_id"
+        ).fetchall()
+        if not order_rows and not fill_rows:
+            return PortfolioExposure.empty()
+        orders = [json.loads(row[0]) for row in order_rows]
+        commands = {order["order_id"]: order["command"] for order in orders}
+        fills = [_decode_fill(row[0]) for row in fill_rows]
+        filled_by_order: dict[str, Decimal] = {}
+        filled_net = Decimal(0)
+        for fill in fills:
+            command = commands.get(fill.order_id)
+            if command is None:
+                raise ValueError("Paper fill has no order")
+            if fill.side != command["side"] or fill.instrument_id != command["instrument_id"]:
+                raise ValueError("Fill does not match paper order")
+            filled_by_order[fill.order_id] = (
+                filled_by_order.get(fill.order_id, Decimal(0)) + fill.quantity
+            )
+            filled_net += fill.quantity if fill.side == "BUY" else -fill.quantity
+        pending_buy = Decimal(0)
+        pending_sell = Decimal(0)
+        for order in orders:
+            command = order["command"]
+            if command["instrument_id"] != "EURUSD":
+                raise ValueError("Paper exposure supports EURUSD only")
+            remaining = Decimal(command["quantity"]) - filled_by_order.get(order["order_id"], 0)
+            if remaining < 0:
+                raise ValueError("Paper fills exceed order quantity")
+            if command["side"] == "BUY":
+                pending_buy += remaining
+            elif command["side"] == "SELL":
+                pending_sell += remaining
+            else:
+                raise ValueError("Unsupported paper order side")
+        payload = json.dumps(
+            [[row[0] for row in order_rows], [row[0] for row in fill_rows]],
+            separators=(",", ":"),
+        ).encode()
+        return PortfolioExposure(
+            snapshot_id=f"paper:{sha256(payload).hexdigest()}",
+            instrument_id="EURUSD",
+            filled_net_quantity=filled_net,
+            pending_buy_quantity=pending_buy,
+            pending_sell_quantity=pending_sell,
+        )
+
+    def exposure_snapshot(self) -> PortfolioExposure:
+        with self._lock:
+            self._connection.execute("BEGIN")
+            try:
+                snapshot = self._exposure_snapshot_unlocked()
+                self._connection.commit()
+                return snapshot
+            except Exception:
+                self._connection.rollback()
+                raise
+
     def record_fill(self, fill: PaperFill) -> PaperFill:
         encoded = _encode_fill(fill)
         with self._lock:
@@ -173,13 +236,45 @@ class PaperOrderStore:
         order_json: str,
         order_id: str,
         before_commit: Callable[[], None],
+        *,
+        expected_snapshot_id: str,
+        max_portfolio_exposure: Decimal,
     ) -> bool:
-        with self._lock, self._connection:
-            cursor = self._connection.execute(
-                "INSERT OR IGNORE INTO paper_orders (idempotency_key, intent_id, order_id, intent_json, order_json) VALUES (?, ?, ?, ?, ?)",
-                (key, intent_id, order_id, intent_json, order_json),
-            )
-            if cursor.rowcount == 0:
-                return False
-            before_commit()
-            return True
+        if not max_portfolio_exposure.is_finite() or max_portfolio_exposure <= 0:
+            raise ValueError("Portfolio exposure limit must be positive and finite")
+        command = json.loads(order_json)["command"]
+        with self._lock:
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                prior = self._connection.execute(
+                    "SELECT 1 FROM paper_orders WHERE idempotency_key = ?", (key,)
+                ).fetchone()
+                if prior is not None:
+                    self._connection.commit()
+                    return False
+                snapshot = self._exposure_snapshot_unlocked()
+                if snapshot.snapshot_id != expected_snapshot_id:
+                    raise ValueError("Portfolio snapshot changed; re-evaluate risk")
+                if snapshot.instrument_id != command["instrument_id"]:
+                    raise ValueError("Portfolio instrument mismatch")
+                resulting_exposure = snapshot.with_order(
+                    command["side"], Decimal(command["quantity"])
+                )
+                if (
+                    resulting_exposure > max_portfolio_exposure
+                    and resulting_exposure > snapshot.worst_case_quantity
+                ):
+                    raise ValueError("Portfolio exposure limit exceeded")
+                cursor = self._connection.execute(
+                    "INSERT OR IGNORE INTO paper_orders (idempotency_key, intent_id, order_id, intent_json, order_json) VALUES (?, ?, ?, ?, ?)",
+                    (key, intent_id, order_id, intent_json, order_json),
+                )
+                if cursor.rowcount == 0:
+                    self._connection.commit()
+                    return False
+                before_commit()
+                self._connection.commit()
+                return True
+            except BaseException:
+                self._connection.rollback()
+                raise

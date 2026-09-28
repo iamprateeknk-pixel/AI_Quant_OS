@@ -22,7 +22,7 @@ export const sectionDetails = {
   brokers: ["Brokers", "The paper simulator is the only enabled route. Exness remains a planned Priority-1 adapter subject to eligibility and release gates."],
   strategies: ["Strategies", "No strategy is active. Validated candidates and allocation history will appear here."],
   agents: ["Agents", "The 18-agent runtime has not been connected. No agent has capital authority."],
-  risk: ["Risk Center", "Deterministic safety state and the paper risk ceiling are shown below."],
+  risk: ["Risk Center", "Deterministic safety state and paper order and portfolio ceilings are shown below."],
   portfolio: ["Paper Portfolio", "Filled EURUSD units and quote-currency trading P&L from the backend. No account equity is inferred."],
   orders: ["Orders", "Paper order receipts and manually reported simulated fills. Broker reconciliation is not connected."],
   research: ["Research", "Experiments and validation dossiers will appear after the research pipeline is connected."],

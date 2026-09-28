@@ -39,7 +39,7 @@ npm run build
 
 ## Current boundaries
 
-- The risk kernel owns quote freshness, trust, spread, world-state match, intent expiry, order exposure, and safety state checks.
+- The risk kernel owns quote freshness, trust, spread, world-state match, intent expiry, order exposure, portfolio exposure, and safety state checks. In the EURUSD paper route, the fixed ceilings are 1,000 base units per order and 1,500 worst case base units across filled positions and pending orders. The gateway rechecks the exact portfolio snapshot inside the SQLite order transaction.
 - The paper execution gateway accepts only decisions issued by its risk kernel, allows one order per intent, routes through the paper simulator, and deduplicates retries. Set `AI_QUANT_PAPER_DB` to retain paper order receipts, manually reported simulated fills, safety state, control receipts, and audit events across restarts.
 - The API requires an operator token for all commands and never exposes a broker route other than `PAPER`.
 - Safety state escalation is one way. Recovery has no endpoint until a separate policy, reauthentication, and reconciliation workflow exists.

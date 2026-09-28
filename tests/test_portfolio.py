@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from ai_quant_os.portfolio import PaperFill, summarize_position
+from ai_quant_os.portfolio import PaperFill, PortfolioExposure, summarize_position
 
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -65,3 +65,27 @@ def test_mixed_instruments_cannot_be_summed_without_fx_conversion() -> None:
     second = PaperFill(**{**fill("two", "BUY", "1", "1.1").__dict__, "instrument_id": "GBPUSD"})
     with pytest.raises(ValueError, match="one instrument"):
         summarize_position((first, second), mark=Decimal("1.1"))
+
+
+def test_worst_case_exposure_includes_filled_position_and_pending_orders() -> None:
+    snapshot = PortfolioExposure(
+        snapshot_id="paper:test",
+        instrument_id="EURUSD",
+        filled_net_quantity=Decimal("800"),
+        pending_buy_quantity=Decimal("200"),
+        pending_sell_quantity=Decimal("300"),
+    )
+    assert snapshot.worst_case_quantity == Decimal("1000")
+    assert snapshot.with_order("BUY", Decimal("600")) == Decimal("1600")
+    assert snapshot.with_order("SELL", Decimal("400")) == Decimal("1000")
+
+
+def test_invalid_pending_exposure_is_rejected() -> None:
+    with pytest.raises(ValueError):
+        PortfolioExposure(
+            snapshot_id="paper:test",
+            instrument_id="EURUSD",
+            filled_net_quantity=Decimal("0"),
+            pending_buy_quantity=Decimal("-1"),
+            pending_sell_quantity=Decimal("0"),
+        )

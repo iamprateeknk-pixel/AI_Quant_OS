@@ -2,6 +2,8 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from dataclasses import replace
 from concurrent.futures import ThreadPoolExecutor
+import json
+import sqlite3
 
 import pytest
 from hypothesis import given, strategies as st
@@ -10,6 +12,7 @@ from ai_quant_os.contracts import RiskDecision, TradeIntent
 from ai_quant_os.broker import BrokerAck, BrokerRouter, BrokerUnavailable, SimulatedBroker
 from ai_quant_os.execution import PaperExecutionGateway
 from ai_quant_os.market import MarketSnapshot
+from ai_quant_os.portfolio import PortfolioExposure
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 
 
@@ -46,7 +49,13 @@ def market(*, age_seconds: int = 1, spread: str = "0.0001") -> MarketSnapshot:
 
 
 def kernel() -> RiskKernel:
-    return RiskKernel(RiskLimits(max_order_exposure=Decimal("1000"), max_quote_age_seconds=5))
+    return RiskKernel(
+        RiskLimits(
+            max_order_exposure=Decimal("1000"),
+            max_portfolio_exposure=Decimal("1500"),
+            max_quote_age_seconds=5,
+        )
+    )
 
 
 def test_stale_market_rejects_new_risk() -> None:
@@ -66,6 +75,54 @@ def test_limit_rejects_oversized_intent() -> None:
     decision = kernel().evaluate(intent(exposure="1001"), market(), now=NOW)
     assert decision.decision == "REJECT"
     assert "ORDER_EXPOSURE_LIMIT" in decision.violations
+
+
+def test_portfolio_limit_rejects_new_risk_using_named_snapshot() -> None:
+    exposure = PortfolioExposure(
+        "paper:observed", "EURUSD", Decimal("1200"), Decimal("0"), Decimal("0")
+    )
+    decision = kernel().evaluate(intent(exposure="400"), market(), now=NOW, portfolio=exposure)
+    assert decision.decision == "REJECT"
+    assert "PORTFOLIO_EXPOSURE_LIMIT" in decision.violations
+    assert decision.portfolio_snapshot_id == "paper:observed"
+
+
+def test_risk_reducing_order_can_fit_portfolio_limit() -> None:
+    exposure = PortfolioExposure(
+        "paper:observed", "EURUSD", Decimal("1200"), Decimal("0"), Decimal("0")
+    )
+    sell = replace(intent(exposure="400"), side="SELL")
+    decision = kernel().evaluate(sell, market(), now=NOW, portfolio=exposure)
+    assert decision.decision == "APPROVE"
+
+
+def test_risk_reducing_order_does_not_get_blocked_by_existing_overage() -> None:
+    exposure = PortfolioExposure(
+        "paper:over-limit", "EURUSD", Decimal("1600"), Decimal("0"), Decimal("0")
+    )
+    sell = replace(intent(exposure="400"), side="SELL")
+    decision = kernel().evaluate(sell, market(), now=NOW, portfolio=exposure)
+    assert decision.decision == "APPROVE"
+
+
+@given(
+    st.integers(min_value=-2000, max_value=2000),
+    st.integers(min_value=0, max_value=1000),
+    st.integers(min_value=0, max_value=1000),
+    st.integers(min_value=1, max_value=1000),
+    st.sampled_from(["BUY", "SELL"]),
+)
+def test_approved_intents_never_increase_an_over_limit_worst_case(
+    filled: int, pending_buy: int, pending_sell: int, quantity: int, side: str
+) -> None:
+    exposure = PortfolioExposure(
+        "paper:property", "EURUSD", Decimal(filled), Decimal(pending_buy), Decimal(pending_sell)
+    )
+    trade = replace(intent(exposure=str(quantity)), side=side)
+    decision = kernel().evaluate(trade, market(), now=NOW, portfolio=exposure)
+    if decision.decision == "APPROVE":
+        after = exposure.with_order(side, Decimal(quantity))
+        assert after <= max(Decimal("1500"), exposure.worst_case_quantity)
 
 
 @given(st.decimals(min_value="1000.000001", max_value="1000000", places=6))
@@ -163,6 +220,129 @@ def test_parallel_gateways_do_not_route_duplicate_intent(tmp_path) -> None:
     assert outcomes.count("REJECTED") == 1
     assert len(simulator.orders) == 1
     assert len(first.orders) == 1
+
+
+def test_exposure_snapshot_tracks_pending_and_filled_units_across_restart(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent(exposure="1000")
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path)
+    empty = gateway.exposure_snapshot
+    assert empty.snapshot_id == "paper:empty"
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW, portfolio=empty),
+        idempotency_key="exposure-order",
+        now=NOW,
+    )
+    pending = gateway.exposure_snapshot
+    assert pending.snapshot_id != empty.snapshot_id
+    assert pending.pending_buy_quantity == Decimal("1000")
+    assert pending.filled_net_quantity == Decimal("0")
+
+    gateway.record_fill(
+        fill_id="exposure-fill",
+        order_id=order.order_id,
+        quantity=Decimal("1000"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    filled = gateway.exposure_snapshot
+    assert filled.snapshot_id != pending.snapshot_id
+    assert filled.pending_buy_quantity == Decimal("0")
+    assert filled.filled_net_quantity == Decimal("1000")
+    assert PaperExecutionGateway(kernel(), store_path=path).exposure_snapshot == filled
+
+
+def test_concurrent_distinct_orders_cannot_cross_portfolio_limit(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    simulator = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)
+    router = BrokerRouter([simulator])
+    first_risk, second_risk = kernel(), kernel()
+    first = PaperExecutionGateway(first_risk, store_path=path, router=router)
+    second = PaperExecutionGateway(second_risk, store_path=path, router=router)
+    snapshot = first.exposure_snapshot
+    trade_a = intent(exposure="1000", intent_id="a")
+    trade_b = intent(exposure="1000", intent_id="b")
+    decision_a = first_risk.evaluate(trade_a, market(), now=NOW, portfolio=snapshot)
+    decision_b = second_risk.evaluate(trade_b, market(), now=NOW, portfolio=snapshot)
+    assert decision_a.decision == decision_b.decision == "APPROVE"
+
+    def submit(gateway, trade, decision, key):
+        try:
+            gateway.submit(trade, decision, idempotency_key=key, now=NOW)
+            return True
+        except ValueError:
+            return False
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(
+            pool.map(
+                lambda args: submit(*args),
+                [(first, trade_a, decision_a, "a"), (second, trade_b, decision_b, "b")],
+            )
+        )
+    assert results.count(True) == 1
+    assert len(simulator.orders) == 1
+    assert first.exposure_snapshot.worst_case_quantity == Decimal("1000")
+
+
+def test_parallel_gateways_replay_same_idempotency_key(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    simulator = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)
+    router = BrokerRouter([simulator])
+    first_risk, second_risk = kernel(), kernel()
+    first = PaperExecutionGateway(first_risk, store_path=path, router=router)
+    second = PaperExecutionGateway(second_risk, store_path=path, router=router)
+    trade = intent(exposure="1000")
+    snapshot = first.exposure_snapshot
+    decisions = [
+        risk.evaluate(trade, market(), now=NOW, portfolio=snapshot)
+        for risk in (first_risk, second_risk)
+    ]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        receipts = list(
+            pool.map(
+                lambda args: args[0].submit(trade, args[1], idempotency_key="same-key", now=NOW),
+                [(first, decisions[0]), (second, decisions[1])],
+            )
+        )
+    assert receipts[0].order_id == receipts[1].order_id
+    assert len(simulator.orders) == 1
+
+
+def test_corrupt_fill_side_cannot_understate_exposure(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    trade = intent(exposure="100")
+    risk = kernel()
+    gateway = PaperExecutionGateway(risk, store_path=path)
+    order = gateway.submit(
+        trade,
+        risk.evaluate(trade, market(), now=NOW, portfolio=gateway.exposure_snapshot),
+        idempotency_key="tamper",
+        now=NOW,
+    )
+    gateway.record_fill(
+        fill_id="tampered-fill",
+        order_id=order.order_id,
+        quantity=Decimal("100"),
+        price=Decimal("1.10"),
+        fee=Decimal("0"),
+        observed_at=NOW,
+    )
+    with sqlite3.connect(path) as connection:
+        row = connection.execute(
+            "SELECT fill_json FROM paper_fills WHERE fill_id = ?", ("tampered-fill",)
+        ).fetchone()
+        changed = json.loads(row[0])
+        changed["side"] = "SELL"
+        connection.execute(
+            "UPDATE paper_fills SET fill_json = ? WHERE fill_id = ?",
+            (json.dumps(changed), "tampered-fill"),
+        )
+    with pytest.raises(ValueError, match="Fill does not match"):
+        gateway.exposure_snapshot
 
 
 def test_rejected_risk_cannot_create_order() -> None:
@@ -299,7 +479,11 @@ def test_nonfinite_intent_bounds_are_rejected(field: str) -> None:
 
 def test_nonfinite_risk_ceiling_is_rejected() -> None:
     with pytest.raises(ValueError):
-        RiskLimits(max_order_exposure=Decimal("NaN"), max_quote_age_seconds=5)
+        RiskLimits(
+            max_order_exposure=Decimal("NaN"),
+            max_portfolio_exposure=Decimal("1500"),
+            max_quote_age_seconds=5,
+        )
 
 
 def test_disabled_paper_adapter_cannot_accept_gateway_order() -> None:
@@ -353,6 +537,10 @@ def test_partial_fills_persist_and_cannot_overfill_order(tmp_path) -> None:
         observed_at=NOW,
     )
     assert gateway.orders[0].status == "PARTIALLY_FILLED"
+    partial_exposure = gateway.exposure_snapshot
+    assert partial_exposure.filled_net_quantity == Decimal("60")
+    assert partial_exposure.pending_buy_quantity == Decimal("40")
+    assert partial_exposure.worst_case_quantity == Decimal("100")
     assert (
         gateway.record_fill(
             fill_id="fill-1",

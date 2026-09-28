@@ -377,3 +377,59 @@ def test_paper_fill_requires_operator_and_known_order(tmp_path) -> None:
         ).status_code
         == 409
     )
+
+
+def test_api_portfolio_limit_rejects_new_buy_but_allows_risk_reducing_sell(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    client = TestClient(
+        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+    )
+    quote = {
+        "instrument_id": "EURUSD",
+        "bid": "1.1000",
+        "ask": "1.1001",
+        "observed_at": NOW.isoformat(),
+        "world_state_version": "world-1",
+    }
+    client.post("/api/v1/paper/quotes", json=quote, headers={"X-Operator-Token": "test-secret"})
+    base_intent = {
+        "intent_id": "first",
+        "strategy_id": "demo",
+        "strategy_version": "1",
+        "instrument_id": "EURUSD",
+        "side": "BUY",
+        "desired_exposure": "1000",
+        "risk_budget": "10",
+        "max_spread": "0.0003",
+        "max_slippage": "0.0002",
+        "valid_until": (NOW + timedelta(minutes=1)).isoformat(),
+        "world_state_version": "world-1",
+        "evidence_refs": ["fixture:1"],
+        "created_at": NOW.isoformat(),
+    }
+
+    def submit(payload: dict[str, str], key: str):
+        return client.post(
+            "/api/v1/paper/intents",
+            json=payload,
+            headers={"X-Operator-Token": "test-secret", "Idempotency-Key": key},
+        )
+
+    first = submit(base_intent, "first")
+    assert first.status_code == 200
+    assert first.json()["status"] == "ACCEPTED"
+    observed_risk = client.get("/api/v1/risk").json()
+    assert observed_risk["max_portfolio_exposure"] == "1500"
+    assert observed_risk["worst_case_quantity"] == "1000"
+    assert observed_risk["pending_buy_quantity"] == "1000"
+    assert observed_risk["portfolio_snapshot_id"] != "paper:empty"
+    excess = submit({**base_intent, "intent_id": "excess", "desired_exposure": "600"}, "excess")
+    assert excess.status_code == 200
+    assert excess.json()["status"] == "REJECT"
+    assert "PORTFOLIO_EXPOSURE_LIMIT" in client.get("/api/v1/audit").json()["events"][-1]["reason"]
+    reduce = submit(
+        {**base_intent, "intent_id": "reduce", "side": "SELL", "desired_exposure": "600"},
+        "reduce",
+    )
+    assert reduce.status_code == 200
+    assert reduce.json()["status"] == "ACCEPTED"

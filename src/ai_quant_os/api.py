@@ -94,7 +94,11 @@ def create_app(
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
     )
     current_time = clock or (lambda: datetime.now(timezone.utc))
-    limits = RiskLimits(max_order_exposure=Decimal("1000"), max_quote_age_seconds=5)
+    limits = RiskLimits(
+        max_order_exposure=Decimal("1000"),
+        max_portfolio_exposure=Decimal("1500"),
+        max_quote_age_seconds=5,
+    )
     risk = RiskKernel(limits)
     configured_path = paper_db_path or (
         Path(os.environ["AI_QUANT_PAPER_DB"]) if os.getenv("AI_QUANT_PAPER_DB") else None
@@ -143,7 +147,17 @@ def create_app(
 
     @app.get("/api/v1/risk")
     def risk_state() -> dict[str, str]:
-        return {"safety_state": risk.safety_state.value}
+        exposure = execution.exposure_snapshot
+        return {
+            "safety_state": risk.safety_state.value,
+            "max_order_exposure": str(limits.max_order_exposure),
+            "max_portfolio_exposure": str(limits.max_portfolio_exposure),
+            "worst_case_quantity": str(exposure.worst_case_quantity),
+            "filled_net_quantity": str(exposure.filled_net_quantity),
+            "pending_buy_quantity": str(exposure.pending_buy_quantity),
+            "pending_sell_quantity": str(exposure.pending_sell_quantity),
+            "portfolio_snapshot_id": exposure.snapshot_id,
+        }
 
     @app.get("/api/v1/brokers")
     def brokers() -> dict[str, list[dict[str, str | bool | list[str]]]]:
@@ -242,7 +256,7 @@ def create_app(
         if quote is None:
             raise HTTPException(status_code=409, detail="No paper market quote")
         now = current_time()
-        decision = risk.evaluate(intent, quote, now=now)
+        decision = risk.evaluate(intent, quote, now=now, portfolio=execution.exposure_snapshot)
         try:
             order = execution.submit(intent, decision, idempotency_key=idempotency_key, now=now)
         except ValueError as error:

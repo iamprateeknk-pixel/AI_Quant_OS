@@ -30,6 +30,54 @@ class PaperFill:
 
 
 @dataclass(frozen=True)
+class PortfolioExposure:
+    snapshot_id: str
+    instrument_id: str
+    filled_net_quantity: Decimal
+    pending_buy_quantity: Decimal
+    pending_sell_quantity: Decimal
+
+    def __post_init__(self) -> None:
+        if not self.snapshot_id or not self.instrument_id:
+            raise ValueError("Portfolio exposure identifiers are required")
+        values = (
+            self.filled_net_quantity,
+            self.pending_buy_quantity,
+            self.pending_sell_quantity,
+        )
+        if not all(value.is_finite() for value in values):
+            raise ValueError("Portfolio exposure must be finite")
+        if self.pending_buy_quantity < 0 or self.pending_sell_quantity < 0:
+            raise ValueError("Pending exposure cannot be negative")
+
+    @classmethod
+    def empty(cls, instrument_id: str = "EURUSD") -> "PortfolioExposure":
+        return cls("paper:empty", instrument_id, Decimal(0), Decimal(0), Decimal(0))
+
+    @property
+    def worst_case_quantity(self) -> Decimal:
+        return max(
+            abs(self.filled_net_quantity + self.pending_buy_quantity),
+            abs(self.filled_net_quantity - self.pending_sell_quantity),
+        )
+
+    def with_order(self, side: Literal["BUY", "SELL"], quantity: Decimal) -> Decimal:
+        if not quantity.is_finite() or quantity <= 0:
+            raise ValueError("Order quantity must be positive and finite")
+        if side == "BUY":
+            return max(
+                abs(self.filled_net_quantity + self.pending_buy_quantity + quantity),
+                abs(self.filled_net_quantity - self.pending_sell_quantity),
+            )
+        if side == "SELL":
+            return max(
+                abs(self.filled_net_quantity + self.pending_buy_quantity),
+                abs(self.filled_net_quantity - self.pending_sell_quantity - quantity),
+            )
+        raise ValueError("Unsupported order side")
+
+
+@dataclass(frozen=True)
 class PositionSummary:
     instrument_id: str | None
     net_quantity: Decimal

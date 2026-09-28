@@ -4,3 +4,4 @@
 - 2026-09-28: Require an operator token for local write endpoints. All recovery and live-capital enablement remain absent.
 - 2026-09-28: Add a local Mission Control monitoring UI and SQLite paper receipts, control state, and audit. External brokers, agents and distributed workflows remain incomplete.
 - 2026-09-28: Reserve a unique intent in SQLite before invoking the paper simulator, within one transaction. This is a local simulator safeguard, not a substitute for a live broker outbox and reconciliation.
+- 2026-09-28: Compute worst case EURUSD base units from the filled net position and pending buy/sell quantities. Bind each risk decision to the stored snapshot and recheck its fingerprint and fixed ceiling inside the order transaction. See ADR 0002.
