@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
+from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
 from ai_quant_os.broker import BrokerRouter, SimulatedBroker
 from ai_quant_os.execution import PaperExecutionGateway, PaperOrder
 from ai_quant_os.market import MarketSnapshot
@@ -70,6 +71,7 @@ def _order_view(order: PaperOrder) -> dict[str, str]:
         "risk_id": order.risk_id,
         "status": order.status,
         "broker_route": "PAPER",
+        "instrument_id": order.command.instrument_id,
     }
     if order.broker_order_id is not None:
         view["broker_order_id"] = order.broker_order_id
@@ -115,7 +117,10 @@ def create_app(
         max_portfolio_exposure=Decimal("1500"),
         max_quote_age_seconds=5,
     )
-    currency_policy = CurrencyRiskPolicy("USD", Decimal("2000"), Decimal("4000"), 5)
+    currency_policy = CurrencyRiskPolicy(
+        "USD", Decimal("2000"), Decimal("4000"), 5, PAPER_INSTRUMENTS
+    )
+    instrument_catalog = {item.instrument_id: item for item in PAPER_INSTRUMENTS}
     risk = RiskKernel(limits, currency_policy=currency_policy)
     configured_path = paper_db_path or (
         Path(os.environ["AI_QUANT_PAPER_DB"]) if os.getenv("AI_QUANT_PAPER_DB") else None
@@ -123,7 +128,14 @@ def create_app(
     state_store = PaperStateStore(configured_path)
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
-        [SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=configured_path)]
+        [
+            SimulatedBroker(
+                "PAPER",
+                {identifier: identifier for identifier in instrument_catalog},
+                enabled=True,
+                store_path=configured_path,
+            )
+        ]
     )
     execution = PaperExecutionGateway(
         risk,
@@ -198,9 +210,12 @@ def create_app(
         }
 
     @app.get("/api/v1/risk")
-    def risk_state() -> dict[str, str]:
-        exposure = execution.exposure_snapshot
+    def risk_state(instrument: str = "EURUSD") -> dict[str, str]:
+        if instrument not in instrument_catalog:
+            raise HTTPException(status_code=404, detail="Unknown paper instrument")
+        exposure = execution.exposure_for(instrument)
         return {
+            "instrument_id": instrument,
             "safety_state": risk.safety_state.value,
             "max_order_exposure": str(limits.max_order_exposure),
             "max_portfolio_exposure": str(limits.max_portfolio_exposure),
@@ -248,21 +263,22 @@ def create_app(
     def fills() -> dict[str, list[dict[str, str]]]:
         return {"fills": [_fill_view(fill) for fill in execution.fills]}
 
-    @app.get("/api/v1/portfolio/snapshot")
-    def portfolio_snapshot() -> dict[str, str | bool | None]:
-        position_fills = execution.fills
+    def position_view(
+        instrument: str, fills: tuple[PaperFill, ...], quote: MarketSnapshot | None, now: datetime
+    ) -> dict[str, str | bool | None]:
+        position_fills = tuple(fill for fill in fills if fill.instrument_id == instrument)
         unmarked = summarize_position(position_fills, mark=None)
-        quote = quotes.get("EURUSD")
         mark: Decimal | None = None
         if quote is not None and quote.trusted:
-            age = (current_time() - quote.observed_at).total_seconds()
+            age = (now - quote.observed_at).total_seconds()
             if 0 <= age <= limits.max_quote_age_seconds:
                 mark = quote.bid if unmarked.net_quantity >= 0 else quote.ask
         position = summarize_position(position_fills, mark=mark) if mark is not None else unmarked
         return {
             "mode": "PAPER",
-            "instrument_id": "EURUSD",
-            "quote_currency": "USD",
+            "instrument_id": instrument,
+            "base_currency": instrument_catalog[instrument].base_currency,
+            "quote_currency": instrument_catalog[instrument].quote_currency,
             "mark_available": mark is not None,
             "mark_price": str(mark) if mark is not None else None,
             "net_quantity": str(position.net_quantity),
@@ -280,6 +296,36 @@ def create_app(
             "marked_pnl_quote": (
                 str(position.marked_pnl_quote) if position.marked_pnl_quote is not None else None
             ),
+        }
+
+    @app.get("/api/v1/portfolio/snapshot")
+    def portfolio_snapshot(instrument: str = "EURUSD") -> dict[str, str | bool | None]:
+        if instrument not in instrument_catalog:
+            raise HTTPException(status_code=404, detail="Unknown paper instrument")
+        return position_view(instrument, execution.fills, quotes.get(instrument), current_time())
+
+    @app.get("/api/v1/portfolio/positions")
+    def portfolio_positions() -> dict[str, object]:
+        fills = execution.fills
+        observed_quotes = quotes.copy()
+        now = current_time()
+        return {
+            "schema_version": "1.0",
+            "mode": "PAPER",
+            "positions": [
+                position_view(
+                    item.instrument_id, fills, observed_quotes.get(item.instrument_id), now
+                )
+                for item in PAPER_INSTRUMENTS
+            ],
+        }
+
+    @app.get("/api/v1/instruments")
+    def instruments() -> dict[str, object]:
+        return {
+            "schema_version": "1.0",
+            "mode": "PAPER",
+            "instruments": jsonable_encoder(PAPER_INSTRUMENTS),
         }
 
     @app.get("/api/v1/audit")
@@ -362,7 +408,7 @@ def create_app(
                 intent,
                 quote,
                 now=now,
-                portfolio=execution.exposure_snapshot,
+                portfolio=execution.exposure_for(intent.instrument_id),
                 currency_context=currency_context(quote),
             )
             order = execution.submit(intent, decision, idempotency_key=idempotency_key, now=now)
@@ -446,7 +492,7 @@ def create_app(
         return {"order_id": order_id, "imported_count": imported}
 
     @app.post("/api/v1/paper/positions/reconcile", dependencies=[Depends(require_operator)])
-    def reconcile_paper_positions() -> dict[str, str | bool | list[str]]:
+    def reconcile_paper_positions() -> dict[str, object]:
         try:
             result = execution.compare_paper_positions()
         except ValueError as error:
@@ -464,9 +510,15 @@ def create_app(
                 "local_only_fill_ids": ",".join(result.local_only_fill_ids),
                 "broker_only_fill_ids": ",".join(result.broker_only_fill_ids),
                 "conflicting_fill_ids": ",".join(result.conflicting_fill_ids),
+                "mismatched_instruments": ",".join(
+                    item.instrument_id for item in result.instruments if not item.matches
+                ),
             },
         )
         return {
+            "schema_version": "1.1",
+            "summary_instrument_id": "EURUSD",
+            "instruments": jsonable_encoder(result.instruments, custom_encoder={Decimal: str}),
             "matches": result.matches,
             "local_net_quantity": str(result.local_net_quantity),
             "broker_net_quantity": str(result.broker_net_quantity),

@@ -23,7 +23,7 @@ export const sectionDetails = {
   strategies: ["Strategies", "No strategy is active. Validated candidates and allocation history will appear here."],
   agents: ["Agents", "The 18-agent runtime has not been connected. No agent has capital authority."],
   risk: ["Risk Center", "Deterministic safety state and paper order and portfolio ceilings are shown below."],
-  portfolio: ["Paper Portfolio", "Filled EURUSD units and quote-currency trading P&L from the backend. No account equity is inferred."],
+  portfolio: ["Paper Portfolio", "Paper positions by instrument and combined currency exposure from the backend. No account equity is inferred."],
   orders: ["Orders", "Paper order receipts, manual fills, and fills imported from the durable simulator. Uncertain orders require operator reconciliation."],
   research: ["Research", "Experiments and validation dossiers will appear after the research pipeline is connected."],
   evolution: ["Evolution", "Champion and challenger promotions require offline, replay, shadow, and canary evidence."],

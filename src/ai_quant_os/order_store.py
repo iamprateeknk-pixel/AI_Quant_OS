@@ -183,7 +183,7 @@ class PaperOrderStore:
                 )
         return fills, tuple(pending)
 
-    def _exposure_snapshot_unlocked(self) -> PortfolioExposure:
+    def _exposure_snapshot_unlocked(self, instrument_id: str = "EURUSD") -> PortfolioExposure:
         order_rows = self._connection.execute(
             "SELECT order_json FROM paper_orders ORDER BY order_id"
         ).fetchall()
@@ -191,7 +191,7 @@ class PaperOrderStore:
             "SELECT fill_json FROM paper_fills ORDER BY fill_id"
         ).fetchall()
         if not order_rows and not fill_rows:
-            return PortfolioExposure.empty()
+            return PortfolioExposure.empty(instrument_id)
         orders = [json.loads(row[0]) for row in order_rows]
         commands = {order["order_id"]: order["command"] for order in orders}
         fills = [_decode_fill(row[0]) for row in fill_rows]
@@ -206,18 +206,19 @@ class PaperOrderStore:
             filled_by_order[fill.order_id] = (
                 filled_by_order.get(fill.order_id, Decimal(0)) + fill.quantity
             )
-            filled_net += fill.quantity if fill.side == "BUY" else -fill.quantity
+            if fill.instrument_id == instrument_id:
+                filled_net += fill.quantity if fill.side == "BUY" else -fill.quantity
         pending_buy = Decimal(0)
         pending_sell = Decimal(0)
         for order in orders:
             if order.get("status") == "REJECTED":
                 continue
             command = order["command"]
-            if command["instrument_id"] != "EURUSD":
-                raise ValueError("Paper exposure supports EURUSD only")
             remaining = Decimal(command["quantity"]) - filled_by_order.get(order["order_id"], 0)
             if remaining < 0:
                 raise ValueError("Paper fills exceed order quantity")
+            if command["instrument_id"] != instrument_id:
+                continue
             if command["side"] == "BUY":
                 pending_buy += remaining
             elif command["side"] == "SELL":
@@ -230,17 +231,17 @@ class PaperOrderStore:
         ).encode()
         return PortfolioExposure(
             snapshot_id=f"paper:{sha256(payload).hexdigest()}",
-            instrument_id="EURUSD",
+            instrument_id=instrument_id,
             filled_net_quantity=filled_net,
             pending_buy_quantity=pending_buy,
             pending_sell_quantity=pending_sell,
         )
 
-    def exposure_snapshot(self) -> PortfolioExposure:
+    def exposure_snapshot(self, instrument_id: str = "EURUSD") -> PortfolioExposure:
         with self._lock:
             self._connection.execute("BEGIN")
             try:
-                snapshot = self._exposure_snapshot_unlocked()
+                snapshot = self._exposure_snapshot_unlocked(instrument_id)
                 self._connection.commit()
                 return snapshot
             except Exception:
@@ -330,7 +331,7 @@ class PaperOrderStore:
                 if prior is not None:
                     self._connection.commit()
                     return False
-                snapshot = self._exposure_snapshot_unlocked()
+                snapshot = self._exposure_snapshot_unlocked(command["instrument_id"])
                 if snapshot.snapshot_id != expected_snapshot_id:
                     raise ValueError("Portfolio snapshot changed; re-evaluate risk")
                 if snapshot.instrument_id != command["instrument_id"]:

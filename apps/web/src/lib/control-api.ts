@@ -1,12 +1,12 @@
 import "server-only";
 
 export type SystemStatus = { mode: "PAPER"; safety_state: string; order_count: number };
-export type PaperOrder = { order_id: string; intent_id: string; risk_id: string; status: string; broker_route: "PAPER"; broker_order_id?: string };
+export type PaperOrder = { order_id: string; intent_id: string; risk_id: string; instrument_id: string; status: string; broker_route: "PAPER"; broker_order_id?: string };
 export type AuditEvent = { action: string; intent_id: string; reason: string; trace_id?: string };
 export type BrokerView = { broker_id: string; connection_state: string; enabled: boolean; instruments: string[] };
 export type MarketView = { instrument_id: string; bid: string; ask: string; observed_at: string; world_state_version: string; freshness: string; source: string };
-export type PaperFill = { fill_id: string; order_id: string; side: "BUY" | "SELL"; quantity: string; price: string; fee: string; observed_at: string; source: "PAPER_MANUAL" | "PAPER_BROKER" };
-export type PortfolioView = { instrument_id: "EURUSD"; quote_currency: "USD"; mark_available: boolean; mark_price: string | null; net_quantity: string; cash_flow_quote: string; gross_exposure_quote: string | null; net_exposure_quote: string | null; marked_pnl_quote: string | null };
+export type PaperFill = { fill_id: string; order_id: string; instrument_id: string; side: "BUY" | "SELL"; quantity: string; price: string; fee: string; observed_at: string; source: "PAPER_MANUAL" | "PAPER_BROKER" };
+export type InstrumentPositionView = { instrument_id: string; base_currency: string; quote_currency: string; mark_price: string | null; net_quantity: string; cash_flow_quote: string; marked_pnl_quote: string | null };
 export type CurrencyExposureView = { currency: string; filled_balance: string; minimum_balance: string | null; maximum_balance: string | null; worst_case_exposure_reporting: string | null; issue: string | null };
 export type CurrencyPortfolioView = { reporting_currency: string; valuation_available: boolean; marked_pnl_reporting: string | null; gross_worst_case_exposure_reporting: string | null; currencies: CurrencyExposureView[] };
 export type RiskView = { safety_state: string; max_order_exposure: string; max_portfolio_exposure: string; worst_case_quantity: string; filled_net_quantity: string; pending_buy_quantity: string; pending_sell_quantity: string; portfolio_snapshot_id: string; reporting_currency: string; max_currency_exposure_reporting: string; max_gross_currency_exposure_reporting: string };
@@ -51,9 +51,9 @@ export function getOrders(): Promise<ReadResult<{ orders: PaperOrder[] }>> {
     if (!isRecord(value) || !Array.isArray(value.orders)) return null;
     const orders: PaperOrder[] = [];
     for (const item of value.orders) {
-      if (!isRecord(item) || typeof item.order_id !== "string" || typeof item.intent_id !== "string" || typeof item.risk_id !== "string" || typeof item.status !== "string" || item.broker_route !== "PAPER") return null;
+      if (!isRecord(item) || typeof item.order_id !== "string" || typeof item.intent_id !== "string" || typeof item.risk_id !== "string" || typeof item.instrument_id !== "string" || typeof item.status !== "string" || item.broker_route !== "PAPER") return null;
       if (item.broker_order_id !== undefined && typeof item.broker_order_id !== "string") return null;
-      orders.push({ order_id: item.order_id, intent_id: item.intent_id, risk_id: item.risk_id, status: item.status, broker_route: "PAPER", broker_order_id: item.broker_order_id });
+      orders.push({ order_id: item.order_id, intent_id: item.intent_id, risk_id: item.risk_id, instrument_id: item.instrument_id, status: item.status, broker_route: "PAPER", broker_order_id: item.broker_order_id });
     }
     return { orders };
   });
@@ -95,17 +95,22 @@ export function getFills(): Promise<ReadResult<{ fills: PaperFill[] }>> {
     if (!isRecord(value) || !Array.isArray(value.fills)) return null;
     const fills: PaperFill[] = [];
     for (const item of value.fills) {
-      if (!isRecord(item) || typeof item.fill_id !== "string" || typeof item.order_id !== "string" || (item.side !== "BUY" && item.side !== "SELL") || typeof item.quantity !== "string" || typeof item.price !== "string" || typeof item.fee !== "string" || typeof item.observed_at !== "string" || (item.source !== "PAPER_MANUAL" && item.source !== "PAPER_BROKER")) return null;
-      fills.push({ fill_id: item.fill_id, order_id: item.order_id, side: item.side, quantity: item.quantity, price: item.price, fee: item.fee, observed_at: item.observed_at, source: item.source });
+      if (!isRecord(item) || typeof item.fill_id !== "string" || typeof item.order_id !== "string" || typeof item.instrument_id !== "string" || (item.side !== "BUY" && item.side !== "SELL") || typeof item.quantity !== "string" || typeof item.price !== "string" || typeof item.fee !== "string" || typeof item.observed_at !== "string" || (item.source !== "PAPER_MANUAL" && item.source !== "PAPER_BROKER")) return null;
+      fills.push({ fill_id: item.fill_id, order_id: item.order_id, instrument_id: item.instrument_id, side: item.side, quantity: item.quantity, price: item.price, fee: item.fee, observed_at: item.observed_at, source: item.source });
     }
     return { fills };
   });
 }
 
-export function getPortfolio(): Promise<ReadResult<PortfolioView>> {
-  return read("/api/v1/portfolio/snapshot", (value) => {
-    if (!isRecord(value) || value.mode !== "PAPER" || value.instrument_id !== "EURUSD" || value.quote_currency !== "USD" || typeof value.mark_available !== "boolean" || !isNullableString(value.mark_price) || typeof value.net_quantity !== "string" || typeof value.cash_flow_quote !== "string" || !isNullableString(value.gross_exposure_quote) || !isNullableString(value.net_exposure_quote) || !isNullableString(value.marked_pnl_quote)) return null;
-    return { instrument_id: "EURUSD", quote_currency: "USD", mark_available: value.mark_available, mark_price: value.mark_price, net_quantity: value.net_quantity, cash_flow_quote: value.cash_flow_quote, gross_exposure_quote: value.gross_exposure_quote, net_exposure_quote: value.net_exposure_quote, marked_pnl_quote: value.marked_pnl_quote };
+export function getPositions(): Promise<ReadResult<{ positions: InstrumentPositionView[] }>> {
+  return read("/api/v1/portfolio/positions", (value) => {
+    if (!isRecord(value) || value.mode !== "PAPER" || value.schema_version !== "1.0" || !Array.isArray(value.positions)) return null;
+    const positions: InstrumentPositionView[] = [];
+    for (const item of value.positions) {
+      if (!isRecord(item) || typeof item.instrument_id !== "string" || typeof item.base_currency !== "string" || typeof item.quote_currency !== "string" || !isNullableString(item.mark_price) || typeof item.net_quantity !== "string" || typeof item.cash_flow_quote !== "string" || !isNullableString(item.marked_pnl_quote)) return null;
+      positions.push({ instrument_id: item.instrument_id, base_currency: item.base_currency, quote_currency: item.quote_currency, mark_price: item.mark_price, net_quantity: item.net_quantity, cash_flow_quote: item.cash_flow_quote, marked_pnl_quote: item.marked_pnl_quote });
+    }
+    return { positions };
   });
 }
 

@@ -33,6 +33,16 @@ class PaperOrder:
 
 
 @dataclass(frozen=True)
+class InstrumentPositionReconciliation:
+    instrument_id: str
+    matches: bool
+    local_net_quantity: Decimal
+    broker_net_quantity: Decimal
+    local_cash_flow_quote: Decimal
+    broker_cash_flow_quote: Decimal
+
+
+@dataclass(frozen=True)
 class PositionReconciliation:
     matches: bool
     local_net_quantity: Decimal
@@ -42,6 +52,7 @@ class PositionReconciliation:
     local_only_fill_ids: tuple[str, ...]
     broker_only_fill_ids: tuple[str, ...]
     conflicting_fill_ids: tuple[str, ...]
+    instruments: tuple[InstrumentPositionReconciliation, ...] = ()
 
 
 def _encode_value(value: Decimal | datetime) -> str:
@@ -75,7 +86,7 @@ def _decode_order(raw: str) -> PaperOrder:
 
 def _with_fill_status(order: PaperOrder, fills: tuple[PaperFill, ...]) -> PaperOrder:
     quantity = sum((fill.quantity for fill in fills if fill.order_id == order.order_id), Decimal(0))
-    if quantity == 0:
+    if quantity == 0 or order.status != "ACCEPTED":
         return order
     status = "FILLED" if quantity == order.command.quantity else "PARTIALLY_FILLED"
     return replace(order, status=status)
@@ -99,7 +110,7 @@ class PaperExecutionGateway:
         self._lock = RLock()
         self._on_uncertain_order = on_uncertain_order
         self._clock = clock
-        for order in self.orders:
+        for order in (_decode_order(raw) for raw in self._store.all_orders()):
             if order.status in {"DISPATCHING", "UNKNOWN"}:
                 self._escalate_uncertainty(order.order_id)
 
@@ -124,6 +135,9 @@ class PaperExecutionGateway:
     def exposure_snapshot(self) -> PortfolioExposure:
         return self._store.exposure_snapshot()
 
+    def exposure_for(self, instrument_id: str) -> PortfolioExposure:
+        return self._store.exposure_snapshot(instrument_id)
+
     def record_fill(
         self,
         *,
@@ -134,21 +148,22 @@ class PaperExecutionGateway:
         fee: Decimal,
         observed_at: datetime,
     ) -> PaperFill:
-        raw = self._store.get_order_by_id(order_id)
-        if raw is None:
-            raise ValueError("Paper order does not exist")
-        command = _decode_order(raw).command
-        fill = PaperFill(
-            fill_id,
-            order_id,
-            command.instrument_id,
-            command.side,
-            quantity,
-            price,
-            fee,
-            observed_at,
-        )
-        return self._store.record_fill(fill)
+        with self._lock:
+            raw = self._store.get_order_by_id(order_id)
+            if raw is None:
+                raise ValueError("Paper order does not exist")
+            command = _decode_order(raw).command
+            fill = PaperFill(
+                fill_id,
+                order_id,
+                command.instrument_id,
+                command.side,
+                quantity,
+                price,
+                fee,
+                observed_at,
+            )
+            return self._store.record_fill(fill)
 
     def simulate_broker_fill(
         self,
@@ -160,24 +175,25 @@ class PaperExecutionGateway:
         fee: Decimal,
         observed_at: datetime,
     ) -> PaperFill:
-        raw = self._store.get_order_by_id(order_id)
-        if raw is None:
-            raise ValueError("Paper order does not exist")
-        order = _decode_order(raw)
-        if order.status != "ACCEPTED":
-            raise ValueError("Paper order is not accepted")
-        fill = PaperFill(
-            fill_id,
-            order_id,
-            order.command.instrument_id,
-            order.command.side,
-            quantity,
-            price,
-            fee,
-            observed_at,
-            "PAPER_BROKER",
-        )
-        return self._router.simulate_fill(order.command, fill)
+        with self._lock:
+            raw = self._store.get_order_by_id(order_id)
+            if raw is None:
+                raise ValueError("Paper order does not exist")
+            order = _decode_order(raw)
+            if order.status != "ACCEPTED":
+                raise ValueError("Paper order is not accepted")
+            fill = PaperFill(
+                fill_id,
+                order_id,
+                order.command.instrument_id,
+                order.command.side,
+                quantity,
+                price,
+                fee,
+                observed_at,
+                "PAPER_BROKER",
+            )
+            return self._router.simulate_fill(order.command, fill)
 
     def sync_broker_fills(self, order_id: str) -> int:
         with self._lock:
@@ -205,8 +221,38 @@ class PaperExecutionGateway:
             local_fills = self._store.all_fills()
             try:
                 broker_fills = self._router.all_fills("PAPER")
-                local_position = summarize_position(local_fills, mark=None)
-                broker_position = summarize_position(broker_fills, mark=None)
+                comparisons: list[InstrumentPositionReconciliation] = []
+                identifiers = sorted({fill.instrument_id for fill in local_fills + broker_fills})
+                for identifier in identifiers:
+                    local = tuple(fill for fill in local_fills if fill.instrument_id == identifier)
+                    broker = tuple(
+                        fill for fill in broker_fills if fill.instrument_id == identifier
+                    )
+                    local_summary = summarize_position(local, mark=None)
+                    broker_summary = summarize_position(broker, mark=None)
+                    matches = (
+                        local_summary.net_quantity == broker_summary.net_quantity
+                        and local_summary.cash_flow_quote == broker_summary.cash_flow_quote
+                        and {fill.fill_id: fill for fill in local}
+                        == {fill.fill_id: fill for fill in broker}
+                    )
+                    comparisons.append(
+                        InstrumentPositionReconciliation(
+                            identifier,
+                            matches,
+                            local_summary.net_quantity,
+                            broker_summary.net_quantity,
+                            local_summary.cash_flow_quote,
+                            broker_summary.cash_flow_quote,
+                        )
+                    )
+                local_position = summarize_position(
+                    tuple(fill for fill in local_fills if fill.instrument_id == "EURUSD"), mark=None
+                )
+                broker_position = summarize_position(
+                    tuple(fill for fill in broker_fills if fill.instrument_id == "EURUSD"),
+                    mark=None,
+                )
                 local_by_id = {fill.fill_id: fill for fill in local_fills}
                 broker_by_id = {fill.fill_id: fill for fill in broker_fills}
                 local_only = tuple(sorted(local_by_id.keys() - broker_by_id.keys()))
@@ -219,17 +265,16 @@ class PaperExecutionGateway:
                     )
                 )
                 matches = (
-                    local_position.net_quantity == broker_position.net_quantity
-                    and local_position.cash_flow_quote == broker_position.cash_flow_quote
+                    all(item.matches for item in comparisons)
                     and not local_only
                     and not broker_only
                     and not conflicting
                 )
             except Exception:
-                self._escalate_uncertainty("position:EURUSD")
+                self._escalate_uncertainty("position:PAPER")
                 raise
             if not matches:
-                self._escalate_uncertainty("position:EURUSD")
+                self._escalate_uncertainty("position:PAPER")
             return PositionReconciliation(
                 matches,
                 local_position.net_quantity,
@@ -239,6 +284,7 @@ class PaperExecutionGateway:
                 local_only,
                 broker_only,
                 conflicting,
+                tuple(comparisons),
             )
 
     def recover_paper_safety(self, *, before_change: Callable[[], None]) -> None:
@@ -341,7 +387,7 @@ class PaperExecutionGateway:
                 return replace(order, status="REJECTED")
             if self._risk.safety_state != SafetyState.NORMAL:
                 raise BrokerUnavailable("Risk safety state blocks pending order recovery")
-            portfolio = self._store.exposure_snapshot()
+            portfolio = self._store.exposure_snapshot(intent.instrument_id)
             command = order.command
             if command.side == "BUY":
                 adjusted = replace(

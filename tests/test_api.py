@@ -335,7 +335,7 @@ def test_broker_read_model_reports_only_simulated_paper_route() -> None:
                 "broker_id": "PAPER",
                 "connection_state": "CONNECTED",
                 "enabled": True,
-                "instruments": ["EURUSD"],
+                "instruments": ["EURJPY", "EURUSD", "GBPUSD", "USDJPY"],
             }
         ]
     }
