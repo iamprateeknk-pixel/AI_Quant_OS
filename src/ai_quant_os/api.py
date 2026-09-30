@@ -16,6 +16,7 @@ from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
 from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
 from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
+from ai_quant_os.openai_reviewer import OpenAIReviewer, reviewer_from_environment
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -162,7 +163,10 @@ def create_app(
         fast_classifier if fast_classifier is not None else jev_from_environment()
     )
     decisions = DecisionGateway(primary=configured_classifier, clock=current_time)
-    deep_reviews = DeepReviewDispatcher(reviewer=deep_reviewer, clock=current_time)
+    configured_reviewer = (
+        deep_reviewer if deep_reviewer is not None else reviewer_from_environment()
+    )
+    deep_reviews = DeepReviewDispatcher(reviewer=configured_reviewer, clock=current_time)
     world_state = WorldStateEngine(PAPER_INSTRUMENTS, max_quote_age_seconds=5)
     instrument_catalog = {item.instrument_id: item for item in PAPER_INSTRUMENTS}
     risk = RiskKernel(limits, currency_policy=currency_policy)
@@ -468,10 +472,12 @@ def create_app(
             "schema_version": "1.0",
             "mode": "PAPER",
             "configured": configured_classifier is not None,
-            "deep_review_configured": deep_reviewer is not None,
-            "deep_review_provider_id": deep_reviewer.provider_id if deep_reviewer else None,
-            "deep_review_provider_version": deep_reviewer.provider_version
-            if deep_reviewer
+            "deep_review_configured": configured_reviewer is not None,
+            "deep_review_provider_id": configured_reviewer.provider_id
+            if configured_reviewer
+            else None,
+            "deep_review_provider_version": configured_reviewer.provider_version
+            if configured_reviewer
             else None,
             "provider_id": configured_classifier.provider_id if configured_classifier else None,
             "provider_version": configured_classifier.provider_version
@@ -480,6 +486,8 @@ def create_app(
         }
         if isinstance(configured_classifier, JevClassifier):
             status.update(configured_classifier.status())
+        if isinstance(configured_reviewer, OpenAIReviewer):
+            status["deep_review"] = configured_reviewer.status()
         return status
 
     @app.post("/api/v1/paper/decisions/calibration", dependencies=[Depends(require_operator)])
