@@ -15,6 +15,7 @@ data = ["pyarrow>=25,<26", "psycopg[binary]>=3.2,<4", "boto3>=1.40,<2", "redis>=
 
 [project.scripts]
 ai-quant-data = "ai_quant_os.data_cli:main"
+ai-quant-evaluate = "ai_quant_os.evaluation_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

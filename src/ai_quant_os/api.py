@@ -11,6 +11,8 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict, Field
 
+from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
+from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -154,6 +156,7 @@ def create_app(
         Path(os.environ["AI_QUANT_PAPER_DB"]) if os.getenv("AI_QUANT_PAPER_DB") else None
     )
     state_store = PaperStateStore(configured_path)
+    calibration_store = CalibrationStore(configured_path)
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
         [
@@ -396,6 +399,45 @@ def create_app(
     def world_state_snapshot() -> dict[str, object]:
         snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
         return {"mode": "PAPER", **jsonable_encoder(snapshot, custom_encoder={Decimal: str})}
+
+    @app.post("/api/v1/paper/decisions/calibration", dependencies=[Depends(require_operator)])
+    def record_calibration(payload: EvaluationBatch) -> dict[str, object]:
+        try:
+            report = build_calibration_report(
+                payload.records,
+                provider_id=payload.provider_id,
+                provider_version=payload.provider_version,
+                dataset_ref=payload.dataset_ref,
+                created_at=current_time(),
+            )
+            calibration_store.put(report)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        state_store.record_event(
+            f"calibration-report:{report.report_id}",
+            {
+                "action": "CALIBRATION_REPORT",
+                "intent_id": "",
+                "reason": "EVIDENCE_ONLY",
+                "report_id": report.report_id,
+                "provider_id": report.provider_id,
+                "provider_version": report.provider_version,
+                "dataset_ref": report.dataset_ref,
+            },
+        )
+        return {"mode": "PAPER", **report.model_dump(mode="json")}
+
+    @app.get("/api/v1/calibration/{report_id}")
+    def calibration_report(report_id: str) -> dict[str, object]:
+        try:
+            report = calibration_store.get(report_id)
+        except ValueError as error:
+            raise HTTPException(
+                status_code=503, detail="Calibration report integrity verification failed"
+            ) from error
+        if report is None:
+            raise HTTPException(status_code=404, detail="Calibration report not found")
+        return {"mode": "PAPER", **report.model_dump(mode="json")}
 
     @app.post("/api/v1/paper/decisions/classify", dependencies=[Depends(require_operator)])
     async def classify_world_state(payload: ClassificationInput) -> dict[str, object]:
