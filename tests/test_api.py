@@ -260,6 +260,71 @@ def test_status_is_paper_only_and_starts_with_no_orders() -> None:
     assert response.json()["order_count"] == 0
 
 
+def test_currency_snapshot_reads_pending_ledger_and_withholds_stale_values():
+    time = [NOW]
+    client = TestClient(create_app(operator_token="test-secret", clock=lambda: time[0]))
+    headers = {"X-Operator-Token": "test-secret", "Idempotency-Key": "currency-order"}
+    quote = {
+        "instrument_id": "EURUSD",
+        "bid": "1.1000",
+        "ask": "1.1001",
+        "observed_at": NOW.isoformat(),
+        "world_state_version": "world-1",
+    }
+    payload = {
+        "intent_id": "currency-order",
+        "strategy_id": "demo",
+        "strategy_version": "1",
+        "instrument_id": "EURUSD",
+        "side": "BUY",
+        "desired_exposure": "100",
+        "risk_budget": "10",
+        "max_spread": "0.0003",
+        "max_slippage": "0.0002",
+        "valid_until": (NOW + timedelta(minutes=1)).isoformat(),
+        "world_state_version": "world-1",
+        "evidence_refs": ["fixture:1"],
+        "created_at": NOW.isoformat(),
+    }
+    assert client.post("/api/v1/paper/quotes", json=quote, headers=headers).status_code == 200
+    assert client.post("/api/v1/paper/intents", json=payload, headers=headers).status_code == 200
+    result = client.get("/api/v1/portfolio/currencies")
+    assert result.status_code == 200
+    body = result.json()
+    assert body["schema_version"] == "1.0"
+    assert body["reporting_currency"] == "USD"
+    assert body["valuation_available"] is True
+    currencies = {item["currency"]: item for item in body["currencies"]}
+    assert Decimal(currencies["EUR"]["maximum_balance"]) == Decimal("100")
+    assert Decimal(currencies["USD"]["minimum_balance"]) == Decimal("-110.0300")
+    order_id = client.get("/api/v1/orders").json()["orders"][0]["order_id"]
+    assert (
+        client.post(
+            "/api/v1/paper/fills",
+            headers=headers,
+            json={
+                "fill_id": "partial-currency",
+                "order_id": order_id,
+                "quantity": "40",
+                "price": "1.1",
+                "fee": "0.1",
+                "observed_at": NOW.isoformat(),
+            },
+        ).status_code
+        == 200
+    )
+    partial = client.get("/api/v1/portfolio/currencies").json()
+    currencies = {item["currency"]: item for item in partial["currencies"]}
+    assert Decimal(currencies["EUR"]["filled_balance"]) == Decimal("40")
+    assert Decimal(currencies["EUR"]["maximum_balance"]) == Decimal("100")
+    assert Decimal(currencies["USD"]["minimum_balance"]) == Decimal("-110.1180")
+    time[0] = NOW + timedelta(seconds=6)
+    stale = client.get("/api/v1/portfolio/currencies").json()
+    assert stale["valuation_available"] is False
+    assert stale["gross_worst_case_exposure_reporting"] is None
+    assert "STALE_FX_RATE" in stale["issues"]
+
+
 def test_broker_read_model_reports_only_simulated_paper_route() -> None:
     client = TestClient(create_app(operator_token="test-secret"))
     response = client.get("/api/v1/brokers")

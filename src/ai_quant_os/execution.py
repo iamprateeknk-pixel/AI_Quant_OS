@@ -14,6 +14,7 @@ from ai_quant_os.broker import (
     SimulatedBroker,
 )
 from ai_quant_os.contracts import OrderCommand, RiskDecision, TradeIntent, _require_aware
+from ai_quant_os.currency_portfolio import CurrencyPendingOrder
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.order_store import PaperOrderStore
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure, summarize_position
@@ -110,6 +111,11 @@ class PaperExecutionGateway:
     @property
     def fills(self) -> tuple[PaperFill, ...]:
         return self._store.all_fills()
+
+    @property
+    def currency_ledger(self) -> tuple[tuple[PaperFill, ...], tuple[CurrencyPendingOrder, ...]]:
+        with self._lock:
+            return self._store.currency_ledger()
 
     @property
     def exposure_snapshot(self) -> PortfolioExposure:

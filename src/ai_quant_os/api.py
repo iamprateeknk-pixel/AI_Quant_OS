@@ -8,9 +8,11 @@ from typing import Callable, Literal
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict, Field
 
 from ai_quant_os.contracts import TradeIntent
+from ai_quant_os.currency_portfolio import CurrencyInstrument, FxRate, summarize_currency_portfolio
 from ai_quant_os.broker import BrokerRouter, SimulatedBroker
 from ai_quant_os.execution import PaperExecutionGateway, PaperOrder
 from ai_quant_os.market import MarketSnapshot
@@ -252,6 +254,40 @@ def create_app(
     @app.get("/api/v1/audit")
     def audit_events() -> dict[str, list[dict[str, str]]]:
         return {"events": state_store.audit_events()}
+
+    @app.get("/api/v1/portfolio/currencies")
+    def currency_portfolio() -> dict[str, object]:
+        instruments = (CurrencyInstrument("EURUSD", "EUR", "USD"),)
+        rates = tuple(
+            FxRate(
+                item.base_currency,
+                item.quote_currency,
+                quote.bid,
+                quote.ask,
+                quote.observed_at,
+                quote.trusted,
+            )
+            for item in instruments
+            if (quote := quotes.get(item.instrument_id)) is not None
+        )
+        try:
+            ledger_fills, pending = execution.currency_ledger
+            snapshot = summarize_currency_portfolio(
+                ledger_fills,
+                pending=pending,
+                instruments=instruments,
+                rates=rates,
+                reporting_currency="USD",
+                now=current_time(),
+                max_rate_age_seconds=limits.max_quote_age_seconds,
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return {
+            **jsonable_encoder(snapshot, custom_encoder={Decimal: str}),
+            "valuation_available": snapshot.valuation_available,
+            "mode": "PAPER",
+        }
 
     @app.post("/api/v1/paper/quotes", dependencies=[Depends(require_operator)])
     def record_quote(quote: QuoteInput) -> dict[str, str]:

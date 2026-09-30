@@ -8,6 +8,7 @@ from pathlib import Path
 from threading import Lock
 
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure
+from ai_quant_os.currency_portfolio import CurrencyPendingOrder
 
 
 def _encode_fill(fill: PaperFill) -> str:
@@ -118,6 +119,69 @@ class PaperOrderStore:
                 "SELECT fill_json FROM paper_fills ORDER BY rowid"
             ).fetchall()
             return tuple(_decode_fill(row[0]) for row in rows)
+
+    def currency_ledger(self) -> tuple[tuple[PaperFill, ...], tuple[CurrencyPendingOrder, ...]]:
+        with self._lock:
+            self._connection.execute("BEGIN")
+            try:
+                order_rows = self._connection.execute(
+                    "SELECT order_id, order_json, intent_json FROM paper_orders ORDER BY order_id"
+                ).fetchall()
+                orders = {row[0]: json.loads(row[1]) for row in order_rows}
+                slippage = {
+                    row[0]: Decimal(json.loads(row[2])["max_slippage"]) for row in order_rows
+                }
+                fills = tuple(
+                    _decode_fill(row[0])
+                    for row in self._connection.execute(
+                        "SELECT fill_json FROM paper_fills ORDER BY fill_id"
+                    )
+                )
+                quantities: dict[str, Decimal] = {}
+                for fill in fills:
+                    order = orders.get(fill.order_id)
+                    if order is None or order["status"] != "ACCEPTED":
+                        raise ValueError("Currency ledger fill has no accepted order")
+                    command = order["command"]
+                    if (
+                        fill.instrument_id != command["instrument_id"]
+                        or fill.side != command["side"]
+                    ):
+                        raise ValueError("Currency ledger fill does not match order")
+                    quantities[fill.order_id] = (
+                        quantities.get(fill.order_id, Decimal(0)) + fill.quantity
+                    )
+                pending: list[CurrencyPendingOrder] = []
+                for order_id, order in orders.items():
+                    if order["status"] not in {
+                        "PENDING",
+                        "DISPATCHING",
+                        "UNKNOWN",
+                        "ACCEPTED",
+                        "REJECTED",
+                    }:
+                        raise ValueError("Unknown currency ledger order state")
+                    if order["status"] == "REJECTED":
+                        continue
+                    command = order["command"]
+                    remaining = Decimal(command["quantity"]) - quantities.get(order_id, Decimal(0))
+                    if remaining < 0:
+                        raise ValueError("Currency ledger fills exceed order quantity")
+                    if remaining > 0:
+                        pending.append(
+                            CurrencyPendingOrder(
+                                order_id,
+                                command["instrument_id"],
+                                command["side"],
+                                remaining,
+                                slippage[order_id],
+                            )
+                        )
+                self._connection.commit()
+                return fills, tuple(pending)
+            except BaseException:
+                self._connection.rollback()
+                raise
 
     def _exposure_snapshot_unlocked(self) -> PortfolioExposure:
         order_rows = self._connection.execute(

@@ -7,6 +7,8 @@ export type BrokerView = { broker_id: string; connection_state: string; enabled:
 export type MarketView = { instrument_id: string; bid: string; ask: string; observed_at: string; world_state_version: string; freshness: string; source: string };
 export type PaperFill = { fill_id: string; order_id: string; side: "BUY" | "SELL"; quantity: string; price: string; fee: string; observed_at: string; source: "PAPER_MANUAL" | "PAPER_BROKER" };
 export type PortfolioView = { instrument_id: "EURUSD"; quote_currency: "USD"; mark_available: boolean; mark_price: string | null; net_quantity: string; cash_flow_quote: string; gross_exposure_quote: string | null; net_exposure_quote: string | null; marked_pnl_quote: string | null };
+export type CurrencyExposureView = { currency: string; filled_balance: string; minimum_balance: string | null; maximum_balance: string | null; worst_case_exposure_reporting: string | null; issue: string | null };
+export type CurrencyPortfolioView = { reporting_currency: string; valuation_available: boolean; marked_pnl_reporting: string | null; gross_worst_case_exposure_reporting: string | null; currencies: CurrencyExposureView[] };
 export type RiskView = { safety_state: string; max_order_exposure: string; max_portfolio_exposure: string; worst_case_quantity: string; filled_net_quantity: string; pending_buy_quantity: string; pending_sell_quantity: string; portfolio_snapshot_id: string };
 export type ReadResult<T> = { ok: true; value: T } | { ok: false; reason: string };
 
@@ -104,5 +106,17 @@ export function getPortfolio(): Promise<ReadResult<PortfolioView>> {
   return read("/api/v1/portfolio/snapshot", (value) => {
     if (!isRecord(value) || value.mode !== "PAPER" || value.instrument_id !== "EURUSD" || value.quote_currency !== "USD" || typeof value.mark_available !== "boolean" || !isNullableString(value.mark_price) || typeof value.net_quantity !== "string" || typeof value.cash_flow_quote !== "string" || !isNullableString(value.gross_exposure_quote) || !isNullableString(value.net_exposure_quote) || !isNullableString(value.marked_pnl_quote)) return null;
     return { instrument_id: "EURUSD", quote_currency: "USD", mark_available: value.mark_available, mark_price: value.mark_price, net_quantity: value.net_quantity, cash_flow_quote: value.cash_flow_quote, gross_exposure_quote: value.gross_exposure_quote, net_exposure_quote: value.net_exposure_quote, marked_pnl_quote: value.marked_pnl_quote };
+  });
+}
+
+export function getCurrencyPortfolio(): Promise<ReadResult<CurrencyPortfolioView>> {
+  return read("/api/v1/portfolio/currencies", (value) => {
+    if (!isRecord(value) || value.mode !== "PAPER" || value.schema_version !== "1.0" || typeof value.reporting_currency !== "string" || typeof value.valuation_available !== "boolean" || !isNullableString(value.marked_pnl_reporting) || !isNullableString(value.gross_worst_case_exposure_reporting) || !Array.isArray(value.currencies)) return null;
+    const currencies: CurrencyExposureView[] = [];
+    for (const item of value.currencies) {
+      if (!isRecord(item) || typeof item.currency !== "string" || typeof item.filled_balance !== "string" || !isNullableString(item.minimum_balance) || !isNullableString(item.maximum_balance) || !isNullableString(item.worst_case_exposure_reporting) || !isNullableString(item.issue)) return null;
+      currencies.push({ currency: item.currency, filled_balance: item.filled_balance, minimum_balance: item.minimum_balance, maximum_balance: item.maximum_balance, worst_case_exposure_reporting: item.worst_case_exposure_reporting, issue: item.issue });
+    }
+    return { reporting_currency: value.reporting_currency, valuation_available: value.valuation_available, marked_pnl_reporting: value.marked_pnl_reporting, gross_worst_case_exposure_reporting: value.gross_worst_case_exposure_reporting, currencies };
   });
 }
