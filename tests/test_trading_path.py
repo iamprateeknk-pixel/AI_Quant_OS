@@ -71,6 +71,19 @@ def test_stale_market_rejects_new_risk() -> None:
     assert "STALE_MARKET" in decision.violations
 
 
+def test_paper_recovery_requires_new_risk_approval_after_incident() -> None:
+    risk = kernel()
+    trade = intent()
+    old_decision = risk.evaluate(trade, market(), now=NOW)
+    risk.set_safety_state(SafetyState.NO_NEW_RISK)
+    risk.recover_paper_safety(before_change=lambda: None)
+    gateway = PaperExecutionGateway(risk)
+    with pytest.raises(ValueError, match="not issued"):
+        gateway.submit(trade, old_decision, idempotency_key="old", now=NOW)
+    new_decision = risk.evaluate(trade, market(), now=NOW)
+    assert gateway.submit(trade, new_decision, idempotency_key="new", now=NOW) is not None
+
+
 def test_untrusted_market_rejects_new_risk() -> None:
     quote = market()
     quote = MarketSnapshot(**{**quote.__dict__, "trusted": False})

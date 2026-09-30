@@ -64,6 +64,15 @@ class RiskKernel:
                 before_change()
             self._safety_state = state
 
+    def recover_paper_safety(self, *, before_change: Callable[[], None]) -> None:
+        with self._lock:
+            if self._safety_state != SafetyState.NO_NEW_RISK:
+                raise ValueError("Only NO_NEW_RISK paper state can be recovered")
+            before_change()
+            self._issued.clear()
+            self._consumed.clear()
+            self._safety_state = SafetyState.NORMAL
+
     @contextmanager
     def authorization(self, intent: TradeIntent, decision: RiskDecision) -> Iterator[bool]:
         with self._lock:

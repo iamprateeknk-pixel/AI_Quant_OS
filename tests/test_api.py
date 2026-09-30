@@ -114,9 +114,26 @@ def test_reconcile_endpoint_uses_durable_ack_without_resending(tmp_path) -> None
             (json.dumps(interrupted, sort_keys=True), first["order_id"]),
         )
     restarted = TestClient(
-        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+        create_app(
+            operator_token="test-secret",
+            recovery_token="recovery-secret",
+            clock=lambda: NOW,
+            paper_db_path=path,
+        )
     )
     url = f"/api/v1/paper/orders/{first['order_id']}/reconcile"
+    assert (
+        restarted.post(
+            "/api/v1/control/recover-paper",
+            json={"reason": "attempt before order reconciliation"},
+            headers={
+                "X-Operator-Token": "test-secret",
+                "X-Recovery-Token": "recovery-secret",
+                "Idempotency-Key": "too-early",
+            },
+        ).status_code
+        == 409
+    )
     assert restarted.post(url).status_code == 401
     result = restarted.post(url, headers={"X-Operator-Token": "test-secret"})
     assert result.status_code == 200
@@ -213,9 +230,26 @@ def test_operator_syncs_durable_simulated_broker_fill(tmp_path) -> None:
     assert mismatch.json()["local_net_quantity"] == "50"
     assert mismatch.json()["broker_net_quantity"] == "40"
     after_mismatch_restart = TestClient(
-        create_app(operator_token="test-secret", clock=lambda: NOW, paper_db_path=path)
+        create_app(
+            operator_token="test-secret",
+            recovery_token="recovery-secret",
+            clock=lambda: NOW,
+            paper_db_path=path,
+        )
     )
     assert after_mismatch_restart.get("/api/v1/risk").json()["safety_state"] == "NO_NEW_RISK"
+    assert (
+        after_mismatch_restart.post(
+            "/api/v1/control/recover-paper",
+            json={"reason": "attempt with ledger mismatch"},
+            headers={
+                "X-Operator-Token": "test-secret",
+                "X-Recovery-Token": "recovery-secret",
+                "Idempotency-Key": "mismatch-recovery",
+            },
+        ).status_code
+        == 409
+    )
 
 
 def test_status_is_paper_only_and_starts_with_no_orders() -> None:
@@ -454,6 +488,90 @@ def test_restarted_halt_cannot_be_lowered_by_new_control(tmp_path) -> None:
     )
     assert response.status_code == 409
     assert restarted.get("/api/v1/risk").json()["safety_state"] == "HALT"
+
+
+def test_paper_recovery_requires_separate_token_and_survives_restart(tmp_path) -> None:
+    path = tmp_path / "paper.sqlite3"
+    client = TestClient(
+        create_app(
+            operator_token="operator-secret",
+            recovery_token="recovery-secret",
+            paper_db_path=path,
+        )
+    )
+    control_headers = {"X-Operator-Token": "operator-secret", "Idempotency-Key": "stop"}
+    assert (
+        client.post(
+            "/api/v1/control/no-new-risk",
+            json={"reason": "feed interruption"},
+            headers=control_headers,
+        ).status_code
+        == 200
+    )
+    url = "/api/v1/control/recover-paper"
+    payload = {"reason": "feed restored and paper ledger checked"}
+    headers = {"X-Operator-Token": "operator-secret", "Idempotency-Key": "recover"}
+    assert client.post(url, json=payload, headers=headers).status_code == 401
+    headers["X-Recovery-Token"] = "recovery-secret"
+    first = client.post(url, json=payload, headers=headers)
+    assert first.status_code == 200
+    assert first.json()["safety_state"] == "NORMAL"
+    assert client.post(url, json=payload, headers=headers).json() == first.json()
+    assert client.post(url, json={"reason": "changed"}, headers=headers).status_code == 409
+    restarted = TestClient(
+        create_app(
+            operator_token="operator-secret",
+            recovery_token="recovery-secret",
+            paper_db_path=path,
+        )
+    )
+    assert restarted.get("/api/v1/risk").json()["safety_state"] == "NORMAL"
+    assert restarted.post(url, json=payload, headers=headers).json() == first.json()
+    assert [event["action"] for event in restarted.get("/api/v1/audit").json()["events"]] == [
+        "NO_NEW_RISK",
+        "PAPER_RECOVERY",
+    ]
+    assert (
+        restarted.post(
+            "/api/v1/control/no-new-risk",
+            json={"reason": "new incident"},
+            headers={"X-Operator-Token": "operator-secret", "Idempotency-Key": "stop-again"},
+        ).status_code
+        == 200
+    )
+    again = TestClient(create_app(operator_token="operator-secret", paper_db_path=path))
+    assert again.get("/api/v1/risk").json()["safety_state"] == "NO_NEW_RISK"
+
+
+def test_paper_recovery_rejects_halt_and_missing_gate(tmp_path) -> None:
+    with pytest.raises(ValueError, match="must differ"):
+        create_app(operator_token="same", recovery_token="same")
+    path = tmp_path / "paper.sqlite3"
+    client = TestClient(create_app(operator_token="operator", paper_db_path=path))
+    control = {"X-Operator-Token": "operator", "Idempotency-Key": "halt"}
+    assert (
+        client.post(
+            "/api/v1/control/halt", json={"reason": "incident"}, headers=control
+        ).status_code
+        == 200
+    )
+    recovery = {**control, "Idempotency-Key": "recover", "X-Recovery-Token": "second"}
+    assert (
+        client.post(
+            "/api/v1/control/recover-paper", json={"reason": "check"}, headers=recovery
+        ).status_code
+        == 503
+    )
+    configured = TestClient(
+        create_app(operator_token="operator", recovery_token="second", paper_db_path=path)
+    )
+    assert (
+        configured.post(
+            "/api/v1/control/recover-paper", json={"reason": "check"}, headers=recovery
+        ).status_code
+        == 409
+    )
+    assert configured.get("/api/v1/risk").json()["safety_state"] == "HALT"
 
 
 def test_paper_order_audit_survives_restart(tmp_path) -> None:

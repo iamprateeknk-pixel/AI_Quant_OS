@@ -90,12 +90,22 @@ def _fill_view(fill: PaperFill) -> dict[str, str]:
 def create_app(
     *,
     operator_token: str | None = None,
+    recovery_token: str | None = None,
     clock: Callable[[], datetime] | None = None,
     paper_db_path: Path | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
     )
+    configured_recovery_token = (
+        recovery_token if recovery_token is not None else os.getenv("AI_QUANT_RECOVERY_TOKEN")
+    )
+    if (
+        configured_token
+        and configured_recovery_token
+        and hmac.compare_digest(configured_token, configured_recovery_token)
+    ):
+        raise ValueError("Recovery token must differ from operator token")
     current_time = clock or (lambda: datetime.now(timezone.utc))
     limits = RiskLimits(
         max_order_exposure=Decimal("1000"),
@@ -142,6 +152,14 @@ def create_app(
             raise HTTPException(status_code=503, detail="Operator commands are disabled")
         if not x_operator_token or not hmac.compare_digest(x_operator_token, configured_token):
             raise HTTPException(status_code=401, detail="Invalid operator token")
+
+    def require_recovery(x_recovery_token: str | None = Header(default=None)) -> None:
+        if not configured_recovery_token:
+            raise HTTPException(status_code=503, detail="Paper recovery is disabled")
+        if not x_recovery_token or not hmac.compare_digest(
+            x_recovery_token, configured_recovery_token
+        ):
+            raise HTTPException(status_code=401, detail="Invalid recovery token")
 
     @app.get("/api/v1/system/status")
     def status() -> dict[str, str | int]:
@@ -455,6 +473,38 @@ def create_app(
     @app.post("/api/v1/control/halt", dependencies=[Depends(require_operator)])
     def halt(command: ControlInput, idempotency_key: str = Header(min_length=1)) -> dict[str, str]:
         return transition(SafetyState.HALT, command, idempotency_key)
+
+    @app.post(
+        "/api/v1/control/recover-paper",
+        dependencies=[Depends(require_operator), Depends(require_recovery)],
+    )
+    def recover_paper(
+        command: ControlInput, idempotency_key: str = Header(min_length=1)
+    ) -> dict[str, str]:
+        reason = command.reason.strip()
+        if not reason:
+            raise HTTPException(status_code=422, detail="Reason is required")
+        with control_lock:
+            previous = state_store.recovery_receipt(idempotency_key)
+            if previous is not None:
+                if previous[0] != reason:
+                    raise HTTPException(status_code=409, detail="Idempotency key reused")
+                return previous[1]
+            receipt = {
+                "receipt_id": str(uuid4()),
+                "status": "COMPLETED",
+                "safety_state": SafetyState.NORMAL.value,
+                "reason": reason,
+            }
+            try:
+                execution.recover_paper_safety(
+                    before_change=lambda: state_store.record_recovery(
+                        idempotency_key, reason, receipt
+                    )
+                )
+            except ValueError as error:
+                raise HTTPException(status_code=409, detail=str(error)) from error
+            return receipt
 
     return app
 

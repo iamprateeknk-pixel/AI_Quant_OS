@@ -3,7 +3,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from threading import Lock
+from threading import RLock
 from typing import Callable
 from uuid import uuid4
 
@@ -93,7 +93,7 @@ class PaperExecutionGateway:
         self._router = router or BrokerRouter(
             [SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)]
         )
-        self._lock = Lock()
+        self._lock = RLock()
         self._on_uncertain_order = on_uncertain_order
         for order in self.orders:
             if order.status in {"DISPATCHING", "UNKNOWN"}:
@@ -231,6 +231,17 @@ class PaperExecutionGateway:
                 broker_only,
                 conflicting,
             )
+
+    def recover_paper_safety(self, *, before_change: Callable[[], None]) -> None:
+        with self._lock:
+            if any(
+                _decode_order(raw).status in {"PENDING", "DISPATCHING", "UNKNOWN"}
+                for raw in self._store.all_orders()
+            ):
+                raise ValueError("Unresolved paper orders block safety recovery")
+            if not self.compare_paper_positions().matches:
+                raise ValueError("Paper fill ledger mismatch blocks safety recovery")
+            self._risk.recover_paper_safety(before_change=before_change)
 
     def replay(self, intent: TradeIntent, *, idempotency_key: str) -> PaperOrder | None:
         with self._lock:
