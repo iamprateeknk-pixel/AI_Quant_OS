@@ -26,6 +26,7 @@ from ai_quant_os.market_data import Bar
 from ai_quant_os.world_state import WorldState, WorldStateEngine
 from ai_quant_os.world_state_store import WorldStateStore
 from ai_quant_os.decision_gateway import DecisionGateway, FastClassifier, require_current_decision
+from ai_quant_os.deep_review import DeepReviewer, DeepReviewDispatcher, require_current_review
 from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
@@ -133,6 +134,7 @@ def create_app(
     clock: Callable[[], datetime] | None = None,
     paper_db_path: Path | None = None,
     fast_classifier: FastClassifier | None = None,
+    deep_reviewer: DeepReviewer | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -159,6 +161,7 @@ def create_app(
         fast_classifier if fast_classifier is not None else jev_from_environment()
     )
     decisions = DecisionGateway(primary=configured_classifier, clock=current_time)
+    deep_reviews = DeepReviewDispatcher(reviewer=deep_reviewer, clock=current_time)
     world_state = WorldStateEngine(PAPER_INSTRUMENTS, max_quote_age_seconds=5)
     instrument_catalog = {item.instrument_id: item for item in PAPER_INSTRUMENTS}
     risk = RiskKernel(limits, currency_policy=currency_policy)
@@ -464,6 +467,11 @@ def create_app(
             "schema_version": "1.0",
             "mode": "PAPER",
             "configured": configured_classifier is not None,
+            "deep_review_configured": deep_reviewer is not None,
+            "deep_review_provider_id": deep_reviewer.provider_id if deep_reviewer else None,
+            "deep_review_provider_version": deep_reviewer.provider_version
+            if deep_reviewer
+            else None,
             "provider_id": configured_classifier.provider_id if configured_classifier else None,
             "provider_version": configured_classifier.provider_version
             if configured_classifier
@@ -520,6 +528,7 @@ def create_app(
             decision = await decisions.classify(
                 snapshot, instrument_id=payload.instrument_id, task_id=payload.task_id
             )
+            review = await deep_reviews.dispatch(snapshot, decision)
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         state_store.record_event(
@@ -536,15 +545,29 @@ def create_app(
                 "classification": decision.output.classification,
                 "fallback_reasons": ",".join(decision.output.fallback_reasons),
                 "expires_at": decision.expires_at.isoformat(),
+                "deep_review_trace_id": review.trace_id,
+                "deep_review_status": review.output.status,
+                "deep_review_route": review.model_route,
+                "deep_review_provider_version": review.provider_version,
+                "deep_review_classification": review.output.classification or "",
+                "deep_review_confidence": str(review.confidence),
+                "deep_review_expires_at": review.expires_at.isoformat(),
             },
         )
         try:
             require_current_decision(
                 decision, world_state_version=snapshot.world_state_version, now=current_time()
             )
+            require_current_review(
+                review, world_state_version=snapshot.world_state_version, now=current_time()
+            )
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        return {"mode": "PAPER", **decision.model_dump(mode="json")}
+        return {
+            "mode": "PAPER",
+            **decision.model_dump(mode="json"),
+            "deep_review": review.model_dump(mode="json"),
+        }
 
     @app.post("/api/v1/paper/world-state/bars", dependencies=[Depends(require_operator)])
     def record_world_state_bars(payload: WorldStateBarsInput) -> dict[str, object]:
