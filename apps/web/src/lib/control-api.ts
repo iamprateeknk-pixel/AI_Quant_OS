@@ -125,3 +125,12 @@ export function getCurrencyPortfolio(): Promise<ReadResult<CurrencyPortfolioView
     return { reporting_currency: value.reporting_currency, valuation_available: value.valuation_available, marked_pnl_reporting: value.marked_pnl_reporting, gross_worst_case_exposure_reporting: value.gross_worst_case_exposure_reporting, currencies };
   });
 }
+
+export type AuditIntegrityView = { valid: boolean; event_count: number; head_hash: string; legacy_event_count: number; issue: string | null };
+
+export function getAuditIntegrity(): Promise<ReadResult<AuditIntegrityView>> {
+  return read("/api/v1/audit/integrity", (value) => {
+    if (!isRecord(value) || value.schema_version !== "1.0" || typeof value.valid !== "boolean" || typeof value.event_count !== "number" || !Number.isSafeInteger(value.event_count) || value.event_count < 0 || typeof value.head_hash !== "string" || !/^[a-f0-9]{64}$/.test(value.head_hash) || typeof value.legacy_event_count !== "number" || !Number.isSafeInteger(value.legacy_event_count) || value.legacy_event_count < 0 || !isNullableString(value.issue)) return null;
+    return { valid: value.valid, event_count: value.event_count, head_hash: value.head_hash, legacy_event_count: value.legacy_event_count, issue: value.issue };
+  });
+}

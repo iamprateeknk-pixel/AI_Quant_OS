@@ -5,6 +5,7 @@ from threading import Lock
 from uuid import uuid4
 
 from ai_quant_os.risk import SafetyState
+from ai_quant_os.audit_chain import AuditChain, AuditIntegrity
 
 
 class PaperStateStore:
@@ -13,7 +14,9 @@ class PaperStateStore:
             str(path) if path else ":memory:", check_same_thread=False
         )
         self._lock = Lock()
+        self._audit_chain = AuditChain(self._connection)
         with self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
             self._connection.execute(
                 """CREATE TABLE IF NOT EXISTS control_receipts (
                     idempotency_key TEXT PRIMARY KEY,
@@ -61,6 +64,8 @@ class PaperStateStore:
                 "INSERT OR IGNORE INTO safety_current VALUES (1, ?)", (legacy_state.value,)
             )
 
+            self._audit_chain.initialize()
+
     def safety_state(self) -> SafetyState:
         with self._lock:
             row = self._connection.execute(
@@ -97,20 +102,14 @@ class PaperStateStore:
                 ).fetchone()
             ):
                 event_key = f"{event_key}:{uuid4()}"
-            self._connection.execute(
-                "INSERT OR IGNORE INTO audit_events VALUES (?, ?)",
-                (
-                    event_key,
-                    json.dumps(
-                        {
-                            "action": SafetyState.NO_NEW_RISK.value,
-                            "intent_id": "",
-                            "reason": "PAPER_RECONCILIATION_REQUIRED",
-                            "trace_id": order_id,
-                        },
-                        sort_keys=True,
-                    ),
-                ),
+            self._audit_chain.append(
+                event_key,
+                {
+                    "action": SafetyState.NO_NEW_RISK.value,
+                    "intent_id": "",
+                    "reason": "PAPER_RECONCILIATION_REQUIRED",
+                    "trace_id": order_id,
+                },
             )
 
     def control_receipt(self, key: str) -> tuple[SafetyState, str, dict[str, str]] | None:
@@ -137,10 +136,7 @@ class PaperStateStore:
                 "INSERT INTO control_receipts VALUES (?, ?, ?, ?)",
                 (key, state.value, reason, json.dumps(receipt, sort_keys=True)),
             )
-            self._connection.execute(
-                "INSERT INTO audit_events VALUES (?, ?)",
-                (f"control:{key}", json.dumps(event, sort_keys=True)),
-            )
+            self._audit_chain.append(f"control:{key}", event)
 
     def recovery_receipt(self, key: str) -> tuple[str, dict[str, str]] | None:
         with self._lock:
@@ -162,20 +158,14 @@ class PaperStateStore:
                 "INSERT INTO recovery_receipts VALUES (?, ?, ?)",
                 (key, reason, json.dumps(receipt, sort_keys=True)),
             )
-            self._connection.execute(
-                "INSERT INTO audit_events VALUES (?, ?)",
-                (
-                    f"recovery:{key}",
-                    json.dumps(
-                        {
-                            "action": "PAPER_RECOVERY",
-                            "intent_id": "",
-                            "reason": reason,
-                            "trace_id": receipt["receipt_id"],
-                        },
-                        sort_keys=True,
-                    ),
-                ),
+            self._audit_chain.append(
+                f"recovery:{key}",
+                {
+                    "action": "PAPER_RECOVERY",
+                    "intent_id": "",
+                    "reason": reason,
+                    "trace_id": receipt["receipt_id"],
+                },
             )
             self._connection.execute(
                 "UPDATE safety_current SET safety_state = ? WHERE singleton = 1",
@@ -184,14 +174,26 @@ class PaperStateStore:
 
     def record_event(self, key: str, event: dict[str, str]) -> None:
         with self._lock, self._connection:
-            self._connection.execute(
-                "INSERT OR IGNORE INTO audit_events VALUES (?, ?)",
-                (key, json.dumps(event, sort_keys=True)),
-            )
+            self._connection.execute("BEGIN IMMEDIATE")
+            self._audit_chain.append(key, event)
+
+    def backfill_event(self, key: str, event: dict[str, str]) -> None:
+        """Reconstruct missing receipt events at startup; retain original history if present."""
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            self._audit_chain.append(key, event, only_if_missing=True)
+
+    def audit_integrity(self) -> AuditIntegrity:
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN")
+            return self._audit_chain.verify()
 
     def audit_events(self) -> list[dict[str, str]]:
-        with self._lock:
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN")
+            self._audit_chain.require_valid()
             rows = self._connection.execute(
-                "SELECT event_json FROM audit_events ORDER BY rowid"
+                "SELECT e.event_json FROM audit_chain c "
+                "JOIN audit_events e ON e.event_key = c.event_key ORDER BY c.sequence"
             ).fetchall()
             return [json.loads(row[0]) for row in rows]

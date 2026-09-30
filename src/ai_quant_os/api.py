@@ -172,17 +172,17 @@ def create_app(
         return CurrencyRiskContext(ledger_fills, pending, instruments, tuple(rates))
 
     for order in execution.orders:
-        state_store.record_event(
+        state_store.backfill_event(
             f"order:{order.order_id}",
             {"action": "PAPER_ORDER", "intent_id": order.intent_id, "reason": "APPROVE"},
         )
     for fill in execution.fills:
-        state_store.record_event(
+        state_store.backfill_event(
             f"fill:{fill.fill_id}",
             {
                 "action": "PAPER_FILL",
                 "intent_id": "",
-                "reason": "SIMULATED",
+                "reason": "PAPER_BROKER" if fill.source == "PAPER_BROKER" else "SIMULATED",
                 "trace_id": fill.fill_id,
             },
         )
@@ -192,6 +192,8 @@ def create_app(
             raise HTTPException(status_code=503, detail="Operator commands are disabled")
         if not x_operator_token or not hmac.compare_digest(x_operator_token, configured_token):
             raise HTTPException(status_code=401, detail="Invalid operator token")
+        if not state_store.audit_integrity().valid:
+            raise HTTPException(status_code=503, detail="Audit integrity verification failed")
 
     def require_recovery(x_recovery_token: str | None = Header(default=None)) -> None:
         if not configured_recovery_token:
@@ -328,9 +330,18 @@ def create_app(
             "instruments": jsonable_encoder(PAPER_INSTRUMENTS),
         }
 
+    @app.get("/api/v1/audit/integrity")
+    def audit_integrity() -> dict[str, object]:
+        return {"schema_version": "1.0", **jsonable_encoder(state_store.audit_integrity())}
+
     @app.get("/api/v1/audit")
     def audit_events() -> dict[str, list[dict[str, str]]]:
-        return {"events": state_store.audit_events()}
+        try:
+            return {"events": state_store.audit_events()}
+        except ValueError as error:
+            raise HTTPException(
+                status_code=503, detail="Audit integrity verification failed"
+            ) from error
 
     @app.get("/api/v1/portfolio/currencies")
     def currency_portfolio() -> dict[str, object]:

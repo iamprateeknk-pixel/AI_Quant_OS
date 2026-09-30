@@ -29,7 +29,7 @@ export const sectionDetails = {
   evolution: ["Evolution", "Champion and challenger promotions require offline, replay, shadow, and canary evidence."],
   incidents: ["Incidents", "Incident timeline and controlled recovery will appear after observability integration."],
   costs: ["Costs", "Model, compute, and data costs are not being collected yet."],
-  audit: ["Audit", "Paper control events persist when the local SQLite database is configured. Tamper-evident audit remains a release gate."],
+  audit: ["Audit", "Paper control events persist with a verified local hash chain. Independent immutable storage remains a release gate."],
   settings: ["Settings", "Only non-capital preferences will be managed here. Live enablement is not a UI toggle."],
 } as const;
 

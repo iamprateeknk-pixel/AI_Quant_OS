@@ -11,7 +11,7 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 | P04 Broker abstraction | In progress | Canonical routing interface, symbol/capability gates and paper simulator; Exness MT5 and alternate live adapters remain absent and disabled. |
 | P05 Portfolio, risk and execution | In progress | Deterministic paper risk checks with transactional per-instrument unit ceilings and shared USD currency ceilings for EURUSD, GBPUSD, USDJPY and EURJPY, SQLite-backed order reservations committed before simulator dispatch, checked recovery of pending reservations through idempotent API retry, explicit pending/dispatching/accepted/rejected/unknown states, durable simulator acknowledgements and an operator-gated lookup for uncertain orders, durable simulated broker fills with atomic idempotent import, paper position and fill-ledger comparison with persistent mismatch escalation, per-instrument positions and marked trading P&L, persistent safety state and audit, and a distinct-token, reconciliation-gated `NO_NEW_RISK` paper recovery with durable receipt; real broker sourced fills, live account reconciliation, production currency policy and account risk controls remain. |
 | P06–P11 Intelligence, research, recovery and evolution | Not started | Workpacks remain to be implemented and validated. |
-| P12 Mission Control and governance | In progress | Local control API and monitoring shell with paper portfolio and fill views; realtime contract, operator-session auth, observability and cost governance remain. |
+| P12 Mission Control and governance | In progress | Local control API and monitoring shell with paper portfolio, fill and audit-integrity views; transactional SHA-256 audit chaining with startup verification and a disclosed legacy baseline; realtime contract, operator-session auth, observability and cost governance remain. |
 | P13 Restricted live rollout | Blocked by release gates | No broker or live credentials; every `99_RELEASE_GATES/GO_LIVE_GATE.md` item remains open. |
 
 ## Handoff
@@ -27,3 +27,8 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 ## Latest verification
 
 - Multi-instrument backend: 159 tests passed, 11 optional integration tests skipped. Checks cover shared currencies, separate units, concurrent retries, missing and stale conversions, mismatched GBPUSD fills, and restart uncertainty. Dashboard lint and production build passed. Browser verification with an isolated four-instrument fixture confirmed separate quote currencies, shared EUR balances and the combined overview.
+
+## Audit integrity increment
+
+- Local paper audit events now have a sequence/hash chain and committed head. Startup, event reads and append operations verify it; authenticated writes are rejected if verification fails. Mission Control shows validity and the count of legacy events baselined during migration.
+- Verification: 173 tests passed, 11 optional integration tests skipped; Python lint/format checks and dashboard lint/build passed. Browser checks confirmed verified and failed history states using a disposable SQLite fixture. See ADR 0006 for limitations and rollback instructions. Independent immutable storage and production authorization remain open.
