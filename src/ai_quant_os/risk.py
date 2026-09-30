@@ -10,6 +10,8 @@ from uuid import uuid4
 from ai_quant_os.contracts import RiskDecision, TradeIntent, _require_aware
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.portfolio import PortfolioExposure
+from ai_quant_os.currency_portfolio import CurrencyPendingOrder
+from ai_quant_os.currency_risk import CurrencyReservation, CurrencyRiskContext, CurrencyRiskPolicy
 
 
 class SafetyState(str, Enum):
@@ -37,12 +39,16 @@ class RiskLimits:
 
 
 class RiskKernel:
-    def __init__(self, limits: RiskLimits) -> None:
+    def __init__(
+        self, limits: RiskLimits, *, currency_policy: CurrencyRiskPolicy | None = None
+    ) -> None:
         self._limits = limits
         self._safety_state = SafetyState.NORMAL
         self._issued: dict[str, tuple[TradeIntent, RiskDecision]] = {}
         self._consumed: set[str] = set()
         self._lock = RLock()
+        self._currency_policy = currency_policy
+        self._currency_reservations: dict[str, CurrencyReservation] = {}
 
     @property
     def safety_state(self) -> SafetyState:
@@ -71,6 +77,7 @@ class RiskKernel:
             before_change()
             self._issued.clear()
             self._consumed.clear()
+            self._currency_reservations.clear()
             self._safety_state = SafetyState.NORMAL
 
     @contextmanager
@@ -90,6 +97,14 @@ class RiskKernel:
                 raise ValueError("Risk decision cannot be consumed")
             self._consumed.add(risk_id)
 
+    def currency_reservation(self, decision: RiskDecision) -> CurrencyReservation | None:
+        with self._lock:
+            if self._currency_policy is None:
+                return None
+            if decision.risk_id not in self._currency_reservations:
+                raise ValueError("Currency authorization context is required")
+            return self._currency_reservations[decision.risk_id]
+
     def evaluate(
         self,
         intent: TradeIntent,
@@ -97,6 +112,7 @@ class RiskKernel:
         *,
         now: datetime,
         portfolio: PortfolioExposure | None = None,
+        currency_context: CurrencyRiskContext | None = None,
     ) -> RiskDecision:
         _require_aware(now)
         observed_portfolio = portfolio or PortfolioExposure.empty(intent.instrument_id)
@@ -129,6 +145,47 @@ class RiskKernel:
             violations.append("SPREAD_LIMIT")
         if intent.desired_exposure > self._limits.max_order_exposure:
             violations.append("ORDER_EXPOSURE_LIMIT")
+        if self._currency_policy is not None:
+            rules += (
+                "CURRENCY_EXPOSURE_LIMIT",
+                "GROSS_CURRENCY_EXPOSURE_LIMIT",
+                "CURRENCY_PRICE_FRESHNESS",
+            )
+            if currency_context is None:
+                violations.append("CURRENCY_CONTEXT_REQUIRED")
+            else:
+                instrument = next(
+                    (
+                        item
+                        for item in self._currency_policy.instruments
+                        if item.instrument_id == intent.instrument_id
+                    ),
+                    None,
+                )
+                if instrument is not None and not any(
+                    (rate.base_currency, rate.quote_currency)
+                    == (instrument.base_currency, instrument.quote_currency)
+                    and (rate.bid, rate.ask, rate.observed_at, rate.trusted)
+                    == (market.bid, market.ask, market.observed_at, market.trusted)
+                    for rate in currency_context.rates
+                ):
+                    violations.append("CURRENCY_MARKET_MISMATCH")
+                try:
+                    violations.extend(
+                        self._currency_policy.violations(
+                            currency_context,
+                            CurrencyPendingOrder(
+                                f"proposal:{intent.intent_id}",
+                                intent.instrument_id,
+                                intent.side,
+                                intent.desired_exposure,
+                                intent.max_slippage,
+                            ),
+                            now=now,
+                        )
+                    )
+                except ValueError:
+                    violations.append("INVALID_CURRENCY_CONTEXT")
         if intent.instrument_id != observed_portfolio.instrument_id:
             violations.append("PORTFOLIO_INSTRUMENT_MISMATCH")
         else:
@@ -162,4 +219,12 @@ class RiskKernel:
                 created_at=now,
             )
             self._issued[decision.risk_id] = (intent, decision)
+            if (
+                outcome == "APPROVE"
+                and self._currency_policy is not None
+                and currency_context is not None
+            ):
+                self._currency_reservations[decision.risk_id] = CurrencyReservation(
+                    self._currency_policy, currency_context
+                )
             return decision

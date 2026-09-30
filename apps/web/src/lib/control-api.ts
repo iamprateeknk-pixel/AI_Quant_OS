@@ -9,7 +9,7 @@ export type PaperFill = { fill_id: string; order_id: string; side: "BUY" | "SELL
 export type PortfolioView = { instrument_id: "EURUSD"; quote_currency: "USD"; mark_available: boolean; mark_price: string | null; net_quantity: string; cash_flow_quote: string; gross_exposure_quote: string | null; net_exposure_quote: string | null; marked_pnl_quote: string | null };
 export type CurrencyExposureView = { currency: string; filled_balance: string; minimum_balance: string | null; maximum_balance: string | null; worst_case_exposure_reporting: string | null; issue: string | null };
 export type CurrencyPortfolioView = { reporting_currency: string; valuation_available: boolean; marked_pnl_reporting: string | null; gross_worst_case_exposure_reporting: string | null; currencies: CurrencyExposureView[] };
-export type RiskView = { safety_state: string; max_order_exposure: string; max_portfolio_exposure: string; worst_case_quantity: string; filled_net_quantity: string; pending_buy_quantity: string; pending_sell_quantity: string; portfolio_snapshot_id: string };
+export type RiskView = { safety_state: string; max_order_exposure: string; max_portfolio_exposure: string; worst_case_quantity: string; filled_net_quantity: string; pending_buy_quantity: string; pending_sell_quantity: string; portfolio_snapshot_id: string; reporting_currency: string; max_currency_exposure_reporting: string; max_gross_currency_exposure_reporting: string };
 export type ReadResult<T> = { ok: true; value: T } | { ok: false; reason: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -41,8 +41,8 @@ export function getSystemStatus(): Promise<ReadResult<SystemStatus>> {
 
 export function getRisk(): Promise<ReadResult<RiskView>> {
   return read("/api/v1/risk", (value) => {
-    if (!isRecord(value) || typeof value.safety_state !== "string" || typeof value.max_order_exposure !== "string" || typeof value.max_portfolio_exposure !== "string" || typeof value.worst_case_quantity !== "string" || typeof value.filled_net_quantity !== "string" || typeof value.pending_buy_quantity !== "string" || typeof value.pending_sell_quantity !== "string" || typeof value.portfolio_snapshot_id !== "string") return null;
-    return { safety_state: value.safety_state, max_order_exposure: value.max_order_exposure, max_portfolio_exposure: value.max_portfolio_exposure, worst_case_quantity: value.worst_case_quantity, filled_net_quantity: value.filled_net_quantity, pending_buy_quantity: value.pending_buy_quantity, pending_sell_quantity: value.pending_sell_quantity, portfolio_snapshot_id: value.portfolio_snapshot_id };
+    if (!isRecord(value) || typeof value.safety_state !== "string" || typeof value.max_order_exposure !== "string" || typeof value.max_portfolio_exposure !== "string" || typeof value.worst_case_quantity !== "string" || typeof value.filled_net_quantity !== "string" || typeof value.pending_buy_quantity !== "string" || typeof value.pending_sell_quantity !== "string" || typeof value.portfolio_snapshot_id !== "string" || typeof value.reporting_currency !== "string" || typeof value.max_currency_exposure_reporting !== "string" || typeof value.max_gross_currency_exposure_reporting !== "string") return null;
+    return { safety_state: value.safety_state, max_order_exposure: value.max_order_exposure, max_portfolio_exposure: value.max_portfolio_exposure, worst_case_quantity: value.worst_case_quantity, filled_net_quantity: value.filled_net_quantity, pending_buy_quantity: value.pending_buy_quantity, pending_sell_quantity: value.pending_sell_quantity, portfolio_snapshot_id: value.portfolio_snapshot_id, reporting_currency: value.reporting_currency, max_currency_exposure_reporting: value.max_currency_exposure_reporting, max_gross_currency_exposure_reporting: value.max_gross_currency_exposure_reporting };
   });
 }
 

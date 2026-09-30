@@ -1,6 +1,6 @@
 # ADR 0003 Currency ledger and valuation
 
-Status: Accepted for paper portfolio reporting. Aggregate currency risk enforcement remains a P05 dependency.
+Status: Accepted for paper portfolio reporting. The paper API currency gate is recorded in ADR 0004.
 
 The portfolio engine uses explicit instrument base and quote currencies. Every fill adds signed base units and the opposite quote cash flow; fees reduce quote cash. Currency balances are combined across instruments before conversion to the reporting currency. Positive balances use conversion bid prices and liabilities use asks. Direct and inverse FX pairs are supported. Missing, stale, future-dated or untrusted conversion rates prevent aggregate valuation. The engine does not infer metadata from instrument names or select arbitrary conversion chains.
 

@@ -9,6 +9,7 @@ from threading import Lock
 
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure
 from ai_quant_os.currency_portfolio import CurrencyPendingOrder
+from ai_quant_os.currency_risk import CurrencyReservation
 
 
 def _encode_fill(fill: PaperFill) -> str:
@@ -124,64 +125,63 @@ class PaperOrderStore:
         with self._lock:
             self._connection.execute("BEGIN")
             try:
-                order_rows = self._connection.execute(
-                    "SELECT order_id, order_json, intent_json FROM paper_orders ORDER BY order_id"
-                ).fetchall()
-                orders = {row[0]: json.loads(row[1]) for row in order_rows}
-                slippage = {
-                    row[0]: Decimal(json.loads(row[2])["max_slippage"]) for row in order_rows
-                }
-                fills = tuple(
-                    _decode_fill(row[0])
-                    for row in self._connection.execute(
-                        "SELECT fill_json FROM paper_fills ORDER BY fill_id"
-                    )
-                )
-                quantities: dict[str, Decimal] = {}
-                for fill in fills:
-                    order = orders.get(fill.order_id)
-                    if order is None or order["status"] != "ACCEPTED":
-                        raise ValueError("Currency ledger fill has no accepted order")
-                    command = order["command"]
-                    if (
-                        fill.instrument_id != command["instrument_id"]
-                        or fill.side != command["side"]
-                    ):
-                        raise ValueError("Currency ledger fill does not match order")
-                    quantities[fill.order_id] = (
-                        quantities.get(fill.order_id, Decimal(0)) + fill.quantity
-                    )
-                pending: list[CurrencyPendingOrder] = []
-                for order_id, order in orders.items():
-                    if order["status"] not in {
-                        "PENDING",
-                        "DISPATCHING",
-                        "UNKNOWN",
-                        "ACCEPTED",
-                        "REJECTED",
-                    }:
-                        raise ValueError("Unknown currency ledger order state")
-                    if order["status"] == "REJECTED":
-                        continue
-                    command = order["command"]
-                    remaining = Decimal(command["quantity"]) - quantities.get(order_id, Decimal(0))
-                    if remaining < 0:
-                        raise ValueError("Currency ledger fills exceed order quantity")
-                    if remaining > 0:
-                        pending.append(
-                            CurrencyPendingOrder(
-                                order_id,
-                                command["instrument_id"],
-                                command["side"],
-                                remaining,
-                                slippage[order_id],
-                            )
-                        )
+                result = self._currency_ledger_unlocked()
                 self._connection.commit()
-                return fills, tuple(pending)
+                return result
             except BaseException:
                 self._connection.rollback()
                 raise
+
+    def _currency_ledger_unlocked(
+        self,
+    ) -> tuple[tuple[PaperFill, ...], tuple[CurrencyPendingOrder, ...]]:
+        order_rows = self._connection.execute(
+            "SELECT order_id, order_json, intent_json FROM paper_orders ORDER BY order_id"
+        ).fetchall()
+        orders = {row[0]: json.loads(row[1]) for row in order_rows}
+        slippage = {row[0]: Decimal(json.loads(row[2])["max_slippage"]) for row in order_rows}
+        fills = tuple(
+            _decode_fill(row[0])
+            for row in self._connection.execute(
+                "SELECT fill_json FROM paper_fills ORDER BY fill_id"
+            )
+        )
+        quantities: dict[str, Decimal] = {}
+        for fill in fills:
+            order = orders.get(fill.order_id)
+            if order is None or order["status"] != "ACCEPTED":
+                raise ValueError("Currency ledger fill has no accepted order")
+            command = order["command"]
+            if fill.instrument_id != command["instrument_id"] or fill.side != command["side"]:
+                raise ValueError("Currency ledger fill does not match order")
+            quantities[fill.order_id] = quantities.get(fill.order_id, Decimal(0)) + fill.quantity
+        pending: list[CurrencyPendingOrder] = []
+        for order_id, order in orders.items():
+            if order["status"] not in {
+                "PENDING",
+                "DISPATCHING",
+                "UNKNOWN",
+                "ACCEPTED",
+                "REJECTED",
+            }:
+                raise ValueError("Unknown currency ledger order state")
+            if order["status"] == "REJECTED":
+                continue
+            command = order["command"]
+            remaining = Decimal(command["quantity"]) - quantities.get(order_id, Decimal(0))
+            if remaining < 0:
+                raise ValueError("Currency ledger fills exceed order quantity")
+            if remaining > 0:
+                pending.append(
+                    CurrencyPendingOrder(
+                        order_id,
+                        command["instrument_id"],
+                        command["side"],
+                        remaining,
+                        slippage[order_id],
+                    )
+                )
+        return fills, tuple(pending)
 
     def _exposure_snapshot_unlocked(self) -> PortfolioExposure:
         order_rows = self._connection.execute(
@@ -315,6 +315,8 @@ class PaperOrderStore:
         *,
         expected_snapshot_id: str,
         max_portfolio_exposure: Decimal,
+        currency_reservation: CurrencyReservation | None = None,
+        now: datetime | None = None,
     ) -> bool:
         if not max_portfolio_exposure.is_finite() or max_portfolio_exposure <= 0:
             raise ValueError("Portfolio exposure limit must be positive and finite")
@@ -341,6 +343,10 @@ class PaperOrderStore:
                     and resulting_exposure > snapshot.worst_case_quantity
                 ):
                     raise ValueError("Portfolio exposure limit exceeded")
+                if currency_reservation is not None:
+                    self._validate_currency_reservation(
+                        currency_reservation, command, intent_json, order_id, now=now
+                    )
                 cursor = self._connection.execute(
                     "INSERT OR IGNORE INTO paper_orders (idempotency_key, intent_id, order_id, intent_json, order_json) VALUES (?, ?, ?, ?, ?)",
                     (key, intent_id, order_id, intent_json, order_json),
@@ -361,18 +367,32 @@ class PaperOrderStore:
         from_status: str,
         to_status: str,
         broker_order_id: str | None = None,
+        currency_reservation: CurrencyReservation | None = None,
+        now: datetime | None = None,
     ) -> str:
         with self._lock:
             self._connection.execute("BEGIN IMMEDIATE")
             try:
                 row = self._connection.execute(
-                    "SELECT order_json FROM paper_orders WHERE order_id = ?", (order_id,)
+                    "SELECT order_json, intent_json FROM paper_orders WHERE order_id = ?",
+                    (order_id,),
                 ).fetchone()
                 if row is None:
                     raise ValueError("Paper order does not exist")
                 order = json.loads(row[0])
                 if order["status"] != from_status:
                     raise ValueError("Paper order state changed")
+                if currency_reservation is not None:
+                    if (from_status, to_status) != ("PENDING", "DISPATCHING"):
+                        raise ValueError("Currency recovery check requires pending dispatch")
+                    self._validate_currency_reservation(
+                        currency_reservation,
+                        order["command"],
+                        row[1],
+                        order_id,
+                        now=now,
+                        exclude_pending_order=order_id,
+                    )
                 order["status"] = to_status
                 if broker_order_id is not None:
                     if to_status != "ACCEPTED":
@@ -388,3 +408,27 @@ class PaperOrderStore:
             except BaseException:
                 self._connection.rollback()
                 raise
+
+    def _validate_currency_reservation(
+        self,
+        reservation: CurrencyReservation,
+        command: dict,
+        intent_json: str,
+        order_id: str,
+        *,
+        now: datetime | None,
+        exclude_pending_order: str | None = None,
+    ) -> None:
+        if now is None:
+            raise ValueError("Currency reservation requires current time")
+        fills, pending = self._currency_ledger_unlocked()
+        if exclude_pending_order is not None:
+            pending = tuple(item for item in pending if item.order_id != exclude_pending_order)
+        candidate = CurrencyPendingOrder(
+            order_id,
+            command["instrument_id"],
+            command["side"],
+            Decimal(command["quantity"]),
+            Decimal(json.loads(intent_json)["max_slippage"]),
+        )
+        reservation.validate(fills, pending, candidate, now=now)

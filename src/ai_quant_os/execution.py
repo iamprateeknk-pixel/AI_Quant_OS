@@ -15,6 +15,7 @@ from ai_quant_os.broker import (
 )
 from ai_quant_os.contracts import OrderCommand, RiskDecision, TradeIntent, _require_aware
 from ai_quant_os.currency_portfolio import CurrencyPendingOrder
+from ai_quant_os.currency_risk import CurrencyRiskContext
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.order_store import PaperOrderStore
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure, summarize_position
@@ -88,6 +89,7 @@ class PaperExecutionGateway:
         store_path: Path | None = None,
         router: BrokerRouter | None = None,
         on_uncertain_order: Callable[[str], None] | None = None,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._risk = risk
         self._store = PaperOrderStore(store_path)
@@ -96,6 +98,7 @@ class PaperExecutionGateway:
         )
         self._lock = RLock()
         self._on_uncertain_order = on_uncertain_order
+        self._clock = clock
         for order in self.orders:
             if order.status in {"DISPATCHING", "UNKNOWN"}:
                 self._escalate_uncertainty(order.order_id)
@@ -321,6 +324,7 @@ class PaperExecutionGateway:
         idempotency_key: str,
         market: MarketSnapshot,
         now: datetime,
+        currency_context: CurrencyRiskContext | None = None,
     ) -> PaperOrder:
         _require_aware(now)
         with self._lock:
@@ -351,19 +355,36 @@ class PaperExecutionGateway:
                     snapshot_id=f"recovery:{portfolio.snapshot_id}",
                     pending_sell_quantity=portfolio.pending_sell_quantity - command.quantity,
                 )
-            decision = self._risk.evaluate(intent, market, now=now, portfolio=adjusted)
+            if currency_context is not None:
+                currency_context = replace(
+                    currency_context,
+                    pending=tuple(
+                        item for item in currency_context.pending if item.order_id != order.order_id
+                    ),
+                )
+            decision = self._risk.evaluate(
+                intent, market, now=now, portfolio=adjusted, currency_context=currency_context
+            )
             with self._risk.authorization(intent, decision) as authorized:
                 if not authorized:
                     raise BrokerUnavailable("Current market or risk checks block pending recovery")
                 try:
+                    dispatch_now = self._clock() if self._clock is not None else now
                     self._store.transition(
-                        order.order_id, from_status="PENDING", to_status="DISPATCHING"
+                        order.order_id,
+                        from_status="PENDING",
+                        to_status="DISPATCHING",
+                        currency_reservation=self._risk.currency_reservation(decision),
+                        now=dispatch_now,
                     )
                 except ValueError:
                     current = self._store.get(idempotency_key)
-                    return _with_fill_status(_decode_order(current[1]), self._store.all_fills())
+                    current_order = _decode_order(current[1])
+                    if current_order.status == "PENDING":
+                        raise
+                    return _with_fill_status(current_order, self._store.all_fills())
                 self._risk.consume(decision.risk_id)
-                return self._dispatch(order, now=now)
+                return self._dispatch(order, now=dispatch_now)
 
     def reconcile_order(self, order_id: str) -> PaperOrder:
         with self._lock:
@@ -453,6 +474,8 @@ class PaperExecutionGateway:
                     order_id,
                     expected_snapshot_id=decision.portfolio_snapshot_id,
                     max_portfolio_exposure=self._risk.max_portfolio_exposure,
+                    currency_reservation=self._risk.currency_reservation(decision),
+                    now=self._clock() if self._clock is not None else now,
                 ):
                     prior = self._store.get(idempotency_key)
                     if prior is None:
@@ -463,8 +486,15 @@ class PaperExecutionGateway:
                         raise ValueError("idempotency key reused for a different intent")
                     return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
                 self._risk.consume(decision.risk_id)
-                self._store.transition(order_id, from_status="PENDING", to_status="DISPATCHING")
-                return self._dispatch(order, now=now)
+                dispatch_now = self._clock() if self._clock is not None else now
+                self._store.transition(
+                    order_id,
+                    from_status="PENDING",
+                    to_status="DISPATCHING",
+                    currency_reservation=self._risk.currency_reservation(decision),
+                    now=dispatch_now,
+                )
+                return self._dispatch(order, now=dispatch_now)
 
     def reconcile(
         self,

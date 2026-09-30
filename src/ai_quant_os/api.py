@@ -12,7 +12,8 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict, Field
 
 from ai_quant_os.contracts import TradeIntent
-from ai_quant_os.currency_portfolio import CurrencyInstrument, FxRate, summarize_currency_portfolio
+from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
+from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
 from ai_quant_os.broker import BrokerRouter, SimulatedBroker
 from ai_quant_os.execution import PaperExecutionGateway, PaperOrder
 from ai_quant_os.market import MarketSnapshot
@@ -114,7 +115,8 @@ def create_app(
         max_portfolio_exposure=Decimal("1500"),
         max_quote_age_seconds=5,
     )
-    risk = RiskKernel(limits)
+    currency_policy = CurrencyRiskPolicy("USD", Decimal("2000"), Decimal("4000"), 5)
+    risk = RiskKernel(limits, currency_policy=currency_policy)
     configured_path = paper_db_path or (
         Path(os.environ["AI_QUANT_PAPER_DB"]) if os.getenv("AI_QUANT_PAPER_DB") else None
     )
@@ -128,10 +130,34 @@ def create_app(
         store_path=configured_path,
         router=router,
         on_uncertain_order=state_store.record_order_uncertainty,
+        clock=current_time,
     )
     quotes: dict[str, MarketSnapshot] = {}
     control_lock = Lock()
     app = FastAPI(title="AI Quant OS Paper Control API", version="0.1.0")
+
+    def currency_context(primary_quote: MarketSnapshot | None = None) -> CurrencyRiskContext:
+        instruments = currency_policy.instruments
+        rates: list[FxRate] = []
+        for item in instruments:
+            quote = (
+                primary_quote
+                if primary_quote is not None and primary_quote.instrument_id == item.instrument_id
+                else quotes.get(item.instrument_id)
+            )
+            if quote is not None:
+                rates.append(
+                    FxRate(
+                        item.base_currency,
+                        item.quote_currency,
+                        quote.bid,
+                        quote.ask,
+                        quote.observed_at,
+                        quote.trusted,
+                    )
+                )
+        ledger_fills, pending = execution.currency_ledger
+        return CurrencyRiskContext(ledger_fills, pending, instruments, tuple(rates))
 
     for order in execution.orders:
         state_store.record_event(
@@ -183,6 +209,11 @@ def create_app(
             "pending_buy_quantity": str(exposure.pending_buy_quantity),
             "pending_sell_quantity": str(exposure.pending_sell_quantity),
             "portfolio_snapshot_id": exposure.snapshot_id,
+            "reporting_currency": currency_policy.reporting_currency,
+            "max_currency_exposure_reporting": str(currency_policy.max_currency_exposure_reporting),
+            "max_gross_currency_exposure_reporting": str(
+                currency_policy.max_gross_exposure_reporting
+            ),
         }
 
     @app.get("/api/v1/brokers")
@@ -257,29 +288,16 @@ def create_app(
 
     @app.get("/api/v1/portfolio/currencies")
     def currency_portfolio() -> dict[str, object]:
-        instruments = (CurrencyInstrument("EURUSD", "EUR", "USD"),)
-        rates = tuple(
-            FxRate(
-                item.base_currency,
-                item.quote_currency,
-                quote.bid,
-                quote.ask,
-                quote.observed_at,
-                quote.trusted,
-            )
-            for item in instruments
-            if (quote := quotes.get(item.instrument_id)) is not None
-        )
         try:
-            ledger_fills, pending = execution.currency_ledger
+            context = currency_context()
             snapshot = summarize_currency_portfolio(
-                ledger_fills,
-                pending=pending,
-                instruments=instruments,
-                rates=rates,
-                reporting_currency="USD",
+                context.fills,
+                pending=context.pending,
+                instruments=context.instruments,
+                rates=context.rates,
+                reporting_currency=currency_policy.reporting_currency,
                 now=current_time(),
-                max_rate_age_seconds=limits.max_quote_age_seconds,
+                max_rate_age_seconds=currency_policy.max_rate_age_seconds,
             )
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
@@ -321,6 +339,7 @@ def create_app(
                         idempotency_key=idempotency_key,
                         market=quote,
                         now=current_time(),
+                        currency_context=currency_context(quote),
                     )
                 except ValueError as error:
                     raise HTTPException(status_code=409, detail=str(error)) from error
@@ -338,8 +357,14 @@ def create_app(
         if quote is None:
             raise HTTPException(status_code=409, detail="No paper market quote")
         now = current_time()
-        decision = risk.evaluate(intent, quote, now=now, portfolio=execution.exposure_snapshot)
         try:
+            decision = risk.evaluate(
+                intent,
+                quote,
+                now=now,
+                portfolio=execution.exposure_snapshot,
+                currency_context=currency_context(quote),
+            )
             order = execution.submit(intent, decision, idempotency_key=idempotency_key, now=now)
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
