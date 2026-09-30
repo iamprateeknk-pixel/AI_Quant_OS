@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
 from ai_quant_os.calibration_store import CalibrationStore
+from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
 from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
@@ -531,29 +532,19 @@ def create_app(
             review = await deep_reviews.dispatch(snapshot, decision)
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        state_store.record_event(
-            f"classification:{decision.trace_id}",
-            {
-                "action": "PAPER_CLASSIFICATION",
-                "intent_id": "",
-                "reason": decision.output.next_route,
-                "trace_id": decision.trace_id,
-                "task_id": decision.task_id,
-                "world_state_version": decision.world_state_version,
-                "snapshot_ref": snapshot.world_state_version,
-                "model_route": decision.model_route,
-                "classification": decision.output.classification,
-                "fallback_reasons": ",".join(decision.output.fallback_reasons),
-                "expires_at": decision.expires_at.isoformat(),
-                "deep_review_trace_id": review.trace_id,
-                "deep_review_status": review.output.status,
-                "deep_review_route": review.model_route,
-                "deep_review_provider_version": review.provider_version,
-                "deep_review_classification": review.output.classification or "",
-                "deep_review_confidence": str(review.confidence),
-                "deep_review_expires_at": review.expires_at.isoformat(),
-            },
+        run = AgentRun(
+            schema_version="1.0",
+            run_id=decision.trace_id,
+            snapshot_ref=snapshot.world_state_version,
+            decision=decision,
+            deep_review=review,
+            recorded_at=current_time(),
         )
+        try:
+            verify_run_snapshot(run, snapshot)
+            state_store.record_agent_run(run)
+        except (ValueError, sqlite3.Error) as error:
+            raise HTTPException(status_code=503, detail="Agent run storage unavailable") from error
         try:
             require_current_decision(
                 decision, world_state_version=snapshot.world_state_version, now=current_time()
@@ -567,6 +558,32 @@ def create_app(
             "mode": "PAPER",
             **decision.model_dump(mode="json"),
             "deep_review": review.model_dump(mode="json"),
+        }
+
+    @app.get("/api/v1/agents/runs/{run_id}")
+    def archived_agent_run(run_id: str) -> dict[str, object]:
+        try:
+            run = state_store.agent_run(run_id)
+            snapshot = world_state_store.get(run.snapshot_ref) if run else None
+        except (ValueError, sqlite3.Error) as error:
+            raise HTTPException(status_code=503, detail="Agent run storage unavailable") from error
+        if run is None:
+            raise HTTPException(status_code=404, detail="Agent run not found")
+        if snapshot is None:
+            raise HTTPException(status_code=503, detail="Agent run snapshot unavailable")
+        try:
+            verify_run_snapshot(run, snapshot)
+        except ValueError as error:
+            raise HTTPException(
+                status_code=503, detail="Agent run provenance unavailable"
+            ) from error
+        now = current_time()
+        return {
+            "schema_version": "1.0",
+            "mode": "PAPER",
+            "archival_only": True,
+            "current": run.deep_review.created_at <= now < run.deep_review.expires_at,
+            "run": run.model_dump(mode="json"),
         }
 
     @app.post("/api/v1/paper/world-state/bars", dependencies=[Depends(require_operator)])

@@ -225,14 +225,14 @@ def test_api_rejects_review_expiring_during_audit_even_when_fast_decision_is_cur
     from ai_quant_os.paper_state_store import PaperStateStore
 
     time = [NOW]
-    original = PaperStateStore.record_event
+    original = PaperStateStore.record_agent_run
 
-    def delayed(self, key, event):
-        original(self, key, event)
-        if event["action"] == "PAPER_CLASSIFICATION":
-            time[0] = NOW + timedelta(seconds=4)
+    def delayed(self, run):
+        result = original(self, run)
+        time[0] = NOW + timedelta(seconds=4)
+        return result
 
-    monkeypatch.setattr(PaperStateStore, "record_event", delayed)
+    monkeypatch.setattr(PaperStateStore, "record_agent_run", delayed)
 
     class FastProvider:
         provider_id = "FAST_FIXTURE"

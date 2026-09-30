@@ -242,14 +242,14 @@ def test_api_rejects_result_that_expires_during_audit_persistence(monkeypatch):
     from ai_quant_os.paper_state_store import PaperStateStore
 
     time = [NOW]
-    original = PaperStateStore.record_event
+    original = PaperStateStore.record_agent_run
 
-    def delayed_record(self, key, event):
-        original(self, key, event)
-        if event["action"] == "PAPER_CLASSIFICATION":
-            time[0] = NOW + timedelta(seconds=6)
+    def delayed_record(self, run):
+        result = original(self, run)
+        time[0] = NOW + timedelta(seconds=6)
+        return result
 
-    monkeypatch.setattr(PaperStateStore, "record_event", delayed_record)
+    monkeypatch.setattr(PaperStateStore, "record_agent_run", delayed_record)
     client = TestClient(create_app(operator_token="fixture-token", clock=lambda: time[0]))
     result = client.post(
         "/api/v1/paper/decisions/classify",
