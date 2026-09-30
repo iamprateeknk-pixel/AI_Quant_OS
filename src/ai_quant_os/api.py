@@ -18,6 +18,8 @@ from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
 from ai_quant_os.broker import BrokerRouter, SimulatedBroker
 from ai_quant_os.execution import PaperExecutionGateway, PaperOrder
 from ai_quant_os.market import MarketSnapshot
+from ai_quant_os.market_data import Bar
+from ai_quant_os.world_state import WorldStateEngine
 from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
@@ -30,6 +32,22 @@ class QuoteInput(BaseModel):
     ask: Decimal
     observed_at: datetime
     world_state_version: str
+
+
+class WorldStateBarInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    instrument_id: str
+    observed_at: datetime
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: Decimal
+
+
+class WorldStateBarsInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    bars: list[WorldStateBarInput] = Field(min_length=1, max_length=1000)
 
 
 class IntentInput(BaseModel):
@@ -120,6 +138,7 @@ def create_app(
     currency_policy = CurrencyRiskPolicy(
         "USD", Decimal("2000"), Decimal("4000"), 5, PAPER_INSTRUMENTS
     )
+    world_state = WorldStateEngine(PAPER_INSTRUMENTS, max_quote_age_seconds=5)
     instrument_catalog = {item.instrument_id: item for item in PAPER_INSTRUMENTS}
     risk = RiskKernel(limits, currency_policy=currency_policy)
     configured_path = paper_db_path or (
@@ -363,6 +382,24 @@ def create_app(
             "valuation_available": snapshot.valuation_available,
             "mode": "PAPER",
         }
+
+    @app.get("/api/v1/world-state")
+    def world_state_snapshot() -> dict[str, object]:
+        snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
+        return {"mode": "PAPER", **jsonable_encoder(snapshot, custom_encoder={Decimal: str})}
+
+    @app.post("/api/v1/paper/world-state/bars", dependencies=[Depends(require_operator)])
+    def record_world_state_bars(payload: WorldStateBarsInput) -> dict[str, object]:
+        try:
+            bars = tuple(Bar(**item.model_dump()) for item in payload.bars)
+            inserted = world_state.record_bars(bars, now=current_time())
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        state_store.record_event(
+            f"world-state-bars:{uuid4()}",
+            {"action": "PAPER_WORLD_STATE_BARS", "intent_id": "", "reason": f"INSERTED:{inserted}"},
+        )
+        return {"mode": "PAPER", "inserted_count": inserted}
 
     @app.post("/api/v1/paper/quotes", dependencies=[Depends(require_operator)])
     def record_quote(quote: QuoteInput) -> dict[str, str]:

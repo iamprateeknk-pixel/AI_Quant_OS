@@ -32,3 +32,9 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 - Local paper audit events now have a sequence/hash chain and committed head. Startup, event reads and append operations verify it; authenticated writes are rejected if verification fails. Mission Control shows validity and the count of legacy events baselined during migration.
 - Verification: 173 tests passed, 11 optional integration tests skipped; Python lint/format checks and dashboard lint/build passed. Browser checks confirmed verified and failed history states using a disposable SQLite fixture. See ADR 0006 for limitations and rollback instructions. Independent immutable storage and production authorization remain open.
+
+## World-state increment
+
+- The world-state read API and authenticated bar-ingestion API are connected to Mission Control. Freshness failures leave regimes unknown; unavailable macro evidence is explicit. Regime output is advisory and cannot issue an order approval.
+- Verification: 182 tests passed, 11 optional integration tests skipped; Python lint/format and dashboard lint/build passed. A disposable in-memory browser fixture verified empty and stale/degraded views; a freshly seeded API snapshot returned READY. See ADR 0007 for policy, retention and restart limitations.
+- Next P06 work: typed decision routing with expiry, safe fallback and confidence escalation, then the Jev adapter/benchmark and calibration store.

@@ -18,7 +18,7 @@ export const sections = [
 ] as const;
 
 export const sectionDetails = {
-  "world-state": ["World State", "Regime, currency twins, macro context, and evidence freshness will appear when the world-state service is connected."],
+  "world-state": ["World State", "Versioned paper quote and regime evidence, currency coverage, and source freshness. Macro sources remain unconnected."],
   brokers: ["Brokers", "The paper simulator is the only enabled route. Exness remains a planned Priority-1 adapter subject to eligibility and release gates."],
   strategies: ["Strategies", "No strategy is active. Validated candidates and allocation history will appear here."],
   agents: ["Agents", "The 18-agent runtime has not been connected. No agent has capital authority."],
