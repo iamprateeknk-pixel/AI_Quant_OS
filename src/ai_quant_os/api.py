@@ -1,5 +1,6 @@
 import hmac
 import os
+import sqlite3
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -22,7 +23,8 @@ from ai_quant_os.broker import BrokerRouter, SimulatedBroker
 from ai_quant_os.execution import PaperExecutionGateway, PaperOrder
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.market_data import Bar
-from ai_quant_os.world_state import WorldStateEngine
+from ai_quant_os.world_state import WorldState, WorldStateEngine
+from ai_quant_os.world_state_store import WorldStateStore
 from ai_quant_os.decision_gateway import DecisionGateway, FastClassifier, require_current_decision
 from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.portfolio import PaperFill, summarize_position
@@ -58,6 +60,10 @@ class ClassificationInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     instrument_id: str = Field(min_length=1, max_length=32)
     task_id: str = Field(min_length=1, max_length=128)
+
+
+class WorldStatePublishInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
 class IntentInput(BaseModel):
@@ -161,6 +167,7 @@ def create_app(
     )
     state_store = PaperStateStore(configured_path)
     calibration_store = CalibrationStore(configured_path)
+    world_state_store = WorldStateStore(configured_path)
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
         [
@@ -404,6 +411,53 @@ def create_app(
         snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
         return {"mode": "PAPER", **jsonable_encoder(snapshot, custom_encoder={Decimal: str})}
 
+    def archive_snapshot(snapshot: WorldState) -> bool:
+        try:
+            return world_state_store.put(snapshot)
+        except (ValueError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503, detail="World-state archive unavailable"
+            ) from error
+
+    def archived_view(snapshot: WorldState) -> dict[str, object]:
+        now = current_time()
+        return {
+            "schema_version": "1.0",
+            "mode": "PAPER",
+            "archival_only": True,
+            "current": snapshot.as_of <= now < snapshot.valid_until,
+            "snapshot": jsonable_encoder(snapshot, custom_encoder={Decimal: str}),
+        }
+
+    @app.post("/api/v1/paper/world-state/publish", dependencies=[Depends(require_operator)])
+    def publish_world_state(
+        payload: WorldStatePublishInput = WorldStatePublishInput(),
+    ) -> dict[str, object]:
+        snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
+        inserted = archive_snapshot(snapshot)
+        state_store.record_event(
+            f"world-state-publication:{snapshot.world_state_version}",
+            {
+                "action": "PAPER_WORLD_STATE_PUBLICATION",
+                "intent_id": "",
+                "reason": "ARCHIVAL_ONLY",
+                "world_state_version": snapshot.world_state_version,
+            },
+        )
+        return {**archived_view(snapshot), "inserted": inserted}
+
+    @app.get("/api/v1/world-state/archive/{world_state_version}")
+    def archived_world_state(world_state_version: str) -> dict[str, object]:
+        try:
+            snapshot = world_state_store.get(world_state_version)
+        except (ValueError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503, detail="World-state archive unavailable"
+            ) from error
+        if snapshot is None:
+            raise HTTPException(status_code=404, detail="World-state archive not found")
+        return archived_view(snapshot)
+
     @app.get("/api/v1/decisions/provider")
     def decision_provider_status() -> dict[str, object]:
         status: dict[str, object] = {
@@ -461,6 +515,7 @@ def create_app(
     @app.post("/api/v1/paper/decisions/classify", dependencies=[Depends(require_operator)])
     async def classify_world_state(payload: ClassificationInput) -> dict[str, object]:
         snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
+        archive_snapshot(snapshot)
         try:
             decision = await decisions.classify(
                 snapshot, instrument_id=payload.instrument_id, task_id=payload.task_id
@@ -476,6 +531,7 @@ def create_app(
                 "trace_id": decision.trace_id,
                 "task_id": decision.task_id,
                 "world_state_version": decision.world_state_version,
+                "snapshot_ref": snapshot.world_state_version,
                 "model_route": decision.model_route,
                 "classification": decision.output.classification,
                 "fallback_reasons": ",".join(decision.output.fallback_reasons),
