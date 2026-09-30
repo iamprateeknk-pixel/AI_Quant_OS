@@ -20,6 +20,7 @@ from ai_quant_os.execution import PaperExecutionGateway, PaperOrder
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.market_data import Bar
 from ai_quant_os.world_state import WorldStateEngine
+from ai_quant_os.decision_gateway import DecisionGateway, FastClassifier, require_current_decision
 from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
@@ -48,6 +49,12 @@ class WorldStateBarInput(BaseModel):
 class WorldStateBarsInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     bars: list[WorldStateBarInput] = Field(min_length=1, max_length=1000)
+
+
+class ClassificationInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    instrument_id: str = Field(min_length=1, max_length=32)
+    task_id: str = Field(min_length=1, max_length=128)
 
 
 class IntentInput(BaseModel):
@@ -116,6 +123,7 @@ def create_app(
     recovery_token: str | None = None,
     clock: Callable[[], datetime] | None = None,
     paper_db_path: Path | None = None,
+    fast_classifier: FastClassifier | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -138,6 +146,7 @@ def create_app(
     currency_policy = CurrencyRiskPolicy(
         "USD", Decimal("2000"), Decimal("4000"), 5, PAPER_INSTRUMENTS
     )
+    decisions = DecisionGateway(primary=fast_classifier, clock=current_time)
     world_state = WorldStateEngine(PAPER_INSTRUMENTS, max_quote_age_seconds=5)
     instrument_catalog = {item.instrument_id: item for item in PAPER_INSTRUMENTS}
     risk = RiskKernel(limits, currency_policy=currency_policy)
@@ -387,6 +396,38 @@ def create_app(
     def world_state_snapshot() -> dict[str, object]:
         snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
         return {"mode": "PAPER", **jsonable_encoder(snapshot, custom_encoder={Decimal: str})}
+
+    @app.post("/api/v1/paper/decisions/classify", dependencies=[Depends(require_operator)])
+    async def classify_world_state(payload: ClassificationInput) -> dict[str, object]:
+        snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
+        try:
+            decision = await decisions.classify(
+                snapshot, instrument_id=payload.instrument_id, task_id=payload.task_id
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        state_store.record_event(
+            f"classification:{decision.trace_id}",
+            {
+                "action": "PAPER_CLASSIFICATION",
+                "intent_id": "",
+                "reason": decision.output.next_route,
+                "trace_id": decision.trace_id,
+                "task_id": decision.task_id,
+                "world_state_version": decision.world_state_version,
+                "model_route": decision.model_route,
+                "classification": decision.output.classification,
+                "fallback_reasons": ",".join(decision.output.fallback_reasons),
+                "expires_at": decision.expires_at.isoformat(),
+            },
+        )
+        try:
+            require_current_decision(
+                decision, world_state_version=snapshot.world_state_version, now=current_time()
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return {"mode": "PAPER", **decision.model_dump(mode="json")}
 
     @app.post("/api/v1/paper/world-state/bars", dependencies=[Depends(require_operator)])
     def record_world_state_bars(payload: WorldStateBarsInput) -> dict[str, object]:
