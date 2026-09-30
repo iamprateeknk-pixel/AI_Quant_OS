@@ -7,10 +7,10 @@ name = "ai-quant-os"
 version = "0.1.0"
 description = "Paper-only deterministic trading foundation"
 requires-python = ">=3.11"
-dependencies = ["fastapi>=0.115,<1", "pydantic>=2,<3", "uvicorn>=0.30,<1"]
+dependencies = ["fastapi>=0.115,<1", "pydantic>=2,<3", "uvicorn>=0.30,<1", "httpx>=0.27,<1"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<9", "hypothesis>=6,<7", "httpx>=0.27,<1", "ruff>=0.8,<1", "moto[s3]>=5.1,<6"]
+dev = ["pytest>=8,<9", "hypothesis>=6,<7", "ruff>=0.8,<1", "moto[s3]>=5.1,<6"]
 data = ["pyarrow>=25,<26", "psycopg[binary]>=3.2,<4", "boto3>=1.40,<2", "redis>=6,<9"]
 
 [project.scripts]

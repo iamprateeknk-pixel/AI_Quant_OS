@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
 from ai_quant_os.calibration_store import CalibrationStore
+from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -148,7 +149,10 @@ def create_app(
     currency_policy = CurrencyRiskPolicy(
         "USD", Decimal("2000"), Decimal("4000"), 5, PAPER_INSTRUMENTS
     )
-    decisions = DecisionGateway(primary=fast_classifier, clock=current_time)
+    configured_classifier = (
+        fast_classifier if fast_classifier is not None else jev_from_environment()
+    )
+    decisions = DecisionGateway(primary=configured_classifier, clock=current_time)
     world_state = WorldStateEngine(PAPER_INSTRUMENTS, max_quote_age_seconds=5)
     instrument_catalog = {item.instrument_id: item for item in PAPER_INSTRUMENTS}
     risk = RiskKernel(limits, currency_policy=currency_policy)
@@ -399,6 +403,21 @@ def create_app(
     def world_state_snapshot() -> dict[str, object]:
         snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
         return {"mode": "PAPER", **jsonable_encoder(snapshot, custom_encoder={Decimal: str})}
+
+    @app.get("/api/v1/decisions/provider")
+    def decision_provider_status() -> dict[str, object]:
+        status: dict[str, object] = {
+            "schema_version": "1.0",
+            "mode": "PAPER",
+            "configured": configured_classifier is not None,
+            "provider_id": configured_classifier.provider_id if configured_classifier else None,
+            "provider_version": configured_classifier.provider_version
+            if configured_classifier
+            else None,
+        }
+        if isinstance(configured_classifier, JevClassifier):
+            status.update(configured_classifier.status())
+        return status
 
     @app.post("/api/v1/paper/decisions/calibration", dependencies=[Depends(require_operator)])
     def record_calibration(payload: EvaluationBatch) -> dict[str, object]:
