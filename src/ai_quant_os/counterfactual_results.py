@@ -1,11 +1,12 @@
 """Source-retaining counterfactual evidence with reconciled native cash flows."""
 
 from dataclasses import dataclass
-from decimal import Context, Decimal, Inexact, ROUND_CEILING, ROUND_FLOOR, localcontext
+from decimal import Context, Decimal, Inexact, localcontext
 from typing import Literal
 
 from ai_quant_os.counterfactual_contracts import CounterfactualPlan, ReplayVariant
 from ai_quant_os.market_data import Bar, BarDataset
+from ai_quant_os.native_bar_evidence import verify_native_bar_result
 from ai_quant_os.registered_backtest import RegisteredBacktest
 from ai_quant_os.research_candidates import CandidateBundle
 
@@ -94,43 +95,7 @@ def _verify_run(row, inputs):
         or row.pnl_difference != result.net_pnl - baseline.result.net_pnl
     ):
         raise ValueError("Counterfactual native evidence binding mismatch")
-    position, cash = Decimal(0), Decimal(0)
-    opens = {bar.observed_at: bar.open for bar in inputs.source_bars[1:]}
-    previous = None
-    for fill in result.fills:
-        if (
-            fill.side not in ("BUY", "SELL")
-            or fill.quantity != row.variant.quantity
-            or fill.fee != row.variant.costs.fee_per_trade
-            or not fill.price.is_finite()
-            or fill.price <= 0
-            or fill.observed_at not in opens
-            or (previous is not None and fill.observed_at <= previous)
-        ):
-            raise ValueError("Counterfactual fill differs from declared replay")
-        # This rounding is explicitly part of the archived synthetic quote model.
-        with localcontext() as rounding:
-            rounding.traps[Inexact] = False
-            direction = Decimal(1) if fill.side == "BUY" else Decimal(-1)
-            increment = Decimal("0.001") if result.pnl_currency == "JPY" else Decimal("0.00001")
-            price = (
-                opens[fill.observed_at] * (1 + direction * row.variant.costs.slippage_bps / 10000)
-            ).quantize(increment, rounding=ROUND_CEILING if fill.side == "BUY" else ROUND_FLOOR)
-        if fill.price != price:
-            raise ValueError("Counterfactual fill price differs from source-open execution model")
-        signed = fill.quantity if fill.side == "BUY" else -fill.quantity
-        position += signed
-        cash -= signed * fill.price + fill.fee
-        if position not in (Decimal(0), Decimal(row.variant.quantity)):
-            raise ValueError("Counterfactual long-flat position mismatch")
-        previous = fill.observed_at
-    if (
-        type(result.native_order_count) is not int
-        or result.native_order_count != len(result.fills)
-        or result.final_position != position
-        or cash + position * inputs.source_bars[-1].close != result.net_pnl
-    ):
-        raise ValueError("Counterfactual cash-flow ledger mismatch")
+    verify_native_bar_result(result, inputs.source_bars, row.variant.quantity, row.variant.costs)
 
 
 @dataclass(frozen=True)

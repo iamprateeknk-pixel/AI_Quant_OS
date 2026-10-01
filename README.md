@@ -104,3 +104,5 @@ The paper API now exposes reconciled cumulative strategy contributions from pers
 New paper orders retain their initial approved quotes before dispatch. A protected execution-evidence API reconciles midpoint, spread, decision-to-fill and fee components; see [execution attribution handoff](docs/EXECUTION_ATTRIBUTION_HANDOFF.md).
 
 `ai-quant-counterfactual` compares declared size, cost and parameter alternatives with a frozen candidate's recorded holdout result in separate native engines. Reports remain diagnostics on already-seen data with no promotion authority. See [counterfactual handoff](docs/COUNTERFACTUAL_HANDOFF.md).
+
+`ai-quant-shadow` assigns a candidate to an isolated diagnostic portfolio and appends post-assignment observations with cumulative native fill/position/PnL evidence. Restart, sequential reservations, withdrawal refusal and historical fill-prefix checks are durable. See [shadow portfolio handoff](docs/SHADOW_PORTFOLIO_HANDOFF.md) for commands and remaining production integration.

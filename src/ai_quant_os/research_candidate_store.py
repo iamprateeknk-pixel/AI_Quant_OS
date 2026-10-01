@@ -232,6 +232,19 @@ class CandidateStore:
             ).fetchone()
             return None if row is None else _decode(row[0], row[1], CandidateBundle)
 
+    def snapshot(self, identifier: str) -> tuple[CandidateView, CandidateBundle] | None:
+        """Read eligibility and retained evidence from the same registry snapshot."""
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN")
+            views, _ = self._verified(db)
+            row = db.execute(
+                "SELECT bundle,bundle_sha256 FROM research_candidates WHERE candidate_id=?",
+                (identifier,),
+            ).fetchone()
+            if row is None:
+                return None
+            return views[identifier], _decode(row[0], row[1], CandidateBundle)
+
     def withdraw(
         self, identifier: str, *, expected_revision: int, command_id: str, reason: str
     ) -> CandidateView:
