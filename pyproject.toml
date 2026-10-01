@@ -18,6 +18,7 @@ trading = ["nautilus_trader==1.221.0"]
 ai-quant-data = "ai_quant_os.data_cli:main"
 ai-quant-evaluate = "ai_quant_os.evaluation_cli:main"
 ai-quant-backtest = "ai_quant_os.nautilus_cli:main"
+ai-quant-portfolio-backtest = "ai_quant_os.portfolio_backtest_cli:main"
 ai-quant-research = "ai_quant_os.research_cli:main"
 ai-quant-candidates = "ai_quant_os.candidate_cli:main"
 ai-quant-counterfactual = "ai_quant_os.counterfactual_cli:main"

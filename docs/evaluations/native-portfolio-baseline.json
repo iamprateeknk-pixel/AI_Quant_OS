@@ -1,0 +1,687 @@
+{
+  "report": {
+    "collateral_model": "GROSS_TARGET_NOTIONAL_USD_NATIVE_BALANCE_V1",
+    "decision_model": "ALL_CURRENT_OPENS_BEFORE_CAUSAL_DECISIONS_V1",
+    "engine": "NAUTILUS_BACKTEST",
+    "engine_version": "1.221.0",
+    "fee_per_order_usd": "0.10",
+    "initial_balance_usd": "100000",
+    "legs": [
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-directional@1.0.0"
+          },
+          "genome_sha256": "6b74bc5e080c2c9731f0accee1268a496cf864c01287f8e98411c63f6d3bc03c",
+          "implementation": {
+            "entry_point": "ai_quant_os.directional_strategy:DirectionalMovingAverage",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "directional_strategy.py",
+                "sha256": "45c4213ef27047adeba1c5788cf54848d26fffe112407b47709a9f19bf26b440"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-directional@1.0.0"
+          },
+          "implementation_sha256": "590bafb27d1344785cb01940080145daeb7c4b981dd660c2f96f51db4a063b1c",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "dataset_fingerprint": "164e831d8d4c1c23ef084b9dadb67ed4c9b595c6445dfddfba77323c0a8e446a",
+        "fee_currency": "USD",
+        "fees_usd": "0.3",
+        "fills": [
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:02:00Z",
+            "price": "197.197",
+            "quantity": "10",
+            "side": "BUY"
+          },
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:04:00Z",
+            "price": "164.835",
+            "quantity": "20",
+            "side": "SELL"
+          },
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:06:00Z",
+            "price": "197.197",
+            "quantity": "20",
+            "side": "BUY"
+          }
+        ],
+        "final_position": "10",
+        "gross_pnl_quote": "-809.210",
+        "gross_pnl_usd": "-5.364370993510066357748476954",
+        "instrument_id": "EURJPY",
+        "quantity": 10,
+        "quote_currency": "JPY",
+        "slippage_bps": "10",
+        "source_bars": [
+          {
+            "close": "165",
+            "high": "165",
+            "instrument_id": "EURJPY",
+            "low": "165",
+            "observed_at": "2026-01-01T00:00:00Z",
+            "open": "165",
+            "volume": "100"
+          },
+          {
+            "close": "181",
+            "high": "181",
+            "instrument_id": "EURJPY",
+            "low": "181",
+            "observed_at": "2026-01-01T00:01:00Z",
+            "open": "181",
+            "volume": "100"
+          },
+          {
+            "close": "197",
+            "high": "197",
+            "instrument_id": "EURJPY",
+            "low": "197",
+            "observed_at": "2026-01-01T00:02:00Z",
+            "open": "197",
+            "volume": "100"
+          },
+          {
+            "close": "181",
+            "high": "181",
+            "instrument_id": "EURJPY",
+            "low": "181",
+            "observed_at": "2026-01-01T00:03:00Z",
+            "open": "181",
+            "volume": "100"
+          },
+          {
+            "close": "165",
+            "high": "165",
+            "instrument_id": "EURJPY",
+            "low": "165",
+            "observed_at": "2026-01-01T00:04:00Z",
+            "open": "165",
+            "volume": "100"
+          },
+          {
+            "close": "181",
+            "high": "181",
+            "instrument_id": "EURJPY",
+            "low": "181",
+            "observed_at": "2026-01-01T00:05:00Z",
+            "open": "181",
+            "volume": "100"
+          },
+          {
+            "close": "197",
+            "high": "197",
+            "instrument_id": "EURJPY",
+            "low": "197",
+            "observed_at": "2026-01-01T00:06:00Z",
+            "open": "197",
+            "volume": "100"
+          },
+          {
+            "close": "181",
+            "high": "181",
+            "instrument_id": "EURJPY",
+            "low": "181",
+            "observed_at": "2026-01-01T00:07:00Z",
+            "open": "181",
+            "volume": "100"
+          }
+        ]
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-directional@1.0.0"
+          },
+          "genome_sha256": "6b74bc5e080c2c9731f0accee1268a496cf864c01287f8e98411c63f6d3bc03c",
+          "implementation": {
+            "entry_point": "ai_quant_os.directional_strategy:DirectionalMovingAverage",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "directional_strategy.py",
+                "sha256": "45c4213ef27047adeba1c5788cf54848d26fffe112407b47709a9f19bf26b440"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-directional@1.0.0"
+          },
+          "implementation_sha256": "590bafb27d1344785cb01940080145daeb7c4b981dd660c2f96f51db4a063b1c",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "dataset_fingerprint": "8cf53734c219fd165a7744fdb83b04dbb39026a471c64cd1c6abdc180842d7bf",
+        "fee_currency": "USD",
+        "fees_usd": "0.3",
+        "fills": [
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:02:00Z",
+            "price": "1.3013",
+            "quantity": "10",
+            "side": "BUY"
+          },
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:04:00Z",
+            "price": "1.0989",
+            "quantity": "20",
+            "side": "SELL"
+          },
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:06:00Z",
+            "price": "1.3013",
+            "quantity": "20",
+            "side": "BUY"
+          }
+        ],
+        "final_position": "10",
+        "gross_pnl_quote": "-5.0610",
+        "gross_pnl_usd": "-5.0610",
+        "instrument_id": "EURUSD",
+        "quantity": 10,
+        "quote_currency": "USD",
+        "slippage_bps": "10",
+        "source_bars": [
+          {
+            "close": "1.1",
+            "high": "1.1",
+            "instrument_id": "EURUSD",
+            "low": "1.1",
+            "observed_at": "2026-01-01T00:00:00Z",
+            "open": "1.1",
+            "volume": "100"
+          },
+          {
+            "close": "1.2",
+            "high": "1.2",
+            "instrument_id": "EURUSD",
+            "low": "1.2",
+            "observed_at": "2026-01-01T00:01:00Z",
+            "open": "1.2",
+            "volume": "100"
+          },
+          {
+            "close": "1.3",
+            "high": "1.3",
+            "instrument_id": "EURUSD",
+            "low": "1.3",
+            "observed_at": "2026-01-01T00:02:00Z",
+            "open": "1.3",
+            "volume": "100"
+          },
+          {
+            "close": "1.2",
+            "high": "1.2",
+            "instrument_id": "EURUSD",
+            "low": "1.2",
+            "observed_at": "2026-01-01T00:03:00Z",
+            "open": "1.2",
+            "volume": "100"
+          },
+          {
+            "close": "1.1",
+            "high": "1.1",
+            "instrument_id": "EURUSD",
+            "low": "1.1",
+            "observed_at": "2026-01-01T00:04:00Z",
+            "open": "1.1",
+            "volume": "100"
+          },
+          {
+            "close": "1.2",
+            "high": "1.2",
+            "instrument_id": "EURUSD",
+            "low": "1.2",
+            "observed_at": "2026-01-01T00:05:00Z",
+            "open": "1.2",
+            "volume": "100"
+          },
+          {
+            "close": "1.3",
+            "high": "1.3",
+            "instrument_id": "EURUSD",
+            "low": "1.3",
+            "observed_at": "2026-01-01T00:06:00Z",
+            "open": "1.3",
+            "volume": "100"
+          },
+          {
+            "close": "1.2",
+            "high": "1.2",
+            "instrument_id": "EURUSD",
+            "low": "1.2",
+            "observed_at": "2026-01-01T00:07:00Z",
+            "open": "1.2",
+            "volume": "100"
+          }
+        ]
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-directional@1.0.0"
+          },
+          "genome_sha256": "6b74bc5e080c2c9731f0accee1268a496cf864c01287f8e98411c63f6d3bc03c",
+          "implementation": {
+            "entry_point": "ai_quant_os.directional_strategy:DirectionalMovingAverage",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "directional_strategy.py",
+                "sha256": "45c4213ef27047adeba1c5788cf54848d26fffe112407b47709a9f19bf26b440"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-directional@1.0.0"
+          },
+          "implementation_sha256": "590bafb27d1344785cb01940080145daeb7c4b981dd660c2f96f51db4a063b1c",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "dataset_fingerprint": "d1d2732e98423b28cae90c9eb5875ed0e70599568d42ba78fb853ae9ef7759c3",
+        "fee_currency": "USD",
+        "fees_usd": "0.3",
+        "fills": [
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:02:00Z",
+            "price": "1.5015",
+            "quantity": "10",
+            "side": "BUY"
+          },
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:04:00Z",
+            "price": "1.2987",
+            "quantity": "20",
+            "side": "SELL"
+          },
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:06:00Z",
+            "price": "1.5015",
+            "quantity": "20",
+            "side": "BUY"
+          }
+        ],
+        "final_position": "10",
+        "gross_pnl_quote": "-5.0710",
+        "gross_pnl_usd": "-5.0710",
+        "instrument_id": "GBPUSD",
+        "quantity": 10,
+        "quote_currency": "USD",
+        "slippage_bps": "10",
+        "source_bars": [
+          {
+            "close": "1.3",
+            "high": "1.3",
+            "instrument_id": "GBPUSD",
+            "low": "1.3",
+            "observed_at": "2026-01-01T00:00:00Z",
+            "open": "1.3",
+            "volume": "100"
+          },
+          {
+            "close": "1.4",
+            "high": "1.4",
+            "instrument_id": "GBPUSD",
+            "low": "1.4",
+            "observed_at": "2026-01-01T00:01:00Z",
+            "open": "1.4",
+            "volume": "100"
+          },
+          {
+            "close": "1.5",
+            "high": "1.5",
+            "instrument_id": "GBPUSD",
+            "low": "1.5",
+            "observed_at": "2026-01-01T00:02:00Z",
+            "open": "1.5",
+            "volume": "100"
+          },
+          {
+            "close": "1.4",
+            "high": "1.4",
+            "instrument_id": "GBPUSD",
+            "low": "1.4",
+            "observed_at": "2026-01-01T00:03:00Z",
+            "open": "1.4",
+            "volume": "100"
+          },
+          {
+            "close": "1.3",
+            "high": "1.3",
+            "instrument_id": "GBPUSD",
+            "low": "1.3",
+            "observed_at": "2026-01-01T00:04:00Z",
+            "open": "1.3",
+            "volume": "100"
+          },
+          {
+            "close": "1.4",
+            "high": "1.4",
+            "instrument_id": "GBPUSD",
+            "low": "1.4",
+            "observed_at": "2026-01-01T00:05:00Z",
+            "open": "1.4",
+            "volume": "100"
+          },
+          {
+            "close": "1.5",
+            "high": "1.5",
+            "instrument_id": "GBPUSD",
+            "low": "1.5",
+            "observed_at": "2026-01-01T00:06:00Z",
+            "open": "1.5",
+            "volume": "100"
+          },
+          {
+            "close": "1.4",
+            "high": "1.4",
+            "instrument_id": "GBPUSD",
+            "low": "1.4",
+            "observed_at": "2026-01-01T00:07:00Z",
+            "open": "1.4",
+            "volume": "100"
+          }
+        ]
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-directional@1.0.0"
+          },
+          "genome_sha256": "6b74bc5e080c2c9731f0accee1268a496cf864c01287f8e98411c63f6d3bc03c",
+          "implementation": {
+            "entry_point": "ai_quant_os.directional_strategy:DirectionalMovingAverage",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "directional_strategy.py",
+                "sha256": "45c4213ef27047adeba1c5788cf54848d26fffe112407b47709a9f19bf26b440"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-directional@1.0.0"
+          },
+          "implementation_sha256": "590bafb27d1344785cb01940080145daeb7c4b981dd660c2f96f51db4a063b1c",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "dataset_fingerprint": "b8997438e55b561b729e9062a4e3d918bd0a8abb99e7c86aa437d22b8fd640c1",
+        "fee_currency": "USD",
+        "fees_usd": "0.3",
+        "fills": [
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:02:00Z",
+            "price": "152.152",
+            "quantity": "10",
+            "side": "BUY"
+          },
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:04:00Z",
+            "price": "149.85",
+            "quantity": "20",
+            "side": "SELL"
+          },
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:06:00Z",
+            "price": "152.152",
+            "quantity": "20",
+            "side": "BUY"
+          }
+        ],
+        "final_position": "10",
+        "gross_pnl_quote": "-57.560",
+        "gross_pnl_usd": "-0.3815736266067391895206464743",
+        "instrument_id": "USDJPY",
+        "quantity": 10,
+        "quote_currency": "JPY",
+        "slippage_bps": "10",
+        "source_bars": [
+          {
+            "close": "150",
+            "high": "150",
+            "instrument_id": "USDJPY",
+            "low": "150",
+            "observed_at": "2026-01-01T00:00:00Z",
+            "open": "150",
+            "volume": "100"
+          },
+          {
+            "close": "151",
+            "high": "151",
+            "instrument_id": "USDJPY",
+            "low": "151",
+            "observed_at": "2026-01-01T00:01:00Z",
+            "open": "151",
+            "volume": "100"
+          },
+          {
+            "close": "152",
+            "high": "152",
+            "instrument_id": "USDJPY",
+            "low": "152",
+            "observed_at": "2026-01-01T00:02:00Z",
+            "open": "152",
+            "volume": "100"
+          },
+          {
+            "close": "151",
+            "high": "151",
+            "instrument_id": "USDJPY",
+            "low": "151",
+            "observed_at": "2026-01-01T00:03:00Z",
+            "open": "151",
+            "volume": "100"
+          },
+          {
+            "close": "150",
+            "high": "150",
+            "instrument_id": "USDJPY",
+            "low": "150",
+            "observed_at": "2026-01-01T00:04:00Z",
+            "open": "150",
+            "volume": "100"
+          },
+          {
+            "close": "151",
+            "high": "151",
+            "instrument_id": "USDJPY",
+            "low": "151",
+            "observed_at": "2026-01-01T00:05:00Z",
+            "open": "151",
+            "volume": "100"
+          },
+          {
+            "close": "152",
+            "high": "152",
+            "instrument_id": "USDJPY",
+            "low": "152",
+            "observed_at": "2026-01-01T00:06:00Z",
+            "open": "152",
+            "volume": "100"
+          },
+          {
+            "close": "151",
+            "high": "151",
+            "instrument_id": "USDJPY",
+            "low": "151",
+            "observed_at": "2026-01-01T00:07:00Z",
+            "open": "151",
+            "volume": "100"
+          }
+        ]
+      }
+    ],
+    "native_balance_usd": "99986.11",
+    "native_order_count": 12,
+    "net_pnl_usd": "-17.07794462011680554726912342",
+    "promotion_allowed": false,
+    "replay_model": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1",
+    "schema_version": "1.0",
+    "total_fees_usd": "1.2",
+    "valuation_model": "FINAL_QUOTE_PNL_SIGN_FX_DECIMAL28_V1",
+    "venue": "PAPER"
+  },
+  "source_lineage": [
+    {
+      "instrument_id": "EURJPY",
+      "source_sha256": "77ce117c9c9b160a23248b11562f8fec1765c72855611c7d46aa7dc0919a707e"
+    },
+    {
+      "instrument_id": "EURUSD",
+      "source_sha256": "77b40d66963a333c3ef3fa5eebc2cfb8b9bda28c2e99f30e016c4c48c4531c98"
+    },
+    {
+      "instrument_id": "GBPUSD",
+      "source_sha256": "ea6e9ef6201c19b803f87cac9e03c9deea974fa082df30c6faee60db9b1b3e99"
+    },
+    {
+      "instrument_id": "USDJPY",
+      "source_sha256": "a384185f780ee8f94d695960b111eb904d29234f1f500a18fe061506206f54e1"
+    }
+  ]
+}

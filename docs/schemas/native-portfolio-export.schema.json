@@ -1,0 +1,468 @@
+{
+  "$defs": {
+    "Bar": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "open": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Open",
+          "type": "string"
+        },
+        "high": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "High",
+          "type": "string"
+        },
+        "low": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Low",
+          "type": "string"
+        },
+        "close": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Close",
+          "type": "string"
+        },
+        "volume": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Volume",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "observed_at",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "title": "Bar",
+      "type": "object"
+    },
+    "Lineage": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "source_sha256": {
+          "title": "Source Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "source_sha256"
+      ],
+      "title": "Lineage",
+      "type": "object"
+    },
+    "NativeFill": {
+      "properties": {
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "price": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Price",
+          "type": "string"
+        },
+        "quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Quantity",
+          "type": "string"
+        },
+        "fee": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee",
+          "type": "string"
+        }
+      },
+      "required": [
+        "observed_at",
+        "side",
+        "price",
+        "quantity",
+        "fee"
+      ],
+      "title": "NativeFill",
+      "type": "object"
+    },
+    "PortfolioLeg": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "source_bars": {
+          "items": {
+            "$ref": "#/$defs/Bar"
+          },
+          "title": "Source Bars",
+          "type": "array"
+        },
+        "dataset_fingerprint": {
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "binding": {
+          "$ref": "#/$defs/StrategyBinding"
+        },
+        "quantity": {
+          "title": "Quantity",
+          "type": "integer"
+        },
+        "slippage_bps": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Slippage Bps",
+          "type": "string"
+        },
+        "fills": {
+          "items": {
+            "$ref": "#/$defs/NativeFill"
+          },
+          "title": "Fills",
+          "type": "array"
+        },
+        "final_position": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Final Position",
+          "type": "string"
+        },
+        "gross_pnl_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Gross Pnl Quote",
+          "type": "string"
+        },
+        "gross_pnl_usd": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Gross Pnl Usd",
+          "type": "string"
+        },
+        "fees_usd": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fees Usd",
+          "type": "string"
+        },
+        "fee_currency": {
+          "const": "USD",
+          "default": "USD",
+          "title": "Fee Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "quote_currency",
+        "source_bars",
+        "dataset_fingerprint",
+        "binding",
+        "quantity",
+        "slippage_bps",
+        "fills",
+        "final_position",
+        "gross_pnl_quote",
+        "gross_pnl_usd",
+        "fees_usd"
+      ],
+      "title": "PortfolioLeg",
+      "type": "object"
+    },
+    "PortfolioReport": {
+      "properties": {
+        "initial_balance_usd": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Initial Balance Usd",
+          "type": "string"
+        },
+        "fee_per_order_usd": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee Per Order Usd",
+          "type": "string"
+        },
+        "legs": {
+          "items": {
+            "$ref": "#/$defs/PortfolioLeg"
+          },
+          "title": "Legs",
+          "type": "array"
+        },
+        "native_order_count": {
+          "title": "Native Order Count",
+          "type": "integer"
+        },
+        "total_fees_usd": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Total Fees Usd",
+          "type": "string"
+        },
+        "net_pnl_usd": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Net Pnl Usd",
+          "type": "string"
+        },
+        "native_balance_usd": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Native Balance Usd",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "engine": {
+          "const": "NAUTILUS_BACKTEST",
+          "default": "NAUTILUS_BACKTEST",
+          "title": "Engine",
+          "type": "string"
+        },
+        "venue": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Venue",
+          "type": "string"
+        },
+        "engine_version": {
+          "const": "1.221.0",
+          "default": "1.221.0",
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "replay_model": {
+          "const": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1",
+          "default": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1",
+          "title": "Replay Model",
+          "type": "string"
+        },
+        "valuation_model": {
+          "const": "FINAL_QUOTE_PNL_SIGN_FX_DECIMAL28_V1",
+          "default": "FINAL_QUOTE_PNL_SIGN_FX_DECIMAL28_V1",
+          "title": "Valuation Model",
+          "type": "string"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        },
+        "collateral_model": {
+          "const": "GROSS_TARGET_NOTIONAL_USD_NATIVE_BALANCE_V1",
+          "default": "GROSS_TARGET_NOTIONAL_USD_NATIVE_BALANCE_V1",
+          "title": "Collateral Model",
+          "type": "string"
+        },
+        "decision_model": {
+          "const": "ALL_CURRENT_OPENS_BEFORE_CAUSAL_DECISIONS_V1",
+          "default": "ALL_CURRENT_OPENS_BEFORE_CAUSAL_DECISIONS_V1",
+          "title": "Decision Model",
+          "type": "string"
+        }
+      },
+      "required": [
+        "initial_balance_usd",
+        "fee_per_order_usd",
+        "legs",
+        "native_order_count",
+        "total_fees_usd",
+        "net_pnl_usd",
+        "native_balance_usd"
+      ],
+      "title": "PortfolioReport",
+      "type": "object"
+    },
+    "SourceFingerprint": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "SourceFingerprint",
+      "type": "object"
+    },
+    "StrategyBinding": {
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "genome": {
+          "$ref": "#/$defs/StrategyGenome"
+        },
+        "genome_sha256": {
+          "title": "Genome Sha256",
+          "type": "string"
+        },
+        "implementation": {
+          "$ref": "#/$defs/StrategyImplementation"
+        },
+        "implementation_sha256": {
+          "title": "Implementation Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "provenance",
+        "genome",
+        "genome_sha256",
+        "implementation",
+        "implementation_sha256"
+      ],
+      "title": "StrategyBinding",
+      "type": "object"
+    },
+    "StrategyGenome": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameters",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind"
+      ],
+      "title": "StrategyGenome",
+      "type": "object"
+    },
+    "StrategyImplementation": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "entry_point": {
+          "title": "Entry Point",
+          "type": "string"
+        },
+        "parameter_defaults": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameter Defaults",
+          "type": "array"
+        },
+        "source_files": {
+          "items": {
+            "$ref": "#/$defs/SourceFingerprint"
+          },
+          "title": "Source Files",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind",
+        "entry_point",
+        "parameter_defaults",
+        "source_files"
+      ],
+      "title": "StrategyImplementation",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "report": {
+      "$ref": "#/$defs/PortfolioReport"
+    },
+    "source_lineage": {
+      "items": {
+        "$ref": "#/$defs/Lineage"
+      },
+      "title": "Source Lineage",
+      "type": "array"
+    }
+  },
+  "required": [
+    "report",
+    "source_lineage"
+  ],
+  "title": "Export",
+  "type": "object"
+}

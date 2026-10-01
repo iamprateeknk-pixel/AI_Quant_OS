@@ -89,6 +89,8 @@ Classifier evaluation is available through `python -m ai_quant_os.evaluation_cli
 
 Built-in backtests now include validated configuration and immutable source provenance. See [strategy provenance handoff](docs/STRATEGY_PROVENANCE_HANDOFF.md) for registry retention and parameterized runs.
 
+`ai-quant-portfolio-backtest` runs a synchronized currency basket in one native USD account with shared collateral checks, actual USD fees and reconciled currency marks. See [native portfolio handoff](docs/NATIVE_PORTFOLIO_HANDOFF.md) for the retained example and remaining limits.
+
 `moving-average-directional` adds native short positions and complete bar reversals with a separate source binding and replay model. It is connected to research 1.0, candidate comparisons and forward shadow diagnostics. See [directional handoff](docs/DIRECTIONAL_BACKTEST_HANDOFF.md) for commands, retained examples and pending statistical policies.
 
 ## Local research validation

@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "legs": [
+    {
+      "csv": "portfolio_EURUSD.csv",
+      "genome": {
+        "strategy_ref": "moving-average-directional@1.0.0",
+        "input_kind": "BAR",
+        "parameters": [
+          [
+            "fast",
+            1
+          ],
+          [
+            "slow",
+            2
+          ]
+        ]
+      },
+      "quantity": 10,
+      "slippage_bps": "10"
+    },
+    {
+      "csv": "portfolio_GBPUSD.csv",
+      "genome": {
+        "strategy_ref": "moving-average-directional@1.0.0",
+        "input_kind": "BAR",
+        "parameters": [
+          [
+            "fast",
+            1
+          ],
+          [
+            "slow",
+            2
+          ]
+        ]
+      },
+      "quantity": 10,
+      "slippage_bps": "10"
+    },
+    {
+      "csv": "portfolio_USDJPY.csv",
+      "genome": {
+        "strategy_ref": "moving-average-directional@1.0.0",
+        "input_kind": "BAR",
+        "parameters": [
+          [
+            "fast",
+            1
+          ],
+          [
+            "slow",
+            2
+          ]
+        ]
+      },
+      "quantity": 10,
+      "slippage_bps": "10"
+    },
+    {
+      "csv": "portfolio_EURJPY.csv",
+      "genome": {
+        "strategy_ref": "moving-average-directional@1.0.0",
+        "input_kind": "BAR",
+        "parameters": [
+          [
+            "fast",
+            1
+          ],
+          [
+            "slow",
+            2
+          ]
+        ]
+      },
+      "quantity": 10,
+      "slippage_bps": "10"
+    }
+  ],
+  "fee_per_order_usd": "0.10"
+}

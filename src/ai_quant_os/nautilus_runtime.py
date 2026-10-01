@@ -69,11 +69,13 @@ def _nanoseconds(observed_at: datetime) -> int:
 
 
 class _ReplayStrategy(NativeStrategy):
-    def __init__(self, instrument, plugin, phases: dict, quantity: int, targets=(0, 1)):
+    def __init__(
+        self, instrument, plugin, phases: dict, quantity: int, targets=(0, 1), *, tag="001"
+    ):
         super().__init__(
             StrategyConfig(
                 strategy_id="Replay",
-                order_id_tag="001",
+                order_id_tag=tag,
                 use_uuid_client_order_ids=False,
                 log_events=False,
                 log_commands=False,
@@ -183,12 +185,32 @@ def _run_native_backtest(
     metadata, precision, increment, quote_currency, instrument = _prepare_instrument(
         identifier, costs, strategy_ref, quantity, initial_balance
     )
+    ticks, phases = _bar_quotes(dataset, instrument, precision, increment, costs.slippage_bps)
+    return _execute_native_replay(
+        instrument,
+        metadata,
+        quote_currency,
+        strategy,
+        costs,
+        strategy_ref,
+        quantity,
+        initial_balance,
+        ticks,
+        phases,
+        dataset.fingerprint,
+        dataset.bars[-1].close,
+        replay_model,
+        targets,
+    )
+
+
+def _bar_quotes(dataset, instrument, precision, increment, slippage_bps):
     for bar in dataset.bars:
         if any(
             price.quantize(increment) != price for price in (bar.open, bar.high, bar.low, bar.close)
         ):
             raise ValueError("Source price exceeds instrument precision")
-    slip = costs.slippage_bps / 10000
+    slip = slippage_bps / 10000
     native_id = instrument.id
     ticks, phases = [], {}
     for bar in dataset.bars:
@@ -210,22 +232,7 @@ def _run_native_backtest(
                 )
             )
             phases[timestamp] = (phase, bar)
-    return _execute_native_replay(
-        instrument,
-        metadata,
-        quote_currency,
-        strategy,
-        costs,
-        strategy_ref,
-        quantity,
-        initial_balance,
-        ticks,
-        phases,
-        dataset.fingerprint,
-        dataset.bars[-1].close,
-        replay_model,
-        targets,
-    )
+    return ticks, phases
 
 
 def run_nautilus_directional_backtest(
@@ -252,7 +259,9 @@ def run_nautilus_directional_backtest(
         )
 
 
-def _prepare_instrument(identifier, costs, strategy_ref, quantity, initial_balance):
+def _prepare_instrument(
+    identifier, costs, strategy_ref, quantity, initial_balance, *, account_currency=None
+):
     if nautilus_trader.__version__ != "1.221.0":
         raise ValueError("Native runtime version does not match pin")
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}@\d+\.\d+\.\d+", strategy_ref):
@@ -267,7 +276,7 @@ def _prepare_instrument(identifier, costs, strategy_ref, quantity, initial_balan
     precision = 3 if metadata.quote_currency == "JPY" else 5
     increment = Decimal(1).scaleb(-precision)
     quote_currency = Currency.from_str(metadata.quote_currency)
-    fee_increment = Decimal(1).scaleb(-quote_currency.precision)
+    fee_increment = Decimal(1).scaleb(-(account_currency or quote_currency).precision)
     if costs.fee_per_trade.quantize(fee_increment) != costs.fee_per_trade:
         raise ValueError("Fixed fee exceeds account currency precision")
     if initial_balance.quantize(fee_increment) != initial_balance:
