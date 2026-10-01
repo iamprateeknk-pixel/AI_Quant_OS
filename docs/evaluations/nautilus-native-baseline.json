@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "engine_version": "1.221.0",
+  "provenance": "SYNTHETIC_DEVELOPMENT_BASELINE",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.11.9",
+  "bar_count": 1000,
+  "dataset_fingerprint": "3d03d593fec8c69fb5b7ae447f1bd872477620a07db2110b6bf11e8113ec9744",
+  "iterations": 3,
+  "reproducible": true,
+  "native_order_count": 99,
+  "elapsed_ms": [
+    314.28930000402033,
+    114.74460002500564,
+    148.04500003810972
+  ],
+  "median_ms": 148.04500003810972,
+  "p95_ms": 314.28930000402033
+}

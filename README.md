@@ -26,6 +26,10 @@ npm run dev
 
 Open `http://127.0.0.1:3000`. The frontend reads `AI_QUANT_API_URL` on the server and defaults to `http://127.0.0.1:8000`. It displays unavailable states for services not connected yet. It does not expose control commands until operator-session authentication is built.
 
+## Native backtests
+
+Install the optional native runtime with `python -m pip install -e ".[dev,data,trading]"`. Run `ai-quant-backtest tests/fixtures/nautilus_replay.csv --strategy moving-average-cross --slippage-bps 10 --fee 0.10 --output native-result.json`. This uses the actual pinned Nautilus engine with a declared synthetic open/close quote model and produces a source-bound result artifact. It grants no live order authority. See [the native runtime handoff](docs/NAUTILUS_HANDOFF.md) for costs, P&L rounding, benchmark evidence and remaining gates.
+
 ## Checks
 
 ```powershell

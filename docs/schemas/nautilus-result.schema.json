@@ -1,0 +1,168 @@
+{
+  "$defs": {
+    "BacktestCosts": {
+      "properties": {
+        "slippage_bps": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Slippage Bps",
+          "type": "string"
+        },
+        "fee_per_trade": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Fee Per Trade",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slippage_bps",
+        "fee_per_trade"
+      ],
+      "title": "BacktestCosts",
+      "type": "object"
+    },
+    "NativeFill": {
+      "properties": {
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "price": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Price",
+          "type": "string"
+        },
+        "quantity": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Quantity",
+          "type": "string"
+        },
+        "fee": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Fee",
+          "type": "string"
+        }
+      },
+      "required": [
+        "observed_at",
+        "side",
+        "price",
+        "quantity",
+        "fee"
+      ],
+      "title": "NativeFill",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "engine": {
+      "const": "NAUTILUS_BACKTEST",
+      "title": "Engine",
+      "type": "string"
+    },
+    "engine_version": {
+      "const": "1.221.0",
+      "title": "Engine Version",
+      "type": "string"
+    },
+    "replay_model": {
+      "const": "BAR_OPEN_CLOSE_QUOTES_V1",
+      "title": "Replay Model",
+      "type": "string"
+    },
+    "venue": {
+      "const": "PAPER",
+      "title": "Venue",
+      "type": "string"
+    },
+    "instrument_id": {
+      "title": "Instrument Id",
+      "type": "string"
+    },
+    "pnl_currency": {
+      "title": "Pnl Currency",
+      "type": "string"
+    },
+    "strategy_ref": {
+      "title": "Strategy Ref",
+      "type": "string"
+    },
+    "dataset_fingerprint": {
+      "title": "Dataset Fingerprint",
+      "type": "string"
+    },
+    "costs": {
+      "$ref": "#/$defs/BacktestCosts"
+    },
+    "fills": {
+      "items": {
+        "$ref": "#/$defs/NativeFill"
+      },
+      "title": "Fills",
+      "type": "array"
+    },
+    "native_order_count": {
+      "title": "Native Order Count",
+      "type": "integer"
+    },
+    "final_position": {
+      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "title": "Final Position",
+      "type": "string"
+    },
+    "net_pnl": {
+      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "title": "Net Pnl",
+      "type": "string"
+    },
+    "pnl_method": {
+      "const": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+      "title": "Pnl Method",
+      "type": "string"
+    },
+    "native_realized_pnl": {
+      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "title": "Native Realized Pnl",
+      "type": "string"
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "engine",
+    "engine_version",
+    "replay_model",
+    "venue",
+    "instrument_id",
+    "pnl_currency",
+    "strategy_ref",
+    "dataset_fingerprint",
+    "costs",
+    "fills",
+    "native_order_count",
+    "final_position",
+    "net_pnl",
+    "pnl_method",
+    "native_realized_pnl",
+    "source_sha256"
+  ],
+  "title": "NautilusResult",
+  "type": "object",
+  "additionalProperties": false
+}

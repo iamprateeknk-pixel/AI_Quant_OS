@@ -12,10 +12,12 @@ dependencies = ["fastapi>=0.115,<1", "pydantic>=2,<3", "uvicorn>=0.30,<1", "http
 [project.optional-dependencies]
 dev = ["pytest>=8,<9", "hypothesis>=6,<7", "ruff>=0.8,<1", "moto[s3]>=5.1,<6"]
 data = ["pyarrow>=25,<26", "psycopg[binary]>=3.2,<4", "boto3>=1.40,<2", "redis>=6,<9"]
+trading = ["nautilus_trader==1.221.0"]
 
 [project.scripts]
 ai-quant-data = "ai_quant_os.data_cli:main"
 ai-quant-evaluate = "ai_quant_os.evaluation_cli:main"
+ai-quant-backtest = "ai_quant_os.nautilus_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
