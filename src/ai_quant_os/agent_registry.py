@@ -202,14 +202,15 @@ def load_agent_catalog() -> AgentRegistry:
                 allowed_tools=tuple(sorted(ROLE_CEILINGS[identifier])),
             )
         )
-    original = registry.get("A02", "0.1.0")
-    registry.register(
-        AgentManifest.model_validate(
-            {
-                **original.model_dump(),
-                "agent_version": "0.2.0",
-                "implementation_status": "PARTIAL",
-            }
+    for identifier in ("A02", "A07"):
+        original = registry.get(identifier, "0.1.0")
+        registry.register(
+            AgentManifest.model_validate(
+                {
+                    **original.model_dump(),
+                    "agent_version": "0.2.0",
+                    "implementation_status": "PARTIAL",
+                }
+            )
         )
-    )
     return registry

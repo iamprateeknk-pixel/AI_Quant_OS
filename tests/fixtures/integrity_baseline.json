@@ -1,0 +1,7 @@
+{
+  "provenance": "SYNTHETIC_DEVELOPMENT_BASELINE_NOT_HOLDOUT",
+  "cases": [
+    {"id": "bad_lineage", "verified_instruments": [], "clock_status": "UNVERIFIED", "offset_ms": null, "expected_issue": "LINEAGE_MISMATCH"},
+    {"id": "clock_drift", "verified_instruments": ["EURUSD"], "clock_status": "MEASURED", "offset_ms": "2000", "expected_issue": "CLOCK_OUT_OF_SYNC"}
+  ]
+}

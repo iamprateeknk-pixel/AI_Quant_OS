@@ -2,7 +2,7 @@
 
 ## Working implementation
 
-A02 0.2.0 now runs as a trusted installed handler in the local graph supervisor. Registering its manifest reports PARTIAL/SHADOW. The other 17 missions and original 18 version-0.1.0 manifests remain PLANNED.
+A02 0.2.0 runs as a trusted installed handler in the local graph supervisor. Registering its manifest reports PARTIAL/SHADOW. A07 now also has a partial shadow implementation; the other 16 missions and original 18 version-0.1.0 manifests remain PLANNED.
 
 Files: agent_envelope.py defines the shared v2 mission envelope; regime_features.py owns pure deterministic calculations; regime_agent.py validates evidence and emits RegimeDistribution; regime_evaluation.py replays the actual graph. paper_context_sources.py binds history hashes and explicit session gaps. graph_runtime.py validates the returned mission envelope against admitted context.
 

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "A07",
+  "agent_version": "0.2.0",
+  "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde",
+  "implementation_status": "PARTIAL",
+  "lifecycle_at_startup": "SHADOW",
+  "owner_role": "LOCAL_OPERATOR",
+  "implementation": "ai_quant_os.integrity_agent:assess_integrity",
+  "model_route": "DETERMINISTIC_ONLY",
+  "memory_policy": "CONTEXT_ONLY_WITH_ARCHIVAL_RECEIPTS",
+  "tools": ["HEALTH_READ", "HISTORY_READ", "INCIDENT_PROPOSE", "WORLD_STATE_READ"],
+  "installed_external_tool_handlers": [],
+  "evaluation_suite": "tests/test_integrity_agent.py",
+  "replay_fixture": "tests/fixtures/integrity_baseline.json",
+  "promotion_approved": false
+}

@@ -19,6 +19,8 @@ from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
 from ai_quant_os.graph_runtime import GraphRuntime
 from ai_quant_os.regime_agent import regime_implementation
+from ai_quant_os.integrity_agent import integrity_implementation, integrity_sources
+from ai_quant_os.ingress_health import IngressHealth
 from ai_quant_os.agent_context import ContextCompiler, require_context_for_agent
 from ai_quant_os.paper_context_sources import paper_context_sources
 from ai_quant_os.context_checkpoints import ContextCheckpoint
@@ -197,6 +199,7 @@ def create_app(
     calibration_store = CalibrationStore(configured_path)
     world_state_store = WorldStateStore(configured_path)
     agent_registry = load_agent_catalog()
+    ingress_health = IngressHealth()
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
         [
@@ -228,7 +231,10 @@ def create_app(
         async with GraphRuntime.open(
             graph_path,
             registry=agent_registry,
-            implementations={("A02", "0.2.0"): regime_implementation(agent_registry)},
+            implementations={
+                ("A02", "0.2.0"): regime_implementation(agent_registry),
+                ("A07", "0.2.0"): integrity_implementation(agent_registry),
+            },
             tools=AgentToolBoundary(agent_registry, {}),
             clock=current_time,
         ) as runtime:
@@ -656,9 +662,14 @@ def create_app(
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
         snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
         try:
+            sources = (
+                integrity_sources(snapshot, world_state.histories(), ingress_health.snapshot())
+                if payload.agent_id == "A07"
+                else paper_context_sources(snapshot, world_state.histories())
+            )
             context = await ContextCompiler(
                 agent_registry,
-                paper_context_sources(snapshot, world_state.histories()),
+                sources,
                 clock=current_time,
             ).compile(
                 payload.agent_id, payload.agent_version, task_id=payload.task_id, scope="PAPER"
@@ -784,9 +795,18 @@ def create_app(
     def record_world_state_bars(payload: WorldStateBarsInput) -> dict[str, object]:
         try:
             bars = tuple(Bar(**item.model_dump()) for item in payload.bars)
-            inserted = world_state.record_bars(bars, now=current_time())
+            inserted, duplicates = world_state.record_bars_with_health(bars, now=current_time())
         except ValueError as error:
+            code = (
+                "CONFLICTING_BAR"
+                if str(error).startswith("Conflicting duplicate bar")
+                else "FUTURE_BAR"
+                if "future-dated" in str(error)
+                else "INVALID_BAR"
+            )
+            ingress_health.note(code)
             raise HTTPException(status_code=422, detail=str(error)) from error
+        ingress_health.note("DUPLICATE_BAR", duplicates)
         state_store.record_event(
             f"world-state-bars:{uuid4()}",
             {"action": "PAPER_WORLD_STATE_BARS", "intent_id": "", "reason": f"INSERTED:{inserted}"},
@@ -798,6 +818,7 @@ def create_app(
         try:
             snapshot = MarketSnapshot(**quote.model_dump(), trusted=True)
         except ValueError as error:
+            ingress_health.note("INVALID_QUOTE")
             raise HTTPException(status_code=422, detail=str(error)) from error
         quotes[snapshot.instrument_id] = snapshot
         return {"instrument_id": snapshot.instrument_id, "mode": "PAPER"}

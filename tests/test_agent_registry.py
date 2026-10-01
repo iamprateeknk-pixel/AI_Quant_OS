@@ -110,7 +110,7 @@ def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
     client = TestClient(create_app(operator_token="fixture-token"))
     body = client.get("/api/v1/agents/registry").json()
     assert body["mode"] == "PAPER"
-    assert len(body["agents"]) == 19
+    assert len(body["agents"]) == 20
     assert all(item["lifecycle"] == "SHADOW" for item in body["agents"])
     assert all(
         item["implementation_status"] == "PLANNED"

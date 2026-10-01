@@ -89,6 +89,9 @@ class WorldStateEngine:
             return self._bars.copy()
 
     def record_bars(self, bars: tuple[Bar, ...], *, now: datetime) -> int:
+        return self.record_bars_with_health(bars, now=now)[0]
+
+    def record_bars_with_health(self, bars: tuple[Bar, ...], *, now: datetime) -> tuple[int, int]:
         _require_aware(now)
         identifiers = {item.instrument_id for item in self.instruments}
         if any(item.instrument_id not in identifiers for item in bars):
@@ -97,6 +100,14 @@ class WorldStateEngine:
             raise ValueError("World-state bars cannot be future-dated")
         incoming = BarDataset(bars).bars
         with self._lock:
+            seen = {
+                (bar.instrument_id, bar.observed_at) for rows in self._bars.values() for bar in rows
+            }
+            duplicate_rows = 0
+            for bar in bars:
+                key = (bar.instrument_id, bar.observed_at)
+                duplicate_rows += key in seen
+                seen.add(key)
             updated = self._bars.copy()
             inserted = 0
             for identifier in sorted({bar.instrument_id for bar in incoming}):
@@ -109,7 +120,7 @@ class WorldStateEngine:
                 inserted += sum(bar.observed_at not in original_keys for bar in retained)
                 updated[identifier] = retained
             self._bars = updated
-            return inserted
+            return inserted, duplicate_rows
 
     def _instrument_state(
         self,
