@@ -108,3 +108,5 @@ New paper orders retain their initial approved quotes before dispatch. A protect
 `ai-quant-shadow` assigns a candidate to an isolated diagnostic portfolio and appends post-assignment observations with cumulative native fill/position/PnL evidence. Restart, sequential reservations, withdrawal refusal and historical fill-prefix checks are durable. See [shadow portfolio handoff](docs/SHADOW_PORTFOLIO_HANDOFF.md) for commands and remaining production integration.
 
 Protected paper evidence routes now capture immutable ledger/quote checkpoints and publish UTC daily cash-plus-inventory reports with retained opening positions and explicit missing marks. See [daily evidence handoff](docs/DAILY_EVIDENCE_HANDOFF.md).
+
+With persistent paper storage and operator configuration, `AI_QUANT_DAILY_EVIDENCE_ENABLED=1` enables a local UTC boundary capture/publication worker. Verified status records published, missed and failed days without backfilling prices. See [daily scheduler handoff](docs/DAILY_SCHEDULER_HANDOFF.md).

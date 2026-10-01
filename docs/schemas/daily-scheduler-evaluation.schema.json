@@ -1,0 +1,727 @@
+{
+  "$defs": {
+    "CurrencyInstrument": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "base_currency": {
+          "title": "Base Currency",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "base_currency",
+        "quote_currency"
+      ],
+      "title": "CurrencyInstrument",
+      "type": "object"
+    },
+    "DailyEvidence": {
+      "properties": {
+        "opening": {
+          "$ref": "#/$defs/EvidenceCheckpoint"
+        },
+        "closing": {
+          "$ref": "#/$defs/EvidenceCheckpoint"
+        },
+        "report": {
+          "$ref": "#/$defs/PaperDailyReport"
+        },
+        "published_at": {
+          "format": "date-time",
+          "title": "Published At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "opening",
+        "closing",
+        "report",
+        "published_at"
+      ],
+      "title": "DailyEvidence",
+      "type": "object"
+    },
+    "DailyInstrumentContribution": {
+      "properties": {
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "opening_quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Opening Quantity",
+          "type": "string"
+        },
+        "closing_quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Closing Quantity",
+          "type": "string"
+        },
+        "cash_flow_before_fees_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Cash Flow Before Fees Quote",
+          "type": "string"
+        },
+        "fee_cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee Cash Flow Quote",
+          "type": "string"
+        },
+        "cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Cash Flow Quote",
+          "type": "string"
+        },
+        "opening_inventory_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Opening Inventory Quote"
+        },
+        "closing_inventory_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Closing Inventory Quote"
+        },
+        "daily_pnl_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Daily Pnl Quote"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "opening_mark_price": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Opening Mark Price"
+        },
+        "closing_mark_price": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Closing Mark Price"
+        },
+        "opening_mark_state": {
+          "title": "Opening Mark State",
+          "type": "string"
+        },
+        "closing_mark_state": {
+          "title": "Closing Mark State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_count",
+        "opening_quantity",
+        "closing_quantity",
+        "cash_flow_before_fees_quote",
+        "fee_cash_flow_quote",
+        "cash_flow_quote",
+        "opening_inventory_quote",
+        "closing_inventory_quote",
+        "daily_pnl_quote",
+        "instrument_id",
+        "quote_currency",
+        "opening_mark_price",
+        "closing_mark_price",
+        "opening_mark_state",
+        "closing_mark_state"
+      ],
+      "title": "DailyInstrumentContribution",
+      "type": "object"
+    },
+    "DailyStrategyContribution": {
+      "properties": {
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "opening_quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Opening Quantity",
+          "type": "string"
+        },
+        "closing_quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Closing Quantity",
+          "type": "string"
+        },
+        "cash_flow_before_fees_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Cash Flow Before Fees Quote",
+          "type": "string"
+        },
+        "fee_cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee Cash Flow Quote",
+          "type": "string"
+        },
+        "cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Cash Flow Quote",
+          "type": "string"
+        },
+        "opening_inventory_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Opening Inventory Quote"
+        },
+        "closing_inventory_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Closing Inventory Quote"
+        },
+        "daily_pnl_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Daily Pnl Quote"
+        },
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_count",
+        "opening_quantity",
+        "closing_quantity",
+        "cash_flow_before_fees_quote",
+        "fee_cash_flow_quote",
+        "cash_flow_quote",
+        "opening_inventory_quote",
+        "closing_inventory_quote",
+        "daily_pnl_quote",
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "quote_currency"
+      ],
+      "title": "DailyStrategyContribution",
+      "type": "object"
+    },
+    "EvidenceCheckpoint": {
+      "properties": {
+        "checkpoint_id": {
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "captured_at": {
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "owners": {
+          "items": {
+            "$ref": "#/$defs/OrderAttribution"
+          },
+          "title": "Owners",
+          "type": "array"
+        },
+        "fills": {
+          "items": {
+            "$ref": "#/$defs/PaperFill"
+          },
+          "title": "Fills",
+          "type": "array"
+        },
+        "quotes": {
+          "items": {
+            "$ref": "#/$defs/MarketSnapshot"
+          },
+          "title": "Quotes",
+          "type": "array"
+        },
+        "catalog": {
+          "items": {
+            "$ref": "#/$defs/CurrencyInstrument"
+          },
+          "title": "Catalog",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "mode": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "checkpoint_id",
+        "captured_at",
+        "owners",
+        "fills",
+        "quotes",
+        "catalog"
+      ],
+      "title": "EvidenceCheckpoint",
+      "type": "object"
+    },
+    "MarketSnapshot": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "bid": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Bid",
+          "type": "string"
+        },
+        "ask": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Ask",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "world_state_version": {
+          "title": "World State Version",
+          "type": "string"
+        },
+        "trusted": {
+          "title": "Trusted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "bid",
+        "ask",
+        "observed_at",
+        "world_state_version",
+        "trusted"
+      ],
+      "title": "MarketSnapshot",
+      "type": "object"
+    },
+    "OrderAttribution": {
+      "properties": {
+        "order_id": {
+          "title": "Order Id",
+          "type": "string"
+        },
+        "intent_id": {
+          "title": "Intent Id",
+          "type": "string"
+        },
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Quantity",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "intent_sha256": {
+          "title": "Intent Sha256",
+          "type": "string"
+        },
+        "order_sha256": {
+          "title": "Order Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "intent_id",
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "side",
+        "quantity",
+        "status",
+        "created_at",
+        "expires_at",
+        "intent_sha256",
+        "order_sha256"
+      ],
+      "title": "OrderAttribution",
+      "type": "object"
+    },
+    "PaperDailyReport": {
+      "properties": {
+        "day": {
+          "format": "date",
+          "title": "Day",
+          "type": "string"
+        },
+        "opening_ledger_sha256": {
+          "title": "Opening Ledger Sha256",
+          "type": "string"
+        },
+        "closing_ledger_sha256": {
+          "title": "Closing Ledger Sha256",
+          "type": "string"
+        },
+        "strategies": {
+          "items": {
+            "$ref": "#/$defs/DailyStrategyContribution"
+          },
+          "title": "Strategies",
+          "type": "array"
+        },
+        "instruments": {
+          "items": {
+            "$ref": "#/$defs/DailyInstrumentContribution"
+          },
+          "title": "Instruments",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "COMPLETE_ACCOUNTING",
+            "INCOMPLETE_MARKS"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "evidence_gaps": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Gaps",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "mode": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        },
+        "accounting_method": {
+          "const": "UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1",
+          "default": "UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1",
+          "title": "Accounting Method",
+          "type": "string"
+        },
+        "marking_method": {
+          "const": "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
+          "default": "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
+          "title": "Marking Method",
+          "type": "string"
+        },
+        "reconciled": {
+          "const": true,
+          "default": true,
+          "title": "Reconciled",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "day",
+        "opening_ledger_sha256",
+        "closing_ledger_sha256",
+        "strategies",
+        "instruments",
+        "state",
+        "evidence_gaps"
+      ],
+      "title": "PaperDailyReport",
+      "type": "object"
+    },
+    "PaperFill": {
+      "properties": {
+        "fill_id": {
+          "title": "Fill Id",
+          "type": "string"
+        },
+        "order_id": {
+          "title": "Order Id",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Quantity",
+          "type": "string"
+        },
+        "price": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Price",
+          "type": "string"
+        },
+        "fee": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "source": {
+          "default": "PAPER_MANUAL",
+          "enum": [
+            "PAPER_MANUAL",
+            "PAPER_BROKER"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_id",
+        "order_id",
+        "instrument_id",
+        "side",
+        "quantity",
+        "price",
+        "fee",
+        "observed_at"
+      ],
+      "title": "PaperFill",
+      "type": "object"
+    },
+    "ScheduleEvent": {
+      "properties": {
+        "receipt": {
+          "$ref": "#/$defs/ScheduleReceipt"
+        },
+        "previous_sha256": {
+          "title": "Previous Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt",
+        "previous_sha256"
+      ],
+      "title": "ScheduleEvent",
+      "type": "object"
+    },
+    "ScheduleReceipt": {
+      "properties": {
+        "day": {
+          "format": "date",
+          "title": "Day",
+          "type": "string"
+        },
+        "attempted_at": {
+          "format": "date-time",
+          "title": "Attempted At",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "PUBLISHED",
+            "MISSED",
+            "FAILED"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reason"
+        },
+        "report_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Report Sha256"
+        }
+      },
+      "required": [
+        "day",
+        "attempted_at",
+        "outcome",
+        "reason",
+        "report_sha256"
+      ],
+      "title": "ScheduleReceipt",
+      "type": "object"
+    },
+    "ScheduleStart": {
+      "properties": {
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "started_at"
+      ],
+      "title": "ScheduleStart",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "started": {
+      "$ref": "#/$defs/ScheduleStart"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/ScheduleEvent"
+      },
+      "title": "Events",
+      "type": "array"
+    },
+    "evidence": {
+      "$ref": "#/$defs/DailyEvidence"
+    }
+  },
+  "required": [
+    "started",
+    "events",
+    "evidence"
+  ],
+  "title": "SchedulerEvaluation",
+  "type": "object"
+}

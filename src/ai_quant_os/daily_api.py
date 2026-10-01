@@ -37,6 +37,8 @@ def install_daily_routes(
 
     @app.post("/api/v1/paper/evidence/checkpoints", dependencies=[Depends(require_operator)])
     def capture(payload: CheckpointInput):
+        if payload.checkpoint_id.startswith("daily-auto-"):
+            raise HTTPException(409, "Automatic boundary identifiers are reserved")
         try:
             archive = store()
             existing = archive.get_checkpoint(payload.checkpoint_id)

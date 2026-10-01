@@ -1,3 +1,4 @@
+import asyncio
 import hmac
 import os
 import sqlite3
@@ -164,6 +165,7 @@ def create_app(
     fast_classifier: FastClassifier | None = None,
     deep_reviewer: DeepReviewer | None = None,
     research_workspace: Path | None = None,
+    daily_evidence_enabled: bool | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -200,6 +202,16 @@ def create_app(
     configured_path = paper_db_path or (
         Path(os.environ["AI_QUANT_PAPER_DB"]) if os.getenv("AI_QUANT_PAPER_DB") else None
     )
+    daily_setting = os.getenv("AI_QUANT_DAILY_EVIDENCE_ENABLED", "0")
+    if daily_evidence_enabled is None and daily_setting not in ("0", "1"):
+        raise ValueError("AI_QUANT_DAILY_EVIDENCE_ENABLED must be 0 or 1")
+    enabled_daily = (
+        daily_setting == "1" if daily_evidence_enabled is None else daily_evidence_enabled
+    )
+    if type(enabled_daily) is not bool or (
+        enabled_daily and (configured_path is None or not configured_token)
+    ):
+        raise ValueError("Daily scheduler requires persistent paper storage and an operator token")
     state_store = PaperStateStore(configured_path)
     calibration_store = CalibrationStore(configured_path)
     world_state_store = WorldStateStore(configured_path)
@@ -225,6 +237,20 @@ def create_app(
     )
     quotes: dict[str, MarketSnapshot] = {}
     control_lock = Lock()
+    daily_worker = None
+    if enabled_daily:
+        from ai_quant_os.daily_scheduler import DailyScheduler
+        from ai_quant_os.evidence_store import EvidenceStore
+
+        evidence_path = configured_path.with_name(configured_path.stem + ".evidence.sqlite3")
+        daily_worker = DailyScheduler(
+            EvidenceStore(evidence_path),
+            lambda: execution.attribution_ledger,
+            lambda: tuple(quotes.copy().values()),
+            PAPER_INSTRUMENTS,
+            current_time,
+            lambda: state_store.audit_integrity().valid,
+        )
 
     @asynccontextmanager
     async def lifespan(application: FastAPI):
@@ -244,13 +270,27 @@ def create_app(
             clock=current_time,
         ) as runtime:
             application.state.graph_runtime = runtime
+            if daily_worker is not None:
+                from ai_quant_os.daily_scheduler import run_daily_scheduler
+
+                application.state.daily_task = asyncio.create_task(
+                    run_daily_scheduler(daily_worker)
+                )
             try:
                 yield
             finally:
+                if application.state.daily_task is not None:
+                    application.state.daily_task.cancel()
+                    try:
+                        await application.state.daily_task
+                    except asyncio.CancelledError:
+                        pass
+                    application.state.daily_task = None
                 application.state.graph_runtime = None
 
     app = FastAPI(title="AI Quant OS Paper Control API", version="0.1.0", lifespan=lifespan)
     app.state.graph_runtime = None
+    app.state.daily_task = None
 
     def currency_context(primary_quote: MarketSnapshot | None = None) -> CurrencyRiskContext:
         instruments = currency_policy.instruments
@@ -306,6 +346,15 @@ def create_app(
             x_recovery_token, configured_recovery_token
         ):
             raise HTTPException(status_code=401, detail="Invalid recovery token")
+
+    @app.get("/api/v1/paper/evidence/scheduler", dependencies=[Depends(require_operator)])
+    def daily_scheduler_status():
+        if daily_worker is None:
+            return {"schema_version": "1.0", "enabled": False, "state": "DISABLED"}
+        try:
+            return daily_worker.status()
+        except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Daily scheduler history could not be verified") from error
 
     @app.get("/api/v1/system/status")
     def status() -> dict[str, str | int]:
