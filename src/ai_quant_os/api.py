@@ -1,6 +1,7 @@
 import hmac
 import os
 import sqlite3
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -15,7 +16,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
 from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
-from ai_quant_os.agent_registry import load_agent_catalog
+from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
+from ai_quant_os.graph_runtime import GraphRuntime
 from ai_quant_os.agent_context import ContextCompiler, require_context_for_agent
 from ai_quant_os.paper_context_sources import paper_context_sources
 from ai_quant_os.context_checkpoints import ContextCheckpoint
@@ -74,6 +76,12 @@ class AgentContextInput(BaseModel):
     agent_id: str = Field(pattern=r"^A(0[1-9]|1[0-8])$")
     agent_version: str = Field(min_length=1, max_length=32)
     task_id: str = Field(min_length=1, max_length=128)
+
+
+class AgentGraphInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    run_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,128}$")
+    context_ref: str = Field(min_length=1, max_length=128)
 
 
 class WorldStatePublishInput(BaseModel):
@@ -208,7 +216,29 @@ def create_app(
     )
     quotes: dict[str, MarketSnapshot] = {}
     control_lock = Lock()
-    app = FastAPI(title="AI Quant OS Paper Control API", version="0.1.0")
+
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):
+        application.state.graph_runtime = None
+        if configured_path is None:
+            yield
+            return
+        graph_path = configured_path.with_name(configured_path.stem + ".agents.sqlite3")
+        async with GraphRuntime.open(
+            graph_path,
+            registry=agent_registry,
+            implementations={},
+            tools=AgentToolBoundary(agent_registry, {}),
+            clock=current_time,
+        ) as runtime:
+            application.state.graph_runtime = runtime
+            try:
+                yield
+            finally:
+                application.state.graph_runtime = None
+
+    app = FastAPI(title="AI Quant OS Paper Control API", version="0.1.0", lifespan=lifespan)
+    app.state.graph_runtime = None
 
     def currency_context(primary_quote: MarketSnapshot | None = None) -> CurrencyRiskContext:
         instruments = currency_policy.instruments
@@ -681,6 +711,70 @@ def create_app(
             "archival_only": True,
             "current": context.created_at <= now < context.valid_until,
             "checkpoint": checkpoint.model_dump(mode="json"),
+        }
+
+    def require_graph_runtime() -> GraphRuntime:
+        runtime = app.state.graph_runtime
+        if runtime is None:
+            raise HTTPException(status_code=503, detail="Persistent agent runtime is unavailable")
+        return runtime
+
+    @app.post("/api/v1/paper/agents/execute", dependencies=[Depends(require_operator)])
+    async def execute_agent_graph(payload: AgentGraphInput) -> dict[str, object]:
+        runtime = require_graph_runtime()
+        try:
+            checkpoint = state_store.context_checkpoint(payload.context_ref)
+            if checkpoint is None:
+                raise HTTPException(status_code=404, detail="Context checkpoint not found")
+            if checkpoint.context.scope != "PAPER":
+                raise HTTPException(status_code=403, detail="Paper context required")
+            receipt = await runtime.run(payload.run_id, checkpoint.context)
+            context_current = runtime.current(receipt.run_id)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail="Graph run rejected") from error
+        except sqlite3.Error as error:
+            raise HTTPException(status_code=503, detail="Graph storage unavailable") from error
+        return {
+            "mode": "PAPER",
+            "advisory_only": True,
+            "context_current": context_current,
+            "receipt": receipt.model_dump(mode="json"),
+        }
+
+    @app.get("/api/v1/agents/graph-runs/{run_id}", dependencies=[Depends(require_operator)])
+    def archived_graph_run(run_id: str) -> dict[str, object]:
+        runtime = require_graph_runtime()
+        try:
+            receipt = runtime.receipt(run_id)
+            context_current = runtime.current(run_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail="Graph run not found") from error
+        except (ValueError, sqlite3.Error) as error:
+            raise HTTPException(status_code=503, detail="Graph storage unavailable") from error
+        return {
+            "mode": "PAPER",
+            "archival_only": True,
+            "context_current": context_current,
+            "receipt": receipt.model_dump(mode="json"),
+        }
+
+    @app.post(
+        "/api/v1/paper/agents/graph-runs/{run_id}/resume", dependencies=[Depends(require_operator)]
+    )
+    async def resume_agent_graph(run_id: str) -> dict[str, object]:
+        runtime = require_graph_runtime()
+        try:
+            receipt = await runtime.resume(run_id)
+            context_current = runtime.current(run_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail="Graph run not found") from error
+        except (ValueError, sqlite3.Error) as error:
+            raise HTTPException(status_code=503, detail="Graph storage unavailable") from error
+        return {
+            "mode": "PAPER",
+            "advisory_only": True,
+            "context_current": context_current,
+            "receipt": receipt.model_dump(mode="json"),
         }
 
     @app.post("/api/v1/paper/world-state/bars", dependencies=[Depends(require_operator)])
