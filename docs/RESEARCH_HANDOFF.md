@@ -20,7 +20,7 @@ This isolation applies to this pipeline and its shared registry. Trusted Python 
 
 Four declared screens check nonnegative aggregate walk-forward marked P&L, nonnegative holdout marked P&L, nonnegative stressed validation/holdout marked P&L, and actual validation/holdout order activity. Stress fees and slippage cannot be lower than baseline, and at least one must be higher. Native bar costs retain their documented synthetic quote model.
 
-These screens are engineering evidence, not proof of an investable edge. Independent fold accounts and end marks are not one continuous portfolio return. Monte Carlo, adversarial, sandbox, independent review and shadow gates are mandatory PENDING entries. No report can skip required gates or set promotion_allowed=true. Outcomes are FAILED, REJECTED or VALIDATION_INCOMPLETE; none is promotion-ready.
+These screens are engineering evidence, not proof of an investable edge. Independent fold accounts and end marks are not one continuous portfolio return. In version 1.0, Monte Carlo, adversarial, sandbox, independent review and shadow gates are mandatory PENDING entries. No report can skip required gates or set promotion_allowed=true. Outcomes are FAILED, REJECTED or VALIDATION_INCOMPLETE; none is promotion-ready.
 
 Candidate construction and native failures produce sanitized stage reasons and retain completed attempts in the immutable report. Failed screens produce a REJECTED report with reasons. Invalid or already exposed input scopes are rejected before execution. SQLite reads verify canonical typed plan/report/selection hashes and their hypothesis/holdout lineage. Completion requires the reservation's private ownership token and commits once. The store is local integrity checking, not independently immutable audit storage or a publisher signature.
 
@@ -36,8 +36,12 @@ The checked-in baseline uses synthetic monotonic EURUSD prices: fourteen develop
 
 Runtime limits are 16 candidates, 16 folds, 4,096 bars per input, 128 native calls and 20,000 total bar visits per experiment, 4 MiB per CLI CSV, 16 MiB per archived report and 1,000 experiments per database. CLI exports include separate source lineage and a canonical report hash. Success of the export command means the report was produced; inspect outcome and gates for its evaluation state.
 
+## Monte Carlo extension
+
+Version 1.1 adds an explicitly predeclared native closed-trade resampling screen; insufficient or unclosed samples remain pending. Version 1.0 archives and pending gates keep their existing meaning. See [Monte Carlo handoff](MONTE_CARLO_HANDOFF.md) for scope, declared policy, statistics, tests and compatibility.
+
 ## Remaining work and rollback
 
-Automated hypothesis generation, general strategy genomes, isolated sandbox building, Monte Carlo/statistical overfit checks, adversarial suites, shadow evidence, champion/challenger governance, promotion bundles, agent/API/UI integration, production observability and independent review remain unfinished. P08 is in progress.
+Automated hypothesis generation, general strategy genomes, isolated sandbox building, Statistical overfit/multiple-testing checks, adversarial suites, shadow evidence, champion/challenger governance, promotion bundles, agent/API/UI integration, production observability and independent review remain unfinished. P08 is in progress.
 
 Preserve the research database, raw/Parquet archive, strategy registry and result exports before rollback. The new research tables are separate from paper orders and controls. No automatic deletion, retention migration, reservation recovery or holdout release is implemented; abandoned holdout claims remain conservative reservations. Older packages cannot read these new contracts. Hosted Windows/Linux research checks are configured but have not run.

@@ -11,6 +11,7 @@ from ai_quant_os.backtest import BacktestCosts
 from ai_quant_os.data_archive import BarArchive
 from ai_quant_os.research_contracts import Hypothesis, ResearchDatasetScope, ResearchPlan
 from ai_quant_os.strategy_contracts import StrategyGenome
+from ai_quant_os.monte_carlo import MonteCarloSpec
 
 
 def main():
@@ -30,6 +31,12 @@ def main():
     parser.add_argument("--fee", type=Decimal, default=Decimal(0))
     parser.add_argument("--stress-slippage-bps", type=Decimal, required=True)
     parser.add_argument("--stress-fee", type=Decimal, required=True)
+    parser.add_argument("--monte-carlo", action="store_true")
+    parser.add_argument("--mc-seed", type=int)
+    parser.add_argument("--mc-iterations", type=int)
+    parser.add_argument("--mc-block-size", type=int)
+    parser.add_argument("--mc-drawdown-limit", type=Decimal)
+    parser.add_argument("--mc-currency", choices=("USD", "JPY"))
     parser.add_argument("--workspace", type=Path, default=Path("data-local/research"))
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -39,6 +46,20 @@ def main():
         from ai_quant_os.strategy_registry import StrategyRegistry
 
         root, output = args.workspace.resolve(), args.output.resolve()
+        mc_kwargs = {
+            key: value
+            for key, value in (
+                ("seed", args.mc_seed),
+                ("iterations", args.mc_iterations),
+                ("block_size", args.mc_block_size),
+                ("drawdown_limit", args.mc_drawdown_limit),
+                ("risk_currency", args.mc_currency),
+            )
+            if value is not None
+        }
+        if mc_kwargs and not args.monte_carlo:
+            raise ValueError("Monte Carlo options require --monte-carlo declaration")
+        mc_spec = MonteCarloSpec(**mc_kwargs) if args.monte_carlo else None
         if (
             output
             in {
@@ -108,6 +129,8 @@ def main():
             args.quantity,
             BacktestCosts(args.slippage_bps, args.fee),
             BacktestCosts(args.stress_slippage_bps, args.stress_fee),
+            schema_version="1.1" if mc_spec is not None else "1.0",
+            monte_carlo_spec=mc_spec,
         )
         report = run_research_experiment(
             plan,
@@ -117,7 +140,7 @@ def main():
             ResearchStore(root / "research.sqlite3"),
         )
         payload = {
-            "schema_version": "1.0",
+            "schema_version": report.schema_version,
             "report": json.loads(encode_research(report)),
             "report_sha256": sha256(encode_research(report)).hexdigest(),
             "source_lineage": sources,

@@ -16,6 +16,7 @@ from ai_quant_os.research_results import (
 )
 from ai_quant_os.research_store import ResearchStore
 from ai_quant_os.strategy_registry import StrategyRegistry, prepare_builtin
+from ai_quant_os.research_monte_carlo import evaluate_native_monte_carlo
 
 
 def run_research_experiment(
@@ -63,6 +64,11 @@ def _run(plan, development, holdout, registry, store):
     )
     if total_rows > 20000:
         raise ValueError("Research evidence volume budget exceeded")
+    if (
+        plan.monte_carlo_spec is not None
+        and len(holdout.bars) * plan.monte_carlo_spec.iterations // 2 > 500000
+    ):
+        raise ValueError("Declared Monte Carlo computation budget exceeded")
     actual_scope = ResearchDatasetScope(
         holdout.bars[0].instrument_id,
         holdout.bars[0].observed_at,
@@ -122,6 +128,12 @@ def _run(plan, development, holdout, registry, store):
         failure_code = "NATIVE_EXECUTION_FAILURE"
         heldout = execute(holdout, selection.genome, plan.costs)
         heldout_stress = execute(holdout, selection.genome, plan.stress_costs)
+        failure_code = "MONTE_CARLO_FAILURE"
+        monte_carlo = (
+            evaluate_native_monte_carlo(heldout, plan.monte_carlo_spec)
+            if plan.monte_carlo_spec is not None
+            else None
+        )
         conditions = measured_conditions(folds, heldout, heldout_stress)
         gates = tuple(
             ResearchGate(
@@ -133,13 +145,18 @@ def _run(plan, development, holdout, registry, store):
         ) + tuple(
             ResearchGate(name, "PENDING", "IMPLEMENTATION_OR_EVIDENCE_MISSING")
             for name in PENDING_GATES
+            if name != "MONTE_CARLO" or monte_carlo is None
         )
+        if monte_carlo is not None:
+            gates += (
+                ResearchGate("MONTE_CARLO", monte_carlo.result.state, monte_carlo.result.reason),
+            )
         reasons = tuple(gate.name for gate in gates if gate.state != "PASS")
         outcome = (
             "REJECTED" if any(gate.state == "FAIL" for gate in gates) else "VALIDATION_INCOMPLETE"
         )
         report = ResearchReport(
-            "1.0",
+            plan.schema_version,
             plan,
             outcome,
             False,
@@ -150,10 +167,11 @@ def _run(plan, development, holdout, registry, store):
             gates,
             reasons,
             tuple(attempts),
+            monte_carlo,
         )
     except Exception:
         report = ResearchReport(
-            "1.0",
+            plan.schema_version,
             plan,
             "FAILED",
             False,

@@ -353,3 +353,135 @@ def test_concurrent_reservation_assigns_holdout_only_once(tmp_path):
     with ThreadPoolExecutor(max_workers=4) as pool:
         claimed = tuple(pool.map(reserve, range(4)))
     assert sum(token is not None for token in claimed) == 1
+
+
+def test_declared_monte_carlo_is_bound_to_closed_native_trades_and_archives(tmp_path):
+    pytest.importorskip("nautilus_trader")
+    from dataclasses import replace
+    from ai_quant_os.monte_carlo import MonteCarloSpec
+    from ai_quant_os.research_pipeline import run_research_experiment
+    from ai_quant_os.research_store import ResearchStore
+    from ai_quant_os.strategy_registry import StrategyRegistry
+
+    def cyclic(start, count):
+        rows = []
+        for i in range(start, start + count):
+            step = i % 20
+            price = Decimal(1) + Decimal(step if step <= 10 else 20 - step) / 100
+            rows.append(
+                Bar(
+                    "EURUSD",
+                    datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(minutes=i),
+                    price,
+                    price,
+                    price,
+                    price,
+                    Decimal(100),
+                )
+            )
+        return BarDataset(rows)
+
+    development, holdout = cyclic(0, 60), cyclic(60, 400)
+    spec = MonteCarloSpec(iterations=100)
+    declared = plan(
+        development,
+        holdout,
+        train_bars=20,
+        validation_bars=20,
+        schema_version="1.1",
+        monte_carlo_spec=spec,
+    )
+    store = ResearchStore(tmp_path / "research.sqlite3")
+    report = run_research_experiment(
+        declared, development, holdout, StrategyRegistry(tmp_path / "strategies"), store
+    )
+    assert report.schema_version == "1.1" and report.monte_carlo.result.state == "PASS"
+    assert report.monte_carlo.result.closed_trade_count == 20
+    assert next(g for g in report.gates if g.name == "MONTE_CARLO").state == "PASS"
+    assert report.promotion_allowed is False and report.outcome == "VALIDATION_INCOMPLETE"
+    assert store.get("fixture") == report
+    with pytest.raises(ValueError, match="Monte Carlo"):
+        replace(
+            report,
+            monte_carlo=replace(
+                report.monte_carlo,
+                result=replace(report.monte_carlo.result, drawdown_p95=Decimal(999)),
+            ),
+        )
+    with pytest.raises(ValueError, match="Monte Carlo"):
+        replace(
+            report,
+            outcome="FAILED",
+            reasons=("TEST",),
+            schema_version="1.0",
+            plan=replace(declared, schema_version="1.0", monte_carlo_spec=None),
+        )
+
+
+def test_preexisting_version_one_report_remains_byte_identical():
+    pytest.importorskip("nautilus_trader")
+    from pathlib import Path
+    from hashlib import sha256
+    from pydantic import TypeAdapter
+    from ai_quant_os.research_results import ResearchReport
+    from ai_quant_os.research_store import encode_research
+
+    artifact = json.loads(
+        (Path(__file__).parents[1] / "docs/evaluations/research-native-baseline.json").read_text()
+    )
+    report = TypeAdapter(ResearchReport).validate_python(artifact["report"])
+    assert sha256(encode_research(report)).hexdigest() == artifact["report_sha256"]
+
+
+def test_cli_declares_monte_carlo_before_execution(tmp_path):
+    pytest.importorskip("nautilus_trader")
+    pytest.importorskip("pyarrow")
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    fixtures = Path(__file__).parent / "fixtures"
+    output = tmp_path / "report.json"
+    command = [
+        sys.executable,
+        "-m",
+        "ai_quant_os.research_cli",
+        str(fixtures / "research_development.csv"),
+        str(fixtures / "research_holdout.csv"),
+        "--experiment-id",
+        "mc-cli",
+        "--hypothesis-id",
+        "mc-cli-hypothesis",
+        "--description",
+        "Synthetic policy declaration",
+        "--candidate",
+        "1:2",
+        "--train-bars",
+        "6",
+        "--validation-bars",
+        "4",
+        "--quantity",
+        "100",
+        "--fee",
+        "0.10",
+        "--stress-fee",
+        "0.20",
+        "--stress-slippage-bps",
+        "10",
+        "--monte-carlo",
+        "--mc-seed",
+        "123",
+        "--mc-iterations",
+        "100",
+        "--workspace",
+        str(tmp_path / "workspace"),
+        "--output",
+        str(output),
+    ]
+    run = subprocess.run(command, capture_output=True, text=True)
+    assert run.returncode == 0, run.stderr
+    artifact = json.loads(output.read_text())
+    assert artifact["schema_version"] == "1.1"
+    assert artifact["report"]["plan"]["monte_carlo_spec"]["seed"] == 123
+    assert artifact["report"]["monte_carlo"]["result"]["state"] == "PENDING"
+    assert artifact["report"]["monte_carlo"]["result"]["reason"] == "UNCLOSED_POSITION"
