@@ -132,6 +132,28 @@ class PaperOrderStore:
                 self._connection.rollback()
                 raise
 
+    def attribution_records(self):
+        """Read persisted ownership and fills in one bounded database snapshot."""
+        with self._lock:
+            self._connection.execute("BEGIN")
+            try:
+                rows = self._connection.execute(
+                    "SELECT order_id,intent_id,intent_json,order_json FROM paper_orders ORDER BY order_id LIMIT 10001"
+                ).fetchall()
+                fill_rows = self._connection.execute(
+                    "SELECT fill_id,fill_json FROM paper_fills ORDER BY fill_id LIMIT 10001"
+                ).fetchall()
+                if len(rows) > 10000 or len(fill_rows) > 10000:
+                    raise ValueError("Paper attribution ledger capacity exceeded")
+                fills = tuple(_decode_fill(row[1]) for row in fill_rows)
+                if any(row[0] != fill.fill_id for row, fill in zip(fill_rows, fills, strict=True)):
+                    raise ValueError("Paper attribution fill storage identity mismatch")
+                self._connection.commit()
+                return tuple(rows), fills
+            except BaseException:
+                self._connection.rollback()
+                raise
+
     def _currency_ledger_unlocked(
         self,
     ) -> tuple[tuple[PaperFill, ...], tuple[CurrencyPendingOrder, ...]]:

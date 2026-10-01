@@ -1,4 +1,5 @@
 import json
+from hashlib import sha256
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from decimal import Decimal
@@ -20,6 +21,7 @@ from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.order_store import PaperOrderStore
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure, summarize_position
 from ai_quant_os.risk import RiskKernel, SafetyState
+from ai_quant_os.paper_attribution import OrderAttribution
 
 
 @dataclass(frozen=True)
@@ -130,6 +132,46 @@ class PaperExecutionGateway:
     def currency_ledger(self) -> tuple[tuple[PaperFill, ...], tuple[CurrencyPendingOrder, ...]]:
         with self._lock:
             return self._store.currency_ledger()
+
+    @property
+    def attribution_ledger(self):
+        with self._lock:
+            rows, fills = self._store.attribution_records()
+            owners = []
+            for order_id, intent_id, intent_raw, order_raw in rows:
+                order = _decode_order(order_raw)
+                intent = json.loads(intent_raw)
+                command = order.command
+                if (
+                    command.broker_route != "PAPER"
+                    or command.order_id != order_id
+                    or command.risk_id != order.risk_id
+                    or order.order_id != order_id
+                    or order.intent_id != intent_id
+                    or intent["intent_id"] != intent_id
+                    or (command.instrument_id, command.side)
+                    != (intent["instrument_id"], intent["side"])
+                    or command.quantity != Decimal(intent["desired_exposure"])
+                    or command.expires_at != datetime.fromisoformat(intent["valid_until"])
+                ):
+                    raise ValueError("Paper attribution order ownership mismatch")
+                owners.append(
+                    OrderAttribution(
+                        order_id,
+                        intent_id,
+                        intent["strategy_id"],
+                        intent["strategy_version"],
+                        command.instrument_id,
+                        command.side,
+                        command.quantity,
+                        order.status,
+                        datetime.fromisoformat(intent["created_at"]),
+                        command.expires_at,
+                        sha256(intent_raw.encode()).hexdigest(),
+                        sha256(order_raw.encode()).hexdigest(),
+                    )
+                )
+            return tuple(owners), fills
 
     @property
     def exposure_snapshot(self) -> PortfolioExposure:

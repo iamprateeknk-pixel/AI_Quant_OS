@@ -1,0 +1,148 @@
+{
+  "case": "SYNTHETIC_PERSISTED_PAPER_LEDGER",
+  "catalog": [
+    {
+      "base_currency": "EUR",
+      "instrument_id": "EURUSD",
+      "quote_currency": "USD"
+    },
+    {
+      "base_currency": "GBP",
+      "instrument_id": "GBPUSD",
+      "quote_currency": "USD"
+    },
+    {
+      "base_currency": "USD",
+      "instrument_id": "USDJPY",
+      "quote_currency": "JPY"
+    },
+    {
+      "base_currency": "EUR",
+      "instrument_id": "EURJPY",
+      "quote_currency": "JPY"
+    }
+  ],
+  "fills": [
+    {
+      "fee": "0.1",
+      "fill_id": "evidence-fill-alpha",
+      "instrument_id": "EURUSD",
+      "observed_at": "2026-01-01T00:00:00Z",
+      "order_id": "71fb92aa-1b03-49f4-9389-9b5502b8041b",
+      "price": "1.1",
+      "quantity": "10",
+      "side": "BUY",
+      "source": "PAPER_MANUAL"
+    },
+    {
+      "fee": "0.2",
+      "fill_id": "evidence-fill-beta",
+      "instrument_id": "EURUSD",
+      "observed_at": "2026-01-01T00:00:00Z",
+      "order_id": "932595f6-0971-4c80-9577-d3b84386aceb",
+      "price": "1.2",
+      "quantity": "4",
+      "side": "SELL",
+      "source": "PAPER_MANUAL"
+    }
+  ],
+  "owners": [
+    {
+      "created_at": "2026-01-01T00:00:00Z",
+      "expires_at": "2026-01-01T00:01:00Z",
+      "instrument_id": "EURUSD",
+      "intent_id": "evidence-alpha",
+      "intent_sha256": "062b68ca99edd5965e0e8230b804b91979356a0e468487a2e94c74c9122bd69d",
+      "order_id": "71fb92aa-1b03-49f4-9389-9b5502b8041b",
+      "order_sha256": "3bd10bcf46f9a343a72905d2c591519d6b03268bf59dad6b77a8bdd4a3b23177",
+      "quantity": "1E+1",
+      "side": "BUY",
+      "status": "ACCEPTED",
+      "strategy_id": "alpha",
+      "strategy_version": "1"
+    },
+    {
+      "created_at": "2026-01-01T00:00:00Z",
+      "expires_at": "2026-01-01T00:01:00Z",
+      "instrument_id": "EURUSD",
+      "intent_id": "evidence-beta",
+      "intent_sha256": "01c3203b348a0fa25ccbb9ae746d21923b352ea5ea7ae46d496d4687fc2a4157",
+      "order_id": "932595f6-0971-4c80-9577-d3b84386aceb",
+      "order_sha256": "b12f35295c84ebd57a35fca1596990383912bbb1aeb90d5ce1a70278a3891b20",
+      "quantity": "4",
+      "side": "SELL",
+      "status": "ACCEPTED",
+      "strategy_id": "beta",
+      "strategy_version": "1"
+    }
+  ],
+  "quotes": [
+    {
+      "ask": "1.4",
+      "bid": "1.3",
+      "instrument_id": "EURUSD",
+      "observed_at": "2026-01-01T00:00:00Z",
+      "trusted": true,
+      "world_state_version": "attribution-world"
+    }
+  ],
+  "report": {
+    "accounting_scope": "CUMULATIVE_FROM_EMPTY_INVENTORY",
+    "as_of": "2026-01-01T00:00:00Z",
+    "evidence_gaps": [
+      "DECISION_PRICE_BENCHMARK_MISSING",
+      "AGENT_CREDIT_EVIDENCE_MISSING",
+      "CAUSAL_FACTOR_ATTRIBUTION_MISSING",
+      "CANDIDATE_GENOME_BINDING_MISSING"
+    ],
+    "instruments": [
+      {
+        "cash_flow_before_fees_quote": "-6.2",
+        "cash_flow_quote": "-6.5",
+        "fee_cash_flow_quote": "-0.3",
+        "fill_count": 2,
+        "instrument_id": "EURUSD",
+        "mark_price": "1.3",
+        "mark_state": "AVAILABLE",
+        "marked_inventory_quote": "7.8",
+        "marked_pnl_quote": "1.3",
+        "net_quantity": "6",
+        "quote_currency": "USD"
+      }
+    ],
+    "ledger_sha256": "86ee9921bbfe21f0fbc6290f05e17ceefd4c41f466d9092cd0721826a0425510",
+    "marking_method": "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
+    "mode": "PAPER",
+    "reconciled": true,
+    "schema_version": "1.0",
+    "strategies": [
+      {
+        "cash_flow_before_fees_quote": "-11.0",
+        "cash_flow_quote": "-11.1",
+        "fee_cash_flow_quote": "-0.1",
+        "fill_count": 1,
+        "instrument_id": "EURUSD",
+        "marked_inventory_quote": "13.0",
+        "marked_pnl_quote": "1.9",
+        "net_quantity": "10",
+        "quote_currency": "USD",
+        "strategy_id": "alpha",
+        "strategy_version": "1"
+      },
+      {
+        "cash_flow_before_fees_quote": "4.8",
+        "cash_flow_quote": "4.6",
+        "fee_cash_flow_quote": "-0.2",
+        "fill_count": 1,
+        "instrument_id": "EURUSD",
+        "marked_inventory_quote": "-5.2",
+        "marked_pnl_quote": "-0.6",
+        "net_quantity": "-4",
+        "quote_currency": "USD",
+        "strategy_id": "beta",
+        "strategy_version": "1"
+      }
+    ]
+  },
+  "schema_version": "1.0"
+}

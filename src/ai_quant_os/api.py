@@ -42,6 +42,7 @@ from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
+from ai_quant_os.paper_attribution import build_strategy_contributions
 
 
 class QuoteInput(BaseModel):
@@ -406,6 +407,31 @@ def create_app(
         if instrument not in instrument_catalog:
             raise HTTPException(status_code=404, detail="Unknown paper instrument")
         return position_view(instrument, execution.fills, quotes.get(instrument), current_time())
+
+    @app.get(
+        "/api/v1/paper/evidence/strategy-contributions", dependencies=[Depends(require_operator)]
+    )
+    def strategy_contributions():
+        from pydantic import TypeAdapter
+        from fastapi.responses import Response
+
+        try:
+            owners, fills = execution.attribution_ledger
+            report = build_strategy_contributions(
+                owners,
+                fills,
+                tuple(quotes.copy().values()),
+                PAPER_INSTRUMENTS,
+                now=current_time(),
+                max_age_seconds=limits.max_quote_age_seconds,
+            )
+            return Response(
+                TypeAdapter(type(report)).dump_json(report), media_type="application/json"
+            )
+        except (ValueError, KeyError, TypeError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503, detail="Paper attribution ledger could not be verified"
+            ) from error
 
     @app.get("/api/v1/portfolio/positions")
     def portfolio_positions() -> dict[str, object]:
