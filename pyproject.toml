@@ -24,6 +24,7 @@ ai-quant-research = "ai_quant_os.research_cli:main"
 ai-quant-candidates = "ai_quant_os.candidate_cli:main"
 ai-quant-counterfactual = "ai_quant_os.counterfactual_cli:main"
 ai-quant-shadow = "ai_quant_os.shadow_cli:main"
+ai-quant-repair = "ai_quant_os.repair_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
