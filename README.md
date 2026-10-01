@@ -106,3 +106,5 @@ New paper orders retain their initial approved quotes before dispatch. A protect
 `ai-quant-counterfactual` compares declared size, cost and parameter alternatives with a frozen candidate's recorded holdout result in separate native engines. Reports remain diagnostics on already-seen data with no promotion authority. See [counterfactual handoff](docs/COUNTERFACTUAL_HANDOFF.md).
 
 `ai-quant-shadow` assigns a candidate to an isolated diagnostic portfolio and appends post-assignment observations with cumulative native fill/position/PnL evidence. Restart, sequential reservations, withdrawal refusal and historical fill-prefix checks are durable. See [shadow portfolio handoff](docs/SHADOW_PORTFOLIO_HANDOFF.md) for commands and remaining production integration.
+
+Protected paper evidence routes now capture immutable ledger/quote checkpoints and publish UTC daily cash-plus-inventory reports with retained opening positions and explicit missing marks. See [daily evidence handoff](docs/DAILY_EVIDENCE_HANDOFF.md).

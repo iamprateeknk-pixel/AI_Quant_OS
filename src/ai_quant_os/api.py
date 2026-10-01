@@ -42,6 +42,7 @@ from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
+from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
 from ai_quant_os.execution_attribution import build_execution_contributions
 
@@ -1129,6 +1130,15 @@ def create_app(
                 raise HTTPException(status_code=409, detail=str(error)) from error
             return receipt
 
+    install_daily_routes(
+        app,
+        configured_path,
+        require_operator,
+        lambda: execution.attribution_ledger,
+        lambda: tuple(quotes.copy().values()),
+        PAPER_INSTRUMENTS,
+        current_time,
+    )
     install_research_routes(
         app,
         research_workspace

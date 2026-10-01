@@ -1,0 +1,269 @@
+{
+  "$defs": {
+    "CurrencyInstrument": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "base_currency": {
+          "title": "Base Currency",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "base_currency",
+        "quote_currency"
+      ],
+      "title": "CurrencyInstrument",
+      "type": "object"
+    },
+    "MarketSnapshot": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "bid": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Bid",
+          "type": "string"
+        },
+        "ask": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Ask",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "world_state_version": {
+          "title": "World State Version",
+          "type": "string"
+        },
+        "trusted": {
+          "title": "Trusted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "bid",
+        "ask",
+        "observed_at",
+        "world_state_version",
+        "trusted"
+      ],
+      "title": "MarketSnapshot",
+      "type": "object"
+    },
+    "OrderAttribution": {
+      "properties": {
+        "order_id": {
+          "title": "Order Id",
+          "type": "string"
+        },
+        "intent_id": {
+          "title": "Intent Id",
+          "type": "string"
+        },
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Quantity",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "intent_sha256": {
+          "title": "Intent Sha256",
+          "type": "string"
+        },
+        "order_sha256": {
+          "title": "Order Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "intent_id",
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "side",
+        "quantity",
+        "status",
+        "created_at",
+        "expires_at",
+        "intent_sha256",
+        "order_sha256"
+      ],
+      "title": "OrderAttribution",
+      "type": "object"
+    },
+    "PaperFill": {
+      "properties": {
+        "fill_id": {
+          "title": "Fill Id",
+          "type": "string"
+        },
+        "order_id": {
+          "title": "Order Id",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Quantity",
+          "type": "string"
+        },
+        "price": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Price",
+          "type": "string"
+        },
+        "fee": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "source": {
+          "default": "PAPER_MANUAL",
+          "enum": [
+            "PAPER_MANUAL",
+            "PAPER_BROKER"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_id",
+        "order_id",
+        "instrument_id",
+        "side",
+        "quantity",
+        "price",
+        "fee",
+        "observed_at"
+      ],
+      "title": "PaperFill",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "checkpoint_id": {
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "owners": {
+      "items": {
+        "$ref": "#/$defs/OrderAttribution"
+      },
+      "title": "Owners",
+      "type": "array"
+    },
+    "fills": {
+      "items": {
+        "$ref": "#/$defs/PaperFill"
+      },
+      "title": "Fills",
+      "type": "array"
+    },
+    "quotes": {
+      "items": {
+        "$ref": "#/$defs/MarketSnapshot"
+      },
+      "title": "Quotes",
+      "type": "array"
+    },
+    "catalog": {
+      "items": {
+        "$ref": "#/$defs/CurrencyInstrument"
+      },
+      "title": "Catalog",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    }
+  },
+  "required": [
+    "checkpoint_id",
+    "captured_at",
+    "owners",
+    "fills",
+    "quotes",
+    "catalog"
+  ],
+  "title": "EvidenceCheckpoint",
+  "type": "object"
+}
