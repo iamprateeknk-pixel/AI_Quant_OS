@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
 from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
+from ai_quant_os.agent_registry import load_agent_catalog
 from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
 from ai_quant_os.openai_reviewer import OpenAIReviewer, reviewer_from_environment
 from ai_quant_os.contracts import TradeIntent
@@ -176,6 +177,7 @@ def create_app(
     state_store = PaperStateStore(configured_path)
     calibration_store = CalibrationStore(configured_path)
     world_state_store = WorldStateStore(configured_path)
+    agent_registry = load_agent_catalog()
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
         [
@@ -592,6 +594,21 @@ def create_app(
             "archival_only": True,
             "current": run.deep_review.created_at <= now < run.deep_review.expires_at,
             "run": run.model_dump(mode="json"),
+        }
+
+    @app.get("/api/v1/agents/registry")
+    def registered_agents() -> dict[str, object]:
+        return {
+            "schema_version": "1.0",
+            "mode": "PAPER",
+            "agents": [
+                {
+                    **item.model_dump(mode="json"),
+                    "manifest_ref": item.manifest_ref,
+                    "lifecycle": agent_registry.lifecycle(item.agent_id, item.agent_version),
+                }
+                for item in agent_registry.manifests()
+            ],
         }
 
     @app.post("/api/v1/paper/world-state/bars", dependencies=[Depends(require_operator)])
