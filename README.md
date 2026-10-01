@@ -41,6 +41,8 @@ An opt-in health watchdog (`AI_QUANT_HEALTH_WATCHDOG_ENABLED=1`) checks actual p
 
 `ai-quant-repair` builds an isolated candidate branch from a quarantined A02/A07 incident and retains its original source as the rollback target. Candidate inspection checks provenance; independent verification, shadow/canary and release remain pending. See [repair candidate handoff](docs/REPAIR_CANDIDATE_HANDOFF.md).
 
+The read-only `ai-quant-repair sandbox-status` command checks local isolated-runtime prerequisites without executing candidate code. Live enforcement and behavioral verification remain unverified; see [sandbox admission handoff](docs/REPAIR_SANDBOX_HANDOFF.md).
+
 ```powershell
 python -m ruff check src tests scripts
 python -m ruff format --check src tests scripts

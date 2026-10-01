@@ -3,6 +3,7 @@
 import argparse
 import json
 import subprocess
+from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
 
@@ -11,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ai_quant_os.agent_registry import load_agent_catalog
 from ai_quant_os.health_store import HealthStore
 from ai_quant_os.repair_workspace import RepairWorkspace
+from ai_quant_os.repair_sandbox import DockerConfinement
 
 
 class RepairPlan(BaseModel):
@@ -27,7 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Create and inspect isolated repair proposals")
     parser.add_argument("--repository", required=True, type=Path)
     parser.add_argument("--root", type=Path)
-    parser.add_argument("--health-store", required=True, type=Path)
+    parser.add_argument("--health-store", type=Path)
     commands = parser.add_subparsers(dest="command", required=True)
     create = commands.add_parser(
         "prepare", help="Save a candidate branch; verification stays pending"
@@ -37,8 +39,27 @@ def main(argv: list[str] | None = None) -> int:
         "inspect", help="Verify retained candidate source and receipt identity"
     )
     read.add_argument("candidate_id")
+    sandbox = commands.add_parser(
+        "sandbox-status", help="Read local sandbox prerequisites; execute nothing"
+    )
+    sandbox.add_argument("--image-id", required=True)
+    sandbox.add_argument("--suite-sha256", required=True)
     args = parser.parse_args(argv)
     try:
+        if args.command == "sandbox-status":
+            probe = DockerConfinement(args.image_id, args.suite_sha256).probe()
+            print(
+                json.dumps(
+                    {
+                        "schema_version": "1.0",
+                        **asdict(probe),
+                        "container_admission_required": True,
+                        "suite_verification_required": True,
+                    },
+                    sort_keys=True,
+                )
+            )
+            return 0
         plan = None
         if args.command == "prepare":
             with args.plan.open("rb") as source:
@@ -46,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
             if len(raw) > 3145728:
                 raise ValueError("Repair plan exceeds bound")
             plan = RepairPlan.model_validate_json(raw)
-        if not args.health_store.is_file():
+        if args.health_store is None or not args.health_store.is_file():
             raise ValueError("An existing verified health journal is required")
         health = HealthStore(args.health_store)
         registry = load_agent_catalog()

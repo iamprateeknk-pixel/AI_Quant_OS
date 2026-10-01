@@ -73,3 +73,23 @@ def test_cli_missing_health_journal_does_not_create_fake_incident_source(tmp_pat
     result = cli(repository, tmp_path, "inspect", "a" * 64)
     assert result.returncode == 2
     assert not journal.exists()
+
+
+def test_sandbox_status_does_not_open_health_journal_or_accept_missing_image(tmp_path, repository):
+    result = cli(
+        repository,
+        tmp_path,
+        "sandbox-status",
+        "--image-id",
+        "sha256:" + "0" * 64,
+        "--suite-sha256",
+        "1" * 64,
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["schema_version"] == "1.0"
+    assert payload["available"] is False
+    assert payload["promotion_allowed"] is False
+    assert payload["container_admission_required"] is True
+    assert payload["suite_verification_required"] is True
+    assert not (tmp_path / "health.sqlite3").exists()
