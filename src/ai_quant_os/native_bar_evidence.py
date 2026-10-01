@@ -1,4 +1,4 @@
-"""Reconcile retained long/flat native bar evidence against its declared source model."""
+"""Reconcile retained native bar evidence against its declared position/source model."""
 
 from decimal import Context, Decimal, Inexact, ROUND_CEILING, ROUND_FLOOR, localcontext
 
@@ -27,17 +27,27 @@ def verify_native_bar_result(result, bars, quantity, costs):
             or result.engine_version != "1.221.0"
             or result.schema_version != "1.0"
             or result.venue != "PAPER"
-            or result.replay_model != "BAR_OPEN_CLOSE_QUOTES_V1"
+            or result.replay_model
+            not in ("BAR_OPEN_CLOSE_QUOTES_V1", "BAR_OPEN_CLOSE_LONG_SHORT_V1")
             or result.pnl_method != "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK"
         ):
             raise ValueError("Native bar source/model binding mismatch")
         position, cash = Decimal(0), Decimal(0)
+        directional = result.replay_model == "BAR_OPEN_CLOSE_LONG_SHORT_V1"
+        if type(quantity) is not int or not 1 <= quantity <= (500000 if directional else 1000000):
+            raise ValueError("Native quantity exceeds declared full liquidity")
+        positions = (
+            (-Decimal(quantity), Decimal(0), Decimal(quantity))
+            if directional
+            else (Decimal(0), Decimal(quantity))
+        )
+        quantities = (quantity, 2 * quantity) if directional else (quantity,)
         opens = {bar.observed_at: bar.open for bar in bars[1:]}
         previous = None
         for fill in result.fills:
             if (
                 fill.side not in ("BUY", "SELL")
-                or fill.quantity != quantity
+                or fill.quantity not in quantities
                 or fill.fee != costs.fee_per_trade
                 or not fill.price.is_finite()
                 or fill.price <= 0
@@ -58,8 +68,8 @@ def verify_native_bar_result(result, bars, quantity, costs):
             signed = fill.quantity if fill.side == "BUY" else -fill.quantity
             position += signed
             cash -= signed * fill.price + fill.fee
-            if position not in (Decimal(0), Decimal(quantity)):
-                raise ValueError("Native long-flat position mismatch")
+            if position not in positions:
+                raise ValueError("Native declared position mismatch")
             previous = fill.observed_at
         if (
             type(result.native_order_count) is not int

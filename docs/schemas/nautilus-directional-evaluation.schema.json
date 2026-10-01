@@ -1,0 +1,408 @@
+{
+  "$defs": {
+    "BacktestCosts": {
+      "properties": {
+        "slippage_bps": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Slippage Bps",
+          "type": "string"
+        },
+        "fee_per_trade": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee Per Trade",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slippage_bps",
+        "fee_per_trade"
+      ],
+      "title": "BacktestCosts",
+      "type": "object"
+    },
+    "Bar": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "open": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Open",
+          "type": "string"
+        },
+        "high": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "High",
+          "type": "string"
+        },
+        "low": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Low",
+          "type": "string"
+        },
+        "close": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Close",
+          "type": "string"
+        },
+        "volume": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Volume",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "observed_at",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "title": "Bar",
+      "type": "object"
+    },
+    "NativeFill": {
+      "properties": {
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "price": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Price",
+          "type": "string"
+        },
+        "quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Quantity",
+          "type": "string"
+        },
+        "fee": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee",
+          "type": "string"
+        }
+      },
+      "required": [
+        "observed_at",
+        "side",
+        "price",
+        "quantity",
+        "fee"
+      ],
+      "title": "NativeFill",
+      "type": "object"
+    },
+    "NautilusResult": {
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "engine": {
+          "const": "NAUTILUS_BACKTEST",
+          "title": "Engine",
+          "type": "string"
+        },
+        "engine_version": {
+          "const": "1.221.0",
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "replay_model": {
+          "enum": [
+            "BAR_OPEN_CLOSE_QUOTES_V1",
+            "BAR_OPEN_CLOSE_LONG_SHORT_V1",
+            "RECORDED_QUOTE_TICKS_V1"
+          ],
+          "title": "Replay Model",
+          "type": "string"
+        },
+        "venue": {
+          "const": "PAPER",
+          "title": "Venue",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "pnl_currency": {
+          "title": "Pnl Currency",
+          "type": "string"
+        },
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "costs": {
+          "$ref": "#/$defs/BacktestCosts"
+        },
+        "fills": {
+          "items": {
+            "$ref": "#/$defs/NativeFill"
+          },
+          "title": "Fills",
+          "type": "array"
+        },
+        "native_order_count": {
+          "title": "Native Order Count",
+          "type": "integer"
+        },
+        "final_position": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Final Position",
+          "type": "string"
+        },
+        "net_pnl": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Net Pnl",
+          "type": "string"
+        },
+        "pnl_method": {
+          "enum": [
+            "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+            "EXACT_FILL_CASHFLOWS_PLUS_FINAL_QUOTE_MIDPOINT"
+          ],
+          "title": "Pnl Method",
+          "type": "string"
+        },
+        "native_realized_pnl": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Native Realized Pnl",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "engine",
+        "engine_version",
+        "replay_model",
+        "venue",
+        "instrument_id",
+        "pnl_currency",
+        "strategy_ref",
+        "dataset_fingerprint",
+        "costs",
+        "fills",
+        "native_order_count",
+        "final_position",
+        "net_pnl",
+        "pnl_method",
+        "native_realized_pnl"
+      ],
+      "title": "NautilusResult",
+      "type": "object"
+    },
+    "RegisteredBacktest": {
+      "properties": {
+        "result": {
+          "$ref": "#/$defs/NautilusResult"
+        },
+        "binding": {
+          "$ref": "#/$defs/StrategyBinding"
+        }
+      },
+      "required": [
+        "result",
+        "binding"
+      ],
+      "title": "RegisteredBacktest",
+      "type": "object"
+    },
+    "SourceFingerprint": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "SourceFingerprint",
+      "type": "object"
+    },
+    "StrategyBinding": {
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "genome": {
+          "$ref": "#/$defs/StrategyGenome"
+        },
+        "genome_sha256": {
+          "title": "Genome Sha256",
+          "type": "string"
+        },
+        "implementation": {
+          "$ref": "#/$defs/StrategyImplementation"
+        },
+        "implementation_sha256": {
+          "title": "Implementation Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "provenance",
+        "genome",
+        "genome_sha256",
+        "implementation",
+        "implementation_sha256"
+      ],
+      "title": "StrategyBinding",
+      "type": "object"
+    },
+    "StrategyGenome": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameters",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind"
+      ],
+      "title": "StrategyGenome",
+      "type": "object"
+    },
+    "StrategyImplementation": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "entry_point": {
+          "title": "Entry Point",
+          "type": "string"
+        },
+        "parameter_defaults": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameter Defaults",
+          "type": "array"
+        },
+        "source_files": {
+          "items": {
+            "$ref": "#/$defs/SourceFingerprint"
+          },
+          "title": "Source Files",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind",
+        "entry_point",
+        "parameter_defaults",
+        "source_files"
+      ],
+      "title": "StrategyImplementation",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "run": {
+      "$ref": "#/$defs/RegisteredBacktest"
+    },
+    "bars": {
+      "items": {
+        "$ref": "#/$defs/Bar"
+      },
+      "title": "Bars",
+      "type": "array"
+    },
+    "quantity": {
+      "title": "Quantity",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run",
+    "bars",
+    "quantity"
+  ],
+  "title": "Evaluation",
+  "type": "object"
+}

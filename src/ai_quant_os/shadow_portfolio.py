@@ -141,7 +141,10 @@ class ShadowReport:
                 or self.run.binding != parent.holdout.binding
             ):
                 raise ValueError("Shadow frozen implementation mismatch")
-            if self.run.result.strategy_ref != parent.holdout.result.strategy_ref:
+            if (
+                self.run.result.strategy_ref != parent.holdout.result.strategy_ref
+                or self.run.result.replay_model != parent.holdout.result.replay_model
+            ):
                 raise ValueError("Shadow strategy identity mismatch")
             verify_native_bar_result(
                 self.run.result, self.source_bars, parent.plan.quantity, parent.plan.costs

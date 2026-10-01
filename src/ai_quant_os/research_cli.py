@@ -13,6 +13,7 @@ from ai_quant_os.research_contracts import Hypothesis, ResearchDatasetScope, Res
 from ai_quant_os.strategy_contracts import StrategyGenome
 from ai_quant_os.monte_carlo import MonteCarloSpec
 from ai_quant_os.adversarial import AdversarialSpec
+from ai_quant_os.directional_strategy import DIRECTIONAL_REF
 
 
 def main():
@@ -25,6 +26,11 @@ def main():
     parser.add_argument("--hypothesis-id", required=True)
     parser.add_argument("--description", required=True)
     parser.add_argument("--candidate", action="append", required=True, metavar="FAST:SLOW")
+    parser.add_argument(
+        "--strategy",
+        choices=("moving-average-cross", "moving-average-directional"),
+        default="moving-average-cross",
+    )
     parser.add_argument("--train-bars", type=int, required=True)
     parser.add_argument("--validation-bars", type=int, required=True)
     parser.add_argument("--quantity", type=int, default=1)
@@ -81,6 +87,10 @@ def main():
         if args.adversarial and not args.monte_carlo:
             raise ValueError("Version 1.2 adversarial policy requires --monte-carlo")
         adverse_spec = AdversarialSpec(**adverse_kwargs) if args.adversarial else None
+        if args.strategy == "moving-average-directional" and mc_spec is not None:
+            raise ValueError(
+                "Directional research needs a reviewed reversal-fee Monte Carlo/adversarial policy"
+            )
         if (
             output
             in {
@@ -102,7 +112,11 @@ def main():
             fast, slow = map(int, pair)
             candidates.append(
                 StrategyGenome(
-                    "moving-average-cross@1.0.0", "BAR", (("fast", fast), ("slow", slow))
+                    DIRECTIONAL_REF
+                    if args.strategy == "moving-average-directional"
+                    else "moving-average-cross@1.0.0",
+                    "BAR",
+                    (("fast", fast), ("slow", slow)),
                 )
             )
         archive = BarArchive(root / "archives")

@@ -90,7 +90,7 @@ def _verify_run(row, inputs):
         or result.engine != "NAUTILUS_BACKTEST"
         or result.engine_version != "1.221.0"
         or result.venue != "PAPER"
-        or result.replay_model != "BAR_OPEN_CLOSE_QUOTES_V1"
+        or result.replay_model != baseline.result.replay_model
         or result.pnl_method != "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK"
         or row.pnl_difference != result.net_pnl - baseline.result.net_pnl
     ):

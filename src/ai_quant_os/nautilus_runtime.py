@@ -40,7 +40,9 @@ class NautilusResult:
     schema_version: Literal["1.0"]
     engine: Literal["NAUTILUS_BACKTEST"]
     engine_version: Literal["1.221.0"]
-    replay_model: Literal["BAR_OPEN_CLOSE_QUOTES_V1", "RECORDED_QUOTE_TICKS_V1"]
+    replay_model: Literal[
+        "BAR_OPEN_CLOSE_QUOTES_V1", "BAR_OPEN_CLOSE_LONG_SHORT_V1", "RECORDED_QUOTE_TICKS_V1"
+    ]
     venue: Literal["PAPER"]
     instrument_id: str
     pnl_currency: str
@@ -169,6 +171,8 @@ def _run_native_backtest(
     strategy_ref: str,
     quantity: int,
     initial_balance: Decimal,
+    replay_model: str = "BAR_OPEN_CLOSE_QUOTES_V1",
+    targets: tuple[int, ...] = (0, 1),
 ) -> NautilusResult:
     if not 1 <= len(dataset.bars) <= 1_000_000:
         raise ValueError("Native replay requires 1..1000000 bars")
@@ -219,9 +223,33 @@ def _run_native_backtest(
         phases,
         dataset.fingerprint,
         dataset.bars[-1].close,
-        "BAR_OPEN_CLOSE_QUOTES_V1",
-        (0, 1),
+        replay_model,
+        targets,
     )
+
+
+def run_nautilus_directional_backtest(
+    dataset: BarDataset,
+    strategy: Strategy,
+    costs: BacktestCosts,
+    *,
+    strategy_ref: str,
+    quantity: int = 1,
+    initial_balance: Decimal = Decimal(100000),
+) -> NautilusResult:
+    if type(quantity) is not int or not 1 <= quantity <= 500000:
+        raise ValueError("Directional quantity exceeds complete-reversal liquidity bound")
+    with localcontext(Context(prec=28)):
+        return _run_native_backtest(
+            dataset,
+            strategy,
+            costs,
+            strategy_ref=strategy_ref,
+            quantity=quantity,
+            initial_balance=initial_balance,
+            replay_model="BAR_OPEN_CLOSE_LONG_SHORT_V1",
+            targets=(-1, 0, 1),
+        )
 
 
 def _prepare_instrument(identifier, costs, strategy_ref, quantity, initial_balance):
@@ -405,7 +433,7 @@ def _execute_native_replay(
             native_position,
             cash + native_position * final_mark,
             "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK"
-            if replay_model == "BAR_OPEN_CLOSE_QUOTES_V1"
+            if replay_model in ("BAR_OPEN_CLOSE_QUOTES_V1", "BAR_OPEN_CLOSE_LONG_SHORT_V1")
             else "EXACT_FILL_CASHFLOWS_PLUS_FINAL_QUOTE_MIDPOINT",
             sum(
                 (

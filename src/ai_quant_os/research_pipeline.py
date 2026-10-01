@@ -23,6 +23,7 @@ from ai_quant_os.research_adversarial import (
     AdversarialScenario,
     adversarial_score,
 )
+from ai_quant_os.directional_strategy import DIRECTIONAL_REF
 
 
 def run_research_experiment(
@@ -43,6 +44,12 @@ def run_research_experiment(
 
 
 def _run(plan, development, holdout, registry, store):
+    if plan.schema_version != "1.0" and any(
+        row.strategy_ref == DIRECTIONAL_REF for row in plan.candidates
+    ):
+        raise ValueError(
+            "Directional research needs a reviewed reversal-fee Monte Carlo/adversarial policy"
+        )
     if (
         development.fingerprint != plan.development_fingerprint
         or holdout.fingerprint != plan.holdout_fingerprint

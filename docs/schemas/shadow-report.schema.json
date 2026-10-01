@@ -641,6 +641,7 @@
         "replay_model": {
           "enum": [
             "BAR_OPEN_CLOSE_QUOTES_V1",
+            "BAR_OPEN_CLOSE_LONG_SHORT_V1",
             "RECORDED_QUOTE_TICKS_V1"
           ],
           "title": "Replay Model",

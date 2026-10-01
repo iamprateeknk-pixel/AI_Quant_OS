@@ -89,6 +89,8 @@ Classifier evaluation is available through `python -m ai_quant_os.evaluation_cli
 
 Built-in backtests now include validated configuration and immutable source provenance. See [strategy provenance handoff](docs/STRATEGY_PROVENANCE_HANDOFF.md) for registry retention and parameterized runs.
 
+`moving-average-directional` adds native short positions and complete bar reversals with a separate source binding and replay model. It is connected to research 1.0, candidate comparisons and forward shadow diagnostics. See [directional handoff](docs/DIRECTIONAL_BACKTEST_HANDOFF.md) for commands, retained examples and pending statistical policies.
+
 ## Local research validation
 
 The archived-data research runner performs native walk-forward, held-out and cost-stress evaluation with immutable experiment lineage. Reports retain pending gates and cannot authorize promotion. See [research handoff](docs/RESEARCH_HANDOFF.md) for the synthetic verification example and remaining P08 work.

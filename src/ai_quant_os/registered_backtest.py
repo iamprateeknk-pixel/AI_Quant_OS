@@ -8,10 +8,12 @@ from ai_quant_os.nautilus_runtime import (
     NautilusResult,
     run_nautilus_backtest,
     run_nautilus_tick_backtest,
+    run_nautilus_directional_backtest,
 )
 from ai_quant_os.strategy_contracts import StrategyBinding, StrategyGenome
 from ai_quant_os.strategy_registry import StrategyRegistry, prepare_builtin, verify_implementation
 from ai_quant_os.tick_data import TickDataset
+from ai_quant_os.directional_strategy import DIRECTIONAL_REF
 
 
 @dataclass(frozen=True)
@@ -33,6 +35,8 @@ def run_registered_backtest(
         raise ValueError("Strategy input does not match genome")
     plugin, binding = prepare_builtin(genome, registry)
     runner = run_nautilus_backtest if genome.input_kind == "BAR" else run_nautilus_tick_backtest
+    if genome.strategy_ref == DIRECTIONAL_REF:
+        runner = run_nautilus_directional_backtest
     result = runner(dataset, plugin, costs, strategy_ref=genome.strategy_ref, quantity=quantity)
     verify_implementation(binding.implementation)
     if registry.get(genome.strategy_ref) != binding.implementation:

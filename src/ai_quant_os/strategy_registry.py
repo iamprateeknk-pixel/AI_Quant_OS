@@ -13,12 +13,14 @@ from ai_quant_os.strategy_contracts import (
 )
 from ai_quant_os.strategy_samples import BuyAndHold, MovingAverageCrossover
 from ai_quant_os.tick_strategy import TickMomentum
+from ai_quant_os.directional_strategy import DirectionalMovingAverage
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 _BUILDERS = {
     "ai_quant_os.strategy_samples:BuyAndHold": BuyAndHold,
     "ai_quant_os.strategy_samples:MovingAverageCrossover": MovingAverageCrossover,
     "ai_quant_os.tick_strategy:TickMomentum": TickMomentum,
+    "ai_quant_os.directional_strategy:DirectionalMovingAverage": DirectionalMovingAverage,
 }
 
 

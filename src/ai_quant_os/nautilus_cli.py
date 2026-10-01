@@ -14,6 +14,7 @@ from ai_quant_os.strategy_samples import SAMPLE_STRATEGIES
 from ai_quant_os.strategy_contracts import StrategyGenome
 from ai_quant_os.strategy_registry import StrategyRegistry
 from ai_quant_os.tick_data import import_ticks_csv_bytes
+from ai_quant_os.directional_strategy import DIRECTIONAL_REF
 
 
 def _encode(value):
@@ -30,7 +31,8 @@ def main() -> None:
     )
     parser.add_argument("dataset", type=Path)
     parser.add_argument("--format", choices=("bars", "ticks"), default="bars")
-    parser.add_argument("--strategy", choices=(*SAMPLE_STRATEGIES, "tick-momentum"))
+    bar_names = (*SAMPLE_STRATEGIES, DIRECTIONAL_REF.split("@")[0])
+    parser.add_argument("--strategy", choices=(*bar_names, "tick-momentum"))
     parser.add_argument("--slippage-bps", type=Decimal, default=Decimal(0))
     parser.add_argument("--fee", type=Decimal, default=Decimal(0))
     parser.add_argument("--quantity", type=int, default=1)
@@ -56,7 +58,7 @@ def main() -> None:
                 raise ValueError("Tick format requires a tick strategy")
             dataset = import_ticks_csv_bytes(raw)
         else:
-            if name not in SAMPLE_STRATEGIES:
+            if name not in bar_names:
                 raise ValueError("Bar format requires a bar strategy")
             dataset = import_bars_csv_bytes(raw)
         parameters = tuple(

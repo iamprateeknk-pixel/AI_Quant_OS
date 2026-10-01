@@ -67,5 +67,38 @@
         "sha256": "b74d6b93fa07658747d842419400bf048235c017f169092d5cf424c48424169a"
       }
     ]
+  },
+  {
+    "strategy_ref": "moving-average-directional@1.0.0",
+    "input_kind": "BAR",
+    "entry_point": "ai_quant_os.directional_strategy:DirectionalMovingAverage",
+    "parameter_defaults": [
+      [
+        "fast",
+        2
+      ],
+      [
+        "slow",
+        3
+      ]
+    ],
+    "source_files": [
+      {
+        "path": "contracts.py",
+        "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+      },
+      {
+        "path": "directional_strategy.py",
+        "sha256": "45c4213ef27047adeba1c5788cf54848d26fffe112407b47709a9f19bf26b440"
+      },
+      {
+        "path": "market_data.py",
+        "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+      },
+      {
+        "path": "strategy_samples.py",
+        "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+      }
+    ]
   }
 ]

@@ -42,7 +42,9 @@ The registered runner now adds immutable source manifests, retained source artif
 
 ## Remaining P03 gates
 
-Independent critical review, hosted cross-platform CI evidence, isolation for untrusted plugins, catalog selection, depth/latency and partial-liquidity models, multi-instrument simulation, bar short targets and the complete strategy harness remain open. Current plugins are trusted Python receiving full history; large-replay memory/CPU behavior needs a streaming contract before scale. The paper order API retains its separately gated simulator; this adapter does not replace the Risk Kernel or broker gateway. Live routing remains absent.
+Opt-in native directional bar replay now supports short positions and complete reversals with its own registered source and replay model. See [directional handoff](DIRECTIONAL_BACKTEST_HANDOFF.md) for accounting, research policy and compatibility.
+
+Independent critical review, hosted cross-platform CI evidence, isolation for untrusted plugins, catalog selection, depth/latency and partial-liquidity models, integrated multi-instrument simulation and the complete strategy harness remain open. Current plugins are trusted Python receiving full history; large-replay memory/CPU behavior needs a streaming contract before scale. The paper order API retains its separately gated simulator; this adapter does not replace the Risk Kernel or broker gateway. Live routing remains absent.
 
 Rollback preserves archived data and result evidence. Removing the optional dependency does not alter the paper order database. Runtime upgrades require a new pin and replay comparison.
 

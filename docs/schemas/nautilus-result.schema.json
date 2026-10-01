@@ -3,12 +3,12 @@
     "BacktestCosts": {
       "properties": {
         "slippage_bps": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Slippage Bps",
           "type": "string"
         },
         "fee_per_trade": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Fee Per Trade",
           "type": "string"
         }
@@ -36,17 +36,17 @@
           "type": "string"
         },
         "price": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Price",
           "type": "string"
         },
         "quantity": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Quantity",
           "type": "string"
         },
         "fee": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Fee",
           "type": "string"
         }
@@ -192,6 +192,7 @@
     "replay_model": {
       "enum": [
         "BAR_OPEN_CLOSE_QUOTES_V1",
+        "BAR_OPEN_CLOSE_LONG_SHORT_V1",
         "RECORDED_QUOTE_TICKS_V1"
       ],
       "title": "Replay Model",
@@ -233,12 +234,12 @@
       "type": "integer"
     },
     "final_position": {
-      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
       "title": "Final Position",
       "type": "string"
     },
     "net_pnl": {
-      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
       "title": "Net Pnl",
       "type": "string"
     },
@@ -251,7 +252,7 @@
       "type": "string"
     },
     "native_realized_pnl": {
-      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
       "title": "Native Realized Pnl",
       "type": "string"
     },

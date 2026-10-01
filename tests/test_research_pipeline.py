@@ -26,7 +26,8 @@ def test_archive_accepts_one_immutable_input_snapshot(tmp_path):
     )
 
 
-def test_research_cli_uses_verified_archives_and_retrieves_same_report(tmp_path):
+@pytest.mark.parametrize("strategy", ["moving-average-cross", "moving-average-directional"])
+def test_research_cli_uses_verified_archives_and_retrieves_same_report(tmp_path, strategy):
     pytest.importorskip("nautilus_trader")
     pytest.importorskip("pyarrow")
     import subprocess
@@ -61,6 +62,8 @@ def test_research_cli_uses_verified_archives_and_retrieves_same_report(tmp_path)
         "1:2",
         "--candidate",
         "2:3",
+        "--strategy",
+        strategy,
         "--train-bars",
         "6",
         "--validation-bars",
@@ -83,6 +86,7 @@ def test_research_cli_uses_verified_archives_and_retrieves_same_report(tmp_path)
     record = json.loads(output.read_text())
     assert record["report"]["outcome"] == "VALIDATION_INCOMPLETE"
     assert record["report"]["promotion_allowed"] is False
+    assert record["report"]["holdout"]["binding"]["genome"]["strategy_ref"] == strategy + "@1.0.0"
     assert len(record["source_lineage"]) == 2
     assert len(tuple((workspace / "archives" / "manifests").glob("*.json"))) == 2
     assert ResearchStore(workspace / "research.sqlite3").get("cli-fixture").selection is not None
