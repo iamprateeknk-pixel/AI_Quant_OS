@@ -54,6 +54,49 @@ jobs:
       - run: python -m pip install -e ".[dev,trading]"
       - run: python -c "import nautilus_trader; assert nautilus_trader.__version__ == '1.221.0'"
       - run: python -m pytest -q tests/test_nautilus_runtime.py tests/test_nautilus_ticks.py tests/test_nautilus_directional.py tests/test_native_portfolio.py tests/test_directional_research.py tests/test_strategy_samples.py tests/test_strategy_registry.py tests/test_research_pipeline.py tests/test_monte_carlo.py tests/test_research_adversarial.py tests/test_research_candidates.py tests/test_research_api.py tests/test_counterfactual.py tests/test_shadow_portfolio.py
+  temporal-recovery:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      AI_QUANT_REQUIRE_TEMPORAL: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e ".[dev,recovery]"
+      - name: Install checksum-pinned Temporal CLI
+        shell: pwsh
+        run: |
+          $toolDir = Join-Path $env:RUNNER_TEMP 'quant-temporal'
+          New-Item -ItemType Directory -Path $toolDir -Force | Out-Null
+          if ($IsWindows) {
+            $archiveName = 'temporal_cli_1.9.1_windows_amd64.zip'
+            $expected = 'babb65844835045c91fb98930fe10b81de28db80c8c609180473d2c0b18c7589'
+            $binaryName = 'temporal.exe'
+          } else {
+            $archiveName = 'temporal_cli_1.9.1_linux_amd64.tar.gz'
+            $expected = '09a0326a51db84d02735e53542b9ebd8c4758daf47482a9ab0abce15844e60d5'
+            $binaryName = 'temporal'
+          }
+          $archivePath = Join-Path $toolDir $archiveName
+          Invoke-WebRequest "https://github.com/temporalio/cli/releases/download/v1.9.1/$archiveName" -OutFile $archivePath
+          if ((Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
+            throw 'Temporal archive checksum mismatch'
+          }
+          if ($IsWindows) {
+            Expand-Archive -LiteralPath $archivePath -DestinationPath $toolDir
+          } else {
+            tar -xzf $archivePath -C $toolDir
+            if ($LASTEXITCODE -ne 0) { throw 'Temporal archive extraction failed' }
+          }
+          $binaryPath = Join-Path $toolDir $binaryName
+          & $binaryPath --version
+          if ($LASTEXITCODE -ne 0) { throw 'Temporal CLI verification failed' }
+          "AI_QUANT_TEMPORAL_CLI=$binaryPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - run: python -m pytest -q tests/test_paper_recovery.py tests/test_temporal_recovery.py
   data-integration:
     needs: python
     runs-on: ubuntu-latest

@@ -226,6 +226,16 @@ class PaperStateStore:
             self._connection.execute("BEGIN")
             return self._audit_chain.verify()
 
+    def audit_event(self, key: str) -> dict[str, str] | None:
+        """Read one receipt only after validating its complete owning audit chain."""
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN")
+            self._audit_chain.require_valid()
+            row = self._connection.execute(
+                "SELECT event_json FROM audit_events WHERE event_key = ?", (key,)
+            ).fetchone()
+            return json.loads(row[0]) if row else None
+
     def audit_events(self) -> list[dict[str, str]]:
         with self._lock, self._connection:
             self._connection.execute("BEGIN")
