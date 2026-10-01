@@ -1,0 +1,261 @@
+{
+  "$defs": {
+    "InstrumentExecutionContribution": {
+      "properties": {
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "benchmark_fill_count": {
+          "title": "Benchmark Fill Count",
+          "type": "integer"
+        },
+        "reference_mid_cash_flow_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reference Mid Cash Flow Quote"
+        },
+        "spread_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Cash Adjustment Quote"
+        },
+        "decision_to_fill_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Decision To Fill Cash Adjustment Quote"
+        },
+        "fee_cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee Cash Flow Quote",
+          "type": "string"
+        },
+        "actual_cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Actual Cash Flow Quote",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_count",
+        "benchmark_fill_count",
+        "reference_mid_cash_flow_quote",
+        "spread_cash_adjustment_quote",
+        "decision_to_fill_cash_adjustment_quote",
+        "fee_cash_flow_quote",
+        "actual_cash_flow_quote",
+        "instrument_id",
+        "quote_currency"
+      ],
+      "title": "InstrumentExecutionContribution",
+      "type": "object"
+    },
+    "StrategyExecutionContribution": {
+      "properties": {
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "benchmark_fill_count": {
+          "title": "Benchmark Fill Count",
+          "type": "integer"
+        },
+        "reference_mid_cash_flow_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reference Mid Cash Flow Quote"
+        },
+        "spread_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Cash Adjustment Quote"
+        },
+        "decision_to_fill_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Decision To Fill Cash Adjustment Quote"
+        },
+        "fee_cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee Cash Flow Quote",
+          "type": "string"
+        },
+        "actual_cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Actual Cash Flow Quote",
+          "type": "string"
+        },
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_count",
+        "benchmark_fill_count",
+        "reference_mid_cash_flow_quote",
+        "spread_cash_adjustment_quote",
+        "decision_to_fill_cash_adjustment_quote",
+        "fee_cash_flow_quote",
+        "actual_cash_flow_quote",
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "quote_currency"
+      ],
+      "title": "StrategyExecutionContribution",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "ledger_sha256": {
+      "title": "Ledger Sha256",
+      "type": "string"
+    },
+    "benchmarks_sha256": {
+      "title": "Benchmarks Sha256",
+      "type": "string"
+    },
+    "benchmark_method": {
+      "const": "INITIAL_DECISION_MID_SIDE_QUOTE_V1",
+      "title": "Benchmark Method",
+      "type": "string"
+    },
+    "coverage": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "NONE",
+        "EMPTY"
+      ],
+      "title": "Coverage",
+      "type": "string"
+    },
+    "strategies": {
+      "items": {
+        "$ref": "#/$defs/StrategyExecutionContribution"
+      },
+      "title": "Strategies",
+      "type": "array"
+    },
+    "instruments": {
+      "items": {
+        "$ref": "#/$defs/InstrumentExecutionContribution"
+      },
+      "title": "Instruments",
+      "type": "array"
+    },
+    "missing_benchmark_order_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Benchmark Order Ids",
+      "type": "array"
+    },
+    "reconciled": {
+      "const": true,
+      "title": "Reconciled",
+      "type": "boolean"
+    },
+    "evidence_gaps": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Gaps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "mode",
+    "as_of",
+    "ledger_sha256",
+    "benchmarks_sha256",
+    "benchmark_method",
+    "coverage",
+    "strategies",
+    "instruments",
+    "missing_benchmark_order_ids",
+    "reconciled",
+    "evidence_gaps"
+  ],
+  "title": "ExecutionContributionReport",
+  "type": "object"
+}

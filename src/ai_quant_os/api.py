@@ -43,6 +43,7 @@ from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
+from ai_quant_os.execution_attribution import build_execution_contributions
 
 
 class QuoteInput(BaseModel):
@@ -428,9 +429,29 @@ def create_app(
             return Response(
                 TypeAdapter(type(report)).dump_json(report), media_type="application/json"
             )
-        except (ValueError, KeyError, TypeError, sqlite3.Error) as error:
+        except (ValueError, KeyError, TypeError, ArithmeticError, sqlite3.Error) as error:
             raise HTTPException(
                 status_code=503, detail="Paper attribution ledger could not be verified"
+            ) from error
+
+    @app.get(
+        "/api/v1/paper/evidence/execution-contributions", dependencies=[Depends(require_operator)]
+    )
+    def execution_contributions():
+        from pydantic import TypeAdapter
+        from fastapi.responses import Response
+
+        try:
+            owners, fills, benchmarks = execution.execution_evidence_ledger
+            report = build_execution_contributions(
+                owners, fills, benchmarks, PAPER_INSTRUMENTS, now=current_time()
+            )
+            return Response(
+                TypeAdapter(type(report)).dump_json(report), media_type="application/json"
+            )
+        except (ValueError, KeyError, TypeError, ArithmeticError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503, detail="Paper execution evidence could not be verified"
             ) from error
 
     @app.get("/api/v1/portfolio/positions")

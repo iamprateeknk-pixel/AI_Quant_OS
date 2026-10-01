@@ -49,6 +49,7 @@ class RiskKernel:
         self._lock = RLock()
         self._currency_policy = currency_policy
         self._currency_reservations: dict[str, CurrencyReservation] = {}
+        self._decision_markets: dict[str, MarketSnapshot] = {}
 
     @property
     def safety_state(self) -> SafetyState:
@@ -78,6 +79,7 @@ class RiskKernel:
             self._issued.clear()
             self._consumed.clear()
             self._currency_reservations.clear()
+            self._decision_markets.clear()
             self._safety_state = SafetyState.NORMAL
 
     @contextmanager
@@ -96,6 +98,20 @@ class RiskKernel:
             if risk_id not in self._issued or risk_id in self._consumed:
                 raise ValueError("Risk decision cannot be consumed")
             self._consumed.add(risk_id)
+            self._decision_markets.pop(risk_id, None)
+
+    def decision_market(self, decision: RiskDecision) -> MarketSnapshot:
+        with self._lock:
+            issued = self._issued.get(decision.risk_id)
+            if (
+                issued is None
+                or issued[1] != decision
+                or decision.decision != "APPROVE"
+                or decision.risk_id in self._consumed
+                or decision.risk_id not in self._decision_markets
+            ):
+                raise ValueError("Decision-price benchmark requires an unconsumed kernel approval")
+            return self._decision_markets[decision.risk_id]
 
     def currency_reservation(self, decision: RiskDecision) -> CurrencyReservation | None:
         with self._lock:
@@ -219,6 +235,8 @@ class RiskKernel:
                 created_at=now,
             )
             self._issued[decision.risk_id] = (intent, decision)
+            if outcome == "APPROVE":
+                self._decision_markets[decision.risk_id] = market
             if (
                 outcome == "APPROVE"
                 and self._currency_policy is not None

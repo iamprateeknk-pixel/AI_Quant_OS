@@ -1,5 +1,7 @@
 # Paper strategy contribution evidence
 
+New orders can also retain initial decision-price evidence for a separate cash-flow decomposition. See [execution attribution handoff](EXECUTION_ATTRIBUTION_HANDOFF.md). Historical accounting snapshots keep their explicit benchmark gaps.
+
 P09 is in progress. The first accounting path groups actual persisted paper fills by their original strategy ID/version and instrument. It produces cumulative cash, fee, inventory and marked-P&L contributions from an empty opening inventory.
 
 ## Read the report

@@ -2,7 +2,7 @@
 
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-from decimal import Context, Decimal, localcontext
+from decimal import Context, Decimal, Inexact, localcontext
 from hashlib import sha256
 import json
 import re
@@ -154,7 +154,8 @@ def build_strategy_contributions(
     owners, fills, quotes, catalog, *, now: datetime, max_age_seconds: int = 5
 ):
     _require_aware(now)
-    with localcontext(Context(prec=28)):
+    with localcontext(Context(prec=28)) as context:
+        context.traps[Inexact] = True
         if (
             len(owners) > 10000
             or len(fills) > 10000

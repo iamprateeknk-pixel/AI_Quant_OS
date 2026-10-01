@@ -1,0 +1,170 @@
+{
+  "benchmarks": [
+    {
+      "decision_at": "2026-01-01T00:00:00Z",
+      "intent_id": "execution-alpha",
+      "market": {
+        "ask": "1.1002",
+        "bid": "1.1",
+        "instrument_id": "EURUSD",
+        "observed_at": "2026-01-01T00:00:00Z",
+        "trusted": true,
+        "world_state_version": "execution-world"
+      },
+      "order_id": "9893f86c-4158-491e-ae6b-4052b13f4322",
+      "provenance": "RISK_KERNEL_INITIAL_DECISION_V1",
+      "risk_id": "c0199186-63f3-4d0b-8536-56a26e2df0bd",
+      "schema_version": "1.0"
+    },
+    {
+      "decision_at": "2026-01-01T00:00:00Z",
+      "intent_id": "execution-beta",
+      "market": {
+        "ask": "1.1002",
+        "bid": "1.1",
+        "instrument_id": "EURUSD",
+        "observed_at": "2026-01-01T00:00:00Z",
+        "trusted": true,
+        "world_state_version": "execution-world"
+      },
+      "order_id": "a836e9ca-05a8-4f8b-bc35-e85376d1bd9b",
+      "provenance": "RISK_KERNEL_INITIAL_DECISION_V1",
+      "risk_id": "06448cf0-444a-4774-897d-387f51fe015f",
+      "schema_version": "1.0"
+    }
+  ],
+  "case": "SYNTHETIC_PAPER_BROKER_INITIAL_PRICES",
+  "catalog": [
+    {
+      "base_currency": "EUR",
+      "instrument_id": "EURUSD",
+      "quote_currency": "USD"
+    },
+    {
+      "base_currency": "GBP",
+      "instrument_id": "GBPUSD",
+      "quote_currency": "USD"
+    },
+    {
+      "base_currency": "USD",
+      "instrument_id": "USDJPY",
+      "quote_currency": "JPY"
+    },
+    {
+      "base_currency": "EUR",
+      "instrument_id": "EURJPY",
+      "quote_currency": "JPY"
+    }
+  ],
+  "fills": [
+    {
+      "fee": "0.1",
+      "fill_id": "execution-fill-alpha",
+      "instrument_id": "EURUSD",
+      "observed_at": "2026-01-01T00:00:00Z",
+      "order_id": "9893f86c-4158-491e-ae6b-4052b13f4322",
+      "price": "1.11",
+      "quantity": "1E+1",
+      "side": "BUY",
+      "source": "PAPER_BROKER"
+    },
+    {
+      "fee": "0.2",
+      "fill_id": "execution-fill-beta",
+      "instrument_id": "EURUSD",
+      "observed_at": "2026-01-01T00:00:00Z",
+      "order_id": "a836e9ca-05a8-4f8b-bc35-e85376d1bd9b",
+      "price": "1.095",
+      "quantity": "4",
+      "side": "SELL",
+      "source": "PAPER_BROKER"
+    }
+  ],
+  "owners": [
+    {
+      "created_at": "2026-01-01T00:00:00Z",
+      "expires_at": "2026-01-01T00:01:00Z",
+      "instrument_id": "EURUSD",
+      "intent_id": "execution-alpha",
+      "intent_sha256": "4b2861dc29b9084ec7d547dc09adf0167b03105d2dcd7749e9d343cf75cfaf95",
+      "order_id": "9893f86c-4158-491e-ae6b-4052b13f4322",
+      "order_sha256": "8dd8454c0f80e0b7673696104b0e5d690d47a2b8eca1490046f92cbe05ad277e",
+      "quantity": "1E+1",
+      "side": "BUY",
+      "status": "ACCEPTED",
+      "strategy_id": "alpha",
+      "strategy_version": "1"
+    },
+    {
+      "created_at": "2026-01-01T00:00:00Z",
+      "expires_at": "2026-01-01T00:01:00Z",
+      "instrument_id": "EURUSD",
+      "intent_id": "execution-beta",
+      "intent_sha256": "132ca7121bbe876ab0f3614b707aee9df7173f343487ce074ece9444b32a7073",
+      "order_id": "a836e9ca-05a8-4f8b-bc35-e85376d1bd9b",
+      "order_sha256": "daf637b8eceaec2f8eb53295e3b6332d2efe4155f48b6ab2406ebf9f1547f9a6",
+      "quantity": "4",
+      "side": "SELL",
+      "status": "ACCEPTED",
+      "strategy_id": "beta",
+      "strategy_version": "1"
+    }
+  ],
+  "report": {
+    "as_of": "2026-01-01T00:00:00Z",
+    "benchmark_method": "INITIAL_DECISION_MID_SIDE_QUOTE_V1",
+    "benchmarks_sha256": "817ad3693d153990feda04f7ec3e563057e62225de81cbd5a9d56a190432beec",
+    "coverage": "COMPLETE",
+    "evidence_gaps": [
+      "FILL_TIME_MARKET_BENCHMARK_MISSING",
+      "LATENCY_CAUSAL_ATTRIBUTION_MISSING"
+    ],
+    "instruments": [
+      {
+        "actual_cash_flow_quote": "-7.020",
+        "benchmark_fill_count": 2,
+        "decision_to_fill_cash_adjustment_quote": "-0.118",
+        "fee_cash_flow_quote": "-0.3",
+        "fill_count": 2,
+        "instrument_id": "EURUSD",
+        "quote_currency": "USD",
+        "reference_mid_cash_flow_quote": "-6.6006",
+        "spread_cash_adjustment_quote": "-0.0014"
+      }
+    ],
+    "ledger_sha256": "2fdf94e2ef3ac0d64cca815a602933a1ae9201bf9a327e9cae58b54144da361f",
+    "missing_benchmark_order_ids": [],
+    "mode": "PAPER",
+    "reconciled": true,
+    "schema_version": "1.0",
+    "strategies": [
+      {
+        "actual_cash_flow_quote": "-11.2",
+        "benchmark_fill_count": 1,
+        "decision_to_fill_cash_adjustment_quote": "-0.098",
+        "fee_cash_flow_quote": "-0.1",
+        "fill_count": 1,
+        "instrument_id": "EURUSD",
+        "quote_currency": "USD",
+        "reference_mid_cash_flow_quote": "-11.001",
+        "spread_cash_adjustment_quote": "-0.001",
+        "strategy_id": "alpha",
+        "strategy_version": "1"
+      },
+      {
+        "actual_cash_flow_quote": "4.180",
+        "benchmark_fill_count": 1,
+        "decision_to_fill_cash_adjustment_quote": "-0.020",
+        "fee_cash_flow_quote": "-0.2",
+        "fill_count": 1,
+        "instrument_id": "EURUSD",
+        "quote_currency": "USD",
+        "reference_mid_cash_flow_quote": "4.4004",
+        "spread_cash_adjustment_quote": "-0.0004",
+        "strategy_id": "beta",
+        "strategy_version": "1"
+      }
+    ]
+  },
+  "schema_version": "1.0"
+}

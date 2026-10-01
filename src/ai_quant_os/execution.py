@@ -22,6 +22,7 @@ from ai_quant_os.order_store import PaperOrderStore
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure, summarize_position
 from ai_quant_os.risk import RiskKernel, SafetyState
 from ai_quant_os.paper_attribution import OrderAttribution
+from ai_quant_os.execution_attribution import DecisionPriceBenchmark
 
 
 @dataclass(frozen=True)
@@ -135,8 +136,14 @@ class PaperExecutionGateway:
 
     @property
     def attribution_ledger(self):
+        owners, fills, _ = self.execution_evidence_ledger
+        return owners, fills
+
+    @property
+    def execution_evidence_ledger(self):
         with self._lock:
-            rows, fills = self._store.attribution_records()
+            rows, fills, benchmarks = self._store.execution_evidence_records()
+            retained = {row.order_id: row for row in benchmarks}
             owners = []
             for order_id, intent_id, intent_raw, order_raw in rows:
                 order = _decode_order(order_raw)
@@ -155,6 +162,14 @@ class PaperExecutionGateway:
                     or command.expires_at != datetime.fromisoformat(intent["valid_until"])
                 ):
                     raise ValueError("Paper attribution order ownership mismatch")
+                benchmark = retained.get(order_id)
+                if benchmark is not None and (
+                    benchmark.risk_id != order.risk_id
+                    or benchmark.intent_id != intent_id
+                    or benchmark.market.instrument_id != command.instrument_id
+                    or benchmark.market.world_state_version != intent["world_state_version"]
+                ):
+                    raise ValueError("Paper benchmark ownership mismatch")
                 owners.append(
                     OrderAttribution(
                         order_id,
@@ -171,7 +186,7 @@ class PaperExecutionGateway:
                         sha256(order_raw.encode()).hexdigest(),
                     )
                 )
-            return tuple(owners), fills
+            return tuple(owners), fills, benchmarks
 
     @property
     def exposure_snapshot(self) -> PortfolioExposure:
@@ -564,6 +579,13 @@ class PaperExecutionGateway:
                     max_portfolio_exposure=self._risk.max_portfolio_exposure,
                     currency_reservation=self._risk.currency_reservation(decision),
                     now=self._clock() if self._clock is not None else now,
+                    benchmark=DecisionPriceBenchmark(
+                        order_id,
+                        intent.intent_id,
+                        decision.risk_id,
+                        decision.created_at,
+                        self._risk.decision_market(decision),
+                    ),
                 ):
                     prior = self._store.get(idempotency_key)
                     if prior is None:

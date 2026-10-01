@@ -10,6 +10,8 @@ from threading import Lock
 from ai_quant_os.portfolio import PaperFill, PortfolioExposure
 from ai_quant_os.currency_portfolio import CurrencyPendingOrder
 from ai_quant_os.currency_risk import CurrencyReservation
+from ai_quant_os.execution_attribution import DecisionPriceBenchmark, encode_benchmark
+from ai_quant_os.market import MarketSnapshot
 
 
 def _encode_fill(fill: PaperFill) -> str:
@@ -81,6 +83,16 @@ class PaperOrderStore:
             self._connection.execute(
                 "CREATE INDEX IF NOT EXISTS idx_paper_fills_order_id ON paper_fills(order_id)"
             )
+            self._connection.execute(
+                "CREATE TABLE IF NOT EXISTS paper_price_benchmarks (order_id TEXT PRIMARY KEY, benchmark_json TEXT NOT NULL, sha256 TEXT NOT NULL)"
+            )
+            columns = {
+                row[1] for row in self._connection.execute("PRAGMA table_info(paper_orders)")
+            }
+            if "benchmark_required" not in columns:
+                self._connection.execute(
+                    "ALTER TABLE paper_orders ADD COLUMN benchmark_required INTEGER NOT NULL DEFAULT 0"
+                )
             self._connection.commit()
         except Exception:
             self._connection.rollback()
@@ -133,6 +145,10 @@ class PaperOrderStore:
                 raise
 
     def attribution_records(self):
+        rows, fills, _ = self.execution_evidence_records()
+        return rows, fills
+
+    def execution_evidence_records(self):
         """Read persisted ownership and fills in one bounded database snapshot."""
         with self._lock:
             self._connection.execute("BEGIN")
@@ -148,11 +164,67 @@ class PaperOrderStore:
                 fills = tuple(_decode_fill(row[1]) for row in fill_rows)
                 if any(row[0] != fill.fill_id for row, fill in zip(fill_rows, fills, strict=True)):
                     raise ValueError("Paper attribution fill storage identity mismatch")
+                benchmark_rows = self._connection.execute(
+                    "SELECT order_id,benchmark_json,sha256 FROM paper_price_benchmarks ORDER BY order_id LIMIT 10001"
+                ).fetchall()
+                if len(benchmark_rows) > 10000:
+                    raise ValueError("Paper benchmark inventory capacity exceeded")
+                benchmarks = tuple(self._decode_benchmark(*row) for row in benchmark_rows)
+                present = {row.order_id for row in benchmarks}
+                order_ids = {row[0] for row in rows}
+                metadata = self._connection.execute(
+                    "SELECT order_id,benchmark_required FROM paper_orders"
+                ).fetchall()
+                if any(type(flag) is not int or flag not in (0, 1) for _, flag in metadata):
+                    raise ValueError("Invalid paper benchmark requirement marker")
+                required = {identifier for identifier, flag in metadata if flag == 1}
+                if present - order_ids or present != required:
+                    raise ValueError("Paper benchmark inventory lineage mismatch")
                 self._connection.commit()
-                return tuple(rows), fills
+                return tuple(rows), fills, benchmarks
             except BaseException:
                 self._connection.rollback()
                 raise
+
+    @staticmethod
+    def _decode_benchmark(order_id, raw, digest):
+        if (
+            not isinstance(raw, str)
+            or len(raw.encode()) > 65536
+            or sha256(raw.encode()).hexdigest() != digest
+        ):
+            raise ValueError("Paper benchmark fingerprint mismatch")
+        try:
+            record = json.loads(raw)
+            market = record.pop("market")
+            market["bid"], market["ask"] = Decimal(market["bid"]), Decimal(market["ask"])
+            market["observed_at"] = datetime.fromisoformat(market["observed_at"])
+            record["decision_at"] = datetime.fromisoformat(record["decision_at"])
+            benchmark = DecisionPriceBenchmark(**record, market=MarketSnapshot(**market))
+        except (TypeError, KeyError, AttributeError) as error:
+            raise ValueError("Invalid paper benchmark record") from error
+        if benchmark.order_id != order_id or encode_benchmark(benchmark).decode() != raw:
+            raise ValueError("Paper benchmark identity or canonical encoding mismatch")
+        return benchmark
+
+    def _record_benchmark_unlocked(self, benchmark, order_json, intent_json):
+        order, intent = json.loads(order_json), json.loads(intent_json)
+        if (
+            benchmark.order_id != order["order_id"]
+            or benchmark.risk_id != order["risk_id"]
+            or benchmark.intent_id != order["intent_id"]
+            or benchmark.intent_id != intent["intent_id"]
+            or benchmark.market.instrument_id != intent["instrument_id"]
+            or benchmark.market.world_state_version != intent["world_state_version"]
+        ):
+            raise ValueError("Initial paper benchmark ownership mismatch")
+        raw = encode_benchmark(benchmark)
+        if len(raw) > 65536:
+            raise ValueError("Paper benchmark record capacity exceeded")
+        self._connection.execute(
+            "INSERT INTO paper_price_benchmarks VALUES (?,?,?)",
+            (benchmark.order_id, raw.decode(), sha256(raw).hexdigest()),
+        )
 
     def _currency_ledger_unlocked(
         self,
@@ -340,6 +412,7 @@ class PaperOrderStore:
         max_portfolio_exposure: Decimal,
         currency_reservation: CurrencyReservation | None = None,
         now: datetime | None = None,
+        benchmark: DecisionPriceBenchmark | None = None,
     ) -> bool:
         if not max_portfolio_exposure.is_finite() or max_portfolio_exposure <= 0:
             raise ValueError("Portfolio exposure limit must be positive and finite")
@@ -371,12 +444,14 @@ class PaperOrderStore:
                         currency_reservation, command, intent_json, order_id, now=now
                     )
                 cursor = self._connection.execute(
-                    "INSERT OR IGNORE INTO paper_orders (idempotency_key, intent_id, order_id, intent_json, order_json) VALUES (?, ?, ?, ?, ?)",
-                    (key, intent_id, order_id, intent_json, order_json),
+                    "INSERT OR IGNORE INTO paper_orders (idempotency_key, intent_id, order_id, intent_json, order_json,benchmark_required) VALUES (?, ?, ?, ?, ?, ?)",
+                    (key, intent_id, order_id, intent_json, order_json, int(benchmark is not None)),
                 )
                 if cursor.rowcount == 0:
                     self._connection.commit()
                     return False
+                if benchmark is not None:
+                    self._record_benchmark_unlocked(benchmark, order_json, intent_json)
                 self._connection.commit()
                 return True
             except BaseException:
