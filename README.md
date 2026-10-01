@@ -102,3 +102,5 @@ Completed experiments can be registered and exported through `ai-quant-candidate
 The paper API now exposes reconciled cumulative strategy contributions from persisted ownership and fills. See [paper attribution handoff](docs/PAPER_ATTRIBUTION_HANDOFF.md) for marking, exact fee accounting and remaining P09 evidence.
 
 New paper orders retain their initial approved quotes before dispatch. A protected execution-evidence API reconciles midpoint, spread, decision-to-fill and fee components; see [execution attribution handoff](docs/EXECUTION_ATTRIBUTION_HANDOFF.md).
+
+`ai-quant-counterfactual` compares declared size, cost and parameter alternatives with a frozen candidate's recorded holdout result in separate native engines. Reports remain diagnostics on already-seen data with no promotion authority. See [counterfactual handoff](docs/COUNTERFACTUAL_HANDOFF.md).

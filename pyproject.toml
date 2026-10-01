@@ -20,6 +20,7 @@ ai-quant-evaluate = "ai_quant_os.evaluation_cli:main"
 ai-quant-backtest = "ai_quant_os.nautilus_cli:main"
 ai-quant-research = "ai_quant_os.research_cli:main"
 ai-quant-candidates = "ai_quant_os.candidate_cli:main"
+ai-quant-counterfactual = "ai_quant_os.counterfactual_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

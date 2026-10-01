@@ -1,0 +1,68 @@
+[
+  {
+    "costs": {
+      "fee_per_trade": "0.10",
+      "slippage_bps": "0"
+    },
+    "genome": {
+      "input_kind": "BAR",
+      "parameters": [
+        [
+          "fast",
+          1
+        ],
+        [
+          "slow",
+          2
+        ]
+      ],
+      "strategy_ref": "moving-average-cross@1.0.0"
+    },
+    "name": "half-size",
+    "quantity": 50
+  },
+  {
+    "costs": {
+      "fee_per_trade": "20",
+      "slippage_bps": "10"
+    },
+    "genome": {
+      "input_kind": "BAR",
+      "parameters": [
+        [
+          "fast",
+          1
+        ],
+        [
+          "slow",
+          2
+        ]
+      ],
+      "strategy_ref": "moving-average-cross@1.0.0"
+    },
+    "name": "high-cost",
+    "quantity": 100
+  },
+  {
+    "costs": {
+      "fee_per_trade": "0.10",
+      "slippage_bps": "0"
+    },
+    "genome": {
+      "input_kind": "BAR",
+      "parameters": [
+        [
+          "fast",
+          1
+        ],
+        [
+          "slow",
+          3
+        ]
+      ],
+      "strategy_ref": "moving-average-cross@1.0.0"
+    },
+    "name": "slower-average",
+    "quantity": 100
+  }
+]
