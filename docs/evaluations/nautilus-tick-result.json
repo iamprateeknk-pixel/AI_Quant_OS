@@ -25,6 +25,37 @@
   "replay_model": "RECORDED_QUOTE_TICKS_V1",
   "schema_version": "1.0",
   "source_sha256": "7743b7767376705bc1a052bef45b3045e0467539f1f0b091200f1ebdc02d2295",
+  "strategy_binding": {
+    "genome": {
+      "input_kind": "TICK",
+      "parameters": [],
+      "strategy_ref": "tick-momentum@1.0.0"
+    },
+    "genome_sha256": "5c778f00f113059542686e1115fa5c00a972efe43f0aba127b9a3ec8bf1a884c",
+    "implementation": {
+      "entry_point": "ai_quant_os.tick_strategy:TickMomentum",
+      "input_kind": "TICK",
+      "parameter_defaults": [],
+      "source_files": [
+        {
+          "path": "contracts.py",
+          "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+        },
+        {
+          "path": "tick_data.py",
+          "sha256": "77a62c6359a9ed83222776ae33dcc3d07e23aa7bf179b5430bdc0577b401134d"
+        },
+        {
+          "path": "tick_strategy.py",
+          "sha256": "b74d6b93fa07658747d842419400bf048235c017f169092d5cf424c48424169a"
+        }
+      ],
+      "strategy_ref": "tick-momentum@1.0.0"
+    },
+    "implementation_sha256": "99ef544d711722630f836347dcfae61fcc19a0c995e69da7e68c2abab28c75fc",
+    "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+    "schema_version": "1.0"
+  },
   "strategy_ref": "tick-momentum@1.0.0",
   "venue": "PAPER"
 }

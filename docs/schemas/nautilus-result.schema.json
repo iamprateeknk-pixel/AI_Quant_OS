@@ -60,6 +60,117 @@
       ],
       "title": "NativeFill",
       "type": "object"
+    },
+    "SourceFingerprint": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "SourceFingerprint",
+      "type": "object"
+    },
+    "StrategyGenome": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameters",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind"
+      ],
+      "title": "StrategyGenome",
+      "type": "object"
+    },
+    "StrategyImplementation": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "entry_point": {
+          "title": "Entry Point",
+          "type": "string"
+        },
+        "parameter_defaults": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameter Defaults",
+          "type": "array"
+        },
+        "source_files": {
+          "items": {
+            "$ref": "#/$defs/SourceFingerprint"
+          },
+          "title": "Source Files",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind",
+        "entry_point",
+        "parameter_defaults",
+        "source_files"
+      ],
+      "title": "StrategyImplementation",
+      "type": "object"
     }
   },
   "properties": {
@@ -144,6 +255,44 @@
       "title": "Native Realized Pnl",
       "type": "string"
     },
+    "strategy_binding": {
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "genome": {
+          "$ref": "#/$defs/StrategyGenome"
+        },
+        "genome_sha256": {
+          "title": "Genome Sha256",
+          "type": "string"
+        },
+        "implementation": {
+          "$ref": "#/$defs/StrategyImplementation"
+        },
+        "implementation_sha256": {
+          "title": "Implementation Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "provenance",
+        "genome",
+        "genome_sha256",
+        "implementation",
+        "implementation_sha256"
+      ],
+      "title": "StrategyBinding",
+      "type": "object"
+    },
     "source_sha256": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
@@ -166,7 +315,8 @@
     "net_pnl",
     "pnl_method",
     "native_realized_pnl",
-    "source_sha256"
+    "source_sha256",
+    "strategy_binding"
   ],
   "title": "NautilusResult",
   "type": "object",

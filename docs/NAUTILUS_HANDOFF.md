@@ -38,9 +38,11 @@ The recorded local baseline runs 1,000 synthetic bars three times and checks exa
 
 CI adds Windows/Linux jobs installing the trading extra and asserting the exact runtime version before testing. Hosted jobs have not run. Base installs skip the optional native test module; the dedicated job cannot silently omit the dependency.
 
+The registered runner now adds immutable source manifests, retained source artifacts and validated genome bindings. See [strategy provenance handoff](STRATEGY_PROVENANCE_HANDOFF.md) for construction, persistence, package checks and limits.
+
 ## Remaining P03 gates
 
-Independent critical review, hosted cross-platform CI evidence, immutable strategy implementation manifests, isolation for untrusted plugins, catalog selection, depth/latency and partial-liquidity models, multi-instrument simulation, bar short targets and the complete strategy harness remain open. Current plugins are trusted Python receiving full history; large-replay memory/CPU behavior needs a streaming contract before scale. The paper order API retains its separately gated simulator; this adapter does not replace the Risk Kernel or broker gateway. Live routing remains absent.
+Independent critical review, hosted cross-platform CI evidence, isolation for untrusted plugins, catalog selection, depth/latency and partial-liquidity models, multi-instrument simulation, bar short targets and the complete strategy harness remain open. Current plugins are trusted Python receiving full history; large-replay memory/CPU behavior needs a streaming contract before scale. The paper order API retains its separately gated simulator; this adapter does not replace the Risk Kernel or broker gateway. Live routing remains absent.
 
 Rollback preserves archived data and result evidence. Removing the optional dependency does not alter the paper order database. Runtime upgrades require a new pin and replay comparison.
 

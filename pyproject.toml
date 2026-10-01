@@ -22,6 +22,9 @@ ai-quant-backtest = "ai_quant_os.nautilus_cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+ai_quant_os = ["strategy_manifests.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]

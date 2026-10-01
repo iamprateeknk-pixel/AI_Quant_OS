@@ -12,3 +12,4 @@ data-local/
 node_modules/
 .next/
 .playwright-cli/
+.strategy-registry/

@@ -25,6 +25,55 @@
   "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
   "schema_version": "1.0",
   "source_sha256": "8dd20e16e28250107b99ba831ed2200d527587d1dbdd27859cd7bd6d26691a10",
+  "strategy_binding": {
+    "genome": {
+      "input_kind": "BAR",
+      "parameters": [
+        [
+          "fast",
+          2
+        ],
+        [
+          "slow",
+          3
+        ]
+      ],
+      "strategy_ref": "moving-average-cross@1.0.0"
+    },
+    "genome_sha256": "6adf25994697b09be9f896f7899e36dbf675fbfcb34bad7e2d2b089ff2bf1b71",
+    "implementation": {
+      "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+      "input_kind": "BAR",
+      "parameter_defaults": [
+        [
+          "fast",
+          2
+        ],
+        [
+          "slow",
+          3
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "contracts.py",
+          "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+        },
+        {
+          "path": "market_data.py",
+          "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+        },
+        {
+          "path": "strategy_samples.py",
+          "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+        }
+      ],
+      "strategy_ref": "moving-average-cross@1.0.0"
+    },
+    "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+    "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+    "schema_version": "1.0"
+  },
   "strategy_ref": "moving-average-cross@1.0.0",
   "venue": "PAPER"
 }
