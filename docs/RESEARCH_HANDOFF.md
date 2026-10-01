@@ -1,5 +1,7 @@
 # Research pipeline handoff
 
+Version 1.2 adds predeclared missing-observation and downward-price-step native screens. See [adversarial handoff](ADVERSARIAL_HANDOFF.md) for evidence, compatibility and remaining scenario coverage.
+
 ## Implemented P08 slice
 
 The local research runner executes actual registered Nautilus bar backtests for a predeclared hypothesis and bounded strategy candidate set. It records full configuration/source bindings, normalized dataset fingerprints, UTC data scopes, native fills and positions, costs and every completed native attempt. It has no model, broker connection, Risk Kernel approval or promotion authority.

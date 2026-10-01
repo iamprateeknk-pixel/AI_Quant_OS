@@ -9,6 +9,7 @@ from ai_quant_os.market_data import BarDataset
 from ai_quant_os.strategy_contracts import StrategyGenome
 from ai_quant_os.contracts import _require_aware
 from ai_quant_os.monte_carlo import MonteCarloSpec
+from ai_quant_os.adversarial import AdversarialSpec
 
 
 def _identifier(value):
@@ -66,6 +67,7 @@ class ResearchPlan:
     selection_objective: str = "NET_PNL_THEN_GENOME_SHA256"
     partition_model: str = "EXPANDING_COLD_START_V1"
     monte_carlo_spec: MonteCarloSpec | None = None
+    adversarial_spec: AdversarialSpec | None = None
 
     def __post_init__(self):
         _identifier(self.experiment_id)
@@ -117,15 +119,20 @@ class ResearchPlan:
         ):
             raise ValueError("Cost stress must be strictly adverse")
         if (
-            self.schema_version not in ("1.0", "1.1")
+            self.schema_version not in ("1.0", "1.1", "1.2")
             or self.selection_objective != "NET_PNL_THEN_GENOME_SHA256"
             or self.partition_model != "EXPANDING_COLD_START_V1"
         ):
             raise ValueError("Unsupported research plan contract")
         if (self.schema_version == "1.0" and self.monte_carlo_spec is not None) or (
-            self.schema_version == "1.1" and type(self.monte_carlo_spec) is not MonteCarloSpec
+            self.schema_version in ("1.1", "1.2")
+            and type(self.monte_carlo_spec) is not MonteCarloSpec
         ):
             raise ValueError("Research version requires its declared Monte Carlo policy")
+        if (self.schema_version != "1.2" and self.adversarial_spec is not None) or (
+            self.schema_version == "1.2" and type(self.adversarial_spec) is not AdversarialSpec
+        ):
+            raise ValueError("Research version requires its declared adversarial policy")
 
 
 def partition_development(dataset: BarDataset, *, train_bars: int, validation_bars: int):

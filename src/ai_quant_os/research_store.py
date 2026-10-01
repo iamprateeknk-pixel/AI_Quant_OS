@@ -27,6 +27,10 @@ def _preserve_v10_encoding(record):
             for key in ("monte_carlo", "monte_carlo_spec"):
                 if key in record and record[key] is None:
                     del record[key]
+        if record.get("schema_version") in ("1.0", "1.1"):
+            for key in ("adversarial", "adversarial_spec"):
+                if key in record and record[key] is None:
+                    del record[key]
         for value in record.values():
             _preserve_v10_encoding(value)
     elif isinstance(record, list):

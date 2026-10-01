@@ -94,3 +94,5 @@ Built-in backtests now include validated configuration and immutable source prov
 The archived-data research runner performs native walk-forward, held-out and cost-stress evaluation with immutable experiment lineage. Reports retain pending gates and cannot authorize promotion. See [research handoff](docs/RESEARCH_HANDOFF.md) for the synthetic verification example and remaining P08 work.
 
 Research version 1.1 can declare a seeded native closed-trade Monte Carlo screen before execution. See [Monte Carlo handoff](docs/MONTE_CARLO_HANDOFF.md) for policy, currency units, sample requirements and preserved legacy archives.
+
+Research version 1.2 adds declared native missing-observation and downward-step screens with archived cash-flow reconciliation. See [adversarial handoff](docs/ADVERSARIAL_HANDOFF.md) for usage and remaining coverage.

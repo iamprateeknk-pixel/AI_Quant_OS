@@ -12,6 +12,7 @@ from ai_quant_os.data_archive import BarArchive
 from ai_quant_os.research_contracts import Hypothesis, ResearchDatasetScope, ResearchPlan
 from ai_quant_os.strategy_contracts import StrategyGenome
 from ai_quant_os.monte_carlo import MonteCarloSpec
+from ai_quant_os.adversarial import AdversarialSpec
 
 
 def main():
@@ -37,6 +38,11 @@ def main():
     parser.add_argument("--mc-block-size", type=int)
     parser.add_argument("--mc-drawdown-limit", type=Decimal)
     parser.add_argument("--mc-currency", choices=("USD", "JPY"))
+    parser.add_argument("--adversarial", action="store_true")
+    parser.add_argument("--adversarial-drop-every", type=int)
+    parser.add_argument("--adversarial-shock-bps", type=int)
+    parser.add_argument("--adversarial-loss-limit", type=Decimal)
+    parser.add_argument("--adversarial-currency", choices=("USD", "JPY"))
     parser.add_argument("--workspace", type=Path, default=Path("data-local/research"))
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -60,6 +66,21 @@ def main():
         if mc_kwargs and not args.monte_carlo:
             raise ValueError("Monte Carlo options require --monte-carlo declaration")
         mc_spec = MonteCarloSpec(**mc_kwargs) if args.monte_carlo else None
+        adverse_kwargs = {
+            key: value
+            for key, value in (
+                ("drop_every", args.adversarial_drop_every),
+                ("shock_bps", args.adversarial_shock_bps),
+                ("maximum_loss", args.adversarial_loss_limit),
+                ("risk_currency", args.adversarial_currency),
+            )
+            if value is not None
+        }
+        if adverse_kwargs and not args.adversarial:
+            raise ValueError("Adversarial options require --adversarial declaration")
+        if args.adversarial and not args.monte_carlo:
+            raise ValueError("Version 1.2 adversarial policy requires --monte-carlo")
+        adverse_spec = AdversarialSpec(**adverse_kwargs) if args.adversarial else None
         if (
             output
             in {
@@ -129,8 +150,13 @@ def main():
             args.quantity,
             BacktestCosts(args.slippage_bps, args.fee),
             BacktestCosts(args.stress_slippage_bps, args.stress_fee),
-            schema_version="1.1" if mc_spec is not None else "1.0",
+            schema_version="1.2"
+            if adverse_spec is not None
+            else "1.1"
+            if mc_spec is not None
+            else "1.0",
             monte_carlo_spec=mc_spec,
+            adversarial_spec=adverse_spec,
         )
         report = run_research_experiment(
             plan,

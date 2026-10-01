@@ -17,6 +17,12 @@ from ai_quant_os.research_results import (
 from ai_quant_os.research_store import ResearchStore
 from ai_quant_os.strategy_registry import StrategyRegistry, prepare_builtin
 from ai_quant_os.research_monte_carlo import evaluate_native_monte_carlo
+from ai_quant_os.adversarial import adversarial_datasets
+from ai_quant_os.research_adversarial import (
+    NativeAdversarial,
+    AdversarialScenario,
+    adversarial_score,
+)
 
 
 def run_research_experiment(
@@ -54,13 +60,23 @@ def _run(plan, development, holdout, registry, store):
     partitions = partition_development(
         development, train_bars=plan.train_bars, validation_bars=plan.validation_bars
     )
-    if len(plan.candidates) * (len(partitions) + 1) + 2 * len(partitions) + 2 > 128:
+    scenario_count = 2 if plan.adversarial_spec is not None else 0
+    if (
+        plan.adversarial_spec is not None
+        and len(holdout.bars) < 2 * plan.adversarial_spec.drop_every
+    ):
+        raise ValueError("Insufficient observations for declared adversarial policy")
+    if (
+        len(plan.candidates) * (len(partitions) + 1) + 2 * len(partitions) + 2 + scenario_count
+        > 128
+    ):
         raise ValueError("Native research execution budget exceeded")
     total_rows = (
         len(plan.candidates)
         * (sum(len(train.bars) for train, _ in partitions) + len(development.bars))
         + 2 * sum(len(validation.bars) for _, validation in partitions)
         + 2 * len(holdout.bars)
+        + scenario_count * len(holdout.bars)
     )
     if total_rows > 20000:
         raise ValueError("Research evidence volume budget exceeded")
@@ -134,6 +150,19 @@ def _run(plan, development, holdout, registry, store):
             if plan.monte_carlo_spec is not None
             else None
         )
+        failure_code = "ADVERSARIAL_EXECUTION_FAILURE"
+        adversarial = None
+        if plan.adversarial_spec is not None:
+            scenarios = adversarial_datasets(holdout, plan.adversarial_spec)
+            runs = tuple(
+                AdversarialScenario(
+                    name, dataset.fingerprint, execute(dataset, selection.genome, plan.stress_costs)
+                )
+                for name, dataset in scenarios
+            )
+            adversarial = NativeAdversarial(
+                tuple(holdout.bars), runs, *adversarial_score(runs, plan.adversarial_spec)
+            )
         conditions = measured_conditions(folds, heldout, heldout_stress)
         gates = tuple(
             ResearchGate(
@@ -146,11 +175,14 @@ def _run(plan, development, holdout, registry, store):
             ResearchGate(name, "PENDING", "IMPLEMENTATION_OR_EVIDENCE_MISSING")
             for name in PENDING_GATES
             if name != "MONTE_CARLO" or monte_carlo is None
+            if name != "ADVERSARIAL" or adversarial is None
         )
         if monte_carlo is not None:
             gates += (
                 ResearchGate("MONTE_CARLO", monte_carlo.result.state, monte_carlo.result.reason),
             )
+        if adversarial is not None:
+            gates += (ResearchGate("ADVERSARIAL", adversarial.state, adversarial.reason),)
         reasons = tuple(gate.name for gate in gates if gate.state != "PASS")
         outcome = (
             "REJECTED" if any(gate.state == "FAIL" for gate in gates) else "VALIDATION_INCOMPLETE"
@@ -168,6 +200,7 @@ def _run(plan, development, holdout, registry, store):
             reasons,
             tuple(attempts),
             monte_carlo,
+            adversarial,
         )
     except Exception:
         report = ResearchReport(

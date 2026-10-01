@@ -8,6 +8,7 @@ from ai_quant_os.registered_backtest import RegisteredBacktest
 from ai_quant_os.research_contracts import ResearchPlan
 from ai_quant_os.strategy_contracts import StrategyGenome
 from ai_quant_os.research_monte_carlo import NativeMonteCarlo, evaluate_native_monte_carlo
+from ai_quant_os.research_adversarial import NativeAdversarial, verify_adversarial
 
 PENDING_GATES = ("MONTE_CARLO", "ADVERSARIAL", "SANDBOX", "INDEPENDENT_REVIEW", "SHADOW")
 MEASURED_GATES = ("WALK_FORWARD_PNL", "HOLDOUT_PNL", "COST_STRESS_PNL", "MINIMUM_ACTIVITY")
@@ -84,7 +85,7 @@ class ResearchGate:
 
 @dataclass(frozen=True)
 class ResearchReport:
-    schema_version: Literal["1.0", "1.1"]
+    schema_version: Literal["1.0", "1.1", "1.2"]
     plan: ResearchPlan
     outcome: Literal["FAILED", "REJECTED", "VALIDATION_INCOMPLETE"]
     promotion_allowed: Literal[False]
@@ -96,14 +97,17 @@ class ResearchReport:
     reasons: tuple[str, ...]
     attempts: tuple[RegisteredBacktest, ...] = ()
     monte_carlo: NativeMonteCarlo | None = None
+    adversarial: NativeAdversarial | None = None
 
     def __post_init__(self):
-        if self.schema_version not in ("1.0", "1.1") or self.promotion_allowed is not False:
+        if self.schema_version not in ("1.0", "1.1", "1.2") or self.promotion_allowed is not False:
             raise ValueError("Research cannot grant promotion authority")
         if self.schema_version != self.plan.schema_version:
             raise ValueError("Research report version differs from plan")
         if self.schema_version == "1.0" and self.monte_carlo is not None:
             raise ValueError("Version 1.0 cannot claim Monte Carlo evidence")
+        if self.schema_version != "1.2" and self.adversarial is not None:
+            raise ValueError("Legacy research cannot claim adversarial evidence")
         if len(self.attempts) > 128:
             raise ValueError("Research attempt capacity exceeded")
         if self.outcome == "FAILED":
@@ -111,6 +115,8 @@ class ResearchReport:
                 raise ValueError("Failed research requires an archival reason")
             if self.monte_carlo is not None:
                 raise ValueError("Failed research cannot claim unbound Monte Carlo evidence")
+            if self.adversarial is not None:
+                raise ValueError("Failed research cannot claim adversarial evidence")
             return
         if (
             self.selection is None
@@ -131,17 +137,26 @@ class ResearchReport:
         pending = (
             PENDING_GATES
             if self.schema_version == "1.0"
-            else tuple(name for name in PENDING_GATES if name != "MONTE_CARLO")
+            else tuple(
+                name
+                for name in PENDING_GATES
+                if name != "MONTE_CARLO" and (name != "ADVERSARIAL" or self.schema_version != "1.2")
+            )
         )
         if any(row.state != "PENDING" for row in self.gates if row.name in pending):
             raise ValueError("Unimplemented research gates cannot pass")
-        if self.schema_version == "1.1":
+        if self.schema_version in ("1.1", "1.2"):
             expected_mc = evaluate_native_monte_carlo(self.holdout, self.plan.monte_carlo_spec)
             if self.monte_carlo != expected_mc:
                 raise ValueError("Monte Carlo result differs from declared native evidence")
             gate = next(row for row in self.gates if row.name == "MONTE_CARLO")
             if gate.state != expected_mc.result.state or gate.reason != expected_mc.result.reason:
                 raise ValueError("Monte Carlo gate differs from measured result")
+        if self.schema_version == "1.2":
+            verify_adversarial(self.adversarial, self.plan, self.holdout, self.attempts)
+            gate = next(row for row in self.gates if row.name == "ADVERSARIAL")
+            if (gate.state, gate.reason) != (self.adversarial.state, self.adversarial.reason):
+                raise ValueError("Adversarial gate differs from measured result")
         measured = dict(measured_conditions(self.folds, self.holdout, self.holdout_stress))
         if any(
             gate.state != ("PASS" if measured[gate.name] else "FAIL")
