@@ -88,3 +88,7 @@ Authenticated `POST /api/v1/paper/world-state/publish` preserves the current adv
 Classifier evaluation is available through `python -m ai_quant_os.evaluation_cli report observations.json --output calibration-report.json` and the authenticated `/api/v1/paper/decisions/calibration` endpoint. Reports remain evidence only and do not clear escalation or authorize orders. The provider benchmark harness reuses gateway validation and keeps held-out labels out of classifier inputs. See [the evaluation handoff](docs/CALIBRATION_HANDOFF.md) and [ADR 0009](docs/adr/0009-classifier-evaluation-evidence.md).
 
 Built-in backtests now include validated configuration and immutable source provenance. See [strategy provenance handoff](docs/STRATEGY_PROVENANCE_HANDOFF.md) for registry retention and parameterized runs.
+
+## Local research validation
+
+The archived-data research runner performs native walk-forward, held-out and cost-stress evaluation with immutable experiment lineage. Reports retain pending gates and cannot authorize promotion. See [research handoff](docs/RESEARCH_HANDOFF.md) for the synthetic verification example and remaining P08 work.

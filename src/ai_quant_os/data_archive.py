@@ -90,10 +90,16 @@ class BarArchive:
         return manifest
 
     def ingest_csv(self, path: Path, *, source_id: str, ingested_at: datetime) -> BarManifest:
+        return self.ingest_csv_bytes(
+            path.read_bytes(), source_id=source_id, ingested_at=ingested_at
+        )
+
+    def ingest_csv_bytes(self, raw: bytes, *, source_id: str, ingested_at: datetime) -> BarManifest:
         _require_aware(ingested_at)
         if not source_id.strip():
             raise ValueError("Source id is required")
-        raw = path.read_bytes()
+        if type(raw) is not bytes:
+            raise ValueError("Archive input must be immutable bytes")
         dataset = import_bars_csv_bytes(raw)
         if not dataset.bars:
             raise ValueError("Cannot archive an empty bar dataset")

@@ -53,7 +53,7 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install -e ".[dev,trading]"
       - run: python -c "import nautilus_trader; assert nautilus_trader.__version__ == '1.221.0'"
-      - run: python -m pytest -q tests/test_nautilus_runtime.py tests/test_nautilus_ticks.py tests/test_strategy_samples.py tests/test_strategy_registry.py
+      - run: python -m pytest -q tests/test_nautilus_runtime.py tests/test_nautilus_ticks.py tests/test_strategy_samples.py tests/test_strategy_registry.py tests/test_research_pipeline.py
   data-integration:
     needs: python
     runs-on: ubuntu-latest

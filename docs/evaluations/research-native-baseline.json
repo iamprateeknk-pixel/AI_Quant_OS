@@ -1,0 +1,2095 @@
+{
+  "report": {
+    "attempts": [
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "6adf25994697b09be9f896f7899e36dbf675fbfcb34bad7e2d2b089ff2bf1b71",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.10",
+            "slippage_bps": "0"
+          },
+          "dataset_fingerprint": "d24bd8d185286ee1e1deea797eccdf0dbde9351d7cfd53df72720b44ed04a7a2",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.1",
+              "observed_at": "2026-01-01T00:03:00Z",
+              "price": "1.03",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.1",
+          "net_pnl": "1.900000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.10",
+            "slippage_bps": "0"
+          },
+          "dataset_fingerprint": "d24bd8d185286ee1e1deea797eccdf0dbde9351d7cfd53df72720b44ed04a7a2",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.1",
+              "observed_at": "2026-01-01T00:02:00Z",
+              "price": "1.02",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.1",
+          "net_pnl": "2.900000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.10",
+            "slippage_bps": "0"
+          },
+          "dataset_fingerprint": "a589715a11a9dad269be83fa55c1ecdbe93010856faadc5c0111710e79ff6554",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.1",
+              "observed_at": "2026-01-01T00:08:00Z",
+              "price": "1.08",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.1",
+          "net_pnl": "0.900000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.20",
+            "slippage_bps": "10"
+          },
+          "dataset_fingerprint": "a589715a11a9dad269be83fa55c1ecdbe93010856faadc5c0111710e79ff6554",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.2",
+              "observed_at": "2026-01-01T00:08:00Z",
+              "price": "1.08108",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.2",
+          "net_pnl": "0.692000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "6adf25994697b09be9f896f7899e36dbf675fbfcb34bad7e2d2b089ff2bf1b71",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.10",
+            "slippage_bps": "0"
+          },
+          "dataset_fingerprint": "5035f7cf6324e36ba5ecb738ef4796cad4080844821f3bdb828e4a13432dbbe3",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.1",
+              "observed_at": "2026-01-01T00:03:00Z",
+              "price": "1.03",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.1",
+          "net_pnl": "5.900000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.10",
+            "slippage_bps": "0"
+          },
+          "dataset_fingerprint": "5035f7cf6324e36ba5ecb738ef4796cad4080844821f3bdb828e4a13432dbbe3",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.1",
+              "observed_at": "2026-01-01T00:02:00Z",
+              "price": "1.02",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.1",
+          "net_pnl": "6.900000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.10",
+            "slippage_bps": "0"
+          },
+          "dataset_fingerprint": "1ad7929e854609c1d323fb1403d9c4be26c9a0b9b540f33fe83238bc6641521f",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.1",
+              "observed_at": "2026-01-01T00:12:00Z",
+              "price": "1.12",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.1",
+          "net_pnl": "0.900000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.20",
+            "slippage_bps": "10"
+          },
+          "dataset_fingerprint": "1ad7929e854609c1d323fb1403d9c4be26c9a0b9b540f33fe83238bc6641521f",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.2",
+              "observed_at": "2026-01-01T00:12:00Z",
+              "price": "1.12112",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.2",
+          "net_pnl": "0.688000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "6adf25994697b09be9f896f7899e36dbf675fbfcb34bad7e2d2b089ff2bf1b71",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.10",
+            "slippage_bps": "0"
+          },
+          "dataset_fingerprint": "e196adfa16d999a969a433549d1ce6d68c444c8ec7540362222bc6f21db347d0",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.1",
+              "observed_at": "2026-01-01T00:03:00Z",
+              "price": "1.03",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.1",
+          "net_pnl": "9.900000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.10",
+            "slippage_bps": "0"
+          },
+          "dataset_fingerprint": "e196adfa16d999a969a433549d1ce6d68c444c8ec7540362222bc6f21db347d0",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.1",
+              "observed_at": "2026-01-01T00:02:00Z",
+              "price": "1.02",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.1",
+          "net_pnl": "10.900000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.10",
+            "slippage_bps": "0"
+          },
+          "dataset_fingerprint": "856a6cf972990449aff7c793a22a54b7865ce1da6609f578633b13b9a17d1624",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.1",
+              "observed_at": "2026-01-01T00:16:00Z",
+              "price": "1.16",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.1",
+          "net_pnl": "2.900000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      },
+      {
+        "binding": {
+          "genome": {
+            "input_kind": "BAR",
+            "parameters": [
+              [
+                "fast",
+                1
+              ],
+              [
+                "slow",
+                2
+              ]
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+          "implementation": {
+            "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+            "input_kind": "BAR",
+            "parameter_defaults": [
+              [
+                "fast",
+                2
+              ],
+              [
+                "slow",
+                3
+              ]
+            ],
+            "source_files": [
+              {
+                "path": "contracts.py",
+                "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+              },
+              {
+                "path": "market_data.py",
+                "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+              },
+              {
+                "path": "strategy_samples.py",
+                "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+              }
+            ],
+            "strategy_ref": "moving-average-cross@1.0.0"
+          },
+          "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+          "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "schema_version": "1.0"
+        },
+        "result": {
+          "costs": {
+            "fee_per_trade": "0.20",
+            "slippage_bps": "10"
+          },
+          "dataset_fingerprint": "856a6cf972990449aff7c793a22a54b7865ce1da6609f578633b13b9a17d1624",
+          "engine": "NAUTILUS_BACKTEST",
+          "engine_version": "1.221.0",
+          "fills": [
+            {
+              "fee": "0.2",
+              "observed_at": "2026-01-01T00:16:00Z",
+              "price": "1.16116",
+              "quantity": "100",
+              "side": "BUY"
+            }
+          ],
+          "final_position": "100",
+          "instrument_id": "EURUSD",
+          "native_order_count": 1,
+          "native_realized_pnl": "-0.2",
+          "net_pnl": "2.684000000000000000",
+          "pnl_currency": "USD",
+          "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+          "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+          "schema_version": "1.0",
+          "strategy_ref": "moving-average-cross@1.0.0",
+          "venue": "PAPER"
+        }
+      }
+    ],
+    "folds": [
+      {
+        "index": 0,
+        "stress": {
+          "binding": {
+            "genome": {
+              "input_kind": "BAR",
+              "parameters": [
+                [
+                  "fast",
+                  1
+                ],
+                [
+                  "slow",
+                  2
+                ]
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+            "implementation": {
+              "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+              "input_kind": "BAR",
+              "parameter_defaults": [
+                [
+                  "fast",
+                  2
+                ],
+                [
+                  "slow",
+                  3
+                ]
+              ],
+              "source_files": [
+                {
+                  "path": "contracts.py",
+                  "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                },
+                {
+                  "path": "market_data.py",
+                  "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                },
+                {
+                  "path": "strategy_samples.py",
+                  "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                }
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+            "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+            "schema_version": "1.0"
+          },
+          "result": {
+            "costs": {
+              "fee_per_trade": "0.20",
+              "slippage_bps": "10"
+            },
+            "dataset_fingerprint": "a589715a11a9dad269be83fa55c1ecdbe93010856faadc5c0111710e79ff6554",
+            "engine": "NAUTILUS_BACKTEST",
+            "engine_version": "1.221.0",
+            "fills": [
+              {
+                "fee": "0.2",
+                "observed_at": "2026-01-01T00:08:00Z",
+                "price": "1.08108",
+                "quantity": "100",
+                "side": "BUY"
+              }
+            ],
+            "final_position": "100",
+            "instrument_id": "EURUSD",
+            "native_order_count": 1,
+            "native_realized_pnl": "-0.2",
+            "net_pnl": "0.692000000000000000",
+            "pnl_currency": "USD",
+            "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+            "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+            "schema_version": "1.0",
+            "strategy_ref": "moving-average-cross@1.0.0",
+            "venue": "PAPER"
+          }
+        },
+        "training_results": [
+          {
+            "binding": {
+              "genome": {
+                "input_kind": "BAR",
+                "parameters": [
+                  [
+                    "fast",
+                    2
+                  ],
+                  [
+                    "slow",
+                    3
+                  ]
+                ],
+                "strategy_ref": "moving-average-cross@1.0.0"
+              },
+              "genome_sha256": "6adf25994697b09be9f896f7899e36dbf675fbfcb34bad7e2d2b089ff2bf1b71",
+              "implementation": {
+                "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+                "input_kind": "BAR",
+                "parameter_defaults": [
+                  [
+                    "fast",
+                    2
+                  ],
+                  [
+                    "slow",
+                    3
+                  ]
+                ],
+                "source_files": [
+                  {
+                    "path": "contracts.py",
+                    "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                  },
+                  {
+                    "path": "market_data.py",
+                    "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                  },
+                  {
+                    "path": "strategy_samples.py",
+                    "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                  }
+                ],
+                "strategy_ref": "moving-average-cross@1.0.0"
+              },
+              "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+              "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+              "schema_version": "1.0"
+            },
+            "result": {
+              "costs": {
+                "fee_per_trade": "0.10",
+                "slippage_bps": "0"
+              },
+              "dataset_fingerprint": "d24bd8d185286ee1e1deea797eccdf0dbde9351d7cfd53df72720b44ed04a7a2",
+              "engine": "NAUTILUS_BACKTEST",
+              "engine_version": "1.221.0",
+              "fills": [
+                {
+                  "fee": "0.1",
+                  "observed_at": "2026-01-01T00:03:00Z",
+                  "price": "1.03",
+                  "quantity": "100",
+                  "side": "BUY"
+                }
+              ],
+              "final_position": "100",
+              "instrument_id": "EURUSD",
+              "native_order_count": 1,
+              "native_realized_pnl": "-0.1",
+              "net_pnl": "1.900000000000000000",
+              "pnl_currency": "USD",
+              "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+              "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+              "schema_version": "1.0",
+              "strategy_ref": "moving-average-cross@1.0.0",
+              "venue": "PAPER"
+            }
+          },
+          {
+            "binding": {
+              "genome": {
+                "input_kind": "BAR",
+                "parameters": [
+                  [
+                    "fast",
+                    1
+                  ],
+                  [
+                    "slow",
+                    2
+                  ]
+                ],
+                "strategy_ref": "moving-average-cross@1.0.0"
+              },
+              "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+              "implementation": {
+                "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+                "input_kind": "BAR",
+                "parameter_defaults": [
+                  [
+                    "fast",
+                    2
+                  ],
+                  [
+                    "slow",
+                    3
+                  ]
+                ],
+                "source_files": [
+                  {
+                    "path": "contracts.py",
+                    "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                  },
+                  {
+                    "path": "market_data.py",
+                    "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                  },
+                  {
+                    "path": "strategy_samples.py",
+                    "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                  }
+                ],
+                "strategy_ref": "moving-average-cross@1.0.0"
+              },
+              "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+              "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+              "schema_version": "1.0"
+            },
+            "result": {
+              "costs": {
+                "fee_per_trade": "0.10",
+                "slippage_bps": "0"
+              },
+              "dataset_fingerprint": "d24bd8d185286ee1e1deea797eccdf0dbde9351d7cfd53df72720b44ed04a7a2",
+              "engine": "NAUTILUS_BACKTEST",
+              "engine_version": "1.221.0",
+              "fills": [
+                {
+                  "fee": "0.1",
+                  "observed_at": "2026-01-01T00:02:00Z",
+                  "price": "1.02",
+                  "quantity": "100",
+                  "side": "BUY"
+                }
+              ],
+              "final_position": "100",
+              "instrument_id": "EURUSD",
+              "native_order_count": 1,
+              "native_realized_pnl": "-0.1",
+              "net_pnl": "2.900000000000000000",
+              "pnl_currency": "USD",
+              "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+              "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+              "schema_version": "1.0",
+              "strategy_ref": "moving-average-cross@1.0.0",
+              "venue": "PAPER"
+            }
+          }
+        ],
+        "validation": {
+          "binding": {
+            "genome": {
+              "input_kind": "BAR",
+              "parameters": [
+                [
+                  "fast",
+                  1
+                ],
+                [
+                  "slow",
+                  2
+                ]
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+            "implementation": {
+              "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+              "input_kind": "BAR",
+              "parameter_defaults": [
+                [
+                  "fast",
+                  2
+                ],
+                [
+                  "slow",
+                  3
+                ]
+              ],
+              "source_files": [
+                {
+                  "path": "contracts.py",
+                  "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                },
+                {
+                  "path": "market_data.py",
+                  "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                },
+                {
+                  "path": "strategy_samples.py",
+                  "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                }
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+            "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+            "schema_version": "1.0"
+          },
+          "result": {
+            "costs": {
+              "fee_per_trade": "0.10",
+              "slippage_bps": "0"
+            },
+            "dataset_fingerprint": "a589715a11a9dad269be83fa55c1ecdbe93010856faadc5c0111710e79ff6554",
+            "engine": "NAUTILUS_BACKTEST",
+            "engine_version": "1.221.0",
+            "fills": [
+              {
+                "fee": "0.1",
+                "observed_at": "2026-01-01T00:08:00Z",
+                "price": "1.08",
+                "quantity": "100",
+                "side": "BUY"
+              }
+            ],
+            "final_position": "100",
+            "instrument_id": "EURUSD",
+            "native_order_count": 1,
+            "native_realized_pnl": "-0.1",
+            "net_pnl": "0.900000000000000000",
+            "pnl_currency": "USD",
+            "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+            "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+            "schema_version": "1.0",
+            "strategy_ref": "moving-average-cross@1.0.0",
+            "venue": "PAPER"
+          }
+        }
+      },
+      {
+        "index": 1,
+        "stress": {
+          "binding": {
+            "genome": {
+              "input_kind": "BAR",
+              "parameters": [
+                [
+                  "fast",
+                  1
+                ],
+                [
+                  "slow",
+                  2
+                ]
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+            "implementation": {
+              "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+              "input_kind": "BAR",
+              "parameter_defaults": [
+                [
+                  "fast",
+                  2
+                ],
+                [
+                  "slow",
+                  3
+                ]
+              ],
+              "source_files": [
+                {
+                  "path": "contracts.py",
+                  "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                },
+                {
+                  "path": "market_data.py",
+                  "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                },
+                {
+                  "path": "strategy_samples.py",
+                  "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                }
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+            "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+            "schema_version": "1.0"
+          },
+          "result": {
+            "costs": {
+              "fee_per_trade": "0.20",
+              "slippage_bps": "10"
+            },
+            "dataset_fingerprint": "1ad7929e854609c1d323fb1403d9c4be26c9a0b9b540f33fe83238bc6641521f",
+            "engine": "NAUTILUS_BACKTEST",
+            "engine_version": "1.221.0",
+            "fills": [
+              {
+                "fee": "0.2",
+                "observed_at": "2026-01-01T00:12:00Z",
+                "price": "1.12112",
+                "quantity": "100",
+                "side": "BUY"
+              }
+            ],
+            "final_position": "100",
+            "instrument_id": "EURUSD",
+            "native_order_count": 1,
+            "native_realized_pnl": "-0.2",
+            "net_pnl": "0.688000000000000000",
+            "pnl_currency": "USD",
+            "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+            "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+            "schema_version": "1.0",
+            "strategy_ref": "moving-average-cross@1.0.0",
+            "venue": "PAPER"
+          }
+        },
+        "training_results": [
+          {
+            "binding": {
+              "genome": {
+                "input_kind": "BAR",
+                "parameters": [
+                  [
+                    "fast",
+                    2
+                  ],
+                  [
+                    "slow",
+                    3
+                  ]
+                ],
+                "strategy_ref": "moving-average-cross@1.0.0"
+              },
+              "genome_sha256": "6adf25994697b09be9f896f7899e36dbf675fbfcb34bad7e2d2b089ff2bf1b71",
+              "implementation": {
+                "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+                "input_kind": "BAR",
+                "parameter_defaults": [
+                  [
+                    "fast",
+                    2
+                  ],
+                  [
+                    "slow",
+                    3
+                  ]
+                ],
+                "source_files": [
+                  {
+                    "path": "contracts.py",
+                    "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                  },
+                  {
+                    "path": "market_data.py",
+                    "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                  },
+                  {
+                    "path": "strategy_samples.py",
+                    "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                  }
+                ],
+                "strategy_ref": "moving-average-cross@1.0.0"
+              },
+              "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+              "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+              "schema_version": "1.0"
+            },
+            "result": {
+              "costs": {
+                "fee_per_trade": "0.10",
+                "slippage_bps": "0"
+              },
+              "dataset_fingerprint": "5035f7cf6324e36ba5ecb738ef4796cad4080844821f3bdb828e4a13432dbbe3",
+              "engine": "NAUTILUS_BACKTEST",
+              "engine_version": "1.221.0",
+              "fills": [
+                {
+                  "fee": "0.1",
+                  "observed_at": "2026-01-01T00:03:00Z",
+                  "price": "1.03",
+                  "quantity": "100",
+                  "side": "BUY"
+                }
+              ],
+              "final_position": "100",
+              "instrument_id": "EURUSD",
+              "native_order_count": 1,
+              "native_realized_pnl": "-0.1",
+              "net_pnl": "5.900000000000000000",
+              "pnl_currency": "USD",
+              "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+              "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+              "schema_version": "1.0",
+              "strategy_ref": "moving-average-cross@1.0.0",
+              "venue": "PAPER"
+            }
+          },
+          {
+            "binding": {
+              "genome": {
+                "input_kind": "BAR",
+                "parameters": [
+                  [
+                    "fast",
+                    1
+                  ],
+                  [
+                    "slow",
+                    2
+                  ]
+                ],
+                "strategy_ref": "moving-average-cross@1.0.0"
+              },
+              "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+              "implementation": {
+                "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+                "input_kind": "BAR",
+                "parameter_defaults": [
+                  [
+                    "fast",
+                    2
+                  ],
+                  [
+                    "slow",
+                    3
+                  ]
+                ],
+                "source_files": [
+                  {
+                    "path": "contracts.py",
+                    "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                  },
+                  {
+                    "path": "market_data.py",
+                    "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                  },
+                  {
+                    "path": "strategy_samples.py",
+                    "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                  }
+                ],
+                "strategy_ref": "moving-average-cross@1.0.0"
+              },
+              "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+              "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+              "schema_version": "1.0"
+            },
+            "result": {
+              "costs": {
+                "fee_per_trade": "0.10",
+                "slippage_bps": "0"
+              },
+              "dataset_fingerprint": "5035f7cf6324e36ba5ecb738ef4796cad4080844821f3bdb828e4a13432dbbe3",
+              "engine": "NAUTILUS_BACKTEST",
+              "engine_version": "1.221.0",
+              "fills": [
+                {
+                  "fee": "0.1",
+                  "observed_at": "2026-01-01T00:02:00Z",
+                  "price": "1.02",
+                  "quantity": "100",
+                  "side": "BUY"
+                }
+              ],
+              "final_position": "100",
+              "instrument_id": "EURUSD",
+              "native_order_count": 1,
+              "native_realized_pnl": "-0.1",
+              "net_pnl": "6.900000000000000000",
+              "pnl_currency": "USD",
+              "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+              "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+              "schema_version": "1.0",
+              "strategy_ref": "moving-average-cross@1.0.0",
+              "venue": "PAPER"
+            }
+          }
+        ],
+        "validation": {
+          "binding": {
+            "genome": {
+              "input_kind": "BAR",
+              "parameters": [
+                [
+                  "fast",
+                  1
+                ],
+                [
+                  "slow",
+                  2
+                ]
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+            "implementation": {
+              "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+              "input_kind": "BAR",
+              "parameter_defaults": [
+                [
+                  "fast",
+                  2
+                ],
+                [
+                  "slow",
+                  3
+                ]
+              ],
+              "source_files": [
+                {
+                  "path": "contracts.py",
+                  "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                },
+                {
+                  "path": "market_data.py",
+                  "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                },
+                {
+                  "path": "strategy_samples.py",
+                  "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                }
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+            "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+            "schema_version": "1.0"
+          },
+          "result": {
+            "costs": {
+              "fee_per_trade": "0.10",
+              "slippage_bps": "0"
+            },
+            "dataset_fingerprint": "1ad7929e854609c1d323fb1403d9c4be26c9a0b9b540f33fe83238bc6641521f",
+            "engine": "NAUTILUS_BACKTEST",
+            "engine_version": "1.221.0",
+            "fills": [
+              {
+                "fee": "0.1",
+                "observed_at": "2026-01-01T00:12:00Z",
+                "price": "1.12",
+                "quantity": "100",
+                "side": "BUY"
+              }
+            ],
+            "final_position": "100",
+            "instrument_id": "EURUSD",
+            "native_order_count": 1,
+            "native_realized_pnl": "-0.1",
+            "net_pnl": "0.900000000000000000",
+            "pnl_currency": "USD",
+            "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+            "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+            "schema_version": "1.0",
+            "strategy_ref": "moving-average-cross@1.0.0",
+            "venue": "PAPER"
+          }
+        }
+      }
+    ],
+    "gates": [
+      {
+        "name": "WALK_FORWARD_PNL",
+        "reason": "DECLARED_SCREEN_PASSED",
+        "state": "PASS"
+      },
+      {
+        "name": "HOLDOUT_PNL",
+        "reason": "DECLARED_SCREEN_PASSED",
+        "state": "PASS"
+      },
+      {
+        "name": "COST_STRESS_PNL",
+        "reason": "DECLARED_SCREEN_PASSED",
+        "state": "PASS"
+      },
+      {
+        "name": "MINIMUM_ACTIVITY",
+        "reason": "DECLARED_SCREEN_PASSED",
+        "state": "PASS"
+      },
+      {
+        "name": "MONTE_CARLO",
+        "reason": "IMPLEMENTATION_OR_EVIDENCE_MISSING",
+        "state": "PENDING"
+      },
+      {
+        "name": "ADVERSARIAL",
+        "reason": "IMPLEMENTATION_OR_EVIDENCE_MISSING",
+        "state": "PENDING"
+      },
+      {
+        "name": "SANDBOX",
+        "reason": "IMPLEMENTATION_OR_EVIDENCE_MISSING",
+        "state": "PENDING"
+      },
+      {
+        "name": "INDEPENDENT_REVIEW",
+        "reason": "IMPLEMENTATION_OR_EVIDENCE_MISSING",
+        "state": "PENDING"
+      },
+      {
+        "name": "SHADOW",
+        "reason": "IMPLEMENTATION_OR_EVIDENCE_MISSING",
+        "state": "PENDING"
+      }
+    ],
+    "holdout": {
+      "binding": {
+        "genome": {
+          "input_kind": "BAR",
+          "parameters": [
+            [
+              "fast",
+              1
+            ],
+            [
+              "slow",
+              2
+            ]
+          ],
+          "strategy_ref": "moving-average-cross@1.0.0"
+        },
+        "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+        "implementation": {
+          "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+          "input_kind": "BAR",
+          "parameter_defaults": [
+            [
+              "fast",
+              2
+            ],
+            [
+              "slow",
+              3
+            ]
+          ],
+          "source_files": [
+            {
+              "path": "contracts.py",
+              "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+            },
+            {
+              "path": "market_data.py",
+              "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+            },
+            {
+              "path": "strategy_samples.py",
+              "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+            }
+          ],
+          "strategy_ref": "moving-average-cross@1.0.0"
+        },
+        "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+        "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+        "schema_version": "1.0"
+      },
+      "result": {
+        "costs": {
+          "fee_per_trade": "0.10",
+          "slippage_bps": "0"
+        },
+        "dataset_fingerprint": "856a6cf972990449aff7c793a22a54b7865ce1da6609f578633b13b9a17d1624",
+        "engine": "NAUTILUS_BACKTEST",
+        "engine_version": "1.221.0",
+        "fills": [
+          {
+            "fee": "0.1",
+            "observed_at": "2026-01-01T00:16:00Z",
+            "price": "1.16",
+            "quantity": "100",
+            "side": "BUY"
+          }
+        ],
+        "final_position": "100",
+        "instrument_id": "EURUSD",
+        "native_order_count": 1,
+        "native_realized_pnl": "-0.1",
+        "net_pnl": "2.900000000000000000",
+        "pnl_currency": "USD",
+        "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+        "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+        "schema_version": "1.0",
+        "strategy_ref": "moving-average-cross@1.0.0",
+        "venue": "PAPER"
+      }
+    },
+    "holdout_stress": {
+      "binding": {
+        "genome": {
+          "input_kind": "BAR",
+          "parameters": [
+            [
+              "fast",
+              1
+            ],
+            [
+              "slow",
+              2
+            ]
+          ],
+          "strategy_ref": "moving-average-cross@1.0.0"
+        },
+        "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+        "implementation": {
+          "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+          "input_kind": "BAR",
+          "parameter_defaults": [
+            [
+              "fast",
+              2
+            ],
+            [
+              "slow",
+              3
+            ]
+          ],
+          "source_files": [
+            {
+              "path": "contracts.py",
+              "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+            },
+            {
+              "path": "market_data.py",
+              "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+            },
+            {
+              "path": "strategy_samples.py",
+              "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+            }
+          ],
+          "strategy_ref": "moving-average-cross@1.0.0"
+        },
+        "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+        "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+        "schema_version": "1.0"
+      },
+      "result": {
+        "costs": {
+          "fee_per_trade": "0.20",
+          "slippage_bps": "10"
+        },
+        "dataset_fingerprint": "856a6cf972990449aff7c793a22a54b7865ce1da6609f578633b13b9a17d1624",
+        "engine": "NAUTILUS_BACKTEST",
+        "engine_version": "1.221.0",
+        "fills": [
+          {
+            "fee": "0.2",
+            "observed_at": "2026-01-01T00:16:00Z",
+            "price": "1.16116",
+            "quantity": "100",
+            "side": "BUY"
+          }
+        ],
+        "final_position": "100",
+        "instrument_id": "EURUSD",
+        "native_order_count": 1,
+        "native_realized_pnl": "-0.2",
+        "net_pnl": "2.684000000000000000",
+        "pnl_currency": "USD",
+        "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+        "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+        "schema_version": "1.0",
+        "strategy_ref": "moving-average-cross@1.0.0",
+        "venue": "PAPER"
+      }
+    },
+    "outcome": "VALIDATION_INCOMPLETE",
+    "plan": {
+      "candidates": [
+        {
+          "input_kind": "BAR",
+          "parameters": [
+            [
+              "fast",
+              2
+            ],
+            [
+              "slow",
+              3
+            ]
+          ],
+          "strategy_ref": "moving-average-cross@1.0.0"
+        },
+        {
+          "input_kind": "BAR",
+          "parameters": [
+            [
+              "fast",
+              1
+            ],
+            [
+              "slow",
+              2
+            ]
+          ],
+          "strategy_ref": "moving-average-cross@1.0.0"
+        }
+      ],
+      "costs": {
+        "fee_per_trade": "0.10",
+        "slippage_bps": "0"
+      },
+      "development_fingerprint": "e196adfa16d999a969a433549d1ce6d68c444c8ec7540362222bc6f21db347d0",
+      "development_scope": {
+        "dataset_fingerprint": "e196adfa16d999a969a433549d1ce6d68c444c8ec7540362222bc6f21db347d0",
+        "first_observed_at": "2026-01-01T00:00:00Z",
+        "instrument_id": "EURUSD",
+        "last_observed_at": "2026-01-01T00:13:00Z"
+      },
+      "experiment_id": "synthetic-ma-baseline",
+      "holdout_fingerprint": "856a6cf972990449aff7c793a22a54b7865ce1da6609f578633b13b9a17d1624",
+      "holdout_scope": {
+        "dataset_fingerprint": "856a6cf972990449aff7c793a22a54b7865ce1da6609f578633b13b9a17d1624",
+        "first_observed_at": "2026-01-01T00:14:00Z",
+        "instrument_id": "EURUSD",
+        "last_observed_at": "2026-01-01T00:19:00Z"
+      },
+      "hypothesis": {
+        "description": "Synthetic fixture for pipeline verification; no trading-performance claim",
+        "hypothesis_id": "synthetic-ma-interface"
+      },
+      "partition_model": "EXPANDING_COLD_START_V1",
+      "quantity": 100,
+      "schema_version": "1.0",
+      "selection_objective": "NET_PNL_THEN_GENOME_SHA256",
+      "stress_costs": {
+        "fee_per_trade": "0.20",
+        "slippage_bps": "10"
+      },
+      "train_bars": 6,
+      "validation_bars": 4
+    },
+    "promotion_allowed": false,
+    "reasons": [
+      "MONTE_CARLO",
+      "ADVERSARIAL",
+      "SANDBOX",
+      "INDEPENDENT_REVIEW",
+      "SHADOW"
+    ],
+    "schema_version": "1.0",
+    "selection": {
+      "development_fingerprint": "e196adfa16d999a969a433549d1ce6d68c444c8ec7540362222bc6f21db347d0",
+      "genome": {
+        "input_kind": "BAR",
+        "parameters": [
+          [
+            "fast",
+            1
+          ],
+          [
+            "slow",
+            2
+          ]
+        ],
+        "strategy_ref": "moving-average-cross@1.0.0"
+      },
+      "training_results": [
+        {
+          "binding": {
+            "genome": {
+              "input_kind": "BAR",
+              "parameters": [
+                [
+                  "fast",
+                  2
+                ],
+                [
+                  "slow",
+                  3
+                ]
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "genome_sha256": "6adf25994697b09be9f896f7899e36dbf675fbfcb34bad7e2d2b089ff2bf1b71",
+            "implementation": {
+              "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+              "input_kind": "BAR",
+              "parameter_defaults": [
+                [
+                  "fast",
+                  2
+                ],
+                [
+                  "slow",
+                  3
+                ]
+              ],
+              "source_files": [
+                {
+                  "path": "contracts.py",
+                  "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                },
+                {
+                  "path": "market_data.py",
+                  "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                },
+                {
+                  "path": "strategy_samples.py",
+                  "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                }
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+            "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+            "schema_version": "1.0"
+          },
+          "result": {
+            "costs": {
+              "fee_per_trade": "0.10",
+              "slippage_bps": "0"
+            },
+            "dataset_fingerprint": "e196adfa16d999a969a433549d1ce6d68c444c8ec7540362222bc6f21db347d0",
+            "engine": "NAUTILUS_BACKTEST",
+            "engine_version": "1.221.0",
+            "fills": [
+              {
+                "fee": "0.1",
+                "observed_at": "2026-01-01T00:03:00Z",
+                "price": "1.03",
+                "quantity": "100",
+                "side": "BUY"
+              }
+            ],
+            "final_position": "100",
+            "instrument_id": "EURUSD",
+            "native_order_count": 1,
+            "native_realized_pnl": "-0.1",
+            "net_pnl": "9.900000000000000000",
+            "pnl_currency": "USD",
+            "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+            "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+            "schema_version": "1.0",
+            "strategy_ref": "moving-average-cross@1.0.0",
+            "venue": "PAPER"
+          }
+        },
+        {
+          "binding": {
+            "genome": {
+              "input_kind": "BAR",
+              "parameters": [
+                [
+                  "fast",
+                  1
+                ],
+                [
+                  "slow",
+                  2
+                ]
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "genome_sha256": "bad90dfa97b7c8f885302f3d77fb58ad95eefd6595dca42391259794f86eca30",
+            "implementation": {
+              "entry_point": "ai_quant_os.strategy_samples:MovingAverageCrossover",
+              "input_kind": "BAR",
+              "parameter_defaults": [
+                [
+                  "fast",
+                  2
+                ],
+                [
+                  "slow",
+                  3
+                ]
+              ],
+              "source_files": [
+                {
+                  "path": "contracts.py",
+                  "sha256": "6cef6ea8ec862182ebe4817130d9f3bc8de58d02de7550eac021492b7c061d00"
+                },
+                {
+                  "path": "market_data.py",
+                  "sha256": "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+                },
+                {
+                  "path": "strategy_samples.py",
+                  "sha256": "a56c4985e372d3b3d62953f895ce4a357bac3406c6a800f096fd34ab98c3e178"
+                }
+              ],
+              "strategy_ref": "moving-average-cross@1.0.0"
+            },
+            "implementation_sha256": "be62784d2715ffcca3be6028c9ff272fbb9d8672e18bab10a0748e8719c1f53a",
+            "provenance": "TRUSTED_BUILTIN_SOURCE_BINDING",
+            "schema_version": "1.0"
+          },
+          "result": {
+            "costs": {
+              "fee_per_trade": "0.10",
+              "slippage_bps": "0"
+            },
+            "dataset_fingerprint": "e196adfa16d999a969a433549d1ce6d68c444c8ec7540362222bc6f21db347d0",
+            "engine": "NAUTILUS_BACKTEST",
+            "engine_version": "1.221.0",
+            "fills": [
+              {
+                "fee": "0.1",
+                "observed_at": "2026-01-01T00:02:00Z",
+                "price": "1.02",
+                "quantity": "100",
+                "side": "BUY"
+              }
+            ],
+            "final_position": "100",
+            "instrument_id": "EURUSD",
+            "native_order_count": 1,
+            "native_realized_pnl": "-0.1",
+            "net_pnl": "10.900000000000000000",
+            "pnl_currency": "USD",
+            "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+            "replay_model": "BAR_OPEN_CLOSE_QUOTES_V1",
+            "schema_version": "1.0",
+            "strategy_ref": "moving-average-cross@1.0.0",
+            "venue": "PAPER"
+          }
+        }
+      ]
+    }
+  },
+  "report_sha256": "e9b37a20c1e4aa2d7156e8fcb357ef8a755475ca32cc1634aee55fb8e533b604",
+  "schema_version": "1.0",
+  "source_lineage": [
+    {
+      "archive_id": "7fb7139239caec0a913d4776147282df2217bdb3e33b15f66a9c437f277700e8",
+      "dataset_fingerprint": "e196adfa16d999a969a433549d1ce6d68c444c8ec7540362222bc6f21db347d0",
+      "role": "DEVELOPMENT",
+      "source_sha256": "c3a043270bb66d65dd77a072ff8b9193c732bef36c364a00dc471f5770e8d716"
+    },
+    {
+      "archive_id": "ecb5a4ccf7e0c4b9185f24075cca85416e17e38fe1ace45e8b3098c83c485456",
+      "dataset_fingerprint": "856a6cf972990449aff7c793a22a54b7865ce1da6609f578633b13b9a17d1624",
+      "role": "HOLDOUT",
+      "source_sha256": "414f726800b1fbf3406e8137af905e63e10dd71ee8e73bf71752e69aede7642f"
+    }
+  ]
+}

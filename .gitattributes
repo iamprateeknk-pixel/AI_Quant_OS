@@ -1,0 +1,2 @@
+tests/fixtures/nautilus*.csv -text
+tests/fixtures/research_*.csv -text
