@@ -1,10 +1,12 @@
 """Deterministic circular block resampling of completed trade cash flows."""
 
 from dataclasses import dataclass
-from decimal import Context, Decimal, localcontext
+from decimal import Context, Decimal, Inexact, localcontext
 from hashlib import sha256
 import json
 from typing import Literal
+
+REVERSAL_MONTE_CARLO_METHOD = "CIRCULAR_EQUAL_REVERSAL_HALF_FEE_BLOCKS_SHA256_V1"
 
 
 @dataclass(frozen=True)
@@ -53,15 +55,34 @@ class ClosedTradeSeries:
             return sha256(raw).hexdigest()
 
 
-def closed_trade_series(fills: tuple[CashFill, ...]) -> ClosedTradeSeries:
+def closed_trade_series(
+    fills: tuple[CashFill, ...],
+    *,
+    reversal_fee_policy: Literal["REJECT", "EQUAL_SIZE_HALF_FEE_V1"] = "REJECT",
+) -> ClosedTradeSeries:
+    if reversal_fee_policy not in ("REJECT", "EQUAL_SIZE_HALF_FEE_V1"):
+        raise ValueError("Unknown reversal fee policy")
     if len(fills) > 4096:
         raise ValueError("Trade cash-flow capacity exceeded")
-    with localcontext(Context(prec=28)):
+    context = Context(prec=28)
+    if reversal_fee_policy == "EQUAL_SIZE_HALF_FEE_V1":
+        context.traps[Inexact] = True
+    with localcontext(context):
         position, cash, completed = Decimal(0), Decimal(0), []
         for fill in fills:
             delta = fill.quantity if fill.side == "BUY" else -fill.quantity
             if position and position * delta < 0 and abs(delta) > abs(position):
-                raise ValueError("Position reversal requires explicit fee attribution")
+                if reversal_fee_policy == "REJECT":
+                    raise ValueError("Position reversal requires explicit fee attribution")
+                if abs(delta) != 2 * abs(position):
+                    raise ValueError("Half-fee attribution requires equal reversal legs")
+                # One native order closes Q and opens Q; each leg owns half its fee.
+                closing_delta = -position
+                closing_fee = fill.fee / 2
+                completed.append(cash - closing_delta * fill.price - closing_fee)
+                position = delta + position
+                cash = -position * fill.price - (fill.fee - closing_fee)
+                continue
             cash += (
                 -fill.price * fill.quantity if fill.side == "BUY" else fill.price * fill.quantity
             ) - fill.fee
@@ -82,9 +103,10 @@ class MonteCarloSpec:
     minimum_positive_fraction: Decimal = Decimal("0.95")
     drawdown_limit: Decimal = Decimal(100)
     risk_currency: Literal["USD", "JPY"] = "USD"
-    method: Literal["CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1"] = (
-        "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1"
-    )
+    method: Literal[
+        "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1",
+        "CIRCULAR_EQUAL_REVERSAL_HALF_FEE_BLOCKS_SHA256_V1",
+    ] = "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1"
 
     def __post_init__(self):
         for value, low, high in (
@@ -104,7 +126,8 @@ class MonteCarloSpec:
             or not 0 <= self.minimum_positive_fraction <= 1
             or self.drawdown_limit < 0
             or self.risk_currency not in ("USD", "JPY")
-            or self.method != "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1"
+            or self.method
+            not in ("CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1", REVERSAL_MONTE_CARLO_METHOD)
         ):
             raise ValueError("Invalid Monte Carlo policy")
 

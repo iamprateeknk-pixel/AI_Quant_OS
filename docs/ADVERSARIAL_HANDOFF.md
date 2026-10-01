@@ -1,5 +1,7 @@
 # Native adversarial research screens
 
+Directional bar strategies now use the same declared scenarios with the shared native source/price/time/position/cash verifier. Directional research explicitly declares the equal-reversal Monte Carlo fee method. See [directional research handoff](DIRECTIONAL_RESEARCH_HANDOFF.md).
+
 P08 remains in progress. Research contract 1.2 adds two predeclared native scenarios to the existing development-only selection, walk-forward, holdout, cost-stress and Monte Carlo evidence.
 
 ## Execution and evidence

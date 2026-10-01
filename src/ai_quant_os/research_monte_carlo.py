@@ -11,6 +11,7 @@ from ai_quant_os.monte_carlo import (
     CashFill,
     MonteCarloResult,
     MonteCarloSpec,
+    REVERSAL_MONTE_CARLO_METHOD,
     closed_trade_series,
     run_monte_carlo,
 )
@@ -31,10 +32,20 @@ def evaluate_native_monte_carlo(run: RegisteredBacktest, spec: MonteCarloSpec) -
     with localcontext(Context(prec=28)):
         if run.result.pnl_currency != spec.risk_currency:
             raise ValueError("Monte Carlo drawdown currency differs from native result")
+        if (
+            run.result.replay_model == "BAR_OPEN_CLOSE_LONG_SHORT_V1"
+            and spec.method != REVERSAL_MONTE_CARLO_METHOD
+        ):
+            raise ValueError("Directional Monte Carlo needs an explicit reversal-fee policy")
         fills = tuple(
             CashFill(row.side, row.quantity, row.price, row.fee) for row in run.result.fills
         )
-        series = closed_trade_series(fills)
+        series = closed_trade_series(
+            fills,
+            reversal_fee_policy="EQUAL_SIZE_HALF_FEE_V1"
+            if spec.method == REVERSAL_MONTE_CARLO_METHOD
+            else "REJECT",
+        )
         if series.open_position != run.result.final_position:
             raise ValueError("Monte Carlo trade ledger differs from native position")
         if not series.open_position and sum(series.net_pnls, Decimal(0)) != run.result.net_pnl:

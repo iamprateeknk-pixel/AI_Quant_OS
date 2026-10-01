@@ -11,7 +11,7 @@ from ai_quant_os.backtest import BacktestCosts
 from ai_quant_os.data_archive import BarArchive
 from ai_quant_os.research_contracts import Hypothesis, ResearchDatasetScope, ResearchPlan
 from ai_quant_os.strategy_contracts import StrategyGenome
-from ai_quant_os.monte_carlo import MonteCarloSpec
+from ai_quant_os.monte_carlo import MonteCarloSpec, REVERSAL_MONTE_CARLO_METHOD
 from ai_quant_os.adversarial import AdversarialSpec
 from ai_quant_os.directional_strategy import DIRECTIONAL_REF
 
@@ -44,6 +44,10 @@ def main():
     parser.add_argument("--mc-block-size", type=int)
     parser.add_argument("--mc-drawdown-limit", type=Decimal)
     parser.add_argument("--mc-currency", choices=("USD", "JPY"))
+    parser.add_argument(
+        "--mc-method",
+        choices=("CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1", REVERSAL_MONTE_CARLO_METHOD),
+    )
     parser.add_argument("--adversarial", action="store_true")
     parser.add_argument("--adversarial-drop-every", type=int)
     parser.add_argument("--adversarial-shock-bps", type=int)
@@ -66,6 +70,7 @@ def main():
                 ("block_size", args.mc_block_size),
                 ("drawdown_limit", args.mc_drawdown_limit),
                 ("risk_currency", args.mc_currency),
+                ("method", args.mc_method),
             )
             if value is not None
         }
@@ -87,9 +92,13 @@ def main():
         if args.adversarial and not args.monte_carlo:
             raise ValueError("Version 1.2 adversarial policy requires --monte-carlo")
         adverse_spec = AdversarialSpec(**adverse_kwargs) if args.adversarial else None
-        if args.strategy == "moving-average-directional" and mc_spec is not None:
+        if (
+            args.strategy == "moving-average-directional"
+            and mc_spec is not None
+            and mc_spec.method != REVERSAL_MONTE_CARLO_METHOD
+        ):
             raise ValueError(
-                "Directional research needs a reviewed reversal-fee Monte Carlo/adversarial policy"
+                "Directional research needs an explicit reversal-fee Monte Carlo policy"
             )
         if (
             output

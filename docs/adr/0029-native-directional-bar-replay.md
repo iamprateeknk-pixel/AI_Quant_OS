@@ -2,6 +2,8 @@
 
 Status: Accepted for local diagnostic replay.
 
+Follow-up: [ADR 0030](0030-declared-equal-reversal-fee-statistics.md) implements explicit equal-reversal fee attribution and shared directional adversarial verification for research 1.1/1.2. Default undeclared policy refusal remains.
+
 P03 needs actual short and reversal accounting. Preserve the original long/flat runner and sealed sample sources. Add a separate registered directional sample and explicit `BAR_OPEN_CLOSE_LONG_SHORT_V1` result model using the same causal open/close quotes and native execution engine.
 
 Bound directional quantity to half the synthetic quote capacity. A full reversal submits one native order of twice the target quantity with one fixed fee. Reconcile actual fills and final close inventory in a shared verifier, and bind counterfactual and shadow reports to the parent's replay model.

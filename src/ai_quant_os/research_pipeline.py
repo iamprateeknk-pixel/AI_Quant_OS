@@ -24,6 +24,7 @@ from ai_quant_os.research_adversarial import (
     adversarial_score,
 )
 from ai_quant_os.directional_strategy import DIRECTIONAL_REF
+from ai_quant_os.monte_carlo import REVERSAL_MONTE_CARLO_METHOD
 
 
 def run_research_experiment(
@@ -44,12 +45,12 @@ def run_research_experiment(
 
 
 def _run(plan, development, holdout, registry, store):
-    if plan.schema_version != "1.0" and any(
-        row.strategy_ref == DIRECTIONAL_REF for row in plan.candidates
+    if (
+        plan.monte_carlo_spec is not None
+        and any(row.strategy_ref == DIRECTIONAL_REF for row in plan.candidates)
+        and plan.monte_carlo_spec.method != REVERSAL_MONTE_CARLO_METHOD
     ):
-        raise ValueError(
-            "Directional research needs a reviewed reversal-fee Monte Carlo/adversarial policy"
-        )
+        raise ValueError("Directional research needs an explicit reversal-fee Monte Carlo policy")
     if (
         development.fingerprint != plan.development_fingerprint
         or holdout.fingerprint != plan.holdout_fingerprint
@@ -89,7 +90,10 @@ def _run(plan, development, holdout, registry, store):
         raise ValueError("Research evidence volume budget exceeded")
     if (
         plan.monte_carlo_spec is not None
-        and len(holdout.bars) * plan.monte_carlo_spec.iterations // 2 > 500000
+        and len(holdout.bars)
+        * plan.monte_carlo_spec.iterations
+        // (1 if any(row.strategy_ref == DIRECTIONAL_REF for row in plan.candidates) else 2)
+        > 500000
     ):
         raise ValueError("Declared Monte Carlo computation budget exceeded")
     actual_scope = ResearchDatasetScope(

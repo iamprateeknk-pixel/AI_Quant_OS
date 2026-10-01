@@ -237,10 +237,13 @@
           "type": "string"
         },
         "method": {
-          "const": "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1",
           "default": "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1",
           "title": "Method",
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1",
+            "CIRCULAR_EQUAL_REVERSAL_HALF_FEE_BLOCKS_SHA256_V1"
+          ]
         }
       },
       "title": "MonteCarloSpec",

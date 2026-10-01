@@ -99,6 +99,8 @@ Research version 1.1 can declare a seeded native closed-trade Monte Carlo screen
 
 Research version 1.2 adds declared native missing-observation and downward-step screens with archived cash-flow reconciliation. See [adversarial handoff](docs/ADVERSARIAL_HANDOFF.md) for usage and remaining coverage.
 
+Directional research can explicitly declare equal-reversal fee attribution for Monte Carlo and use those same adverse-market screens. See [directional research handoff](docs/DIRECTIONAL_RESEARCH_HANDOFF.md) for the policy and retained synthetic evidence.
+
 Completed experiments can be registered and exported through `ai-quant-candidates` and protected local API routes. See [candidate registry handoff](docs/CANDIDATE_REGISTRY_HANDOFF.md) for source retention, withdrawal and pending promotion gates.
 
 The paper API now exposes reconciled cumulative strategy contributions from persisted ownership and fills. See [paper attribution handoff](docs/PAPER_ATTRIBUTION_HANDOFF.md) for marking, exact fee accounting and remaining P09 evidence.

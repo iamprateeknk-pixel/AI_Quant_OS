@@ -1,12 +1,13 @@
 """Native scenario evidence bound to the frozen candidate and original holdout bars."""
 
 from dataclasses import dataclass
-from decimal import Context, Decimal, localcontext
+from decimal import Context, localcontext
 from typing import Literal
 
 from ai_quant_os.adversarial import adversarial_datasets
 from ai_quant_os.market_data import Bar, BarDataset
 from ai_quant_os.registered_backtest import RegisteredBacktest
+from ai_quant_os.native_bar_evidence import verify_native_bar_result
 
 
 @dataclass(frozen=True)
@@ -54,24 +55,16 @@ def verify_adversarial(evidence, plan, baseline, attempts):
                 or row.run.result.costs != plan.stress_costs
                 or row.run.result.instrument_id != baseline.result.instrument_id
                 or row.run.result.strategy_ref != baseline.result.strategy_ref
-                or row.run.result.replay_model != "BAR_OPEN_CLOSE_QUOTES_V1"
+                or row.run.result.replay_model != baseline.result.replay_model
                 or row.run not in attempts
             ):
                 raise ValueError("Adversarial native evidence binding mismatch")
-            position, cash = Decimal(0), Decimal(0)
-            for fill in row.run.result.fills:
-                if fill.quantity != plan.quantity or fill.fee != plan.stress_costs.fee_per_trade:
-                    raise ValueError("Adversarial fill differs from declared quantity or fee")
-                signed = fill.quantity if fill.side == "BUY" else -fill.quantity
-                position += signed
-                cash -= signed * fill.price + fill.fee
-            if (
-                position != row.run.result.final_position
-                or position not in (Decimal(0), Decimal(plan.quantity))
-                or len(row.run.result.fills) != row.run.result.native_order_count
-                or cash + position * dataset.bars[-1].close != row.run.result.net_pnl
-            ):
-                raise ValueError("Adversarial cash-flow ledger differs from native result")
+            try:
+                verify_native_bar_result(
+                    row.run.result, dataset.bars, plan.quantity, plan.stress_costs
+                )
+            except ValueError as error:
+                raise ValueError("Adversarial native cash-flow evidence invalid") from error
         if (evidence.state, evidence.reason) != adversarial_score(
             evidence.scenarios, plan.adversarial_spec
         ):
