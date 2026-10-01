@@ -1,0 +1,1171 @@
+{
+  "$defs": {
+    "AdversarialScenario": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "run": {
+          "$ref": "#/$defs/RegisteredBacktest"
+        }
+      },
+      "required": [
+        "name",
+        "dataset_fingerprint",
+        "run"
+      ],
+      "title": "AdversarialScenario",
+      "type": "object"
+    },
+    "AdversarialSpec": {
+      "properties": {
+        "drop_every": {
+          "default": 5,
+          "title": "Drop Every",
+          "type": "integer"
+        },
+        "shock_bps": {
+          "default": 1000,
+          "title": "Shock Bps",
+          "type": "integer"
+        },
+        "maximum_loss": {
+          "default": "100",
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Maximum Loss",
+          "type": "string"
+        },
+        "risk_currency": {
+          "default": "USD",
+          "title": "Risk Currency",
+          "type": "string"
+        },
+        "method": {
+          "default": "MISSING_AND_DOWNWARD_STEP_V1",
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "title": "AdversarialSpec",
+      "type": "object"
+    },
+    "BacktestCosts": {
+      "properties": {
+        "slippage_bps": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Slippage Bps",
+          "type": "string"
+        },
+        "fee_per_trade": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Fee Per Trade",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slippage_bps",
+        "fee_per_trade"
+      ],
+      "title": "BacktestCosts",
+      "type": "object"
+    },
+    "Bar": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "open": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Open",
+          "type": "string"
+        },
+        "high": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "High",
+          "type": "string"
+        },
+        "low": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Low",
+          "type": "string"
+        },
+        "close": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Close",
+          "type": "string"
+        },
+        "volume": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Volume",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "observed_at",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "title": "Bar",
+      "type": "object"
+    },
+    "CandidateManifest": {
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "hypothesis_id": {
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "report_sha256": {
+          "title": "Report Sha256",
+          "type": "string"
+        },
+        "plan_sha256": {
+          "title": "Plan Sha256",
+          "type": "string"
+        },
+        "selected_genome": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StrategyGenome"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "research_outcome": {
+          "enum": [
+            "FAILED",
+            "REJECTED",
+            "VALIDATION_INCOMPLETE"
+          ],
+          "title": "Research Outcome",
+          "type": "string"
+        },
+        "blocking_gates": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Blocking Gates",
+          "type": "array"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "candidate_id",
+        "experiment_id",
+        "hypothesis_id",
+        "report_sha256",
+        "plan_sha256",
+        "selected_genome",
+        "research_outcome",
+        "blocking_gates",
+        "reasons",
+        "promotion_allowed"
+      ],
+      "title": "CandidateManifest",
+      "type": "object"
+    },
+    "CandidateSource": {
+      "properties": {
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256",
+        "text"
+      ],
+      "title": "CandidateSource",
+      "type": "object"
+    },
+    "FoldEvidence": {
+      "properties": {
+        "index": {
+          "title": "Index",
+          "type": "integer"
+        },
+        "training_results": {
+          "items": {
+            "$ref": "#/$defs/RegisteredBacktest"
+          },
+          "title": "Training Results",
+          "type": "array"
+        },
+        "validation": {
+          "$ref": "#/$defs/RegisteredBacktest"
+        },
+        "stress": {
+          "$ref": "#/$defs/RegisteredBacktest"
+        }
+      },
+      "required": [
+        "index",
+        "training_results",
+        "validation",
+        "stress"
+      ],
+      "title": "FoldEvidence",
+      "type": "object"
+    },
+    "Hypothesis": {
+      "properties": {
+        "hypothesis_id": {
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "hypothesis_id",
+        "description"
+      ],
+      "title": "Hypothesis",
+      "type": "object"
+    },
+    "MonteCarloResult": {
+      "properties": {
+        "spec": {
+          "$ref": "#/$defs/MonteCarloSpec"
+        },
+        "sample_fingerprint": {
+          "title": "Sample Fingerprint",
+          "type": "string"
+        },
+        "closed_trade_count": {
+          "title": "Closed Trade Count",
+          "type": "integer"
+        },
+        "open_position": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Open Position",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PENDING"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "lower_tail_pnl": {
+          "anyOf": [
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lower Tail Pnl"
+        },
+        "median_pnl": {
+          "anyOf": [
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Median Pnl"
+        },
+        "drawdown_p95": {
+          "anyOf": [
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Drawdown P95"
+        },
+        "positive_fraction": {
+          "anyOf": [
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Positive Fraction"
+        },
+        "simulation_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Simulation Sha256"
+        },
+        "drawdown_basis": {
+          "const": "TRADE_CLOSE_CASHFLOW",
+          "default": "TRADE_CLOSE_CASHFLOW",
+          "title": "Drawdown Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spec",
+        "sample_fingerprint",
+        "closed_trade_count",
+        "open_position",
+        "state",
+        "reason",
+        "lower_tail_pnl",
+        "median_pnl",
+        "drawdown_p95",
+        "positive_fraction",
+        "simulation_sha256"
+      ],
+      "title": "MonteCarloResult",
+      "type": "object"
+    },
+    "MonteCarloSpec": {
+      "properties": {
+        "seed": {
+          "default": 17,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "iterations": {
+          "default": 500,
+          "title": "Iterations",
+          "type": "integer"
+        },
+        "block_size": {
+          "default": 4,
+          "title": "Block Size",
+          "type": "integer"
+        },
+        "min_closed_trades": {
+          "default": 20,
+          "title": "Min Closed Trades",
+          "type": "integer"
+        },
+        "lower_tail_percent": {
+          "default": 5,
+          "title": "Lower Tail Percent",
+          "type": "integer"
+        },
+        "minimum_positive_fraction": {
+          "default": "0.95",
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Minimum Positive Fraction",
+          "type": "string"
+        },
+        "drawdown_limit": {
+          "default": "100",
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Drawdown Limit",
+          "type": "string"
+        },
+        "risk_currency": {
+          "default": "USD",
+          "enum": [
+            "USD",
+            "JPY"
+          ],
+          "title": "Risk Currency",
+          "type": "string"
+        },
+        "method": {
+          "const": "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1",
+          "default": "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1",
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "title": "MonteCarloSpec",
+      "type": "object"
+    },
+    "NativeAdversarial": {
+      "properties": {
+        "source_bars": {
+          "items": {
+            "$ref": "#/$defs/Bar"
+          },
+          "title": "Source Bars",
+          "type": "array"
+        },
+        "scenarios": {
+          "items": {
+            "$ref": "#/$defs/AdversarialScenario"
+          },
+          "title": "Scenarios",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PENDING"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_bars",
+        "scenarios",
+        "state",
+        "reason"
+      ],
+      "title": "NativeAdversarial",
+      "type": "object"
+    },
+    "NativeFill": {
+      "properties": {
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "price": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Price",
+          "type": "string"
+        },
+        "quantity": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Quantity",
+          "type": "string"
+        },
+        "fee": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Fee",
+          "type": "string"
+        }
+      },
+      "required": [
+        "observed_at",
+        "side",
+        "price",
+        "quantity",
+        "fee"
+      ],
+      "title": "NativeFill",
+      "type": "object"
+    },
+    "NativeMonteCarlo": {
+      "properties": {
+        "native_result_sha256": {
+          "title": "Native Result Sha256",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "genome_sha256": {
+          "title": "Genome Sha256",
+          "type": "string"
+        },
+        "implementation_sha256": {
+          "title": "Implementation Sha256",
+          "type": "string"
+        },
+        "pnl_currency": {
+          "title": "Pnl Currency",
+          "type": "string"
+        },
+        "result": {
+          "$ref": "#/$defs/MonteCarloResult"
+        }
+      },
+      "required": [
+        "native_result_sha256",
+        "dataset_fingerprint",
+        "genome_sha256",
+        "implementation_sha256",
+        "pnl_currency",
+        "result"
+      ],
+      "title": "NativeMonteCarlo",
+      "type": "object"
+    },
+    "NautilusResult": {
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "engine": {
+          "const": "NAUTILUS_BACKTEST",
+          "title": "Engine",
+          "type": "string"
+        },
+        "engine_version": {
+          "const": "1.221.0",
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "replay_model": {
+          "enum": [
+            "BAR_OPEN_CLOSE_QUOTES_V1",
+            "RECORDED_QUOTE_TICKS_V1"
+          ],
+          "title": "Replay Model",
+          "type": "string"
+        },
+        "venue": {
+          "const": "PAPER",
+          "title": "Venue",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "pnl_currency": {
+          "title": "Pnl Currency",
+          "type": "string"
+        },
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "costs": {
+          "$ref": "#/$defs/BacktestCosts"
+        },
+        "fills": {
+          "items": {
+            "$ref": "#/$defs/NativeFill"
+          },
+          "title": "Fills",
+          "type": "array"
+        },
+        "native_order_count": {
+          "title": "Native Order Count",
+          "type": "integer"
+        },
+        "final_position": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Final Position",
+          "type": "string"
+        },
+        "net_pnl": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Net Pnl",
+          "type": "string"
+        },
+        "pnl_method": {
+          "enum": [
+            "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+            "EXACT_FILL_CASHFLOWS_PLUS_FINAL_QUOTE_MIDPOINT"
+          ],
+          "title": "Pnl Method",
+          "type": "string"
+        },
+        "native_realized_pnl": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Native Realized Pnl",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "engine",
+        "engine_version",
+        "replay_model",
+        "venue",
+        "instrument_id",
+        "pnl_currency",
+        "strategy_ref",
+        "dataset_fingerprint",
+        "costs",
+        "fills",
+        "native_order_count",
+        "final_position",
+        "net_pnl",
+        "pnl_method",
+        "native_realized_pnl"
+      ],
+      "title": "NautilusResult",
+      "type": "object"
+    },
+    "RegisteredBacktest": {
+      "properties": {
+        "result": {
+          "$ref": "#/$defs/NautilusResult"
+        },
+        "binding": {
+          "$ref": "#/$defs/StrategyBinding"
+        }
+      },
+      "required": [
+        "result",
+        "binding"
+      ],
+      "title": "RegisteredBacktest",
+      "type": "object"
+    },
+    "ResearchDatasetScope": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "first_observed_at": {
+          "format": "date-time",
+          "title": "First Observed At",
+          "type": "string"
+        },
+        "last_observed_at": {
+          "format": "date-time",
+          "title": "Last Observed At",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "first_observed_at",
+        "last_observed_at",
+        "dataset_fingerprint"
+      ],
+      "title": "ResearchDatasetScope",
+      "type": "object"
+    },
+    "ResearchGate": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PENDING"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "state",
+        "reason"
+      ],
+      "title": "ResearchGate",
+      "type": "object"
+    },
+    "ResearchPlan": {
+      "properties": {
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "hypothesis": {
+          "$ref": "#/$defs/Hypothesis"
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/StrategyGenome"
+          },
+          "title": "Candidates",
+          "type": "array"
+        },
+        "development_fingerprint": {
+          "title": "Development Fingerprint",
+          "type": "string"
+        },
+        "development_scope": {
+          "$ref": "#/$defs/ResearchDatasetScope"
+        },
+        "holdout_fingerprint": {
+          "title": "Holdout Fingerprint",
+          "type": "string"
+        },
+        "holdout_scope": {
+          "$ref": "#/$defs/ResearchDatasetScope"
+        },
+        "train_bars": {
+          "title": "Train Bars",
+          "type": "integer"
+        },
+        "validation_bars": {
+          "title": "Validation Bars",
+          "type": "integer"
+        },
+        "quantity": {
+          "title": "Quantity",
+          "type": "integer"
+        },
+        "costs": {
+          "$ref": "#/$defs/BacktestCosts"
+        },
+        "stress_costs": {
+          "$ref": "#/$defs/BacktestCosts"
+        },
+        "schema_version": {
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selection_objective": {
+          "default": "NET_PNL_THEN_GENOME_SHA256",
+          "title": "Selection Objective",
+          "type": "string"
+        },
+        "partition_model": {
+          "default": "EXPANDING_COLD_START_V1",
+          "title": "Partition Model",
+          "type": "string"
+        },
+        "monte_carlo_spec": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MonteCarloSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "adversarial_spec": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AdversarialSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "experiment_id",
+        "hypothesis",
+        "candidates",
+        "development_fingerprint",
+        "development_scope",
+        "holdout_fingerprint",
+        "holdout_scope",
+        "train_bars",
+        "validation_bars",
+        "quantity",
+        "costs",
+        "stress_costs"
+      ],
+      "title": "ResearchPlan",
+      "type": "object"
+    },
+    "ResearchReport": {
+      "properties": {
+        "schema_version": {
+          "enum": [
+            "1.0",
+            "1.1",
+            "1.2"
+          ],
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "plan": {
+          "$ref": "#/$defs/ResearchPlan"
+        },
+        "outcome": {
+          "enum": [
+            "FAILED",
+            "REJECTED",
+            "VALIDATION_INCOMPLETE"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        },
+        "selection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResearchSelection"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "folds": {
+          "items": {
+            "$ref": "#/$defs/FoldEvidence"
+          },
+          "title": "Folds",
+          "type": "array"
+        },
+        "holdout": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RegisteredBacktest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "holdout_stress": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RegisteredBacktest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gates": {
+          "items": {
+            "$ref": "#/$defs/ResearchGate"
+          },
+          "title": "Gates",
+          "type": "array"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "attempts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RegisteredBacktest"
+          },
+          "title": "Attempts",
+          "type": "array"
+        },
+        "monte_carlo": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NativeMonteCarlo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "adversarial": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NativeAdversarial"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "plan",
+        "outcome",
+        "promotion_allowed",
+        "selection",
+        "folds",
+        "holdout",
+        "holdout_stress",
+        "gates",
+        "reasons"
+      ],
+      "title": "ResearchReport",
+      "type": "object"
+    },
+    "ResearchSelection": {
+      "properties": {
+        "genome": {
+          "$ref": "#/$defs/StrategyGenome"
+        },
+        "development_fingerprint": {
+          "title": "Development Fingerprint",
+          "type": "string"
+        },
+        "training_results": {
+          "items": {
+            "$ref": "#/$defs/RegisteredBacktest"
+          },
+          "title": "Training Results",
+          "type": "array"
+        }
+      },
+      "required": [
+        "genome",
+        "development_fingerprint",
+        "training_results"
+      ],
+      "title": "ResearchSelection",
+      "type": "object"
+    },
+    "SourceFingerprint": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "SourceFingerprint",
+      "type": "object"
+    },
+    "StrategyBinding": {
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "genome": {
+          "$ref": "#/$defs/StrategyGenome"
+        },
+        "genome_sha256": {
+          "title": "Genome Sha256",
+          "type": "string"
+        },
+        "implementation": {
+          "$ref": "#/$defs/StrategyImplementation"
+        },
+        "implementation_sha256": {
+          "title": "Implementation Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "provenance",
+        "genome",
+        "genome_sha256",
+        "implementation",
+        "implementation_sha256"
+      ],
+      "title": "StrategyBinding",
+      "type": "object"
+    },
+    "StrategyGenome": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameters",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind"
+      ],
+      "title": "StrategyGenome",
+      "type": "object"
+    },
+    "StrategyImplementation": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "entry_point": {
+          "title": "Entry Point",
+          "type": "string"
+        },
+        "parameter_defaults": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameter Defaults",
+          "type": "array"
+        },
+        "source_files": {
+          "items": {
+            "$ref": "#/$defs/SourceFingerprint"
+          },
+          "title": "Source Files",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind",
+        "entry_point",
+        "parameter_defaults",
+        "source_files"
+      ],
+      "title": "StrategyImplementation",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "manifest": {
+      "$ref": "#/$defs/CandidateManifest"
+    },
+    "report": {
+      "$ref": "#/$defs/ResearchReport"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/CandidateSource"
+      },
+      "title": "Sources",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "manifest",
+    "report",
+    "sources"
+  ],
+  "title": "CandidateBundle",
+  "type": "object"
+}

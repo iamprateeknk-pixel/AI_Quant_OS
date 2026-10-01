@@ -41,6 +41,7 @@ from ai_quant_os.deep_review import DeepReviewer, DeepReviewDispatcher, require_
 from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
+from ai_quant_os.research_api import install_research_routes
 
 
 class QuoteInput(BaseModel):
@@ -159,6 +160,7 @@ def create_app(
     paper_db_path: Path | None = None,
     fast_classifier: FastClassifier | None = None,
     deep_reviewer: DeepReviewer | None = None,
+    research_workspace: Path | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -1080,6 +1082,16 @@ def create_app(
                 raise HTTPException(status_code=409, detail=str(error)) from error
             return receipt
 
+    install_research_routes(
+        app,
+        research_workspace
+        or (
+            Path(os.environ["AI_QUANT_RESEARCH_WORKSPACE"])
+            if os.getenv("AI_QUANT_RESEARCH_WORKSPACE")
+            else None
+        ),
+        require_operator,
+    )
     return app
 
 

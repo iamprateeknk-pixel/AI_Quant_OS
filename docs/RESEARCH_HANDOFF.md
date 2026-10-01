@@ -1,5 +1,7 @@
 # Research pipeline handoff
 
+Completed experiment dossiers now have an immutable local registry, source-retaining bundle export and protected API. See [candidate registry handoff](CANDIDATE_REGISTRY_HANDOFF.md) for lifecycle, retention and the unfinished champion/promotion requirements.
+
 Version 1.2 adds predeclared missing-observation and downward-price-step native screens. See [adversarial handoff](ADVERSARIAL_HANDOFF.md) for evidence, compatibility and remaining scenario coverage.
 
 ## Implemented P08 slice

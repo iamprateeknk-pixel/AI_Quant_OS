@@ -96,3 +96,5 @@ The archived-data research runner performs native walk-forward, held-out and cos
 Research version 1.1 can declare a seeded native closed-trade Monte Carlo screen before execution. See [Monte Carlo handoff](docs/MONTE_CARLO_HANDOFF.md) for policy, currency units, sample requirements and preserved legacy archives.
 
 Research version 1.2 adds declared native missing-observation and downward-step screens with archived cash-flow reconciliation. See [adversarial handoff](docs/ADVERSARIAL_HANDOFF.md) for usage and remaining coverage.
+
+Completed experiments can be registered and exported through `ai-quant-candidates` and protected local API routes. See [candidate registry handoff](docs/CANDIDATE_REGISTRY_HANDOFF.md) for source retention, withdrawal and pending promotion gates.
