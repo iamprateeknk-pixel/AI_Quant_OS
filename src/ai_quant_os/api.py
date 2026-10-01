@@ -16,6 +16,8 @@ from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
 from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
 from ai_quant_os.agent_registry import load_agent_catalog
+from ai_quant_os.agent_context import ContextCompiler, require_context_for_agent
+from ai_quant_os.paper_context_sources import paper_context_sources
 from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
 from ai_quant_os.openai_reviewer import OpenAIReviewer, reviewer_from_environment
 from ai_quant_os.contracts import TradeIntent
@@ -63,6 +65,13 @@ class WorldStateBarsInput(BaseModel):
 class ClassificationInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     instrument_id: str = Field(min_length=1, max_length=32)
+    task_id: str = Field(min_length=1, max_length=128)
+
+
+class AgentContextInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    agent_id: str = Field(pattern=r"^A(0[1-9]|1[0-8])$")
+    agent_version: str = Field(min_length=1, max_length=32)
     task_id: str = Field(min_length=1, max_length=128)
 
 
@@ -610,6 +619,47 @@ def create_app(
                 for item in agent_registry.manifests()
             ],
         }
+
+    @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
+    async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
+        snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
+        try:
+            context = await ContextCompiler(
+                agent_registry, paper_context_sources(snapshot), clock=current_time
+            ).compile(
+                payload.agent_id, payload.agent_version, task_id=payload.task_id, scope="PAPER"
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        state_store.record_event(
+            f"agent-context:{uuid4()}",
+            {
+                "action": "PAPER_AGENT_CONTEXT",
+                "intent_id": "",
+                "reason": context.status,
+                "context_ref": context.context_ref,
+                "manifest_ref": context.manifest_ref,
+                "agent_id": context.agent_id,
+                "agent_version": context.agent_version,
+                "task_id": context.task_id,
+                "expires_at": context.valid_until.isoformat(),
+            },
+        )
+        try:
+            require_context_for_agent(
+                context,
+                registry=agent_registry,
+                agent_id=payload.agent_id,
+                agent_version=payload.agent_version,
+                task_id=payload.task_id,
+                scope="PAPER",
+                now=current_time(),
+            )
+        except PermissionError as error:
+            raise HTTPException(status_code=403, detail="Agent context admission denied") from error
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return {"mode": "PAPER", **context.model_dump(mode="json")}
 
     @app.post("/api/v1/paper/world-state/bars", dependencies=[Depends(require_operator)])
     def record_world_state_bars(payload: WorldStateBarsInput) -> dict[str, object]:
