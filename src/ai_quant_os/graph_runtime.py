@@ -259,6 +259,9 @@ class GraphRuntime:
                 )
             return self._ledger.get(run_id).receipt
 
+    def health_receipts(self, after_run_id: str = "") -> tuple[GraphReceipt, ...]:
+        return self._ledger.health_receipts(after_run_id)
+
     def receipt(self, run_id: str) -> GraphReceipt:
         """Read archival state without invoking or changing the graph."""
         return self._ledger.get(run_id).receipt

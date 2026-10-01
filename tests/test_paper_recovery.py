@@ -162,3 +162,57 @@ def test_broker_fill_mismatch_persists_halt_and_never_imports_fills(tmp_path):
     assert risk.safety_state == state.safety_state() == SafetyState.HALT
     assert execution.fills == ()
     assert len(broker.orders) == 1
+
+
+def test_recovery_containment_holds_kernel_lock_through_persisted_stop(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+    import time
+
+    service, execution, risk, state, broker = recovery_fixture(tmp_path)
+    order_id = execution.orders[0].order_id
+    execution.reconcile_order(order_id)
+    execution.recover_paper_safety(
+        before_change=lambda: state.record_recovery(
+            "previous", "manual review", {"receipt_id": "previous"}
+        )
+    )
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    intent = TradeIntent(
+        intent_id="during-stop",
+        strategy_id="demo",
+        strategy_version="1",
+        instrument_id="EURUSD",
+        side="BUY",
+        desired_exposure=Decimal(100),
+        risk_budget=Decimal(10),
+        max_spread=Decimal("0.0003"),
+        max_slippage=Decimal("0.0002"),
+        valid_until=now + timedelta(seconds=60),
+        world_state_version="world",
+        evidence_refs=("fixture",),
+        created_at=now,
+    )
+    quote = MarketSnapshot("EURUSD", Decimal("1.1000"), Decimal("1.1001"), now, "world", True)
+    entered, release = Event(), Event()
+    record = state.record_order_uncertainty
+
+    def paused_commit(*args):
+        record(*args)
+        entered.set()
+        assert release.wait(5)
+
+    with (
+        patch.object(state, "record_order_uncertainty", side_effect=paused_commit),
+        ThreadPoolExecutor(max_workers=2) as pool,
+    ):
+        stop = pool.submit(service.contain, "new-triage", order_id)
+        try:
+            assert entered.wait(5)
+            approval = pool.submit(risk.evaluate, intent, quote, now=now)
+            time.sleep(0.05)
+            assert not approval.done()
+        finally:
+            release.set()
+            stop.result(timeout=5)
+        assert approval.result(timeout=5).decision == "REJECT"

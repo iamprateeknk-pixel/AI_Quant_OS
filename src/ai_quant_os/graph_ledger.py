@@ -172,6 +172,25 @@ class GraphLedger:
                 raise KeyError("Unknown graph run")
             return record
 
+    def health_receipts(
+        self, after_run_id: str = "", *, limit: int = 64
+    ) -> tuple[GraphReceipt, ...]:
+        if (
+            not isinstance(after_run_id, str)
+            or len(after_run_id) > 128
+            or type(limit) is not int
+            or not 1 <= limit <= 64
+        ):
+            raise ValueError("Invalid bounded graph health scan")
+        with self._lock, self._db:
+            self._db.execute("BEGIN")
+            self._audit.require_valid()
+            rows = self._db.execute(
+                "SELECT run_id FROM graph_runs WHERE run_id > ? ORDER BY run_id LIMIT ?",
+                (after_run_id, limit),
+            ).fetchall()
+            return tuple(self._read(row[0]).receipt for row in rows)
+
     def create(self, run_id: str, checkpoint: ContextCheckpoint) -> GraphRecord:
         context, manifest = checkpoint.context, checkpoint.manifest
         record = GraphRecord(

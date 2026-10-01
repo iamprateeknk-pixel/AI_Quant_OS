@@ -168,6 +168,7 @@ def create_app(
     daily_evidence_enabled: bool | None = None,
     temporal_recovery_enabled: bool | None = None,
     temporal_recovery_target: str | None = None,
+    health_watchdog_enabled: bool | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -219,6 +220,11 @@ def create_app(
     enabled_recovery, recovery_target = recovery_configuration(
         temporal_recovery_enabled, temporal_recovery_target, configured_path, configured_token
     )
+    from ai_quant_os.health_api import health_configuration, install_health_routes
+
+    enabled_health = health_configuration(
+        health_watchdog_enabled, configured_path, configured_token
+    )
     state_store = PaperStateStore(configured_path)
     calibration_store = CalibrationStore(configured_path)
     world_state_store = WorldStateStore(configured_path)
@@ -244,6 +250,30 @@ def create_app(
     )
     quotes: dict[str, MarketSnapshot] = {}
     control_lock = Lock()
+    health_worker = None
+    if configured_path is not None:
+        health_path = configured_path.with_name(configured_path.stem + ".health.sqlite3")
+        if enabled_health or health_path.exists():
+            from ai_quant_os.health_store import HealthStore
+            from ai_quant_os.health_watchdog import HealthWatchdog, owned_health_call
+
+            health_worker = HealthWatchdog(
+                HealthStore(health_path),
+                state_store,
+                risk,
+                execution,
+                agent_registry,
+                lambda cursor: (
+                    app.state.graph_runtime.health_receipts(cursor)
+                    if app.state.graph_runtime is not None
+                    else ()
+                ),
+                lambda: tuple(quotes.copy().values()),
+                current_time,
+                control_lock=control_lock,
+            )
+            # Disabling monitoring cannot clear persisted safety/quarantine evidence.
+            health_worker.restore()
     daily_worker = None
     if enabled_daily:
         from ai_quant_os.daily_scheduler import DailyScheduler
@@ -280,23 +310,47 @@ def create_app(
             AsyncExitStack() as services,
         ):
             application.state.graph_runtime = runtime
-            if enabled_recovery:
-                from ai_quant_os.recovery_runtime import RecoveryRuntime
-
-                application.state.recovery_runtime = await services.enter_async_context(
-                    RecoveryRuntime.open(
-                        recovery_target, configured_path, execution, risk, state_store, control_lock
-                    )
-                )
-            if daily_worker is not None:
-                from ai_quant_os.daily_scheduler import run_daily_scheduler
-
-                application.state.daily_task = asyncio.create_task(
-                    run_daily_scheduler(daily_worker)
-                )
             try:
+                if enabled_health:
+                    from ai_quant_os.health_watchdog import run_health_watchdog
+
+                    # Cover the bounded graph ledger completely before serving requests.
+                    while True:
+                        await owned_health_call(health_worker.step)
+                        if not health_worker.pending_graph_scan:
+                            break
+                if enabled_recovery:
+                    from ai_quant_os.recovery_runtime import RecoveryRuntime
+
+                    application.state.recovery_runtime = await services.enter_async_context(
+                        RecoveryRuntime.open(
+                            recovery_target,
+                            configured_path,
+                            execution,
+                            risk,
+                            state_store,
+                            control_lock,
+                        )
+                    )
+                if daily_worker is not None:
+                    from ai_quant_os.daily_scheduler import run_daily_scheduler
+
+                    application.state.daily_task = asyncio.create_task(
+                        run_daily_scheduler(daily_worker)
+                    )
+                if enabled_health:
+                    application.state.health_task = asyncio.create_task(
+                        run_health_watchdog(health_worker)
+                    )
                 yield
             finally:
+                if application.state.health_task is not None:
+                    application.state.health_task.cancel()
+                    try:
+                        await application.state.health_task
+                    except asyncio.CancelledError:
+                        pass
+                    application.state.health_task = None
                 if application.state.daily_task is not None:
                     application.state.daily_task.cancel()
                     try:
@@ -311,6 +365,7 @@ def create_app(
     app.state.graph_runtime = None
     app.state.daily_task = None
     app.state.recovery_runtime = None
+    app.state.health_task = None
 
     def currency_context(primary_quote: MarketSnapshot | None = None) -> CurrencyRiskContext:
         instruments = currency_policy.instruments
@@ -358,6 +413,11 @@ def create_app(
             raise HTTPException(status_code=401, detail="Invalid operator token")
         if not state_store.audit_integrity().valid:
             raise HTTPException(status_code=503, detail="Audit integrity verification failed")
+        if health_worker is not None:
+            try:
+                health_worker.verify_admission()
+            except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
+                raise HTTPException(503, "Health incident journal could not be verified") from error
 
     def require_recovery(x_recovery_token: str | None = Header(default=None)) -> None:
         if not configured_recovery_token:
@@ -862,6 +922,8 @@ def create_app(
             if checkpoint.context.scope != "PAPER":
                 raise HTTPException(status_code=403, detail="Paper context required")
             receipt = await runtime.run(payload.run_id, checkpoint.context)
+            if enabled_health:
+                await owned_health_call(health_worker.observe_receipt, receipt)
             context_current = runtime.current(receipt.run_id)
         except ValueError as error:
             raise HTTPException(status_code=409, detail="Graph run rejected") from error
@@ -898,6 +960,8 @@ def create_app(
         runtime = require_graph_runtime()
         try:
             receipt = await runtime.resume(run_id)
+            if enabled_health:
+                await owned_health_call(health_worker.observe_receipt, receipt)
             context_current = runtime.current(run_id)
         except KeyError as error:
             raise HTTPException(status_code=404, detail="Graph run not found") from error
@@ -1193,6 +1257,8 @@ def create_app(
                 from ai_quant_os.paper_recovery import require_completed_triage
 
                 require_completed_triage(state_store.audit_events())
+                if health_worker is not None and health_worker.store.incidents():
+                    raise ValueError("Open health incidents require independently gated repair")
                 execution.recover_paper_safety(
                     before_change=lambda: state_store.record_recovery(
                         idempotency_key, reason, receipt
@@ -1203,6 +1269,7 @@ def create_app(
             return receipt
 
     install_recovery_routes(app, require_operator)
+    install_health_routes(app, require_operator, health_worker, enabled_health)
     install_daily_routes(
         app,
         configured_path,

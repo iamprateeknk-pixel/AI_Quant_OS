@@ -87,7 +87,8 @@ class PaperRecoveryService:
             (self._highest_state(), SafetyState.HALT if halt else SafetyState.NO_NEW_RISK),
             key=list(SafetyState).index,
         )
-        try:
+
+        def persist_stop():
             self._state.record_order_uncertainty(order_id)
             if target in {SafetyState.FLATTEN_ONLY, SafetyState.HALT}:
                 key = f"paper-recovery:{incident_id}:stop:{target.value}"
@@ -98,7 +99,9 @@ class PaperRecoveryService:
                         "PAPER_UNCERTAINTY_TRIAGE",
                         {"receipt_id": key, "safety_state": target.value},
                     )
-            self._risk.set_safety_state(target)
+
+        try:
+            self._risk.set_safety_state(target, before_change=persist_stop)
         except Exception:
             # Persistence failure cannot permit further risk in this process.
             # No claim is made that a failed disk write is restart-durable.

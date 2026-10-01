@@ -61,6 +61,7 @@ class AgentRegistry:
     def __init__(self) -> None:
         self._manifests: dict[tuple[str, str], AgentManifest] = {}
         self._states: dict[tuple[str, str], Lifecycle] = {}
+        self._quarantine_pins: dict[tuple[str, str], str] = {}
         self._lock = Lock()
 
     def register(self, manifest: AgentManifest) -> bool:
@@ -103,7 +104,18 @@ class AgentRegistry:
             key = (agent_id, version)
             if key not in self._manifests:
                 raise ValueError("Unknown agent version")
+            if key in self._quarantine_pins and state != "QUARANTINED":
+                raise PermissionError("Pinned quarantine requires independently gated recovery")
             self._states[key] = state
+
+    def quarantine(self, agent_id: str, version: str, manifest_ref: str) -> None:
+        with self._lock:
+            key = (agent_id, version)
+            manifest = self._manifests.get(key)
+            if manifest is None or manifest.manifest_ref != manifest_ref:
+                raise ValueError("Quarantine manifest pin mismatch")
+            self._quarantine_pins[key] = manifest_ref
+            self._states[key] = "QUARANTINED"
 
     def require_tool(self, agent_id: str, version: str, tool: str, *, scope: str) -> None:
         with self._lock:

@@ -37,6 +37,8 @@ The optional `recovery` extra adds an actual Temporal workflow for paper broker 
 
 ## Checks
 
+An opt-in health watchdog (`AI_QUANT_HEALTH_WATCHDOG_ENABLED=1`) checks actual paper and graph sources, journals failures independently, and persists exact-version agent quarantine. Existing journal pins restore even with monitoring disabled, and open incidents block manual safety recovery. See [the health handoff](docs/HEALTH_WATCHDOG_HANDOFF.md) for failure taxonomy, protected inspection commands and incident runbooks.
+
 ```powershell
 python -m ruff check src tests scripts
 python -m ruff format --check src tests scripts

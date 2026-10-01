@@ -82,7 +82,8 @@ def test_actual_application_owns_temporal_recovery_and_restart_reads(tmp_path):
     asyncio.run(run())
 
 
-def test_unreachable_service_refuses_startup_and_persists_halt(tmp_path):
+@pytest.mark.parametrize("health_enabled", [False, True])
+def test_unreachable_service_refuses_startup_and_persists_halt(tmp_path, health_enabled):
     import socket
     from ai_quant_os.paper_state_store import PaperStateStore
     from ai_quant_os.risk import SafetyState
@@ -96,12 +97,15 @@ def test_unreachable_service_refuses_startup_and_persists_halt(tmp_path):
             paper_db_path=tmp_path / "paper.sqlite3",
             temporal_recovery_enabled=True,
             temporal_recovery_target=target,
+            health_watchdog_enabled=health_enabled,
         )
         with pytest.raises(Exception):
             with TestClient(app):
                 pytest.fail("Application served despite unreachable required recovery service")
     assert PaperStateStore(tmp_path / "paper.sqlite3").safety_state() == SafetyState.HALT
     assert app.state.recovery_runtime is None
+    assert app.state.health_task is None
+    assert app.state.graph_runtime is None
 
 
 def test_actual_worker_fill_mismatch_halts_the_running_api(tmp_path):
