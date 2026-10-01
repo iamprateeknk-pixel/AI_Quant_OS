@@ -18,6 +18,7 @@ from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
 from ai_quant_os.agent_registry import load_agent_catalog
 from ai_quant_os.agent_context import ContextCompiler, require_context_for_agent
 from ai_quant_os.paper_context_sources import paper_context_sources
+from ai_quant_os.context_checkpoints import ContextCheckpoint
 from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
 from ai_quant_os.openai_reviewer import OpenAIReviewer, reviewer_from_environment
 from ai_quant_os.contracts import TradeIntent
@@ -631,20 +632,17 @@ def create_app(
             )
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        state_store.record_event(
-            f"agent-context:{uuid4()}",
-            {
-                "action": "PAPER_AGENT_CONTEXT",
-                "intent_id": "",
-                "reason": context.status,
-                "context_ref": context.context_ref,
-                "manifest_ref": context.manifest_ref,
-                "agent_id": context.agent_id,
-                "agent_version": context.agent_version,
-                "task_id": context.task_id,
-                "expires_at": context.valid_until.isoformat(),
-            },
+        checkpoint = ContextCheckpoint(
+            schema_version="1.0",
+            manifest=agent_registry.get(context.agent_id, context.agent_version),
+            context=context,
         )
+        try:
+            state_store.record_context_checkpoint(checkpoint)
+        except (ValueError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503, detail="Context checkpoint storage unavailable"
+            ) from error
         try:
             require_context_for_agent(
                 context,
@@ -659,7 +657,31 @@ def create_app(
             raise HTTPException(status_code=403, detail="Agent context admission denied") from error
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        return {"mode": "PAPER", **context.model_dump(mode="json")}
+        return {
+            "mode": "PAPER",
+            **context.model_dump(mode="json"),
+            "checkpoint_ref": context.context_ref,
+        }
+
+    @app.get("/api/v1/agents/contexts/{context_ref}", dependencies=[Depends(require_operator)])
+    def archived_context_checkpoint(context_ref: str) -> dict[str, object]:
+        try:
+            checkpoint = state_store.context_checkpoint(context_ref)
+        except (ValueError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503, detail="Context checkpoint storage unavailable"
+            ) from error
+        if checkpoint is None:
+            raise HTTPException(status_code=404, detail="Context checkpoint not found")
+        context = checkpoint.context
+        now = current_time()
+        return {
+            "schema_version": "1.0",
+            "mode": "PAPER",
+            "archival_only": True,
+            "current": context.created_at <= now < context.valid_until,
+            "checkpoint": checkpoint.model_dump(mode="json"),
+        }
 
     @app.post("/api/v1/paper/world-state/bars", dependencies=[Depends(require_operator)])
     def record_world_state_bars(payload: WorldStateBarsInput) -> dict[str, object]:

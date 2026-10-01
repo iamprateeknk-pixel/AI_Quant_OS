@@ -118,16 +118,15 @@ def _context_ref(context: CompiledContext) -> str:
     return "agent-context:" + sha256(raw.encode()).hexdigest()
 
 
-def require_current_context(context: CompiledContext, *, now: datetime) -> None:
-    _require_aware(now)
+def verify_context(context: CompiledContext) -> None:
     try:
         context = CompiledContext.model_validate_json(context.model_dump_json())
     except ValueError as error:
         raise ValueError("Context integrity schema mismatch") from error
     if context.context_ref != _context_ref(context):
         raise ValueError("Context integrity verification failed")
-    if not context.created_at <= now < context.valid_until:
-        raise ValueError("Context is expired or future-dated")
+    if not context.created_at < context.valid_until <= context.created_at + timedelta(seconds=5):
+        raise ValueError("Context integrity validity mismatch")
     available = tuple(row for row in context.inputs if row.status == "AVAILABLE")
     if context.input_refs != tuple(row.content_ref for row in available):
         raise ValueError("Context integrity reference mismatch")
@@ -163,6 +162,13 @@ def require_current_context(context: CompiledContext, *, now: datetime) -> None:
             )
         ):
             raise ValueError("Context integrity unavailable input contains evidence")
+
+
+def require_current_context(context: CompiledContext, *, now: datetime) -> None:
+    _require_aware(now)
+    verify_context(context)
+    if not context.created_at <= now < context.valid_until:
+        raise ValueError("Context is expired or future-dated")
 
 
 def require_context_for_agent(

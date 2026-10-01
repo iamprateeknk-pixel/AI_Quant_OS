@@ -8,6 +8,8 @@ from ai_quant_os.risk import SafetyState
 from ai_quant_os.audit_chain import AuditChain, AuditIntegrity
 from ai_quant_os.agent_runs import AgentRun
 from ai_quant_os.agent_run_repository import AgentRunRepository
+from ai_quant_os.context_checkpoints import ContextCheckpoint
+from ai_quant_os.context_checkpoint_repository import ContextCheckpointRepository
 
 
 class PaperStateStore:
@@ -68,6 +70,7 @@ class PaperStateStore:
 
             self._audit_chain.initialize()
             self._agent_runs = AgentRunRepository(self._connection)
+            self._context_checkpoints = ContextCheckpointRepository(self._connection)
 
     def safety_state(self) -> SafetyState:
         with self._lock:
@@ -194,6 +197,23 @@ class PaperStateStore:
             self._connection.execute("BEGIN")
             self._audit_chain.require_valid()
             return self._agent_runs.get(run_id)
+
+    def record_context_checkpoint(self, checkpoint: ContextCheckpoint) -> bool:
+        checkpoint = ContextCheckpoint.model_validate_json(checkpoint.model_dump_json())
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            self._audit_chain.require_valid()
+            inserted = self._context_checkpoints.put(checkpoint)
+            self._audit_chain.append(
+                f"agent-context:{checkpoint.context.context_ref}", checkpoint.audit_event()
+            )
+            return inserted
+
+    def context_checkpoint(self, context_ref: str) -> ContextCheckpoint | None:
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN")
+            self._audit_chain.require_valid()
+            return self._context_checkpoints.get(context_ref)
 
     def backfill_event(self, key: str, event: dict[str, str]) -> None:
         """Reconstruct missing receipt events at startup; retain original history if present."""

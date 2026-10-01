@@ -304,14 +304,14 @@ def test_api_withholds_context_expiring_during_audit(monkeypatch):
     from ai_quant_os.paper_state_store import PaperStateStore
 
     time = [NOW]
-    original = PaperStateStore.record_event
+    original = PaperStateStore.record_context_checkpoint
 
-    def delayed(self, key, event):
-        original(self, key, event)
-        if event["action"] == "PAPER_AGENT_CONTEXT":
-            time[0] = NOW + timedelta(seconds=6)
+    def delayed(self, checkpoint):
+        inserted = original(self, checkpoint)
+        time[0] = NOW + timedelta(seconds=6)
+        return inserted
 
-    monkeypatch.setattr(PaperStateStore, "record_event", delayed)
+    monkeypatch.setattr(PaperStateStore, "record_context_checkpoint", delayed)
     client = TestClient(create_app(operator_token="fixture-token", clock=lambda: time[0]))
     result = client.post(
         "/api/v1/paper/agents/context",
