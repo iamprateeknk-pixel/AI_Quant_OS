@@ -35,6 +35,43 @@ async def wait_stage(handle, stage):
             await asyncio.sleep(0.05)
 
 
+def test_cancelled_activity_drains_owning_state_write(tmp_path):
+    from threading import Event
+    from ai_quant_os.temporal_recovery import RecoveryActivities, RecoveryRequest
+
+    async def run():
+        service, execution, risk, state, broker = recovery_fixture(tmp_path)
+        order_id = execution.orders[0].order_id
+        entered, release = Event(), Event()
+        contain = service.contain
+
+        def interrupted_write(*args):
+            result = contain(*args)
+            entered.set()
+            assert release.wait(5)
+            return result
+
+        with patch.object(service, "contain", side_effect=interrupted_write):
+            task = asyncio.create_task(
+                RecoveryActivities(service).contain(RecoveryRequest("drain-1", order_id))
+            )
+            assert await asyncio.to_thread(entered.wait, 5)
+            task.cancel()
+            try:
+                await asyncio.sleep(0.05)
+                assert not task.done()
+                task.cancel()
+                await asyncio.sleep(0.05)
+                assert not task.done()
+            finally:
+                release.set()
+                with pytest.raises(asyncio.CancelledError):
+                    await task
+        assert state.audit_event("paper-recovery:drain-1:contained") is not None
+
+    asyncio.run(run())
+
+
 def test_temporal_paper_recovery_resumes_after_server_and_worker_restart(tmp_path):
     binary = temporal_binary()
 

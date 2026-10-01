@@ -17,6 +17,37 @@ def validate_recovery_ids(incident_id: str, order_id: str) -> None:
             raise ValueError("Recovery identifiers must be bounded opaque identifiers")
 
 
+def require_completed_triage(events: list[dict[str, str]]) -> None:
+    """Require durable review-ready evidence before the separate manual recovery gate."""
+    admissions = {}
+    attempts = {}
+    for event in events:
+        if event.get("action") == "PAPER_RECOVERY_CONTAINED":
+            admissions[event["trace_id"]] = event["order_id"]
+        elif event.get("action") == "PAPER_RECOVERY_ATTEMPT":
+            result = json.loads(event["evidence"])
+            incident = event["trace_id"]
+            attempt = result["attempt"]
+            if (
+                type(attempt) is not int
+                or not 1 <= attempt <= 20
+                or result["incident_id"] != incident
+            ):
+                raise ValueError("Invalid paper recovery evidence")
+            if incident not in attempts or attempt > attempts[incident]["attempt"]:
+                attempts[incident] = result
+    for incident, order_id in admissions.items():
+        result = attempts.get(incident)
+        if (
+            result is None
+            or result["order_id"] != order_id
+            or result["stage"] != "REVIEW_REQUIRED"
+            or result["positions_match"] is not True
+            or result["promotion_allowed"] is not False
+        ):
+            raise ValueError("Unfinished paper triage blocks manual safety recovery")
+
+
 class PaperRecoveryService:
     """Bind to the application's existing kernel, gateway and durable state store.
 
@@ -24,11 +55,18 @@ class PaperRecoveryService:
     acknowledgement returns the receipt; only a new attempt performs a new lookup.
     """
 
-    def __init__(self, execution: PaperExecutionGateway, risk: RiskKernel, state: PaperStateStore):
+    def __init__(
+        self,
+        execution: PaperExecutionGateway,
+        risk: RiskKernel,
+        state: PaperStateStore,
+        *,
+        control_lock=None,
+    ):
         self._execution = execution
         self._risk = risk
         self._state = state
-        self._lock = RLock()
+        self._lock = control_lock if control_lock is not None else RLock()
         self._risk.set_safety_state(self._highest_state())
 
     def _highest_state(self) -> SafetyState:

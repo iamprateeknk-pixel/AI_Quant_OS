@@ -33,7 +33,7 @@ ai-quant-backtest tests/fixtures/nautilus_ticks.csv --format ticks --strategy ti
 
 ## Durable paper recovery
 
-The optional `recovery` extra adds an actual Temporal workflow for paper broker uncertainty. It persists containment and attempt evidence, performs acknowledgement lookup without resending orders, survives worker/service restart, and stops at review with trading still disabled. This initial library boundary is not yet wired into the HTTP application. See [the recovery handoff](docs/TEMPORAL_RECOVERY_HANDOFF.md) for setup, verification and remaining P10 requirements.
+The optional `recovery` extra adds an actual Temporal workflow for paper broker uncertainty. It persists containment and attempt evidence, performs acknowledgement lookup without resending orders, survives worker/service restart, and stops at review with trading still disabled. Opt-in application wiring uses the same risk kernel and control lock, with protected start/read/retry commands. Unfinished triage also blocks manual normalization. See [the recovery handoff](docs/TEMPORAL_RECOVERY_HANDOFF.md) for setup, verification and remaining P10 requirements.
 
 ## Checks
 

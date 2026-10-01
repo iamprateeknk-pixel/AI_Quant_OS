@@ -2,7 +2,7 @@ import asyncio
 import hmac
 import os
 import sqlite3
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -166,6 +166,8 @@ def create_app(
     deep_reviewer: DeepReviewer | None = None,
     research_workspace: Path | None = None,
     daily_evidence_enabled: bool | None = None,
+    temporal_recovery_enabled: bool | None = None,
+    temporal_recovery_target: str | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -212,6 +214,11 @@ def create_app(
         enabled_daily and (configured_path is None or not configured_token)
     ):
         raise ValueError("Daily scheduler requires persistent paper storage and an operator token")
+    from ai_quant_os.recovery_api import install_recovery_routes, recovery_configuration
+
+    enabled_recovery, recovery_target = recovery_configuration(
+        temporal_recovery_enabled, temporal_recovery_target, configured_path, configured_token
+    )
     state_store = PaperStateStore(configured_path)
     calibration_store = CalibrationStore(configured_path)
     world_state_store = WorldStateStore(configured_path)
@@ -259,17 +266,28 @@ def create_app(
             yield
             return
         graph_path = configured_path.with_name(configured_path.stem + ".agents.sqlite3")
-        async with GraphRuntime.open(
-            graph_path,
-            registry=agent_registry,
-            implementations={
-                ("A02", "0.2.0"): regime_implementation(agent_registry),
-                ("A07", "0.2.0"): integrity_implementation(agent_registry),
-            },
-            tools=AgentToolBoundary(agent_registry, {}),
-            clock=current_time,
-        ) as runtime:
+        async with (
+            GraphRuntime.open(
+                graph_path,
+                registry=agent_registry,
+                implementations={
+                    ("A02", "0.2.0"): regime_implementation(agent_registry),
+                    ("A07", "0.2.0"): integrity_implementation(agent_registry),
+                },
+                tools=AgentToolBoundary(agent_registry, {}),
+                clock=current_time,
+            ) as runtime,
+            AsyncExitStack() as services,
+        ):
             application.state.graph_runtime = runtime
+            if enabled_recovery:
+                from ai_quant_os.recovery_runtime import RecoveryRuntime
+
+                application.state.recovery_runtime = await services.enter_async_context(
+                    RecoveryRuntime.open(
+                        recovery_target, configured_path, execution, risk, state_store, control_lock
+                    )
+                )
             if daily_worker is not None:
                 from ai_quant_os.daily_scheduler import run_daily_scheduler
 
@@ -287,10 +305,12 @@ def create_app(
                         pass
                     application.state.daily_task = None
                 application.state.graph_runtime = None
+                application.state.recovery_runtime = None
 
     app = FastAPI(title="AI Quant OS Paper Control API", version="0.1.0", lifespan=lifespan)
     app.state.graph_runtime = None
     app.state.daily_task = None
+    app.state.recovery_runtime = None
 
     def currency_context(primary_quote: MarketSnapshot | None = None) -> CurrencyRiskContext:
         instruments = currency_policy.instruments
@@ -1170,6 +1190,9 @@ def create_app(
                 "reason": reason,
             }
             try:
+                from ai_quant_os.paper_recovery import require_completed_triage
+
+                require_completed_triage(state_store.audit_events())
                 execution.recover_paper_safety(
                     before_change=lambda: state_store.record_recovery(
                         idempotency_key, reason, receipt
@@ -1179,6 +1202,7 @@ def create_app(
                 raise HTTPException(status_code=409, detail=str(error)) from error
             return receipt
 
+    install_recovery_routes(app, require_operator)
     install_daily_routes(
         app,
         configured_path,

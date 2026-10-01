@@ -1,8 +1,9 @@
 # Temporal paper uncertainty triage
 
 P10 now has an initial durable runbook for an uncertain **server-owned PAPER order**.
-This is a library integration boundary; the HTTP application does not yet start a
-Temporal worker or expose recovery workflow commands.
+An opt-in HTTP application runtime now starts the worker with the same execution
+gateway, RiskKernel, state store and control lock as operator controls. Default
+configuration remains disabled.
 
 ## Verified behavior
 
@@ -41,6 +42,9 @@ Set `AI_QUANT_TEMPORAL_CLI` to the extracted executable and
 python -m pytest -q tests/test_paper_recovery.py tests/test_temporal_recovery.py
 ```
 
+Also run `tests/test_recovery_api.py` and `tests/test_temporal_recovery_api.py` for
+protected command/configuration checks and actual application startup, restart,
+shared-kernel mismatch containment and unreachable-service startup refusal.
 The dedicated Windows/Linux CI job downloads checksum-pinned binaries and treats
 missing executables as failures. Ordinary installations without the optional SDK
 or executable skip only the real-service tests. Hosted CI results are unverified.
@@ -48,7 +52,51 @@ Local tests use the full native dev service, not a mocked workflow environment.
 The SDK documents this SQLite-backed local service in
 [WorkflowEnvironment](https://python.temporal.io/temporalio.testing.WorkflowEnvironment.html).
 
-## Integration contract
+## Run the owner-bound application
+
+Start the extracted native service with a persistent SQLite file, for example:
+
+```powershell
+temporal server start-dev --ip 127.0.0.1 --port 7233 --db-filename D:/AI_Quant_OS/data-local/temporal.sqlite3 --headless
+$env:AI_QUANT_TEMPORAL_RECOVERY_ENABLED = "1"
+$env:AI_QUANT_TEMPORAL_TARGET = "127.0.0.1:7233"
+```
+
+Set `AI_QUANT_PAPER_DB` and `AI_QUANT_OPERATOR_TOKEN` using the existing local
+application setup, install the `recovery` extra, and start the API. Enabled startup
+requires persistent storage, an operator token, a literal 127.0.0.1 address and a
+valid port. Remote/unauthenticated Temporal deployment is not supported by this
+local configuration. Missing dependencies or unavailable required service refuse
+startup. Connection/worker runtime failures escalate the owning kernel to HALT and
+attempt audited persistent containment; normal shutdown drains worker activities,
+including repeated cancellation while a state-write thread is running. Forced
+process/event-loop termination cannot guarantee completing disk I/O.
+
+Every new route requires `X-Operator-Token` and valid audit integrity:
+
+| Command | Behavior |
+| --- | --- |
+| `GET /api/v1/paper/recovery` | Disabled or ready owner runtime; never promotion authority |
+| `POST /api/v1/paper/recovery` | Strict `incident_id` and `order_id`; contain before RPC dispatch; 202 for submitted workflow |
+| `GET /api/v1/paper/recovery/{incident_id}` | Server-owned admission plus actual Temporal state/result |
+| `POST /api/v1/paper/recovery/{incident_id}/retry` | No verdict payload; retry only while the workflow is waiting |
+
+Active/completed duplicate starts return 409. Unconfirmed start RPC returns 503
+while containment remains; retry the same incident identity to resolve ambiguity.
+Containment/attempt receipts survive app restart, and workflow IDs and task queues
+are scoped to the canonical paper file path. Preserve that path when restoring;
+moving a database requires a reviewed workflow identity migration. Run a single
+application owner process per paper file. Multiple app processes/hosts and leases
+remain unsupported.
+
+The separate `/control/recover-paper` still requires both distinct operator and
+recovery tokens, verified positions and resolved orders. It now additionally
+requires every recorded triage incident's latest attempt to be REVIEW_REQUIRED.
+Failed, unresolved or not-yet-run triage blocks normalization even if its target
+order was independently acknowledged. This initial manual gate is not full P10
+independent repair certification or shadow/canary approval. HALT cannot normalize.
+
+## Library integration contract
 
 Construct `PaperRecoveryService(execution, risk, state)` using the **same instances**
 as the owning application. Register `PaperRecoveryWorkflow` and
@@ -58,11 +106,10 @@ trusted, authenticated operator composition root. Reusing a running or completed
 incident ID is refused. The starter validates shape; the activity validates actual
 ownership. The `retry` signal accepts no client verdict or evidence.
 
-Do not run an independent worker against a live application's SQLite file: its
+The application implements this binding. Do not run an independent worker against a live application's SQLite file: its
 separate in-memory RiskKernel cannot stop that application. Production wiring must
 bind the owner and worker together, authenticate Temporal transport/commands, and
-restrict workflow/activity access. This increment creates no external command
-endpoint and grants no agent permission.
+restrict workflow/activity access. The local HTTP routes grant no agent permission.
 
 ## Failure and rollback limits
 
@@ -79,7 +126,7 @@ same workflow definition for open runs; changing replay decisions requires revie
 Temporal versioning/migration. Disable new workflow starts and retain stopped
 paper state rather than deleting incident history.
 
-Remaining P10 work: application/operator wiring, watchdog and broader taxonomy,
+Remaining P10 work: full operator sessions, watchdog and broader taxonomy,
 durable agent quarantine, candidate repair branches, independent verification,
 shadow/canary gates, gated recovery state machine, rollback automation, production
 service configuration, retention/monitoring and independent review. P11 evolution

@@ -82,7 +82,23 @@ class RecoveryActivities:
 
     async def _call(self, method, *args):
         try:
-            return await asyncio.to_thread(method, *args)
+            task = asyncio.create_task(asyncio.to_thread(method, *args))
+            try:
+                return await asyncio.shield(task)
+            except asyncio.CancelledError:
+                # Cancellation cannot interrupt SQLite/thread work. Drain before
+                # releasing activity ownership or closing the application lifespan.
+                while True:
+                    try:
+                        await asyncio.shield(task)
+                        break
+                    except asyncio.CancelledError:
+                        if task.cancelled():
+                            # Forced event-loop teardown can cancel every task.
+                            # It must not turn draining into a busy loop.
+                            raise
+                        continue
+                raise
         except (ValueError, OSError) as error:
             raise ApplicationError(
                 "Paper recovery failed closed; inspect the owning ledger",
