@@ -79,7 +79,10 @@
       "type": "string"
     },
     "replay_model": {
-      "const": "BAR_OPEN_CLOSE_QUOTES_V1",
+      "enum": [
+        "BAR_OPEN_CLOSE_QUOTES_V1",
+        "RECORDED_QUOTE_TICKS_V1"
+      ],
       "title": "Replay Model",
       "type": "string"
     },
@@ -129,7 +132,10 @@
       "type": "string"
     },
     "pnl_method": {
-      "const": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+      "enum": [
+        "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+        "EXACT_FILL_CASHFLOWS_PLUS_FINAL_QUOTE_MIDPOINT"
+      ],
       "title": "Pnl Method",
       "type": "string"
     },
@@ -140,7 +146,7 @@
     },
     "source_sha256": {
       "type": "string",
-      "pattern": "^[a-f0-9]{64}$"
+      "pattern": "^[0-9a-f]{64}$"
     }
   },
   "required": [

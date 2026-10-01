@@ -1,0 +1,30 @@
+{
+  "costs": {
+    "fee_per_trade": "0.10",
+    "slippage_bps": "0"
+  },
+  "dataset_fingerprint": "0d44e9db544b1bf49dfe137cca8e1289be87e9de72ce1d94e22dd238fb2b1b49",
+  "engine": "NAUTILUS_BACKTEST",
+  "engine_version": "1.221.0",
+  "fills": [
+    {
+      "fee": "0.1",
+      "observed_at": "2026-01-01T00:00:02+00:00",
+      "price": "1.31",
+      "quantity": "1",
+      "side": "BUY"
+    }
+  ],
+  "final_position": "1",
+  "instrument_id": "EURUSD",
+  "native_order_count": 1,
+  "native_realized_pnl": "-0.1",
+  "net_pnl": "-0.005",
+  "pnl_currency": "USD",
+  "pnl_method": "EXACT_FILL_CASHFLOWS_PLUS_FINAL_QUOTE_MIDPOINT",
+  "replay_model": "RECORDED_QUOTE_TICKS_V1",
+  "schema_version": "1.0",
+  "source_sha256": "7743b7767376705bc1a052bef45b3045e0467539f1f0b091200f1ebdc02d2295",
+  "strategy_ref": "tick-momentum@1.0.0",
+  "venue": "PAPER"
+}

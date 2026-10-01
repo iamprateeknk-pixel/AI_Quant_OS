@@ -1,4 +1,4 @@
-"""Pinned native Nautilus backtests over explicit synthetic bar-open/close quotes."""
+"""Pinned native Nautilus replay over synthetic bars or recorded quote ticks."""
 
 import re
 from dataclasses import dataclass
@@ -20,6 +20,8 @@ from nautilus_trader.trading.strategy import Strategy as NativeStrategy
 from ai_quant_os.backtest import BacktestCosts, Strategy
 from ai_quant_os.market_data import Bar, BarDataset
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
+from ai_quant_os.tick_data import Tick, TickDataset
+from ai_quant_os.tick_strategy import TickStrategy
 
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -38,7 +40,7 @@ class NautilusResult:
     schema_version: Literal["1.0"]
     engine: Literal["NAUTILUS_BACKTEST"]
     engine_version: Literal["1.221.0"]
-    replay_model: Literal["BAR_OPEN_CLOSE_QUOTES_V1"]
+    replay_model: Literal["BAR_OPEN_CLOSE_QUOTES_V1", "RECORDED_QUOTE_TICKS_V1"]
     venue: Literal["PAPER"]
     instrument_id: str
     pnl_currency: str
@@ -49,7 +51,10 @@ class NautilusResult:
     native_order_count: int
     final_position: Decimal
     net_pnl: Decimal
-    pnl_method: Literal["EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK"]
+    pnl_method: Literal[
+        "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+        "EXACT_FILL_CASHFLOWS_PLUS_FINAL_QUOTE_MIDPOINT",
+    ]
     native_realized_pnl: Decimal
 
 
@@ -62,7 +67,7 @@ def _nanoseconds(observed_at: datetime) -> int:
 
 
 class _ReplayStrategy(NativeStrategy):
-    def __init__(self, instrument, plugin: Strategy, phases: dict, quantity: int):
+    def __init__(self, instrument, plugin, phases: dict, quantity: int, targets=(0, 1)):
         super().__init__(
             StrategyConfig(
                 strategy_id="Replay",
@@ -74,7 +79,8 @@ class _ReplayStrategy(NativeStrategy):
         )
         self.instrument, self.plugin, self.phases = instrument, plugin, phases
         self.trade_quantity = quantity
-        self.history: list[Bar] = []
+        self.targets = targets
+        self.history: list[Bar | Tick] = []
         self.fills: list[NativeFill] = []
         self.position = Decimal(0)
         self.failure: str | None = None
@@ -87,7 +93,11 @@ class _ReplayStrategy(NativeStrategy):
         if phase == "CLOSE":
             self.history.append(bar)
             return
-        if not self.history or self.failure:
+        if not self.history:
+            if phase == "TICK":
+                self.history.append(bar)
+            return
+        if self.failure:
             return
         try:
             target = self.plugin.target_position(tuple(self.history))
@@ -95,7 +105,7 @@ class _ReplayStrategy(NativeStrategy):
             self.failure = "Strategy plugin failed"
             self.stop()
             return
-        if type(target) is not int or target not in (0, 1):
+        if type(target) is not int or target not in self.targets:
             self.failure = "Invalid strategy target"
             self.stop()
             return
@@ -107,6 +117,8 @@ class _ReplayStrategy(NativeStrategy):
                 quantity=Quantity.from_int(int(abs(delta))),
             )
             self.submit_order(order)
+        if phase == "TICK":
+            self.history.append(bar)
 
     def on_order_filled(self, event):
         side = "BUY" if event.order_side == OrderSide.BUY else "SELL"
@@ -158,6 +170,61 @@ def _run_native_backtest(
     quantity: int,
     initial_balance: Decimal,
 ) -> NautilusResult:
+    if not 1 <= len(dataset.bars) <= 1_000_000:
+        raise ValueError("Native replay requires 1..1000000 bars")
+    identifiers = {bar.instrument_id for bar in dataset.bars}
+    if len(identifiers) != 1:
+        raise ValueError("Native replay requires one instrument")
+    identifier = next(iter(identifiers))
+    metadata, precision, increment, quote_currency, instrument = _prepare_instrument(
+        identifier, costs, strategy_ref, quantity, initial_balance
+    )
+    for bar in dataset.bars:
+        if any(
+            price.quantize(increment) != price for price in (bar.open, bar.high, bar.low, bar.close)
+        ):
+            raise ValueError("Source price exceeds instrument precision")
+    slip = costs.slippage_bps / 10000
+    native_id = instrument.id
+    ticks, phases = [], {}
+    for bar in dataset.bars:
+        stamp = _nanoseconds(bar.observed_at)
+        for phase, mid, timestamp in (("OPEN", bar.open, stamp), ("CLOSE", bar.close, stamp + 1)):
+            bid = (mid * (1 - slip)).quantize(increment, rounding=ROUND_FLOOR)
+            ask = (mid * (1 + slip)).quantize(increment, rounding=ROUND_CEILING)
+            if bid <= 0:
+                raise ValueError("Synthetic bid is not positive at instrument precision")
+            ticks.append(
+                QuoteTick(
+                    native_id,
+                    Price.from_str(f"{bid:.{precision}f}"),
+                    Price.from_str(f"{ask:.{precision}f}"),
+                    Quantity.from_int(1_000_000),
+                    Quantity.from_int(1_000_000),
+                    timestamp,
+                    timestamp,
+                )
+            )
+            phases[timestamp] = (phase, bar)
+    return _execute_native_replay(
+        instrument,
+        metadata,
+        quote_currency,
+        strategy,
+        costs,
+        strategy_ref,
+        quantity,
+        initial_balance,
+        ticks,
+        phases,
+        dataset.fingerprint,
+        dataset.bars[-1].close,
+        "BAR_OPEN_CLOSE_QUOTES_V1",
+        (0, 1),
+    )
+
+
+def _prepare_instrument(identifier, costs, strategy_ref, quantity, initial_balance):
     if nautilus_trader.__version__ != "1.221.0":
         raise ValueError("Native runtime version does not match pin")
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}@\d+\.\d+\.\d+", strategy_ref):
@@ -166,22 +233,11 @@ def _run_native_backtest(
         raise ValueError("Invalid native trade quantity")
     if not initial_balance.is_finite() or not 0 < initial_balance <= 1_000_000_000_000:
         raise ValueError("Invalid native starting balance")
-    if not 1 <= len(dataset.bars) <= 1_000_000:
-        raise ValueError("Native replay requires 1..1000000 bars")
-    identifiers = {bar.instrument_id for bar in dataset.bars}
-    if len(identifiers) != 1:
-        raise ValueError("Native replay requires one instrument")
-    identifier = next(iter(identifiers))
     metadata = next((row for row in PAPER_INSTRUMENTS if row.instrument_id == identifier), None)
     if metadata is None:
         raise ValueError("Unknown native paper instrument")
     precision = 3 if metadata.quote_currency == "JPY" else 5
     increment = Decimal(1).scaleb(-precision)
-    for bar in dataset.bars:
-        if any(
-            price.quantize(increment) != price for price in (bar.open, bar.high, bar.low, bar.close)
-        ):
-            raise ValueError("Source price exceeds instrument precision")
     quote_currency = Currency.from_str(metadata.quote_currency)
     fee_increment = Decimal(1).scaleb(-quote_currency.precision)
     if costs.fee_per_trade.quantize(fee_increment) != costs.fee_per_trade:
@@ -208,26 +264,94 @@ def _run_native_backtest(
         maker_fee=Decimal(0),
         taker_fee=Decimal(0),
     )
-    ticks, phases = [], {}
-    for bar in dataset.bars:
-        stamp = _nanoseconds(bar.observed_at)
-        for phase, mid, timestamp in (("OPEN", bar.open, stamp), ("CLOSE", bar.close, stamp + 1)):
-            bid = (mid * (1 - slip)).quantize(increment, rounding=ROUND_FLOOR)
-            ask = (mid * (1 + slip)).quantize(increment, rounding=ROUND_CEILING)
-            if bid <= 0:
-                raise ValueError("Synthetic bid is not positive at instrument precision")
+    return metadata, precision, increment, quote_currency, instrument
+
+
+def run_nautilus_tick_backtest(
+    dataset: TickDataset,
+    strategy: TickStrategy,
+    costs: BacktestCosts,
+    *,
+    strategy_ref: str,
+    quantity: int = 1,
+    initial_balance: Decimal = Decimal(100000),
+) -> NautilusResult:
+    with localcontext(Context(prec=28)):
+        if not 1 <= len(dataset.ticks) <= 1_000_000:
+            raise ValueError("Native replay requires 1..1000000 ticks")
+        identifiers = {tick.instrument_id for tick in dataset.ticks}
+        if len(identifiers) != 1:
+            raise ValueError("Native tick replay requires one instrument")
+        if len({tick.source_id for tick in dataset.ticks}) != 1:
+            raise ValueError("Native tick replay requires one source")
+        if costs.slippage_bps:
+            raise ValueError("Recorded tick replay requires zero synthetic slippage")
+        metadata, precision, increment, quote_currency, instrument = _prepare_instrument(
+            next(iter(identifiers)), costs, strategy_ref, quantity, initial_balance
+        )
+        ticks, phases = [], {}
+        previous = -1
+        for row in dataset.ticks:
+            timestamp = _nanoseconds(row.observed_at)
+            if timestamp <= previous:
+                raise ValueError("Recorded tick timestamps must be strictly increasing")
+            previous = timestamp
+            if any(price.quantize(increment) != price for price in (row.bid, row.ask)):
+                raise ValueError("Source price exceeds instrument precision")
+            if any(
+                size != size.to_integral_value() or size > 1_000_000
+                for size in (row.bid_size, row.ask_size)
+            ):
+                raise ValueError("Recorded size requires integer units up to 1000000")
+            if min(row.bid_size, row.ask_size) < 2 * quantity:
+                raise ValueError("Recorded liquidity cannot cover a complete target reversal")
             ticks.append(
                 QuoteTick(
-                    native_id,
-                    Price.from_str(f"{bid:.{precision}f}"),
-                    Price.from_str(f"{ask:.{precision}f}"),
-                    Quantity.from_int(1_000_000),
-                    Quantity.from_int(1_000_000),
+                    instrument.id,
+                    Price.from_str(f"{row.bid:.{precision}f}"),
+                    Price.from_str(f"{row.ask:.{precision}f}"),
+                    Quantity.from_int(int(row.bid_size)),
+                    Quantity.from_int(int(row.ask_size)),
                     timestamp,
                     timestamp,
                 )
             )
-            phases[timestamp] = (phase, bar)
+            phases[timestamp] = ("TICK", row)
+        final = dataset.ticks[-1]
+        return _execute_native_replay(
+            instrument,
+            metadata,
+            quote_currency,
+            strategy,
+            costs,
+            strategy_ref,
+            quantity,
+            initial_balance,
+            ticks,
+            phases,
+            dataset.fingerprint,
+            (final.bid + final.ask) / 2,
+            "RECORDED_QUOTE_TICKS_V1",
+            (-1, 0, 1),
+        )
+
+
+def _execute_native_replay(
+    instrument,
+    metadata,
+    quote_currency,
+    strategy,
+    costs,
+    strategy_ref,
+    quantity,
+    initial_balance,
+    ticks,
+    phases,
+    dataset_fingerprint,
+    final_mark,
+    replay_model,
+    targets,
+):
     engine = BacktestEngine(
         config=BacktestEngineConfig(
             trader_id=TraderId("AIQUANT-001"), logging=LoggingConfig(bypass_logging=True)
@@ -249,7 +373,7 @@ def _run_native_backtest(
             bar_execution=False,
         )
         engine.add_instrument(instrument)
-        bridge = _ReplayStrategy(instrument, strategy, phases, quantity)
+        bridge = _ReplayStrategy(instrument, strategy, phases, quantity, targets)
         engine.add_strategy(bridge)
         engine.add_data(ticks)
         engine.run()
@@ -269,18 +393,20 @@ def _run_native_backtest(
             "1.0",
             "NAUTILUS_BACKTEST",
             nautilus_trader.__version__,
-            "BAR_OPEN_CLOSE_QUOTES_V1",
+            replay_model,
             "PAPER",
-            identifier,
+            metadata.instrument_id,
             metadata.quote_currency,
             strategy_ref,
-            dataset.fingerprint,
+            dataset_fingerprint,
             costs,
             tuple(bridge.fills),
             len(engine.cache.orders()),
             native_position,
-            cash + native_position * dataset.bars[-1].close,
-            "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK",
+            cash + native_position * final_mark,
+            "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK"
+            if replay_model == "BAR_OPEN_CLOSE_QUOTES_V1"
+            else "EXACT_FILL_CASHFLOWS_PLUS_FINAL_QUOTE_MIDPOINT",
             sum(
                 (
                     position.realized_pnl.as_decimal()

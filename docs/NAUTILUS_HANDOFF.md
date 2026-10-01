@@ -12,6 +12,14 @@ The adapter owns a fresh 28-digit Decimal context, so caller precision/trap chan
 
 net_pnl is exact Decimal cash flows from native fills plus the final canonical close mark. native_realized_pnl is Nautilus's realized value rounded to account currency precision and excludes unrealized positions. They can differ and are not interchangeable. No forced liquidation is invented at replay end.
 
+## Recorded quote replay
+
+run_nautilus_tick_backtest accepts the canonical TickDataset, including a checksum-verified TickArchive.replay result. It submits actual recorded bid/ask prices and sizes to Nautilus without synthesizing a spread. The pure TickStrategy protocol receives only prior ticks; each decision executes at the following quote. Targets are -1, 0 or 1, multiplied by the requested unit quantity. Native fills reconcile after short entries and complete long/short reversals. Open positions are marked at the final recorded quote midpoint, identified explicitly in pnl_method; this mark is not a liquidation price.
+
+This slice accepts one instrument and one source with strictly increasing UTC timestamps. Same-time quotes are rejected until an arrival-order contract exists. Prices must match instrument precision and sizes must be integer units up to 1,000,000. Every quote side must cover twice the configured trade quantity, so the runner rejects insufficient top-of-book liquidity rather than reporting an incomplete reversal as success. Synthetic slippage must be zero; the recorded spread and native per-order fixed fees apply. No depth or delayed-execution model is inferred. TickMomentum is a trusted interface example, not an evaluated trading strategy.
+
+The archive/CSV integration test runs the same recorded dataset through both verified Parquet replay and CSV replay, checks native result equality and checks the installed CLI artifact. Result schema 1.0 retains the original bar fields and adds explicit recorded-quote replay and midpoint-mark enum alternatives.
+
 ## Files and commands
 
 nautilus_runtime.py contains the adapter/result contract. strategy_samples.py provides trusted buy-and-hold and moving-average-cross examples with version 1.0.0 references. They demonstrate interfaces without a trading-performance claim. nautilus_cli.py reads one bounded canonical CSV without loading arbitrary client code. The artifact schema is docs/schemas/nautilus-result.schema.json.
@@ -20,8 +28,9 @@ nautilus_runtime.py contains the adapter/result contract. strategy_samples.py pr
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev,data,trading]"
 ai-quant-backtest tests/fixtures/nautilus_replay.csv --strategy moving-average-cross --slippage-bps 10 --fee 0.10 --output docs/evaluations/nautilus-sample-result.json
+ai-quant-backtest tests/fixtures/nautilus_ticks.csv --format ticks --strategy tick-momentum --fee 0.10 --output docs/evaluations/nautilus-tick-result.json
 python scripts/benchmark_nautilus.py --output docs/evaluations/nautilus-native-baseline.json
-python -m pytest -q tests/test_nautilus_runtime.py tests/test_strategy_samples.py
+python -m pytest -q tests/test_nautilus_runtime.py tests/test_nautilus_ticks.py tests/test_strategy_samples.py
 python -m pytest -q
 ```
 
@@ -31,7 +40,7 @@ CI adds Windows/Linux jobs installing the trading extra and asserting the exact 
 
 ## Remaining P03 gates
 
-Independent critical review, hosted cross-platform CI evidence, immutable strategy implementation manifests, isolation for untrusted plugins, direct tick/catalog replay, historical spread/depth/latency models, multi-instrument simulation, short targets and the complete strategy harness remain open. Current plugins are trusted Python receiving full history; large-replay memory/CPU behavior needs a streaming contract before scale. The paper order API retains its separately gated simulator; this adapter does not replace the Risk Kernel or broker gateway. Live routing remains absent.
+Independent critical review, hosted cross-platform CI evidence, immutable strategy implementation manifests, isolation for untrusted plugins, catalog selection, depth/latency and partial-liquidity models, multi-instrument simulation, bar short targets and the complete strategy harness remain open. Current plugins are trusted Python receiving full history; large-replay memory/CPU behavior needs a streaming contract before scale. The paper order API retains its separately gated simulator; this adapter does not replace the Risk Kernel or broker gateway. Live routing remains absent.
 
 Rollback preserves archived data and result evidence. Removing the optional dependency does not alter the paper order database. Runtime upgrades require a new pin and replay comparison.
 
