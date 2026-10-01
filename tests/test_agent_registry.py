@@ -14,13 +14,14 @@ from ai_quant_os.agent_registry import (
 
 def test_catalog_covers_exact_pack_agents_and_reports_planned_implementations():
     registry = load_agent_catalog()
-    manifests = registry.manifests()
+    manifests = tuple(row for row in registry.manifests() if row.agent_version == "0.1.0")
     assert [item.agent_id for item in manifests] == [f"A{index:02}" for index in range(1, 19)]
     assert all(item.implementation_status == "PLANNED" for item in manifests)
     assert all(item.agent_version == "0.1.0" for item in manifests)
     assert registry.get("A01", "0.1.0").name == "Master Supervisor"
     assert registry.get("A18", "0.1.0").squad == "Safety"
     assert registry.get("A10", "0.1.0").output_type == "ValidationScorecard"
+    assert registry.get("A02", "0.2.0").implementation_status == "PARTIAL"
 
 
 @pytest.mark.parametrize("agent_id", [f"A{index:02}" for index in range(1, 19)])
@@ -109,9 +110,19 @@ def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
     client = TestClient(create_app(operator_token="fixture-token"))
     body = client.get("/api/v1/agents/registry").json()
     assert body["mode"] == "PAPER"
-    assert len(body["agents"]) == 18
+    assert len(body["agents"]) == 19
     assert all(item["lifecycle"] == "SHADOW" for item in body["agents"])
-    assert all(item["implementation_status"] == "PLANNED" for item in body["agents"])
+    assert all(
+        item["implementation_status"] == "PLANNED"
+        for item in body["agents"]
+        if item["agent_version"] == "0.1.0"
+    )
+    assert (
+        next(item for item in body["agents"] if item["agent_version"] == "0.2.0")[
+            "implementation_status"
+        ]
+        == "PARTIAL"
+    )
     assert (
         client.post(
             "/api/v1/agents/registry",
@@ -145,18 +156,18 @@ def test_timeout_cancels_handler_and_exception_details_are_sanitized():
 
     registry = load_agent_catalog()
     manifest = registry.get("A02", "0.1.0").model_copy(
-        update={"agent_version": "0.2.0", "timeout_seconds": 0.01}
+        update={"agent_version": "9.0.0", "timeout_seconds": 0.01}
     )
     registry.register(manifest)
 
     async def invoke():
         with pytest.raises(TimeoutError, match="timed out"):
             await AgentToolBoundary(registry, {"WORLD_STATE_READ": slow}).call(
-                "A02", "0.2.0", "WORLD_STATE_READ", scope="PAPER", payload={}
+                "A02", "9.0.0", "WORLD_STATE_READ", scope="PAPER", payload={}
             )
         with pytest.raises(ValueError, match="Agent tool failed") as error:
             await AgentToolBoundary(registry, {"WORLD_STATE_READ": fail}).call(
-                "A02", "0.2.0", "WORLD_STATE_READ", scope="PAPER", payload={}
+                "A02", "9.0.0", "WORLD_STATE_READ", scope="PAPER", payload={}
             )
         assert "private-handler-secret" not in str(error.value)
 

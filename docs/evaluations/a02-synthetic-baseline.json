@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "A02",
+  "agent_version": "0.2.0",
+  "fixture_sha256": "b915918a5cc12d4af0cd596ac5c5b712ef087b22b6429277f064c9a377b694a0",
+  "provenance": "SYNTHETIC_DEVELOPMENT_BASELINE_NOT_HOLDOUT",
+  "case_count": 5,
+  "horizon_count": 15,
+  "correct_horizons": 15,
+  "latency_p95_ms": 32.20679995138198,
+  "calibration_status": "UNAVAILABLE",
+  "promotion_approved": false,
+  "results": [
+    {
+      "case_id": "steady_trend",
+      "status": "COMPLETED",
+      "expected": [
+        "TRENDING",
+        "TRENDING",
+        "TRENDING"
+      ],
+      "predicted": [
+        "TRENDING",
+        "TRENDING",
+        "TRENDING"
+      ],
+      "correct_horizons": 3,
+      "elapsed_ms": 32.20679995138198,
+      "context_ref": "agent-context:73c6eda10a1d253fa5cd4031d6cd77a87098044b051434e7b03e1b6dedcf13d3"
+    },
+    {
+      "case_id": "flat_range",
+      "status": "COMPLETED",
+      "expected": [
+        "RANGING",
+        "RANGING",
+        "RANGING"
+      ],
+      "predicted": [
+        "RANGING",
+        "RANGING",
+        "RANGING"
+      ],
+      "correct_horizons": 3,
+      "elapsed_ms": 26.265499996952713,
+      "context_ref": "agent-context:c1c1496288dfdd9aa94f28a680c0b7ed298d964aff8a7b7e48853cbfccbe0834"
+    },
+    {
+      "case_id": "alternating_shock",
+      "status": "COMPLETED",
+      "expected": [
+        "HIGH_VOLATILITY",
+        "HIGH_VOLATILITY",
+        "HIGH_VOLATILITY"
+      ],
+      "predicted": [
+        "HIGH_VOLATILITY",
+        "HIGH_VOLATILITY",
+        "HIGH_VOLATILITY"
+      ],
+      "correct_horizons": 3,
+      "elapsed_ms": 26.38310001930222,
+      "context_ref": "agent-context:fe7bb10f579f253214d762ecae62a39497b8287b85cf1e7cbe9711076ed6ac81"
+    },
+    {
+      "case_id": "trend_then_range",
+      "status": "COMPLETED",
+      "expected": [
+        "RANGING",
+        "TRENDING",
+        "TRENDING"
+      ],
+      "predicted": [
+        "RANGING",
+        "TRENDING",
+        "TRENDING"
+      ],
+      "correct_horizons": 3,
+      "elapsed_ms": 24.163799942471087,
+      "context_ref": "agent-context:1d5e1ca20e4806ff3008ac8cbd0886ce62b64d722163fe24398ee88d8d670e2f"
+    },
+    {
+      "case_id": "insufficient_long_history",
+      "status": "COMPLETED",
+      "expected": [
+        "TRENDING",
+        "UNKNOWN",
+        "UNKNOWN"
+      ],
+      "predicted": [
+        "TRENDING",
+        "UNKNOWN",
+        "UNKNOWN"
+      ],
+      "correct_horizons": 3,
+      "elapsed_ms": 25.63940000254661,
+      "context_ref": "agent-context:e22de59a4e2bc332cf48559fe9c0b3c12d3e67ccaa48a014cea7e28250f67745"
+    }
+  ]
+}

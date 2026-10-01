@@ -37,7 +37,7 @@ class AgentManifest(BaseModel):
     output_type: str = Field(min_length=1, max_length=128)
     required_inputs: tuple[str, ...] = Field(min_length=1, max_length=32)
     allowed_tools: tuple[str, ...] = Field(max_length=32)
-    implementation_status: Literal["PLANNED"] = "PLANNED"
+    implementation_status: Literal["PLANNED", "PARTIAL", "IMPLEMENTED"] = "PLANNED"
     timeout_seconds: float = Field(gt=0, le=30, allow_inf_nan=False, default=2)
 
     @model_validator(mode="after")
@@ -202,4 +202,14 @@ def load_agent_catalog() -> AgentRegistry:
                 allowed_tools=tuple(sorted(ROLE_CEILINGS[identifier])),
             )
         )
+    original = registry.get("A02", "0.1.0")
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **original.model_dump(),
+                "agent_version": "0.2.0",
+                "implementation_status": "PARTIAL",
+            }
+        )
+    )
     return registry

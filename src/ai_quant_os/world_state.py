@@ -83,6 +83,11 @@ class WorldStateEngine:
         self._bars: dict[str, tuple[Bar, ...]] = {}
         self._lock = Lock()
 
+    def histories(self) -> dict[str, tuple[Bar, ...]]:
+        """Return immutable bounded bars; consumers must match snapshot evidence hashes."""
+        with self._lock:
+            return self._bars.copy()
+
     def record_bars(self, bars: tuple[Bar, ...], *, now: datetime) -> int:
         _require_aware(now)
         identifiers = {item.instrument_id for item in self.instruments}

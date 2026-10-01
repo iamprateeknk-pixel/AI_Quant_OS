@@ -6,10 +6,14 @@ from datetime import datetime
 from decimal import Decimal
 
 from ai_quant_os.agent_context import EvidenceRecord, SourceBinding
-from ai_quant_os.world_state import WorldState
+from ai_quant_os.world_state import WorldState, fingerprint
+from ai_quant_os.market_data import Bar
+from ai_quant_os.regime_features import regime_features
 
 
-def paper_context_sources(snapshot: WorldState) -> dict[str, SourceBinding]:
+def paper_context_sources(
+    snapshot: WorldState, histories: dict[str, tuple[Bar, ...]] | None = None
+) -> dict[str, SourceBinding]:
     def encode(value):
         if isinstance(value, datetime):
             return value.isoformat()
@@ -39,6 +43,29 @@ def paper_context_sources(snapshot: WorldState) -> dict[str, SourceBinding]:
             },
         ),
     }
+    sources["session_state"] = bind(
+        "session_state",
+        {
+            "world_state_version": snapshot.world_state_version,
+            "as_of": snapshot.as_of,
+            "clock_basis": "UTC",
+            "calendar_status": "UNAVAILABLE",
+            "event_status": "UNAVAILABLE",
+            "crisis_status": "UNAVAILABLE",
+        },
+    )
+
+    def windows(item):
+        bars = (histories or {}).get(item.instrument_id, ())
+        if not bars:
+            return []
+        reference = "paper-bars:" + fingerprint([asdict(bar) for bar in bars])
+        if reference not in item.evidence_refs or any(
+            bar.observed_at > snapshot.as_of for bar in bars
+        ):
+            raise ValueError("Paper history does not match world-state evidence")
+        return [asdict(row) for row in regime_features(bars)]
+
     prices = [
         {
             "instrument_id": item.instrument_id,
@@ -46,13 +73,19 @@ def paper_context_sources(snapshot: WorldState) -> dict[str, SourceBinding]:
             "spread_bps": item.spread_bps,
             "quote_status": item.quote_status,
             "evidence_refs": item.evidence_refs,
+            "horizons": windows(item),
         }
         for item in snapshot.instruments
         if item.quote_status == "FRESH"
     ]
     if prices:
         sources["price_features"] = bind(
-            "price_features", {"source": snapshot.source, "features": prices}
+            "price_features",
+            {
+                "source": snapshot.source,
+                "world_state_version": snapshot.world_state_version,
+                "features": prices,
+            },
         )
     volatility = [
         {
@@ -68,7 +101,11 @@ def paper_context_sources(snapshot: WorldState) -> dict[str, SourceBinding]:
     if volatility:
         sources["volatility_features"] = bind(
             "volatility_features",
-            {"source": snapshot.source, "features": volatility},
+            {
+                "source": snapshot.source,
+                "world_state_version": snapshot.world_state_version,
+                "features": volatility,
+            },
             "HISTORY_READ",
         )
     return sources

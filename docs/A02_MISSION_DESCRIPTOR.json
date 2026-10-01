@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "A02",
+  "agent_version": "0.2.0",
+  "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d",
+  "implementation_status": "PARTIAL",
+  "lifecycle_at_startup": "SHADOW",
+  "owner_role": "LOCAL_OPERATOR",
+  "implementation": "ai_quant_os.regime_agent:analyze_regimes",
+  "model_route": "DETERMINISTIC_ONLY",
+  "memory_policy": "CONTEXT_ONLY_WITH_ARCHIVAL_RECEIPTS",
+  "tools": ["HISTORY_READ", "MODEL_REVIEW", "WORLD_STATE_READ"],
+  "installed_external_tool_handlers": [],
+  "evaluation_suite": "tests/fixtures/regime_baseline.json",
+  "promotion_approved": false,
+  "limitations": ["TRUSTED_PYTHON_NOT_OS_SANDBOX", "EVENT_CRISIS_CALENDAR_UNAVAILABLE", "CALIBRATION_UNAVAILABLE"]
+}

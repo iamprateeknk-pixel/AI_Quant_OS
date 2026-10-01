@@ -18,6 +18,7 @@ from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
 from ai_quant_os.graph_runtime import GraphRuntime
+from ai_quant_os.regime_agent import regime_implementation
 from ai_quant_os.agent_context import ContextCompiler, require_context_for_agent
 from ai_quant_os.paper_context_sources import paper_context_sources
 from ai_quant_os.context_checkpoints import ContextCheckpoint
@@ -227,7 +228,7 @@ def create_app(
         async with GraphRuntime.open(
             graph_path,
             registry=agent_registry,
-            implementations={},
+            implementations={("A02", "0.2.0"): regime_implementation(agent_registry)},
             tools=AgentToolBoundary(agent_registry, {}),
             clock=current_time,
         ) as runtime:
@@ -656,7 +657,9 @@ def create_app(
         snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
         try:
             context = await ContextCompiler(
-                agent_registry, paper_context_sources(snapshot), clock=current_time
+                agent_registry,
+                paper_context_sources(snapshot, world_state.histories()),
+                clock=current_time,
             ).compile(
                 payload.agent_id, payload.agent_version, task_id=payload.task_id, scope="PAPER"
             )

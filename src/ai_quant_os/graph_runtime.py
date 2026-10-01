@@ -16,6 +16,7 @@ from langsmith.run_helpers import tracing_context
 from pydantic import BaseModel
 
 from ai_quant_os.agent_context import CompiledContext, require_context_for_agent
+from ai_quant_os.agent_envelope import AgentEnvelope
 from ai_quant_os.agent_registry import AgentRegistry, AgentToolBoundary
 from ai_quant_os.context_checkpoints import ContextCheckpoint
 from ai_quant_os.graph_ledger import GraphLedger, GraphReceipt, GraphRecord
@@ -195,6 +196,8 @@ class GraphRuntime:
                 validated = implementation.output_schema.model_validate_json(
                     output.model_dump_json()
                 )
+                if isinstance(validated, AgentEnvelope):
+                    validated.require_context(context)
                 raw = json.dumps(
                     validated.model_dump(mode="json"),
                     sort_keys=True,
