@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "EvaluationCase": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "input_json": {
+          "maxLength": 16384,
+          "minLength": 2,
+          "title": "Input Json",
+          "type": "string"
+        },
+        "expected_json": {
+          "maxLength": 16384,
+          "minLength": 2,
+          "title": "Expected Json",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "input_json",
+        "expected_json"
+      ],
+      "title": "EvaluationCase",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "execution_verified": {
+      "const": false,
+      "default": false,
+      "title": "Execution Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    },
+    "dataset_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,128}$",
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^(?:0|[1-9][0-9]{0,5})(?:\\.(?:0|[1-9][0-9]{0,5})){2}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "enum": [
+        "A02",
+        "A07"
+      ],
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "resource_class": {
+      "enum": [
+        "TRAINING",
+        "HOLDOUT"
+      ],
+      "title": "Resource Class",
+      "type": "string"
+    },
+    "provenance": {
+      "enum": [
+        "SYNTHETIC_DEVELOPMENT_NOT_HOLDOUT",
+        "RECORDED_REFERENCE",
+        "REVIEWED_REFERENCE"
+      ],
+      "title": "Provenance",
+      "type": "string"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/EvaluationCase"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Cases",
+      "type": "array"
+    }
+  },
+  "required": [
+    "dataset_id",
+    "dataset_version",
+    "agent_id",
+    "resource_class",
+    "provenance",
+    "cases"
+  ],
+  "title": "EvolutionDataset",
+  "type": "object"
+}

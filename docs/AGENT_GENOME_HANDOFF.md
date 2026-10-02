@@ -25,9 +25,11 @@ Metric names are correctness, calibration error, evidence age, reliability,
 latency, tool-error rate, USD cost and regime correctness in their explicit
 uppercase wire forms. Improvement for rate metrics is bounded to one.
 
-Protocol SHA is currently a caller-owned opaque predeclaration. Neither a SHA nor
-registration proves retained/accepted protocol bytes, dataset isolation or actual
-evaluation. Model and feature configuration is descriptive and never dispatched.
+The legacy `--objective` path retains a caller-owned opaque predeclaration.
+`--protocol` instead derives the exact objective from a verified retained same-agent
+plan in the evaluation catalog. Neither path proves actual evaluation or grants
+release authority. Model and feature configuration is descriptive and never dispatched.
+See `EVOLUTION_PROTOCOL_HANDOFF.md` for the new dataset/plan commands and limits.
 
 ## Admission and persistence
 
@@ -80,8 +82,8 @@ proposals, forged roots, concurrent idempotence, valid-chain wrong audit binding
 corrupt/deleted bodies/head, atomic audit failure rollback, literal-false admission,
 planned-agent refusal, real CLI workflows and preserved exports/invalid paths.
 
-P11 is in progress. Quality/reputation and weakness measurement, retained protocol
-and offline dataset catalog, actual candidate eval/replay/adversarial/shadow/canary,
+P11 is in progress. Quality/reputation and weakness measurement, executable protocol
+adapters, physical/statistical holdout isolation, actual candidate eval/replay/adversarial/shadow/canary,
 DSPy/generation/Jev pre-screening, full agent coverage, scheduler, monthly tournament,
 promotion policy, production version assignment, rollback and independent review
 remain. Windows/Linux CI is configured but hosted results are unverified.

@@ -77,7 +77,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -e ".[dev]"
-      - run: python -m pytest -q tests/test_agent_genomes.py tests/test_evolution_cli.py tests/test_agent_registry.py
+      - run: python -m pytest -q tests/test_agent_genomes.py tests/test_evolution_protocols.py tests/test_evolution_cli.py tests/test_agent_registry.py
   temporal-recovery:
     runs-on: ${{ matrix.os }}
     strategy:

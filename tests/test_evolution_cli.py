@@ -5,6 +5,8 @@ import os
 import subprocess
 import sys
 
+import pytest
+
 from test_agent_genomes import baseline, child, objective
 
 
@@ -88,3 +90,60 @@ def test_planned_agent_seed_and_oversize_genome_refuse_without_success(tmp_path)
     result = run(workspace, "register", "--input", oversized)
     assert result.returncode == 2
     assert result.stdout == b""
+
+
+def test_retained_protocol_can_seed_exact_objective_and_export_after_restart(tmp_path):
+    from test_evolution_protocols import dataset, protocol
+
+    workspace = tmp_path / "registry"
+    data = dataset()
+    plan = protocol(data)
+    source = tmp_path / "artifact.json"
+    source.write_text(data.model_dump_json(), encoding="utf-8")
+    result = run(workspace, "dataset-register", "--input", source)
+    assert result.returncode == 0, result.stderr.decode()
+    assert "cases" not in json.loads(result.stdout)
+    source.write_text(plan.model_dump_json(), encoding="utf-8")
+    result = run(workspace, "protocol-register", "--input", source)
+    assert result.returncode == 0, result.stderr.decode()
+    result = run(workspace, "seed", "A02", "--protocol", plan.protocol_sha256)
+    assert result.returncode == 0, result.stderr.decode()
+    assert json.loads(result.stdout)["objective"]["protocol_sha256"] == plan.protocol_sha256
+    assert len(json.loads(run(workspace, "catalog-list").stdout)["artifacts"]) == 2
+    output = tmp_path / "protocol.json"
+    assert (
+        run(workspace, "protocol-export", plan.protocol_sha256, "--output", output).returncode == 0
+    )
+    assert json.loads(output.read_bytes()) == plan.model_dump(mode="json")
+    original = output.read_bytes()
+    assert (
+        run(workspace, "protocol-export", plan.protocol_sha256, "--output", output).returncode == 0
+    )
+    assert output.read_bytes() == original
+    assert run(workspace, "seed", "A07", "--protocol", plan.protocol_sha256).returncode == 2
+    output.write_bytes(b"preserve prior protocol file")
+    result = run(workspace, "protocol-export", plan.protocol_sha256, "--output", output)
+    assert result.returncode == 2
+    assert result.stdout == b""
+    assert output.read_bytes() == b"preserve prior protocol file"
+
+
+@pytest.mark.parametrize("command", ["dataset-register", "protocol-register"])
+def test_invalid_evaluation_input_refuses_before_creating_storage(tmp_path, command):
+    workspace = tmp_path / "registry"
+    source = tmp_path / "bad.json"
+    source.write_bytes(b"{}")
+    result = run(workspace, command, "--input", source)
+    assert result.returncode == 2
+    assert result.stdout == b""
+    assert b"Traceback" not in result.stderr
+    assert not workspace.exists()
+
+
+def test_protocol_export_refuses_non_json_and_catalog_paths_before_storage(tmp_path):
+    workspace = tmp_path / "registry"
+    for output in (workspace / "protocol.json", tmp_path / "protocol.py"):
+        result = run(workspace, "protocol-export", "a" * 64, "--output", output)
+        assert result.returncode == 2
+        assert result.stdout == b""
+        assert not workspace.exists()

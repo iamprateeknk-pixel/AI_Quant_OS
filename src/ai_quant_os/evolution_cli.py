@@ -14,6 +14,13 @@ from ai_quant_os.agent_genomes import (
     encode_genome,
 )
 from ai_quant_os.agent_registry import load_agent_catalog
+from ai_quant_os.evolution_catalog import EvolutionCatalog
+from ai_quant_os.evolution_protocols import (
+    EvolutionDataset,
+    EvaluationProtocol,
+    MAX_DATASET_BYTES,
+    encode_protocol_artifact,
+)
 from ai_quant_os.genome_store import GenomeStore
 from ai_quant_os.repair_image_inputs import read_repair_image_input
 
@@ -46,7 +53,7 @@ def _export(output: Path, content: bytes) -> None:
             os.link(pending, output)
         except FileExistsError:
             if read_repair_image_input(output, MAX_GENOME_BYTES) != content:
-                raise ValueError("Immutable genome export differs") from None
+                raise ValueError("Immutable artifact export differs") from None
     finally:
         pending.unlink(missing_ok=True)
 
@@ -59,7 +66,9 @@ def main() -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     seed = commands.add_parser("seed")
     seed.add_argument("agent_id")
-    seed.add_argument("--objective", type=Path, required=True)
+    objective_source = seed.add_mutually_exclusive_group(required=True)
+    objective_source.add_argument("--objective", type=Path)
+    objective_source.add_argument("--protocol")
     register = commands.add_parser("register")
     register.add_argument("--input", type=Path, required=True)
     commands.add_parser("list")
@@ -68,10 +77,16 @@ def main() -> int:
     export = commands.add_parser("export")
     export.add_argument("genome_ref")
     export.add_argument("--output", type=Path, required=True)
+    for command in ("dataset-register", "protocol-register"):
+        commands.add_parser(command).add_argument("--input", type=Path, required=True)
+    commands.add_parser("catalog-list")
+    protocol_export = commands.add_parser("protocol-export")
+    protocol_export.add_argument("protocol_sha256")
+    protocol_export.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
         root = args.workspace.resolve()
-        if args.command == "seed":
+        if args.command == "seed" and args.objective is not None:
             objective = EvaluationObjective.model_validate_json(
                 read_repair_image_input(args.objective, 8192)
             )
@@ -79,10 +94,47 @@ def main() -> int:
             genome = AgentGenome.model_validate_json(
                 read_repair_image_input(args.input, MAX_GENOME_BYTES)
             )
-        elif args.command == "export":
+        elif args.command in {"dataset-register", "protocol-register"}:
+            model, limit = (
+                (EvolutionDataset, MAX_DATASET_BYTES)
+                if args.command == "dataset-register"
+                else (EvaluationProtocol, 8192)
+            )
+            artifact = model.model_validate_json(read_repair_image_input(args.input, limit))
+        elif args.command in {"export", "protocol-export"}:
             output = args.output.resolve()
             if output.is_relative_to(root) or output.suffix.lower() != ".json":
                 raise ValueError("Export requires a JSON path outside registry storage")
+        if args.command in {
+            "dataset-register",
+            "protocol-register",
+            "catalog-list",
+            "protocol-export",
+        }:
+            catalog = EvolutionCatalog(root / "evaluation.sqlite3")
+            if args.command in {"dataset-register", "protocol-register"}:
+                artifact = catalog.register(artifact)
+                ref = (
+                    artifact.dataset_ref
+                    if type(artifact) is EvolutionDataset
+                    else artifact.protocol_sha256
+                )
+                result = next(row for row in catalog.inventory() if row["ref"] == ref)
+            elif args.command == "catalog-list":
+                result = {"schema_version": "1.0", "artifacts": catalog.inventory()}
+            else:
+                plan = catalog.protocol(args.protocol_sha256)
+                if plan is None:
+                    raise ValueError("Unknown retained protocol")
+                _export(output, encode_protocol_artifact(plan))
+                result = {"protocol_sha256": plan.protocol_sha256}
+            print(json.dumps(result, sort_keys=True))
+            return 0
+        if args.command == "seed" and args.protocol is not None:
+            plan = EvolutionCatalog(root / "evaluation.sqlite3").protocol(args.protocol)
+            if plan is None or plan.agent_id != args.agent_id:
+                raise ValueError("Retained same-agent protocol required")
+            objective = plan.objective
         store = GenomeStore(root / "genomes.sqlite3", registry=load_agent_catalog())
         if args.command == "seed":
             result = _view(store.seed(args.agent_id, objective))
@@ -105,7 +157,7 @@ def main() -> int:
     except (OSError, ValueError, sqlite3.Error):
         parser.exit(
             2,
-            "Genome operation refused; check input, lineage, storage integrity and output path.\n",
+            "Evolution operation refused; check input, lineage, storage integrity and output path.\n",
         )
     return 0
 

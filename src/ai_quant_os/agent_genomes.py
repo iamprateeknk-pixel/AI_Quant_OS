@@ -24,7 +24,7 @@ def _version(version: str) -> tuple[int, ...]:
     return tuple(int(part) for part in version.split("."))
 
 
-class EvaluationObjective(BaseModel):
+class MetricCriterion(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     schema_version: Literal["1.0"] = "1.0"
     metric: Literal[
@@ -39,10 +39,9 @@ class EvaluationObjective(BaseModel):
     ]
     direction: Literal["MAXIMIZE", "MINIMIZE"]
     minimum_improvement: Decimal = Field(ge=0, le=1000000, allow_inf_nan=False)
-    protocol_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
     @model_validator(mode="after")
-    def metric_policy(self) -> "EvaluationObjective":
+    def metric_policy(self) -> "MetricCriterion":
         maximized = self.metric in {"CORRECTNESS", "RELIABILITY", "REGIME_CORRECTNESS"}
         expected = "MAXIMIZE" if maximized else "MINIMIZE"
         rates = {
@@ -55,6 +54,10 @@ class EvaluationObjective(BaseModel):
         if self.direction != expected or (self.metric in rates and self.minimum_improvement > 1):
             raise ValueError("Objective direction or improvement differs from metric units")
         return self
+
+
+class EvaluationObjective(MetricCriterion):
+    protocol_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
 class GenomeSource(BaseModel):

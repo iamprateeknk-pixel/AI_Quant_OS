@@ -1,0 +1,177 @@
+{
+  "$defs": {
+    "MetricCriterion": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "metric": {
+          "enum": [
+            "CORRECTNESS",
+            "CALIBRATION_ERROR",
+            "EVIDENCE_AGE_MS",
+            "RELIABILITY",
+            "LATENCY_MS",
+            "TOOL_ERROR_RATE",
+            "COST_USD",
+            "REGIME_CORRECTNESS"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "direction": {
+          "enum": [
+            "MAXIMIZE",
+            "MINIMIZE"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "minimum_improvement": {
+          "anyOf": [
+            {
+              "maximum": 1000000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Minimum Improvement"
+        }
+      },
+      "required": [
+        "metric",
+        "direction",
+        "minimum_improvement"
+      ],
+      "title": "MetricCriterion",
+      "type": "object"
+    },
+    "ProtocolCriterion": {
+      "additionalProperties": false,
+      "properties": {
+        "criterion": {
+          "$ref": "#/$defs/MetricCriterion"
+        },
+        "method": {
+          "enum": [
+            "EXACT_OBJECT_MATCH",
+            "BINARY_BRIER",
+            "MAX_EVIDENCE_AGE",
+            "SUCCESS_RATE",
+            "P95_WALL_MS",
+            "TOOL_FAILURE_RATE",
+            "ACTUAL_USAGE_USD",
+            "REGIME_EXACT_OBJECT_MATCH"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "maximum_regression": {
+          "anyOf": [
+            {
+              "maximum": 1000000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Maximum Regression"
+        }
+      },
+      "required": [
+        "criterion",
+        "method",
+        "maximum_regression"
+      ],
+      "title": "ProtocolCriterion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "execution_verified": {
+      "const": false,
+      "default": false,
+      "title": "Execution Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    },
+    "protocol_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,128}$",
+      "title": "Protocol Id",
+      "type": "string"
+    },
+    "protocol_version": {
+      "pattern": "^(?:0|[1-9][0-9]{0,5})(?:\\.(?:0|[1-9][0-9]{0,5})){2}$",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "enum": [
+        "A02",
+        "A07"
+      ],
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "output_type": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Output Type",
+      "type": "string"
+    },
+    "dataset_ref": {
+      "pattern": "^evolution-dataset:[a-f0-9]{64}$",
+      "title": "Dataset Ref",
+      "type": "string"
+    },
+    "primary_metric": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Primary Metric",
+      "type": "string"
+    },
+    "criteria": {
+      "items": {
+        "$ref": "#/$defs/ProtocolCriterion"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Criteria",
+      "type": "array"
+    }
+  },
+  "required": [
+    "protocol_id",
+    "protocol_version",
+    "agent_id",
+    "output_type",
+    "dataset_ref",
+    "primary_metric",
+    "criteria"
+  ],
+  "title": "EvaluationProtocol",
+  "type": "object"
+}
