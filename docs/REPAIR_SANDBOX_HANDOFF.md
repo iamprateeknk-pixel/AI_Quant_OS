@@ -80,3 +80,8 @@ toolchain and verifier program, run the actual behavioral worker, validate live
 kernel confinement and timeout/output/cleanup failure paths, then retain candidate
 source/version-bound verification evidence. Shadow/canary, incident closure,
 Temporal repair stages and gated recovery/rollback remain required.
+
+Parent-side Docker reads now use a streaming combined-output cap with command
+termination/reaping instead of collecting unbounded output before checking size.
+See `REPAIR_TRANSPORT_HANDOFF.md`; this does not terminate a container or provide
+live sandbox evidence.

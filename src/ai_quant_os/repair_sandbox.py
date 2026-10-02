@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from ai_quant_os.repair_transport import bounded_command
+
 
 MEMORY_BYTES = 536870912
 SCRATCH_OPTIONS = "rw,noexec,nosuid,nodev,size=67108864,mode=1777"
@@ -172,12 +174,11 @@ class DockerConfinement:
             for key, value in os.environ.items()
             if key.upper() in {"PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP"}
         }
-        result = subprocess.run(
+        result = bounded_command(
             [executable, "--host", endpoint, *arguments],
-            stdin=subprocess.DEVNULL,
-            capture_output=True,
-            env=environment,
+            environment=environment,
             timeout=10,
+            output_limit=65536,
         )
         if result.returncode or len(result.stdout) > 65536:
             raise ValueError("Sandbox read admission failed")
@@ -196,7 +197,7 @@ class DockerConfinement:
             return receipt("DOCKER_UNAVAILABLE")
         try:
             engine = self._read(executable, "info", "--format", "{{json .}}")
-        except (OSError, ValueError, subprocess.TimeoutExpired):
+        except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired):
             return receipt("ENGINE_UNAVAILABLE")
         try:
             self.require_engine(engine)
@@ -206,7 +207,7 @@ class DockerConfinement:
             image = self._read(
                 executable, "image", "inspect", self.image_id, "--format", "{{json .}}"
             )
-        except (OSError, ValueError, subprocess.TimeoutExpired):
+        except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired):
             return receipt("IMAGE_UNAVAILABLE")
         if (
             not isinstance(image, dict)
