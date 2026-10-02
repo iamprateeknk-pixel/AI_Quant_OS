@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import stat
 
 import pytest
 
@@ -145,3 +146,65 @@ def test_new_cli_process_cleans_orphan_staging_without_source_output(
     assert json.loads(result.stdout)["state"] == "STAGING_REMOVED"
     assert "VERIFIER_MUST_NOT_RUN" not in result.stdout
     assert not job.path.exists() and not stage.exists()
+
+
+def test_staging_explicitly_sets_readable_modes_for_all_mounted_inputs(
+    tmp_path, repository, monkeypatch
+):
+    evidence = snapshot(tmp_path, repository)
+    original = Path.chmod
+    calls = {}
+
+    def chmod(path, mode, *args, **kwargs):
+        calls[path] = mode
+        return original(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "chmod", chmod)
+    with prepared_repair_job(
+        evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+    ) as job:
+        assert calls.get(job.path) == 0o755
+        assert calls.get(job.path / "src") == 0o755
+        assert calls.get(job.path / "src/ai_quant_os") == 0o755
+        assert all(calls.get(job.path / relative) == 0o644 for relative, _ in job._expected_files)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Requires real POSIX permission semantics")
+def test_restrictive_umask_preserves_private_control_and_readable_input_modes(tmp_path, repository):
+    evidence = snapshot(tmp_path, repository)
+    prior = os.umask(0o077)
+    try:
+        with prepared_repair_job(
+            evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+        ) as job:
+            assert stat.S_IMODE(job.path.stat().st_mode) == 0o755
+            for relative, _ in job._expected_files:
+                assert stat.S_IMODE((job.path / relative).stat().st_mode) == 0o644
+            assert stat.S_IMODE((job.path / "src").stat().st_mode) == 0o755
+            assert stat.S_IMODE((job.path / "src/ai_quant_os").stat().st_mode) == 0o755
+            assert stat.S_IMODE(job._stage()[0].stat().st_mode) == 0o600
+    finally:
+        os.umask(prior)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Requires real POSIX permission semantics")
+@pytest.mark.parametrize("target", ["root", "directory", "file"])
+def test_unreadable_inputs_fail_admission_before_container_access(tmp_path, repository, target):
+    evidence = snapshot(tmp_path, repository)
+    with prepared_repair_job(
+        evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+    ) as job:
+        selected = (
+            job.path
+            if target == "root"
+            else job.path / "src"
+            if target == "directory"
+            else job.path / "verifier.py"
+        )
+        original = stat.S_IMODE(selected.stat().st_mode)
+        selected.chmod(0o700 if selected.is_dir() else 0o600)
+        try:
+            with pytest.raises(ValueError, match="permission"):
+                job.verify()
+        finally:
+            selected.chmod(original)

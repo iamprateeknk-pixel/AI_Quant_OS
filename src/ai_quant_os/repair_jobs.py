@@ -211,6 +211,7 @@ class PreparedRepairJob:
             or (root.st_dev, root.st_ino) != self._root_identity
         ):
             raise ValueError("Repair job root identity changed")
+        self._verify_permissions(root, 0o755)
         expected = dict(self._expected_files)
         directories = {".", "src", "src/ai_quant_os"}
         pending = [self.path]
@@ -228,13 +229,20 @@ class PreparedRepairJob:
                     if stat.S_ISDIR(metadata.st_mode):
                         if relative not in directories:
                             raise ValueError("Repair job contains an undeclared directory")
+                        self._verify_permissions(metadata, 0o755)
                         pending.append(path)
                     elif relative in expected:
+                        self._verify_permissions(metadata, 0o644)
                         self._verify_file(path, metadata, expected[relative])
                         files.add(relative)
                     else:
                         raise ValueError("Repair job contains an undeclared file")
         return files
+
+    @staticmethod
+    def _verify_permissions(metadata, expected: int) -> None:
+        if os.name == "posix" and stat.S_IMODE(metadata.st_mode) != expected:
+            raise ValueError("Repair job permissions do not match non-root read admission")
 
     @staticmethod
     def _verify_file(path: Path, metadata, expected: bytes) -> None:
@@ -384,11 +392,14 @@ def _staged_repair_job(snapshot, *, suite_sha256, parent, request, expected):
             output.write(stage_raw)
             output.flush()
             os.fsync(output.fileno())
+        for directory in (path / "src", path / "src/ai_quant_os"):
+            directory.mkdir(mode=0o755)
+            directory.chmod(0o755)
         for relative, content in expected:
             destination = path / relative
-            destination.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
             with destination.open("xb") as output:
                 output.write(content)
+            destination.chmod(0o644)
         job._verify_stage()
         job.verify()
         yield job
