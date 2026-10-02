@@ -16,6 +16,12 @@ from types import MappingProxyType
 from ai_quant_os.agent_registry import AgentManifest, AgentRegistry
 from ai_quant_os.health_contracts import AGENT_CODES, HealthIncident
 from ai_quant_os.health_store import HealthStore, encode_incident
+from ai_quant_os.repair_snapshots import (
+    RepairSourceFile,
+    RepairSourceSnapshot,
+    SOURCE_PATH,
+    canonical_json,
+)
 
 
 # Only the two implemented shadow missions have a declared repair source boundary.
@@ -325,6 +331,42 @@ class RepairWorkspace:
                     raise ValueError("Repair receipt identity conflict") from None
         finally:
             temporary_path.unlink(missing_ok=True)
+
+    def snapshot(self, candidate_id: str) -> RepairSourceSnapshot:
+        """Read committed package bytes only; never execute or trust working-tree files."""
+        with self._lock:
+            receipt = self.inspect(candidate_id)
+            commit = receipt["candidate_commit"]
+            dossier = json.loads(self._source_bytes(commit, DOSSIER))
+            listing = self._git("ls-tree", "-rz", "--full-tree", commit, "--", "src/ai_quant_os")
+            if len(listing) > 65536:
+                raise ValueError("Repair source inventory exceeds bound")
+            entries = [entry for entry in listing.split(b"\x00") if entry]
+            if not 1 <= len(entries) <= 256:
+                raise ValueError("Repair source inventory exceeds bound")
+            files = []
+            total = 0
+            for entry in entries:
+                metadata, path_bytes = entry.split(b"\t", 1)
+                path = path_bytes.decode("utf-8")
+                if not SOURCE_PATH.fullmatch(path) or not metadata.startswith(b"100644 blob "):
+                    raise ValueError("Repair package contains undeclared or irregular source")
+                content = self._source_bytes(commit, path)
+                total += len(content)
+                if total > 16777216:
+                    raise ValueError("Repair source inventory exceeds bound")
+                files.append(RepairSourceFile(path, content))
+            snapshot = RepairSourceSnapshot(
+                candidate_id,
+                commit,
+                receipt["rollback_commit"],
+                canonical_json(dossier["proposed_manifest"]),
+                canonical_json(dossier["incident"]),
+                tuple(sorted(files, key=lambda source: source.path)),
+            )
+            if self.inspect(candidate_id) != receipt:
+                raise ValueError("Repair source changed during snapshot admission")
+            return snapshot
 
     def inspect(self, candidate_id: str) -> dict:
         path = self._path("receipts", candidate_id, ".json")

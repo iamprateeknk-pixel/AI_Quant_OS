@@ -43,6 +43,8 @@ An opt-in health watchdog (`AI_QUANT_HEALTH_WATCHDOG_ENABLED=1`) checks actual p
 
 The read-only `ai-quant-repair sandbox-status` command checks local isolated-runtime prerequisites without executing candidate code. Live enforcement and behavioral verification remain unverified; see [sandbox admission handoff](docs/REPAIR_SANDBOX_HANDOFF.md).
 
+`ai-quant-repair snapshot` inspects complete committed package hashes for a repair candidate. Trusted-parent job preparation retains those exact bytes and a pinned verifier program without executing either. See [source/job handoff](docs/REPAIR_SOURCE_JOB_HANDOFF.md) for pending execution and incident-replay requirements.
+
 ```powershell
 python -m ruff check src tests scripts
 python -m ruff format --check src tests scripts

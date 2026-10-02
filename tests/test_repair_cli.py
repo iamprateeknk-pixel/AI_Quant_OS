@@ -93,3 +93,20 @@ def test_sandbox_status_does_not_open_health_journal_or_accept_missing_image(tmp
     assert payload["container_admission_required"] is True
     assert payload["suite_verification_required"] is True
     assert not (tmp_path / "health.sqlite3").exists()
+
+
+def test_snapshot_cli_returns_inventory_and_version_without_source_payload(tmp_path, repository):
+    _, incident, _ = workspace(tmp_path, repository)
+    created = cli(repository, tmp_path, "prepare", str(plan(tmp_path, incident)))
+    assert created.returncode == 0, created.stderr
+    candidate = json.loads(created.stdout)
+    result = cli(repository, tmp_path, "snapshot", candidate["candidate_id"])
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(result.stdout)
+    assert summary["schema_version"] == "1.0"
+    assert summary["candidate_commit"] == candidate["candidate_commit"]
+    assert summary["proposed_version"] == "0.2.1"
+    assert summary["state"] == "SNAPSHOT_ONLY"
+    assert summary["promotion_allowed"] is False
+    assert len(summary["inventory"]) == 2
+    assert "MUST_NOT_EXECUTE_CANDIDATE" not in result.stdout

@@ -39,6 +39,10 @@ def main(argv: list[str] | None = None) -> int:
         "inspect", help="Verify retained candidate source and receipt identity"
     )
     read.add_argument("candidate_id")
+    snapshot = commands.add_parser(
+        "snapshot", help="Inspect complete committed source inventory; execute nothing"
+    )
+    snapshot.add_argument("candidate_id")
     sandbox = commands.add_parser(
         "sandbox-status", help="Read local sandbox prerequisites; execute nothing"
     )
@@ -78,7 +82,21 @@ def main(argv: list[str] | None = None) -> int:
                 )
         root = args.root if args.root is not None else args.repository / "data-local" / "repairs"
         workspace = RepairWorkspace(args.repository, root, health, registry)
-        if plan is None:
+        if args.command == "snapshot":
+            snapshot = workspace.snapshot(args.candidate_id)
+            receipt = {
+                "schema_version": "1.0",
+                "candidate_id": snapshot.candidate_id,
+                "candidate_commit": snapshot.candidate_commit,
+                "rollback_commit": snapshot.rollback_commit,
+                "snapshot_sha256": snapshot.snapshot_sha256,
+                "agent_id": snapshot.proposed_manifest["agent_id"],
+                "proposed_version": snapshot.proposed_manifest["agent_version"],
+                "inventory": snapshot.inventory,
+                "state": "SNAPSHOT_ONLY",
+                "promotion_allowed": False,
+            }
+        elif plan is None:
             receipt = workspace.inspect(args.candidate_id)
         else:
             receipt = workspace.prepare(

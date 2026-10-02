@@ -37,7 +37,7 @@ def repository(tmp_path):
     source = repository / SOURCE
     source.parent.mkdir(parents=True)
     source.write_text(ORIGINAL, encoding="utf-8", newline="\n")
-    (source.parent / "risk.py").write_text("LIMIT = 100\n", encoding="utf-8")
+    (source.parent / "risk.py").write_text("LIMIT = 100\n", encoding="utf-8", newline="\n")
     git(repository, "add", ".")
     git(repository, "commit", "-m", "Baseline")
     return repository
