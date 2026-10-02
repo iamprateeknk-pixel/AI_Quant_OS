@@ -146,6 +146,82 @@ def test_full_journal_refuses_new_container_before_daemon_calls_or_lease_publica
         assert not list(root.glob("*.lease.json"))
 
 
+def test_create_rpc_is_preceded_by_durable_exact_request_and_ack_survives_restart(
+    tmp_path, repository, monkeypatch
+):
+    from ai_quant_os.repair_removals import RemovalJournal
+
+    with prepared_repair_job(
+        snapshot(tmp_path, repository), PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+    ) as job:
+        fixture = DockerFixture(monkeypatch, job)
+        command = fixture.command
+
+        def observed(executable, *arguments):
+            if arguments[:2] == ("container", "create"):
+                owner = arguments[arguments.index("--name") + 1].removeprefix("ai-quant-repair-")
+                with RemovalJournal(job.path.parent) as journal:
+                    assert journal.event_count == 1, "Create request was not committed before RPC"
+                    journal.require_create_request(job, owner, image_id=IMAGE, arguments=arguments)
+                job.verify_container_lease(owner)
+            return command(executable, *arguments)
+
+        monkeypatch.setattr(DockerConfinement, "_command", staticmethod(observed))
+        with module().prepared_repair_container(
+            DockerConfinement(IMAGE, SUITE_SHA), job
+        ) as created:
+            with RemovalJournal(job.path.parent) as journal:
+                assert journal.event_count == 2
+                assert journal.created_identity(job, created.owner, image_id=IMAGE) == CID
+        path = job.path
+    with RemovalJournal(path.parent) as journal:
+        assert journal.event_count == 5
+        assert not journal.unfinished
+
+
+def test_failed_create_intent_commit_makes_no_daemon_call_and_preserves_lease(
+    tmp_path, repository, monkeypatch
+):
+    from ai_quant_os.repair_removals import RemovalJournal
+
+    def fail_intent(*args, **kwargs):
+        raise ValueError("injected create intent commit failure")
+
+    monkeypatch.setattr(RemovalJournal, "create_intent", fail_intent)
+    with pytest.raises(RuntimeError, match="retained"):
+        with prepared_repair_job(
+            snapshot(tmp_path, repository), PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+        ) as job:
+            fixture = DockerFixture(monkeypatch, job)
+            with module().prepared_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job):
+                pytest.fail("Uncommitted creation was admitted")
+    assert fixture.calls == []
+    assert job.path.exists() and len(list(job.path.parent.glob("*.lease.json"))) == 1
+
+
+def test_failed_create_ack_commit_reconciles_for_cleanup_without_admission_or_resend(
+    tmp_path, repository, monkeypatch
+):
+    from ai_quant_os.repair_removals import RemovalJournal
+
+    def fail_ack(*args, **kwargs):
+        raise ValueError("injected create acknowledgement commit failure")
+
+    monkeypatch.setattr(RemovalJournal, "create_ack", fail_ack)
+    with pytest.raises(ValueError, match="acknowledgement commit"):
+        with prepared_repair_job(
+            snapshot(tmp_path, repository), PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+        ) as job:
+            fixture = DockerFixture(monkeypatch, job)
+            with module().prepared_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job):
+                pytest.fail("Uncommitted creation acknowledgement was admitted")
+    assert not job.path.exists()
+    assert sum(command[:2] == ("container", "create") for command in fixture.calls) == 1
+    with RemovalJournal(job.path.parent) as journal:
+        assert journal.event_count == 4
+        assert not journal.unfinished
+
+
 def test_consumer_failure_still_removes_owned_container_first(tmp_path, repository, monkeypatch):
     with pytest.raises(RuntimeError, match="consumer"):
         with prepared_repair_job(

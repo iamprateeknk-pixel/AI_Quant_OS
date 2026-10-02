@@ -59,6 +59,9 @@ def _require_owner(value, *, owner, identity, image):
 
 def _remove_owned(policy, executable, identity, owner, job) -> str:
     with RemovalJournal(job.path.parent) as journal:
+        journal.require_create_request(
+            job, owner, image_id=policy.image_id, arguments=_create_arguments(policy, job, owner)
+        )
         confirmed = journal.confirmed(job, owner, image_id=policy.image_id)
         if confirmed is not None:
             return confirmed
@@ -158,6 +161,8 @@ def prepared_repair_container(policy: DockerConfinement, job: PreparedRepairJob)
         raise ValueError("Repair container prerequisites unavailable")
     identity = "ai-quant-repair-" + owner
     job.hold_container(owner, image_id=policy.image_id)
+    with RemovalJournal(job.path.parent) as journal:
+        journal.create_intent(job, owner, image_id=policy.image_id, arguments=arguments)
     try:
         result = policy._command(executable, *arguments)
         if result.returncode:
@@ -165,6 +170,8 @@ def prepared_repair_container(policy: DockerConfinement, job: PreparedRepairJob)
         created_id = result.stdout.decode("ascii").strip()
         if not re.fullmatch(r"[a-f0-9]{64}", created_id):
             raise ValueError("Repair container creation identity invalid")
+        with RemovalJournal(job.path.parent) as journal:
+            journal.create_ack(job, owner, created_id, image_id=policy.image_id)
         value = _inspect(policy, executable, created_id)
         identity = _require_owner(value, owner=owner, identity=created_id, image=policy.image_id)
         policy.require_container(value, owner=owner, job=job.path)

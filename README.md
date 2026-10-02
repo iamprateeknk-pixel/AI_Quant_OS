@@ -47,7 +47,7 @@ The read-only `ai-quant-repair sandbox-status` command checks local isolated-run
 
 `ai-quant-repair replay <candidate-id> --graph-store <archive>` verifies the original failed invocation's receipt and captured inline inputs through read-only archival access. It reports hashes and retains historical expiry; it executes no repair. See [archived input handoff](docs/REPAIR_REPLAY_HANDOFF.md).
 
-`ai-quant-repair admit` prepares an owned job, creates and inspects a local pinned container, then removes it without starting it. Unconfirmed cleanup preserves the job and blocks further staging in that job root. See [container ownership handoff](docs/REPAIR_CONTAINER_HANDOFF.md); live confinement and repair execution remain unverified.
+`ai-quant-repair admit` prepares an owned job, creates and inspects a local pinned container, then removes it without starting it. The exact request is recorded before creation and the response before admission. Unconfirmed cleanup preserves the job and blocks further staging in that job root. See [container ownership handoff](docs/REPAIR_CONTAINER_HANDOFF.md) and [creation journal handoff](docs/REPAIR_CREATE_JOURNAL_HANDOFF.md); live confinement and repair execution remain unverified.
 
 `ai-quant-repair cleanup` reconstructs a retained job from its committed snapshot and pinned verifier, validates its ownership receipt and files, and removes a matching container before deleting inputs. A committed exact removal acknowledgement also permits retry after lease release or interrupted file deletion; each surviving file is verified before cleanup. Unknown absence remains unresolved. See [restart cleanup handoff](docs/REPAIR_CLEANUP_HANDOFF.md) and [removal journal handoff](docs/REPAIR_REMOVAL_JOURNAL_HANDOFF.md).
 

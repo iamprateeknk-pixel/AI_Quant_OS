@@ -39,7 +39,9 @@ missing audit metadata rejects admission. A new database uses SQLite synchronous
 FULL commits. Existing files must be regular, single-link, bounded and free of
 Windows reparse points. Events contain lease metadata, not source/input payloads.
 
-At most 1,000 owners and 3,000 events are admitted. Every admitted intent reserves
+The subsequent creation increment admits at most 1,000 owners and 5,000 events,
+reserving two additional creation events alongside removal and terminal cleanup.
+Existing removal/terminal bytes remain unchanged. Every admitted owner reserves
 room for acknowledgement and terminal cleanup, including at capacity. Container
 admission checks capacity under root ownership before lease publication or daemon
 calls. New staging refuses unfinished journal owners and leftover job paths even
@@ -72,7 +74,7 @@ The trusted local filesystem, cooperating root-lock callers and daemon are part
 of the boundary. A local hash chain is not an externally signed behavioral
 certificate or protection against a hostile administrator rewriting all evidence.
 Power-loss, actual Docker/daemon restart and Linux hosted verification remain
-unverified. Durable create admission/completion and ambiguous removal reconciliation,
+unverified. Definitive ambiguous create/removal completion reconciliation,
 reviewed offline execution image and worker, live kernel confinement, independent
 behavioral checks, Temporal repair stages, shadow/canary and full release gates
 remain open. Quarantine and promotion authority are unchanged.
@@ -82,3 +84,8 @@ receipts and inputs. The original reader rejects schema 1.1 terminal events; rev
 requires retaining evidence and a reviewed recovery/migration procedure. It cannot
 use these journals as valid removal evidence or safely resume partial cleanup.
 Never treat a deleted/missing journal or stale-looking receipt as removal proof.
+
+Schema 1.2 creation intent/response records now bind exact arguments and acknowledged
+container IDs before admission and later removal. Absence remains unresolved;
+see `REPAIR_CREATE_JOURNAL_HANDOFF.md` and ADR 0045 for ordering, migration and
+verification limits.

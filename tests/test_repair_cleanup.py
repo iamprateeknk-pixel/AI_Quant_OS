@@ -376,4 +376,47 @@ def test_terminal_commit_failure_blocks_staging_until_absent_job_is_reconciled(
     assert fixture.calls == []
     with RemovalJournal(tmp_path / "jobs") as journal:
         assert not journal.unfinished
-        assert journal.event_count == 3
+        assert journal.event_count == 5
+
+
+@pytest.mark.parametrize("fault", ["identity", "request"])
+def test_create_acknowledgement_pins_identity_and_request_before_restart_removal(
+    tmp_path, repository, monkeypatch, fault
+):
+    from ai_quant_os.repair_transport import CommandResult
+
+    evidence = snapshot(tmp_path, repository)
+    with pytest.raises(RuntimeError, match="retained"):
+        with prepared_repair_job(
+            evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+        ) as job:
+            fixture = DockerFixture(monkeypatch, job)
+            with containers().prepared_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job):
+                fixture.missing = True
+    lease = next(job.path.parent.glob("*.lease.json"))
+    rebuilt = read(evidence, lease, job.path.parent)
+    fixture.missing = False
+    fixture.calls.clear()
+    if fault == "identity":
+        original = fixture.command
+
+        def replaced(executable, *arguments):
+            result = original(executable, *arguments)
+            if arguments[:2] == ("container", "inspect"):
+                value = json.loads(result.stdout)
+                value["Id"] = "d" * 64
+                return CommandResult(0, json.dumps(value).encode(), b"")
+            return result
+
+        monkeypatch.setattr(DockerConfinement, "_command", staticmethod(replaced))
+    else:
+        original = containers()._create_arguments
+        monkeypatch.setattr(
+            containers(), "_create_arguments", lambda *args: (*original(*args), "changed-option")
+        )
+    with pytest.raises(ValueError, match="creation"):
+        containers().cleanup_retained_repair_container(DockerConfinement(IMAGE, SUITE_SHA), rebuilt)
+    assert job.path.exists() and lease.exists()
+    assert all(command[:2] != ("container", "rm") for command in fixture.calls)
+    if fault == "request":
+        assert fixture.calls == []

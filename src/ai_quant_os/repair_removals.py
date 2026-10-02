@@ -59,39 +59,77 @@ class RemovalJournal:
         try:
             count = self._db.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
             chain_count = self._db.execute("SELECT COUNT(*) FROM audit_chain").fetchone()[0]
-            if count > 3000 or chain_count > 3000:
+            if count > 5000 or chain_count > 5000:
                 raise ValueError("Repair removal journal capacity exceeded")
             integrity = self._audit.require_valid()
             if integrity.legacy_event_count != 0:
                 raise ValueError("Repair removal journal cannot adopt legacy events")
             owners = {}
+            creations = {}
             for key, raw in self._db.execute(
                 "SELECT event_key,event_json FROM audit_events ORDER BY rowid"
             ):
                 if len(raw.encode()) > 32768:
                     raise ValueError("Repair removal event exceeds bound")
                 event = json.loads(raw)
+                state = event.get("state") if isinstance(event, dict) else None
+                creation = state in ("CREATE_INTENT", "CREATE_ACK")
                 if (
                     not isinstance(event, dict)
                     or set(event)
                     != {"schema_version", "owner", "state", "container_id", "lease_json"}
-                    or event["schema_version"] != ("1.1" if event["state"] == "CLEANED" else "1.0")
+                    | ({"arguments_json"} if creation else set())
+                    or event["schema_version"]
+                    != ("1.2" if creation else "1.1" if state == "CLEANED" else "1.0")
                     or not isinstance(event["owner"], str)
                     or not re.fullmatch(r"[a-f0-9]{32}", event["owner"])
                     or not isinstance(event["container_id"], str)
-                    or not re.fullmatch(r"[a-f0-9]{64}", event["container_id"])
+                    or not re.fullmatch(
+                        r"" if state == "CREATE_INTENT" else r"[a-f0-9]{64}", event["container_id"]
+                    )
                     or not isinstance(event["state"], str)
-                    or event["state"] not in {"INTENT", "REMOVED", "CLEANED"}
+                    or event["state"]
+                    not in {"CREATE_INTENT", "CREATE_ACK", "INTENT", "REMOVED", "CLEANED"}
                     or not isinstance(event["lease_json"], str)
                     or len(event["lease_json"].encode()) > 8192
                     or json.dumps(event, sort_keys=True) != raw
                     or key != self._key(event["owner"], event["state"])
                 ):
                     raise ValueError("Repair removal event identity invalid")
+                if creation:
+                    arguments = event["arguments_json"]
+                    if not isinstance(arguments, str) or len(arguments.encode()) > 16384:
+                        raise ValueError("Repair creation arguments exceed bound")
+                    if self._arguments(json.loads(arguments)) != arguments:
+                        raise ValueError("Repair creation arguments identity invalid")
+                    prior = creations.get(event["owner"])
+                    if (
+                        event["owner"] in owners
+                        or (state == "CREATE_INTENT" and prior is not None)
+                        or (
+                            state == "CREATE_ACK"
+                            and (
+                                prior is None
+                                or prior["state"] != "CREATE_INTENT"
+                                or {**prior, "state": state, "container_id": event["container_id"]}
+                                != event
+                            )
+                        )
+                    ):
+                        raise ValueError("Repair creation sequence invalid")
+                    creations[event["owner"]] = event
+                    continue
                 prior = owners.get(event["owner"])
                 if event["state"] == "INTENT":
                     if prior is not None:
                         raise ValueError("Repair removal intent duplicated")
+                    created = creations.get(event["owner"])
+                    if created is not None and (
+                        created["lease_json"] != event["lease_json"]
+                        or created["state"] == "CREATE_ACK"
+                        and created["container_id"] != event["container_id"]
+                    ):
+                        raise ValueError("Repair removal differs from creation identity")
                 elif (
                     prior is None
                     or prior["state"] != {"REMOVED": "INTENT", "CLEANED": "REMOVED"}[event["state"]]
@@ -118,16 +156,100 @@ class RemovalJournal:
         ).fetchone()
         return None if row is None else json.loads(row[0])
 
-    def _intent_count(self) -> int:
+    def _owner_count(self) -> int:
         return self._db.execute(
-            "SELECT COUNT(*) FROM audit_events WHERE event_key LIKE '%:INTENT'"
+            "SELECT COUNT(DISTINCT substr(event_key,16,32)) FROM audit_events"
         ).fetchone()[0]
+
+    def _has_owner(self, owner: str) -> bool:
+        return (
+            self._db.execute(
+                "SELECT 1 FROM audit_events WHERE event_key LIKE ? LIMIT 1",
+                (self._key(owner, "") + "%",),
+            ).fetchone()
+            is not None
+        )
 
     def require_capacity(self) -> None:
         """Called under root ownership before any new container lease or create RPC."""
         self._require_valid()
-        if self._intent_count() >= self.capacity:
+        if self._owner_count() >= self.capacity:
             raise ValueError("Repair removal journal capacity exceeded")
+
+    @staticmethod
+    def _arguments(arguments) -> str:
+        if (
+            not isinstance(arguments, (list, tuple))
+            or not arguments
+            or any(not isinstance(value, str) for value in arguments)
+        ):
+            raise ValueError("Repair creation arguments invalid")
+        raw = json.dumps(list(arguments), separators=(",", ":"))
+        if len(raw.encode()) > 16384:
+            raise ValueError("Repair creation arguments exceed bound")
+        return raw
+
+    def create_intent(self, job, owner: str, *, image_id: str, arguments) -> None:
+        if job.container_image(owner) != image_id:
+            raise ValueError("Repair creation image differs from published lease")
+        job.verify_container_lease(owner)
+        _, lease = job._lease(owner, image_id)
+        event = {
+            "schema_version": "1.2",
+            "owner": owner,
+            "state": "CREATE_INTENT",
+            "container_id": "",
+            "lease_json": lease.decode(),
+            "arguments_json": self._arguments(arguments),
+        }
+        if len(json.dumps(event, sort_keys=True).encode()) > 32768:
+            raise ValueError("Repair creation event exceeds bound")
+        with self._db:
+            self._db.execute("BEGIN IMMEDIATE")
+            self._require_valid()
+            if self._owner_count() >= self.capacity and not self._has_owner(owner):
+                raise ValueError("Repair removal journal capacity exceeded")
+            if self._has_owner(owner) and self._read(owner, "CREATE_INTENT") is None:
+                raise ValueError("Repair creation cannot adopt a legacy removal owner")
+            self._audit.append(self._key(owner, "CREATE_INTENT"), event)
+
+    def require_create_request(self, job, owner: str, *, image_id: str, arguments) -> None:
+        self._require_valid()
+        event = self._read(owner, "CREATE_INTENT")
+        if event is None:
+            return  # Existing schema 1.0 cleanup has no retrospective creation evidence.
+        _, raw = job._lease(owner, image_id)
+        if event["lease_json"] != raw.decode() or event["arguments_json"] != self._arguments(
+            arguments
+        ):
+            raise ValueError("Repair creation request binding failed")
+
+    def create_ack(self, job, owner: str, container_id: str, *, image_id: str) -> None:
+        if not isinstance(container_id, str) or not re.fullmatch(r"[a-f0-9]{64}", container_id):
+            raise ValueError("Repair creation acknowledgement identity invalid")
+        _, raw = job._lease(owner, image_id)
+        with self._db:
+            self._db.execute("BEGIN IMMEDIATE")
+            self._require_valid()
+            event = self._read(owner, "CREATE_INTENT")
+            if event is None or event["lease_json"] != raw.decode():
+                raise ValueError("Repair creation acknowledgement lacks exact intent")
+            if self._read(owner, "INTENT") is not None and self._read(owner, "CREATE_ACK") is None:
+                raise ValueError("Repair creation acknowledgement follows removal")
+            self._audit.append(
+                self._key(owner, "CREATE_ACK"),
+                {**event, "state": "CREATE_ACK", "container_id": container_id},
+            )
+
+    def created_identity(self, job, owner: str, *, image_id: str) -> str | None:
+        self._require_valid()
+        event = self._read(owner, "CREATE_ACK")
+        _, raw = job._lease(owner, image_id)
+        if event is None:
+            return None
+        if event["lease_json"] != raw.decode():
+            raise ValueError("Repair creation acknowledgement binding failed")
+        return event["container_id"]
 
     def intent(self, job, owner: str, container_id: str, *, image_id: str):
         _, raw = job._lease(owner, image_id)
@@ -143,8 +265,17 @@ class RemovalJournal:
         with self._db:
             self._db.execute("BEGIN IMMEDIATE")
             self._require_valid()
-            if self._intent_count() >= self.capacity and self._read(owner, "INTENT") is None:
+            if self._owner_count() >= self.capacity and not self._has_owner(owner):
                 raise ValueError("Repair removal journal capacity exceeded")
+            created = self.created_identity(job, owner, image_id=image_id)
+            requested = self._read(owner, "CREATE_INTENT")
+            if (
+                created is not None
+                and created != container_id
+                or requested is not None
+                and requested["lease_json"] != raw.decode()
+            ):
+                raise ValueError("Repair removal differs from creation identity")
             self._audit.append(self._key(owner, "INTENT"), event)
 
     def removed(self, job, owner: str, container_id: str):
@@ -158,7 +289,7 @@ class RemovalJournal:
             _, raw = job._lease(owner, image_id)
             if event["container_id"] != container_id or event["lease_json"] != raw.decode():
                 raise ValueError("Repair removal acknowledgement binding failed")
-            if self._require_valid().event_count >= 3000 and self._read(owner, "REMOVED") is None:
+            if self._require_valid().event_count >= 5000 and self._read(owner, "REMOVED") is None:
                 raise ValueError("Repair removal journal capacity exceeded")
             self._audit.append(self._key(owner, "REMOVED"), {**event, "state": "REMOVED"})
 
@@ -185,9 +316,9 @@ class RemovalJournal:
         self._require_valid()
         return (
             self._db.execute(
-                "SELECT 1 FROM audit_events i WHERE i.event_key LIKE '%:INTENT' "
+                "SELECT 1 FROM audit_events i WHERE (i.event_key LIKE '%:INTENT' OR i.event_key LIKE '%:CREATE_INTENT') "
                 "AND NOT EXISTS (SELECT 1 FROM audit_events c "
-                "WHERE c.event_key=replace(i.event_key,':INTENT',':CLEANED')) LIMIT 1"
+                "WHERE c.event_key=replace(replace(i.event_key,':CREATE_INTENT',':CLEANED'),':INTENT',':CLEANED')) LIMIT 1"
             ).fetchone()
             is not None
         )

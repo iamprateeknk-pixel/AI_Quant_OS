@@ -106,3 +106,63 @@ def test_terminal_cleanup_refuses_present_paths_and_does_not_regain_deletion_aut
         lease.write_bytes(raw)
         with pytest.raises(ValueError, match="terminal"):
             journal.confirmed(job, OWNER, image_id=IMAGE)
+
+
+def test_creation_request_ack_and_removal_identity_are_immutable_and_capacity_reserved(
+    tmp_path, repository
+):
+    evidence = snapshot(tmp_path, repository)
+    with pytest.raises(RuntimeError, match="retained"):
+        with prepared_repair_job(
+            evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+        ) as job:
+            job.hold_container(OWNER, image_id=IMAGE)
+    with module().RemovalJournal(job.path.parent, capacity=1) as journal:
+        with pytest.raises(ValueError, match="intent"):
+            journal.create_ack(job, OWNER, CID, image_id=IMAGE)
+        journal.create_intent(job, OWNER, image_id=IMAGE, arguments=("container", "create"))
+        journal.create_intent(job, OWNER, image_id=IMAGE, arguments=("container", "create"))
+        assert journal.unfinished
+        with pytest.raises(ValueError, match="capacity"):
+            journal.require_capacity()
+        with pytest.raises(ValueError, match="binding"):
+            journal.require_create_request(
+                job, OWNER, image_id=IMAGE, arguments=("container", "run")
+            )
+        journal.create_ack(job, OWNER, CID, image_id=IMAGE)
+        journal.create_ack(job, OWNER, CID, image_id=IMAGE)
+        with pytest.raises(ValueError):
+            journal.create_ack(job, OWNER, "d" * 64, image_id=IMAGE)
+        with pytest.raises(ValueError, match="creation"):
+            journal.intent(job, OWNER, "d" * 64, image_id=IMAGE)
+        journal.intent(job, OWNER, CID, image_id=IMAGE)
+        journal.removed(job, OWNER, CID)
+    from ai_quant_os.repair_jobs import load_retained_repair_job
+
+    rebuilt = load_retained_repair_job(
+        evidence,
+        PROGRAM,
+        suite_sha256=SUITE_SHA,
+        image_id=IMAGE,
+        root=job.path.parent,
+        lease=job._lease(OWNER, IMAGE)[0],
+    )
+    rebuilt.release_container(OWNER)
+    rebuilt.cleanup()
+    with module().RemovalJournal(job.path.parent, capacity=1) as journal:
+        assert journal.event_count == 5
+        assert not journal.unfinished
+
+
+def test_creation_intent_cannot_change_the_already_published_image_pin(tmp_path, repository):
+    with pytest.raises(RuntimeError, match="retained"):
+        with prepared_repair_job(
+            snapshot(tmp_path, repository), PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+        ) as job:
+            job.hold_container(OWNER, image_id=IMAGE)
+    with module().RemovalJournal(job.path.parent) as journal:
+        with pytest.raises(ValueError, match="image"):
+            journal.create_intent(
+                job, OWNER, image_id="sha256:" + "f" * 64, arguments=("container", "create")
+            )
+        assert journal.event_count == 0
