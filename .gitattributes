@@ -1,3 +1,6 @@
 tests/fixtures/nautilus*.csv -text
 tests/fixtures/research_*.csv -text whitespace=cr-at-eol
 tests/fixtures/portfolio_*.csv -text whitespace=cr-at-eol
+infra/repair-worker/base_index.json -text
+infra/repair-worker/base_manifest.json -text
+infra/repair-worker/base_config.json -text

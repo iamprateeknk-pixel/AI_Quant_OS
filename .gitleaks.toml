@@ -10,3 +10,11 @@ condition = "AND"
 paths = ['''^compose\.data\.yaml$''']
 regexTarget = "line"
 regexes = ['''^\s*image:\s*valkey/valkey:9\.0\.6-alpine3\.24\s*$''']
+
+[[allowlists]]
+description = "Exact public CPython signing-key fingerprint in the pinned official image config"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^infra/repair-worker/base_config\.json$''']
+regexTarget = "match"
+regexes = ['''^GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D"$''']
