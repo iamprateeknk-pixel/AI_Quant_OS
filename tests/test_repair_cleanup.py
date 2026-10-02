@@ -269,3 +269,111 @@ def test_missing_ack_commit_never_turns_absence_into_removal_confirmation(
     with pytest.raises(ValueError):
         containers().cleanup_retained_repair_container(DockerConfinement(IMAGE, SUITE_SHA), rebuilt)
     assert job.path.exists() and lease.exists()
+
+
+def interrupted_cleanup(tmp_path, repository, monkeypatch, phase):
+    import shutil
+    from ai_quant_os.repair_jobs import PreparedRepairJob
+
+    evidence = snapshot(tmp_path, repository)
+    original = PreparedRepairJob.cleanup
+
+    def interrupt(job):
+        if phase == "partial":
+            (job.path / "request.json").unlink()
+        elif phase == "deleted":
+            shutil.rmtree(job.path)
+        raise RuntimeError("injected input cleanup interruption")
+
+    monkeypatch.setattr(PreparedRepairJob, "cleanup", interrupt)
+    with pytest.raises(RuntimeError, match="interruption"):
+        with prepared_repair_job(
+            evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+        ) as job:
+            fixture = DockerFixture(monkeypatch, job)
+            with containers().prepared_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job):
+                pass
+    lease = job.path.parent / f"{job.path.name}.{fixture.owner}.lease.json"
+    assert not lease.exists()
+    monkeypatch.setattr(PreparedRepairJob, "cleanup", original)
+    fixture.missing = True
+    fixture.calls.clear()
+    return evidence, job.path, lease, fixture
+
+
+@pytest.mark.parametrize("phase", ["released", "partial", "deleted"])
+def test_interrupted_input_cleanup_recovers_from_exact_removal_without_lease_or_daemon(
+    tmp_path, repository, monkeypatch, phase
+):
+    evidence, path, lease, fixture = interrupted_cleanup(tmp_path, repository, monkeypatch, phase)
+    rebuilt = read(evidence, lease, tmp_path / "jobs")
+    receipt = containers().cleanup_retained_repair_container(
+        DockerConfinement(IMAGE, SUITE_SHA), rebuilt
+    )
+    assert receipt["container_id"] == CID
+    assert fixture.calls == []
+    assert not path.exists() and not lease.exists()
+    # Delivery after terminal cleanup is safe and does not touch the daemon.
+    rebuilt = read(evidence, lease, tmp_path / "jobs")
+    assert (
+        containers().cleanup_retained_repair_container(DockerConfinement(IMAGE, SUITE_SHA), rebuilt)
+        == receipt
+    )
+    with prepared_repair_job(evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"):
+        pass
+
+
+@pytest.mark.parametrize("fault", ["bytes", "file", "directory", "hardlink", "root", "receipt"])
+def test_confirmed_removal_never_authorizes_deletion_of_changed_surviving_inputs(
+    tmp_path, repository, monkeypatch, fault
+):
+    evidence, path, lease, fixture = interrupted_cleanup(
+        tmp_path, repository, monkeypatch, "partial"
+    )
+    if fault == "bytes":
+        (path / "src/ai_quant_os/risk.py").write_bytes(b"LIMIT = 200\n")
+    elif fault == "file":
+        (path / "unknown.txt").write_bytes(b"preserve")
+    elif fault == "directory":
+        (path / "unexpected").mkdir()
+    elif fault == "hardlink":
+        os.link(path / "verifier.py", tmp_path / "external.py")
+    elif fault == "root":
+        path.rename(path.parent / "kept-original")
+        path.mkdir()
+    else:
+        lease.write_bytes(b"{}")
+    with pytest.raises(ValueError):
+        read(evidence, lease, tmp_path / "jobs")
+    assert path.exists()
+    assert fixture.calls == []
+
+
+def test_terminal_commit_failure_blocks_staging_until_absent_job_is_reconciled(
+    tmp_path, repository, monkeypatch
+):
+    from ai_quant_os.repair_removals import RemovalJournal
+
+    evidence, path, lease, fixture = interrupted_cleanup(
+        tmp_path, repository, monkeypatch, "released"
+    )
+    original = RemovalJournal.cleaned
+
+    def fail_terminal(*args, **kwargs):
+        raise RuntimeError("injected terminal commit failure")
+
+    monkeypatch.setattr(RemovalJournal, "cleaned", fail_terminal)
+    job = read(evidence, lease, tmp_path / "jobs")
+    with pytest.raises(RuntimeError, match="terminal commit"):
+        containers().cleanup_retained_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job)
+    assert not path.exists() and not lease.exists()
+    with pytest.raises(ValueError, match="unfinished"):
+        with prepared_repair_job(evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"):
+            pytest.fail("Uncommitted terminal cleanup allowed new staging")
+    monkeypatch.setattr(RemovalJournal, "cleaned", original)
+    job = read(evidence, lease, tmp_path / "jobs")
+    containers().cleanup_retained_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job)
+    assert fixture.calls == []
+    with RemovalJournal(tmp_path / "jobs") as journal:
+        assert not journal.unfinished
+        assert journal.event_count == 3

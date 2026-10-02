@@ -17,6 +17,7 @@ from threading import Lock
 from ai_quant_os.repair_snapshots import RepairSourceSnapshot, canonical_json
 from ai_quant_os.repair_replay import RepairIncidentReplay
 from ai_quant_os.repair_locks import repair_root_lock
+from ai_quant_os.repair_removals import RemovalJournal
 
 
 def _reparse(metadata) -> bool:
@@ -47,6 +48,7 @@ class PreparedRepairJob:
     _root_identity: tuple[int, int]
     _expected_files: tuple[tuple[str, bytes], ...]
     _containers: dict[str, str] = field(default_factory=dict, compare=False, repr=False)
+    _released: dict[str, str] = field(default_factory=dict, compare=False, repr=False)
     _container_lock: LockType = field(default_factory=Lock, compare=False, repr=False)
 
     @property
@@ -105,9 +107,19 @@ class PreparedRepairJob:
         with self._container_lock:
             if owner not in self._containers:
                 raise ValueError("Repair job container lease does not match")
-            receipt, raw = self._lease(owner, self._containers[owner])
-            self._verify_file(receipt, receipt.lstat(), raw)
-            receipt.unlink()
+            image_id = self._containers[owner]
+            with RemovalJournal(self.path.parent) as journal:
+                if journal.confirmed(self, owner, image_id=image_id) is None:
+                    raise ValueError("Repair lease release lacks removal acknowledgement")
+            receipt, raw = self._lease(owner, image_id)
+            try:
+                metadata = receipt.lstat()
+            except FileNotFoundError:
+                metadata = None
+            if metadata is not None:
+                self._verify_file(receipt, metadata, raw)
+                receipt.unlink()
+            self._released[owner] = image_id
             del self._containers[owner]
 
     @property
@@ -118,11 +130,38 @@ class PreparedRepairJob:
         """Delete only this owned input tree after all container leases are released."""
         if self.pending_containers:
             raise RuntimeError(f"Repair job retained pending container cleanup: {self.path}")
+        if self._released:
+            with RemovalJournal(self.path.parent) as journal:
+                for owner, image_id in self._released.items():
+                    if journal.confirmed(self, owner, image_id=image_id) is None:
+                        raise ValueError("Repair input cleanup lacks removal acknowledgement")
+                self.verify_remaining()
+                try:
+                    self.path.lstat()
+                except FileNotFoundError:
+                    pass
+                else:
+                    _cleanup_job(self.path, self.path.parent, self._root_identity)
+                for owner, image_id in self._released.items():
+                    journal.cleaned(self, owner, image_id=image_id)
+            return
         _cleanup_job(self.path, self.path.parent, self._root_identity)
 
     def verify(self) -> None:
         """Require the exact owned input tree before a future read-only sandbox mount."""
         root = self.path.lstat()
+        if self._inventory(root) != {relative for relative, _ in self._expected_files}:
+            raise ValueError("Repair job source inventory is incomplete")
+
+    def verify_remaining(self) -> None:
+        """Accept deletion only; every surviving input keeps its exact identity and bytes."""
+        try:
+            root = self.path.lstat()
+        except FileNotFoundError:
+            return
+        self._inventory(root)
+
+    def _inventory(self, root) -> set[str]:
         if (
             _reparse(root)
             or not stat.S_ISDIR(root.st_mode)
@@ -152,8 +191,7 @@ class PreparedRepairJob:
                         files.add(relative)
                     else:
                         raise ValueError("Repair job contains an undeclared file")
-        if files != set(expected):
-            raise ValueError("Repair job source inventory is incomplete")
+        return files
 
     @staticmethod
     def _verify_file(path: Path, metadata, expected: bytes) -> None:
@@ -270,6 +308,17 @@ def prepared_repair_job(
 def _staged_repair_job(snapshot, *, suite_sha256, parent, request, expected):
     if next(parent.glob("repair-job-*.*.lease.json"), None) is not None:
         raise ValueError("Repair job root has an unresolved container lease")
+    journal_path = parent / "repair-removals.sqlite3"
+    try:
+        journal_path.lstat()
+    except FileNotFoundError:
+        pass
+    else:
+        with RemovalJournal(parent) as journal:
+            if journal.unfinished:
+                raise ValueError("Repair job root has unfinished journal cleanup")
+    if next(parent.glob("repair-job-*"), None) is not None:
+        raise ValueError("Repair job root has retained input cleanup")
     path = Path(tempfile.mkdtemp(prefix="repair-job-", dir=parent)).resolve()
     job = None
     root_identity = path.lstat()
@@ -332,7 +381,19 @@ def _load_retained_repair_job(snapshot, *, suite_sha256, image_id, root, lease, 
     match = re.fullmatch(r"(repair-job-[a-z0-9_]{1,64})\.([a-f0-9]{32})\.lease\.json", receipt.name)
     if not parent.is_dir() or receipt.parent.resolve() != parent or match is None:
         raise ValueError("Retained repair lease boundary invalid")
-    metadata = receipt.lstat()
+    try:
+        metadata = receipt.lstat()
+    except FileNotFoundError:
+        (parent / "repair-removals.sqlite3").lstat()
+        with RemovalJournal(parent) as journal:
+            raw = journal.acknowledged_lease(match[2])
+            job = _job_from_lease(
+                snapshot, suite_sha256, image_id, parent, match, request, expected, raw
+            )
+            if journal.confirmed(job, match[2], image_id=image_id) is None:
+                raise ValueError("Repair cleanup acknowledgement binding failed")
+        job.verify_remaining()
+        return job
     if (
         _reparse(metadata)
         or not stat.S_ISREG(metadata.st_mode)
@@ -354,6 +415,12 @@ def _load_retained_repair_job(snapshot, *, suite_sha256, image_id, root, lease, 
     if len(raw) > 8192:
         raise ValueError("Retained repair lease exceeds bound")
     PreparedRepairJob._verify_file(receipt, metadata, raw)
+    job = _job_from_lease(snapshot, suite_sha256, image_id, parent, match, request, expected, raw)
+    job.verify()
+    return job
+
+
+def _job_from_lease(snapshot, suite_sha256, image_id, parent, match, request, expected, raw):
     value = json.loads(raw)
     if not isinstance(value, dict) or any(
         type(value.get(key)) is not int or value[key] < 0 for key in ("root_device", "root_inode")
@@ -370,6 +437,5 @@ def _load_retained_repair_job(snapshot, *, suite_sha256, image_id, root, lease, 
     _, canonical = job._lease(match[2], image_id)
     if raw != canonical:
         raise ValueError("Retained repair lease binding failed")
-    job.verify()
     job._containers[match[2]] = image_id
     return job

@@ -80,3 +80,11 @@ intent and acknowledgement. It recovers interrupted lease release when the intac
 job and current receipt remain, without further daemon access. Missing acknowledgement,
 missing lease and partially deleted job recovery remain open. See
 `REPAIR_REMOVAL_JOURNAL_HANDOFF.md`.
+
+The subsequent terminal cleanup increment now reconstructs an already-released
+receipt from exact committed removal evidence and accepts only verified remaining
+inputs for deletion. It resumes partial/deleted jobs, persists terminal absence,
+blocks unfinished journal owners from new staging, and rejects reappearing terminal
+paths. Ordinary sandbox admission still requires the complete source inventory.
+Ambiguous create/removal acknowledgement and live confinement remain open; see
+the updated removal journal handoff and ADR 0044.

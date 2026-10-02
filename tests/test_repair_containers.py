@@ -119,6 +119,33 @@ def test_created_container_is_admitted_without_start_and_removed_before_job_clea
     assert all("start" not in command and "run" not in command for command in fixture.calls)
 
 
+def test_full_journal_refuses_new_container_before_daemon_calls_or_lease_publication(
+    tmp_path, repository, monkeypatch
+):
+    from ai_quant_os.repair_removals import RemovalJournal
+
+    original = RemovalJournal.__init__
+
+    def limited(journal, root, **kwargs):
+        original(journal, root, capacity=1)
+
+    monkeypatch.setattr(RemovalJournal, "__init__", limited)
+    evidence = snapshot(tmp_path, repository)
+    root = tmp_path / "jobs"
+    with prepared_repair_job(evidence, PROGRAM, suite_sha256=SUITE_SHA, root=root) as job:
+        DockerFixture(monkeypatch, job)
+        with module().prepared_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job):
+            pass
+    with prepared_repair_job(evidence, PROGRAM, suite_sha256=SUITE_SHA, root=root) as job:
+        fixture = DockerFixture(monkeypatch, job)
+        with pytest.raises(ValueError, match="capacity"):
+            with module().prepared_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job):
+                pytest.fail("A full journal allowed creation")
+        assert fixture.calls == []
+        assert not job.pending_containers
+        assert not list(root.glob("*.lease.json"))
+
+
 def test_consumer_failure_still_removes_owned_container_first(tmp_path, repository, monkeypatch):
     with pytest.raises(RuntimeError, match="consumer"):
         with prepared_repair_job(

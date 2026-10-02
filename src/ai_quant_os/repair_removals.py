@@ -59,7 +59,7 @@ class RemovalJournal:
         try:
             count = self._db.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
             chain_count = self._db.execute("SELECT COUNT(*) FROM audit_chain").fetchone()[0]
-            if count > 2000 or chain_count > 2000:
+            if count > 3000 or chain_count > 3000:
                 raise ValueError("Repair removal journal capacity exceeded")
             integrity = self._audit.require_valid()
             if integrity.legacy_event_count != 0:
@@ -75,12 +75,13 @@ class RemovalJournal:
                     not isinstance(event, dict)
                     or set(event)
                     != {"schema_version", "owner", "state", "container_id", "lease_json"}
-                    or event["schema_version"] != "1.0"
+                    or event["schema_version"] != ("1.1" if event["state"] == "CLEANED" else "1.0")
                     or not isinstance(event["owner"], str)
                     or not re.fullmatch(r"[a-f0-9]{32}", event["owner"])
                     or not isinstance(event["container_id"], str)
                     or not re.fullmatch(r"[a-f0-9]{64}", event["container_id"])
-                    or event["state"] not in {"INTENT", "REMOVED"}
+                    or not isinstance(event["state"], str)
+                    or event["state"] not in {"INTENT", "REMOVED", "CLEANED"}
                     or not isinstance(event["lease_json"], str)
                     or len(event["lease_json"].encode()) > 8192
                     or json.dumps(event, sort_keys=True) != raw
@@ -91,7 +92,12 @@ class RemovalJournal:
                 if event["state"] == "INTENT":
                     if prior is not None:
                         raise ValueError("Repair removal intent duplicated")
-                elif prior is None or {**prior, "state": "REMOVED"} != event:
+                elif (
+                    prior is None
+                    or prior["state"] != {"REMOVED": "INTENT", "CLEANED": "REMOVED"}[event["state"]]
+                    or {**prior, "state": event["state"], "schema_version": event["schema_version"]}
+                    != event
+                ):
                     raise ValueError("Repair removal acknowledgement lacks exact intent")
                 owners[event["owner"]] = event
             return integrity
@@ -112,6 +118,17 @@ class RemovalJournal:
         ).fetchone()
         return None if row is None else json.loads(row[0])
 
+    def _intent_count(self) -> int:
+        return self._db.execute(
+            "SELECT COUNT(*) FROM audit_events WHERE event_key LIKE '%:INTENT'"
+        ).fetchone()[0]
+
+    def require_capacity(self) -> None:
+        """Called under root ownership before any new container lease or create RPC."""
+        self._require_valid()
+        if self._intent_count() >= self.capacity:
+            raise ValueError("Repair removal journal capacity exceeded")
+
     def intent(self, job, owner: str, container_id: str, *, image_id: str):
         _, raw = job._lease(owner, image_id)
         if not isinstance(container_id, str) or not re.fullmatch(r"[a-f0-9]{64}", container_id):
@@ -126,10 +143,7 @@ class RemovalJournal:
         with self._db:
             self._db.execute("BEGIN IMMEDIATE")
             self._require_valid()
-            intent_count = self._db.execute(
-                "SELECT COUNT(*) FROM audit_events WHERE event_key LIKE '%:INTENT'"
-            ).fetchone()[0]
-            if intent_count >= self.capacity and self._read(owner, "INTENT") is None:
+            if self._intent_count() >= self.capacity and self._read(owner, "INTENT") is None:
                 raise ValueError("Repair removal journal capacity exceeded")
             self._audit.append(self._key(owner, "INTENT"), event)
 
@@ -144,7 +158,7 @@ class RemovalJournal:
             _, raw = job._lease(owner, image_id)
             if event["container_id"] != container_id or event["lease_json"] != raw.decode():
                 raise ValueError("Repair removal acknowledgement binding failed")
-            if self._require_valid().event_count >= 2000 and self._read(owner, "REMOVED") is None:
+            if self._require_valid().event_count >= 3000 and self._read(owner, "REMOVED") is None:
                 raise ValueError("Repair removal journal capacity exceeded")
             self._audit.append(self._key(owner, "REMOVED"), {**event, "state": "REMOVED"})
 
@@ -154,4 +168,50 @@ class RemovalJournal:
         _, raw = job._lease(owner, image_id)
         if event is None or event["lease_json"] != raw.decode():
             return None
+        if self._read(owner, "CLEANED") is not None:
+            self._require_absent(job, owner, image_id, "Repair terminal cleanup paths reappeared")
         return event["container_id"]
+
+    def acknowledged_lease(self, owner: str) -> bytes:
+        """Return retained lease bytes only after an audit-bound removal acknowledgement."""
+        self._require_valid()
+        event = self._read(owner, "REMOVED")
+        if event is None:
+            raise ValueError("Repair cleanup requires a committed removal acknowledgement")
+        return event["lease_json"].encode()
+
+    @property
+    def unfinished(self) -> bool:
+        self._require_valid()
+        return (
+            self._db.execute(
+                "SELECT 1 FROM audit_events i WHERE i.event_key LIKE '%:INTENT' "
+                "AND NOT EXISTS (SELECT 1 FROM audit_events c "
+                "WHERE c.event_key=replace(i.event_key,':INTENT',':CLEANED')) LIMIT 1"
+            ).fetchone()
+            is not None
+        )
+
+    def cleaned(self, job, owner: str, *, image_id: str) -> None:
+        """Commit terminal cleanup only after exact removal and filesystem absence."""
+        with self._db:
+            self._db.execute("BEGIN IMMEDIATE")
+            if self.confirmed(job, owner, image_id=image_id) is None:
+                raise ValueError("Repair cleanup lacks exact removal acknowledgement")
+            self._require_absent(
+                job, owner, image_id, "Repair cleanup terminal record requires absent job and lease"
+            )
+            event = self._read(owner, "REMOVED")
+            self._audit.append(
+                self._key(owner, "CLEANED"), {**event, "state": "CLEANED", "schema_version": "1.1"}
+            )
+
+    @staticmethod
+    def _require_absent(job, owner, image_id, message):
+        receipt, _ = job._lease(owner, image_id)
+        for path in (job.path, receipt):
+            try:
+                path.lstat()
+            except FileNotFoundError:
+                continue
+            raise ValueError(message)

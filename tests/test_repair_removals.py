@@ -80,3 +80,29 @@ def test_capacity_reserves_acknowledgement_room_for_every_admitted_intent(tmp_pa
                 journal.intent(job, "b" * 32, "d" * 64, image_id=IMAGE)
             journal.removed(job, OWNER, CID)
             assert journal.confirmed(job, OWNER, image_id=IMAGE) == CID
+
+
+def test_terminal_cleanup_refuses_present_paths_and_does_not_regain_deletion_authority(
+    tmp_path, repository
+):
+    evidence = snapshot(tmp_path, repository)
+    with prepared_repair_job(
+        evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+    ) as job:
+        with module().RemovalJournal(job.path.parent, capacity=1) as journal:
+            journal.intent(job, OWNER, CID, image_id=IMAGE)
+            journal.removed(job, OWNER, CID)
+            with pytest.raises(ValueError, match="absent"):
+                journal.cleaned(job, OWNER, image_id=IMAGE)
+            assert journal.unfinished
+    with module().RemovalJournal(job.path.parent, capacity=1) as journal:
+        journal.cleaned(job, OWNER, image_id=IMAGE)
+        journal.cleaned(job, OWNER, image_id=IMAGE)
+        assert journal.event_count == 3
+        assert not journal.unfinished
+        assert journal.confirmed(job, OWNER, image_id=IMAGE) == CID
+        # A later receipt at an already-cleaned identity never restores authority.
+        lease, raw = job._lease(OWNER, IMAGE)
+        lease.write_bytes(raw)
+        with pytest.raises(ValueError, match="terminal"):
+            journal.confirmed(job, OWNER, image_id=IMAGE)

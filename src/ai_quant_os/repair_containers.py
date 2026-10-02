@@ -149,6 +149,8 @@ def prepared_repair_container(policy: DockerConfinement, job: PreparedRepairJob)
     if policy.suite_sha256 != job.suite_sha256:
         raise ValueError("Repair container suite pin mismatch")
     job.verify()
+    with RemovalJournal(job.path.parent) as journal:
+        journal.require_capacity()
     owner = uuid4().hex
     arguments = _create_arguments(policy, job, owner)
     executable = shutil.which("docker")
@@ -193,8 +195,20 @@ def _cleanup_retained_repair_container(policy, job):
     owners = job.pending_containers
     if len(owners) != 1 or job.container_image(owners[0]) != policy.image_id:
         raise ValueError("Retained repair cleanup ownership invalid")
-    job.verify()
-    job.verify_container_lease(owners[0])
+    with RemovalJournal(job.path.parent) as journal:
+        confirmed = journal.confirmed(job, owners[0], image_id=policy.image_id)
+    if confirmed is None:
+        job.verify()
+        job.verify_container_lease(owners[0])
+    else:
+        job.verify_remaining()
+        receipt, raw = job._lease(owners[0], policy.image_id)
+        try:
+            metadata = receipt.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            job._verify_file(receipt, metadata, raw)
     executable = shutil.which("docker")
     owner = owners[0]
     container_id = _remove_owned(policy, executable, "ai-quant-repair-" + owner, owner, job)

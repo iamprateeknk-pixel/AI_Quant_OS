@@ -49,7 +49,7 @@ The read-only `ai-quant-repair sandbox-status` command checks local isolated-run
 
 `ai-quant-repair admit` prepares an owned job, creates and inspects a local pinned container, then removes it without starting it. Unconfirmed cleanup preserves the job and blocks further staging in that job root. See [container ownership handoff](docs/REPAIR_CONTAINER_HANDOFF.md); live confinement and repair execution remain unverified.
 
-`ai-quant-repair cleanup` reconstructs a retained job from its committed snapshot and pinned verifier, validates its ownership receipt and files, and removes a matching container before deleting inputs. A committed exact removal acknowledgement allows retry after interrupted lease release; unknown absence remains unresolved. See [restart cleanup handoff](docs/REPAIR_CLEANUP_HANDOFF.md) and [removal journal handoff](docs/REPAIR_REMOVAL_JOURNAL_HANDOFF.md).
+`ai-quant-repair cleanup` reconstructs a retained job from its committed snapshot and pinned verifier, validates its ownership receipt and files, and removes a matching container before deleting inputs. A committed exact removal acknowledgement also permits retry after lease release or interrupted file deletion; each surviving file is verified before cleanup. Unknown absence remains unresolved. See [restart cleanup handoff](docs/REPAIR_CLEANUP_HANDOFF.md) and [removal journal handoff](docs/REPAIR_REMOVAL_JOURNAL_HANDOFF.md).
 
 ```powershell
 python -m ruff check src tests scripts
