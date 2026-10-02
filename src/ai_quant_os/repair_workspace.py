@@ -11,9 +11,9 @@ from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 from threading import Lock
-from types import MappingProxyType
 
 from ai_quant_os.agent_registry import AgentManifest, AgentRegistry
+from ai_quant_os.agent_sources import AGENT_SOURCE_PATHS
 from ai_quant_os.health_contracts import AGENT_CODES, HealthIncident
 from ai_quant_os.health_store import HealthStore, encode_incident
 from ai_quant_os.repair_snapshots import (
@@ -25,14 +25,7 @@ from ai_quant_os.repair_snapshots import (
 
 
 # Only the two implemented shadow missions have a declared repair source boundary.
-REPAIR_SOURCES = MappingProxyType(
-    {
-        ("A02", "0.2.0"): frozenset(
-            {"src/ai_quant_os/regime_agent.py", "src/ai_quant_os/regime_features.py"}
-        ),
-        ("A07", "0.2.0"): frozenset({"src/ai_quant_os/integrity_agent.py"}),
-    }
-)
+REPAIR_SOURCES = AGENT_SOURCE_PATHS
 GATES = ("INDEPENDENT_VERIFICATION", "SHADOW", "CANARY", "RELEASE")
 DOSSIER = "repair-candidate.json"
 logger = logging.getLogger(__name__)

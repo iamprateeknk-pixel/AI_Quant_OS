@@ -1,0 +1,291 @@
+{
+  "$defs": {
+    "AgentManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "pattern": "^A(0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "maxLength": 32,
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "allowed_tools": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Allowed Tools",
+          "type": "array"
+        },
+        "implementation_status": {
+          "default": "PLANNED",
+          "enum": [
+            "PLANNED",
+            "PARTIAL",
+            "IMPLEMENTED"
+          ],
+          "title": "Implementation Status",
+          "type": "string"
+        },
+        "mission": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Mission",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "output_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Output Type",
+          "type": "string"
+        },
+        "required_inputs": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Required Inputs",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "squad": {
+          "enum": [
+            "Control",
+            "Market",
+            "Data",
+            "Research",
+            "Validation",
+            "Portfolio",
+            "Learning",
+            "Reliability",
+            "Evolution",
+            "Safety"
+          ],
+          "title": "Squad",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "maximum": 30,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "agent_id",
+        "agent_version",
+        "name",
+        "squad",
+        "mission",
+        "output_type",
+        "required_inputs",
+        "allowed_tools"
+      ],
+      "title": "AgentManifest",
+      "type": "object"
+    },
+    "EvaluationObjective": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "MAXIMIZE",
+            "MINIMIZE"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "metric": {
+          "enum": [
+            "CORRECTNESS",
+            "CALIBRATION_ERROR",
+            "EVIDENCE_AGE_MS",
+            "RELIABILITY",
+            "LATENCY_MS",
+            "TOOL_ERROR_RATE",
+            "COST_USD",
+            "REGIME_CORRECTNESS"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "minimum_improvement": {
+          "anyOf": [
+            {
+              "maximum": 1000000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Minimum Improvement"
+        },
+        "protocol_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Protocol Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "direction",
+        "minimum_improvement",
+        "protocol_sha256"
+      ],
+      "title": "EvaluationObjective",
+      "type": "object"
+    },
+    "GenomeSource": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "maxLength": 65536,
+          "title": "Content",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 128,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "content"
+      ],
+      "title": "GenomeSource",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "execution_verified": {
+      "const": false,
+      "default": false,
+      "title": "Execution Verified",
+      "type": "boolean"
+    },
+    "feature_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Feature Refs",
+      "type": "array"
+    },
+    "manifest": {
+      "$ref": "#/$defs/AgentManifest"
+    },
+    "model_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Ref"
+    },
+    "model_route": {
+      "default": "QUANTITATIVE",
+      "enum": [
+        "QUANTITATIVE",
+        "JEV",
+        "OPENAI"
+      ],
+      "title": "Model Route",
+      "type": "string"
+    },
+    "objective": {
+      "$ref": "#/$defs/EvaluationObjective"
+    },
+    "parent_ref": {
+      "anyOf": [
+        {
+          "pattern": "^agent-genome:[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Ref"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    },
+    "prompt_template": {
+      "anyOf": [
+        {
+          "maxLength": 32768,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prompt Template"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/GenomeSource"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "title": "Sources",
+      "type": "array"
+    }
+  },
+  "required": [
+    "manifest",
+    "sources",
+    "objective",
+    "feature_refs"
+  ],
+  "title": "AgentGenome",
+  "type": "object"
+}
