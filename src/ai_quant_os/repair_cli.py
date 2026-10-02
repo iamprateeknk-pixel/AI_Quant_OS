@@ -15,7 +15,11 @@ from ai_quant_os.health_store import HealthStore
 from ai_quant_os.repair_workspace import RepairWorkspace
 from ai_quant_os.repair_sandbox import DockerConfinement
 from ai_quant_os.repair_replay import load_incident_replay
-from ai_quant_os.repair_jobs import prepared_repair_job, load_retained_repair_job
+from ai_quant_os.repair_jobs import (
+    prepared_repair_job,
+    load_retained_repair_job,
+    cleanup_staged_repair_job,
+)
 from ai_quant_os.repair_containers import (
     prepared_repair_container,
     cleanup_retained_repair_container,
@@ -72,6 +76,14 @@ def main(argv: list[str] | None = None) -> int:
     cleanup.add_argument("--suite-sha256", required=True)
     cleanup.add_argument("--suite-file", required=True, type=Path)
     cleanup.add_argument("--graph-store", type=Path)
+    staging = commands.add_parser(
+        "cleanup-staging", help="Verify and remove orphan inputs without unresolved containers"
+    )
+    staging.add_argument("candidate_id")
+    staging.add_argument("--stage", required=True, type=Path)
+    staging.add_argument("--suite-sha256", required=True)
+    staging.add_argument("--suite-file", required=True, type=Path)
+    staging.add_argument("--graph-store", type=Path)
     sandbox = commands.add_parser(
         "sandbox-status", help="Read local sandbox prerequisites; execute nothing"
     )
@@ -111,15 +123,29 @@ def main(argv: list[str] | None = None) -> int:
                 )
         root = args.root if args.root is not None else args.repository / "data-local" / "repairs"
         workspace = RepairWorkspace(args.repository, root, health, registry)
-        if args.command in {"admit", "cleanup"}:
-            policy = DockerConfinement(args.image_id, args.suite_sha256)
+        if args.command in {"admit", "cleanup", "cleanup-staging"}:
+            policy = (
+                None
+                if args.command == "cleanup-staging"
+                else DockerConfinement(args.image_id, args.suite_sha256)
+            )
             source = workspace.snapshot(args.candidate_id)
             with args.suite_file.open("rb") as suite:
                 program = suite.read(65537)
             replay = (
                 None if args.graph_store is None else load_incident_replay(source, args.graph_store)
             )
-            if args.command == "cleanup":
+            if args.command == "cleanup-staging":
+                receipt = cleanup_staged_repair_job(
+                    source,
+                    program,
+                    suite_sha256=args.suite_sha256,
+                    root=root / "jobs",
+                    stage=args.stage,
+                    replay=replay,
+                )
+                receipt["candidate_id"] = source.candidate_id
+            elif args.command == "cleanup":
                 job = load_retained_repair_job(
                     source,
                     program,

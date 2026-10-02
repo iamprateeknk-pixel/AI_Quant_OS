@@ -126,10 +126,51 @@ class PreparedRepairJob:
     def promotion_allowed(self) -> bool:
         return False
 
+    def _stage(self) -> tuple[Path, bytes]:
+        return self.path.parent / (self.path.name + ".stage.json"), canonical_json(
+            {
+                "schema_version": "1.0",
+                "job_path": str(self.path),
+                "snapshot_sha256": self.snapshot_sha256,
+                "suite_sha256": self.suite_sha256,
+                "request_sha256": self.request_sha256,
+                "root_device": self._root_identity[0],
+                "root_inode": self._root_identity[1],
+            }
+        ).encode()
+
+    def _verify_stage(self) -> None:
+        receipt, raw = self._stage()
+        metadata = receipt.lstat()
+        if _reparse(metadata):
+            raise ValueError("Repair staging receipt cannot be a reparse point")
+        self._verify_file(receipt, metadata, raw)
+
+    def _release_stage(self) -> None:
+        receipt, _ = self._stage()
+        try:
+            receipt.lstat()
+        except FileNotFoundError:
+            return  # Historical jobs predate staging receipts.
+        self._verify_stage()
+        try:
+            self.path.lstat()
+        except FileNotFoundError:
+            receipt.unlink()
+            return
+        raise ValueError("Repair staging release requires absent inputs")
+
     def cleanup(self) -> None:
         """Delete only this owned input tree after all container leases are released."""
         if self.pending_containers:
             raise RuntimeError(f"Repair job retained pending container cleanup: {self.path}")
+        stage, _ = self._stage()
+        try:
+            stage.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            self._verify_stage()
         if self._released:
             with RemovalJournal(self.path.parent) as journal:
                 for owner, image_id in self._released.items():
@@ -142,10 +183,12 @@ class PreparedRepairJob:
                     pass
                 else:
                     _cleanup_job(self.path, self.path.parent, self._root_identity)
+                self._release_stage()
                 for owner, image_id in self._released.items():
                     journal.cleaned(self, owner, image_id=image_id)
             return
         _cleanup_job(self.path, self.path.parent, self._root_identity)
+        self._release_stage()
 
     def verify(self) -> None:
         """Require the exact owned input tree before a future read-only sandbox mount."""
@@ -328,20 +371,25 @@ def _staged_repair_job(snapshot, *, suite_sha256, parent, request, expected):
         # Non-root sandbox users must be able to read the eventual /job mount.
         # The enforced read-only bind, not host file mode, provides target write isolation.
         path.chmod(0o755)
-        for relative, content in expected:
-            destination = path / relative
-            destination.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
-            with destination.open("xb") as output:
-                output.write(content)
-        metadata = path.lstat()
         job = PreparedRepairJob(
             path,
             snapshot.snapshot_sha256,
             suite_sha256,
             sha256(request).hexdigest(),
-            (metadata.st_dev, metadata.st_ino),
+            (root_identity.st_dev, root_identity.st_ino),
             expected,
         )
+        stage, stage_raw = job._stage()
+        with stage.open("xb") as output:
+            output.write(stage_raw)
+            output.flush()
+            os.fsync(output.fileno())
+        for relative, content in expected:
+            destination = path / relative
+            destination.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
+            with destination.open("xb") as output:
+                output.write(content)
+        job._verify_stage()
         job.verify()
         yield job
     finally:
@@ -349,6 +397,75 @@ def _staged_repair_job(snapshot, *, suite_sha256, parent, request, expected):
             job.cleanup()
         else:
             _cleanup_job(path, parent, (root_identity.st_dev, root_identity.st_ino))
+
+
+def cleanup_staged_repair_job(
+    snapshot: RepairSourceSnapshot,
+    program: bytes,
+    *,
+    suite_sha256: str,
+    root: Path,
+    stage: Path,
+    replay: RepairIncidentReplay | None = None,
+) -> dict:
+    """Clean source-bound orphan staging only when no container outcome is unresolved."""
+    request, expected = _job_inputs(snapshot, program, suite_sha256=suite_sha256, replay=replay)
+    parent, receipt = Path(root).resolve(), Path(stage).absolute()
+    match = re.fullmatch(r"(repair-job-[a-z0-9_]{1,64})\.stage\.json", receipt.name)
+    if receipt.parent.resolve() != parent or match is None:
+        raise ValueError("Repair staging receipt boundary invalid")
+    with repair_root_lock(parent):
+        if next(parent.glob("repair-job-*.*.lease.json"), None) is not None:
+            raise ValueError("Repair staging cleanup has unresolved container leases")
+        try:
+            (parent / "repair-removals.sqlite3").lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            with RemovalJournal(parent) as journal:
+                if journal.unfinished:
+                    raise ValueError("Repair staging cleanup has unfinished container outcomes")
+        metadata = receipt.lstat()
+        if (
+            _reparse(metadata)
+            or not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or not 1 <= metadata.st_size <= 8192
+        ):
+            raise ValueError("Repair staging receipt identity invalid")
+        with receipt.open("rb") as source:
+            raw = source.read(8193)
+        PreparedRepairJob._verify_file(receipt, metadata, raw)
+        value = json.loads(raw)
+        if not isinstance(value, dict) or any(
+            type(value.get(key)) is not int or value[key] < 0
+            for key in ("root_device", "root_inode")
+        ):
+            raise ValueError("Repair staging root identity invalid")
+        job = PreparedRepairJob(
+            parent / match[1],
+            snapshot.snapshot_sha256,
+            suite_sha256,
+            sha256(request).hexdigest(),
+            (value["root_device"], value["root_inode"]),
+            expected,
+        )
+        job._verify_stage()
+        job.verify_remaining()
+        try:
+            job.path.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            _cleanup_job(job.path, parent, job._root_identity)
+        job._release_stage()
+        return {
+            "schema_version": "1.0",
+            "snapshot_sha256": job.snapshot_sha256,
+            "state": "STAGING_REMOVED",
+            "execution_verified": False,
+            "promotion_allowed": False,
+        }
 
 
 def load_retained_repair_job(
