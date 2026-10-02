@@ -79,6 +79,12 @@ target source. It does not execute this Dockerfile. The ignored binary and track
 or behavioral evidence. See [the archive handoff](../../docs/REPAIR_IMAGE_ARCHIVE_HANDOFF.md)
 for the assembly command, exact hashes, OCI validation and limits. Build-tool wheel
 hashes are in `build-tools.lock`; the tool is included in the development extra.
+Generated paths now sort by POSIX names to avoid Windows case-folded ordering;
+the current recorded archive is in `oci-linux-cp311-03`, with a matching fresh `04`
+copy. Original `01`/`02` bytes remain retained. The readonly parent check requires
+explicit independent pins and validates blob/base/rootfs/runtime metadata while
+keeping all execution authority false. See
+[the archive check handoff](../../docs/REPAIR_IMAGE_VERIFICATION_HANDOFF.md).
 
 Dockerfile-based builds, actual Linux pip installation/import/regression runs,
 dependency/security/license review, native enforcement probes and an admitted

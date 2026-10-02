@@ -2,16 +2,23 @@
 
 ## Actual artifact
 
-Two independent Windows-host assemblies produced identical 112,629,760-byte OCI
+Two independent Windows-host assemblies with canonical POSIX member ordering produced identical 112,629,760-byte OCI
 archives. The first is retained locally at
-`data-local/repair-worker/oci-linux-cp311-01/image.oci.tar`; a second is in
-`oci-linux-cp311-02`. `infra/repair-worker/archive_manifest.json` retains the input
+`data-local/repair-worker/oci-linux-cp311-03/image.oci.tar`; a second is in
+`oci-linux-cp311-04`. `infra/repair-worker/archive_manifest.json` retains the input
 pins and output digests without embedding the binary.
 
-- Archive SHA-256: `035f1f8e53d728ff705291e859ce8b106db34c812a8c41213ade495f009204ce`
-- Manifest: `sha256:6ee588187410da41ca8908c2a852c72f5d9c1ee5fabcdad41f0c0ee4caec785b`
-- Config: `sha256:5bff8eafad1f5bf04d50f475d82d838eebb0bbb069506f95be1abf1f8a5b31e1`
-- Dependency layer: `sha256:90bfecdfe8313406122f93427e13257ca30eb164d4231046be8305cd018e491f`
+- Archive SHA-256: `1bf8ec03c42a6a645cb33e347f04fbe5363d8cf0b0fb945bb3ed51ac230ecffe`
+- Manifest: `sha256:5c86773e1c259ac6b89d6ff2bf8ceca386de0013b66c4e3b0cd1f1e91658e5b4`
+- Config: `sha256:c35bc16127ed4d5fa942414c9d3d13796709348baba4a8b9873aa7142e5776f1`
+- Dependency layer: `sha256:1e26d74e8f35e9d89b0679bc719205ad25a9fd9b142c6333aaca01f0e212673f`
+
+The earlier `oci-linux-cp311-01`/`02` artifacts remain retained with their original
+hashes and ADR 0049 source. A real fixture reproduced Windows path sorting placing
+lowercase names before uppercase names; the builder now sorts relative POSIX
+strings explicitly. This changes dependency-layer/config/manifest/archive hashes,
+not package contents. No admitted image or retained container pin was migrated.
+Actual cross-host/OS reproduction remains unverified.
 
 The four pinned official Python base blobs total 48,247,712 compressed bytes and
 were fetched into `data-local/repair-worker/base-blobs`. Their declared byte sizes,
@@ -48,7 +55,7 @@ an ignored image staging root and never added to host import paths.
   --recipes infra/repair-worker `
   --wheels data-local/repair-worker/verified-offline-linux-cp311 `
   --base-blobs data-local/repair-worker/base-blobs `
-  --output data-local/repair-worker/oci-linux-cp311-03
+  --output data-local/repair-worker/oci-linux-cp311-05
 ```
 
 The output must be new. The assembler first prepares the same verified allowlisted
@@ -83,6 +90,11 @@ after archive publication. Publication is not a power-loss transaction or signed
 attestation. The cached roots, recipe, installer and host are trusted operator
 inputs; hostile host administrators and directory/output races are outside this
 build boundary. This data-copy tool is not an untrusted-source executor.
+
+Use the read-only parent archive checker before a future handoff; it requires
+independently supplied archive/manifest/config pins and rechecks the server base
+profile. It does not execute a behavioral suite or approve an image. See
+`REPAIR_IMAGE_VERIFICATION_HANDOFF.md` and ADR 0050.
 
 Docker remains `ENGINE_UNAVAILABLE`, and service/socket remediation is untouched.
 Linux runtime/import/regression evidence, Docker load/admission, actual UID and

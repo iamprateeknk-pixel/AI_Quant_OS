@@ -198,7 +198,9 @@ def _wheel_layer(wheels: list[Path], staging: Path) -> bytes:
     output = io.BytesIO()
     total = 0
     with tarfile.open(fileobj=output, mode="w", format=tarfile.PAX_FORMAT) as archive:
-        for path in sorted(staging.rglob("*")):
+        for path in sorted(
+            staging.rglob("*"), key=lambda item: item.relative_to(staging).as_posix()
+        ):
             metadata = path.lstat()
             name = path.relative_to(staging).as_posix()
             info = tarfile.TarInfo(name)

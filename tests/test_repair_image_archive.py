@@ -157,6 +157,8 @@ def test_assembly_preserves_base_blobs_and_builds_linux_wheel_layer_without_exec
     assert "sha256:" + sha256(layer).hexdigest() == config["rootfs"]["diff_ids"][-1]
     with tarfile.open(fileobj=io.BytesIO(layer)) as archive:
         members = archive.getmembers()
+        names = [item.name for item in members]
+        assert names == sorted(names), "Layer order must use POSIX names on every build host"
         assert all(item.uid == 0 and item.gid == 0 and item.mtime == 0 for item in members)
         module = archive.extractfile(
             "usr/local/lib/python3.11/site-packages/worker_fixture/__init__.py"
