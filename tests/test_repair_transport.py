@@ -132,3 +132,69 @@ def test_docker_reader_uses_fixed_local_endpoint_and_bounded_transport(monkeypat
     assert "AWS_SECRET_ACCESS_KEY" not in options["environment"]
     assert options["output_limit"] == 65536
     assert options["timeout"] == 10
+
+
+def test_binary_input_arrives_exactly_while_both_output_streams_are_drained():
+    from hashlib import sha256
+
+    payload = bytes(range(256)) * 16384
+    script = (
+        "import sys,hashlib;sys.stdout.buffer.write(b'a'*32768);sys.stdout.flush();"
+        "sys.stderr.buffer.write(b'b'*32768);sys.stderr.flush();"
+        "sys.stdout.buffer.write(hashlib.sha256(sys.stdin.buffer.read()).hexdigest().encode()+b'\\n')"
+    )
+    result = runner()(
+        [sys.executable, "-I", "-c", script],
+        environment=environment(),
+        timeout=5,
+        output_limit=65601,
+        input_bytes=payload,
+    )
+    assert result.returncode == 0
+    assert result.stdout == b"a" * 32768 + sha256(payload).hexdigest().encode() + b"\n"
+    assert result.stderr == b"b" * 32768
+
+
+def test_blocked_input_writer_obeys_deadline_and_reaps_owned_process(tmp_path):
+    marker = tmp_path / "input-orphan"
+    script = "import time,pathlib;time.sleep(1);pathlib.Path(" + repr(str(marker)) + ").touch()"
+    with pytest.raises(TimeoutError, match="deadline"):
+        runner()(
+            [sys.executable, "-I", "-c", script],
+            environment=environment(),
+            timeout=0.15,
+            output_limit=64,
+            input_bytes=b"x" * 4194304,
+        )
+    time.sleep(1.1)
+    assert not marker.exists()
+
+
+def test_incomplete_input_delivery_is_not_a_successful_command():
+    with pytest.raises(ValueError, match="input"):
+        runner()(
+            [sys.executable, "-I", "-c", "import sys;sys.stdin.close()"],
+            environment=environment(),
+            timeout=5,
+            output_limit=64,
+            input_bytes=b"x" * 4194304,
+        )
+
+
+@pytest.mark.parametrize("payload", ["text", bytearray(b"mutable"), True])
+def test_invalid_input_does_not_launch_program(tmp_path, payload):
+    marker = tmp_path / "invalid-input"
+    with pytest.raises(ValueError, match="input"):
+        runner()(
+            [
+                sys.executable,
+                "-I",
+                "-c",
+                "from pathlib import Path;Path(" + repr(str(marker)) + ").touch()",
+            ],
+            environment=environment(),
+            timeout=5,
+            output_limit=64,
+            input_bytes=payload,
+        )
+    assert not marker.exists()

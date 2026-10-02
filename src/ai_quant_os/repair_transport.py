@@ -20,8 +20,9 @@ def bounded_command(
     environment: dict[str, str],
     timeout: float,
     output_limit: int,
+    input_bytes: bytes | None = None,
 ) -> CommandResult:
-    """Drain both binary pipes with a shared cap; reap the owned command on every exit.
+    """Deliver bounded immutable input, drain output and reap the owned command.
 
     The caller owns executable/arguments/environment. Container lifetime is separate:
     killing a Docker CLI does not terminate its container. No process-tree isolation
@@ -35,10 +36,12 @@ def bounded_command(
         or not 1 <= output_limit <= 1048576
     ):
         raise ValueError("Invalid command transport bounds")
+    if input_bytes is not None and (type(input_bytes) is not bytes or len(input_bytes) > 536870912):
+        raise ValueError("Invalid command input bytes")
     deadline = time.monotonic() + timeout
     process = subprocess.Popen(
         arguments,
-        stdin=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL if input_bytes is None else subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=environment,
@@ -46,7 +49,7 @@ def bounded_command(
         close_fds=True,
         bufsize=0,
     )
-    lock, exceeded, read_failed = Lock(), Event(), Event()
+    lock, exceeded, read_failed, input_failed = Lock(), Event(), Event(), Event()
     buffers = [bytearray(), bytearray()]
     done = [Event(), Event()]
     total = 0
@@ -75,17 +78,40 @@ def bounded_command(
         Thread(target=drain, args=(pipe, index), daemon=True)
         for index, pipe in enumerate((process.stdout, process.stderr))
     ]
+    pipes = [process.stdout, process.stderr]
+    if input_bytes is not None:
+        delivered = Event()
+        done.append(delivered)
+        pipes.append(process.stdin)
+
+        def feed():
+            try:
+                content, position = memoryview(input_bytes), 0
+                while position < len(content):
+                    written = process.stdin.write(content[position : position + 4096])
+                    if not written:
+                        raise OSError("Command input pipe made no progress")
+                    position += written
+            except OSError:
+                input_failed.set()
+            finally:
+                process.stdin.close()
+                delivered.set()
+
+        threads.append(Thread(target=feed, daemon=True))
     try:
         for thread in threads:
             thread.start()
         while True:
-            # Once both readers finish their flags are final. Check those flags
+            # Once all pipe threads finish their flags are final. Check those flags
             # after observing completion so a last-chunk overflow cannot pass.
             settled = process.poll() is not None and all(event.is_set() for event in done)
             if exceeded.is_set():
                 raise ValueError("Command output limit exceeded")
             if read_failed.is_set():
                 raise ValueError("Command output read failed")
+            if input_failed.is_set():
+                raise ValueError("Command input delivery failed")
             if time.monotonic() >= deadline:
                 raise TimeoutError("Command deadline exceeded")
             if settled:
@@ -98,7 +124,7 @@ def bounded_command(
         for thread in threads:
             if thread.ident is not None:
                 thread.join(timeout=2)
-        for pipe, thread in zip((process.stdout, process.stderr), threads, strict=True):
+        for pipe, thread in zip(pipes, threads, strict=True):
             if thread.ident is None:
                 pipe.close()
         if any(thread.is_alive() for thread in threads):

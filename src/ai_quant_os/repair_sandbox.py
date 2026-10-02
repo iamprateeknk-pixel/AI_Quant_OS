@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from ai_quant_os.repair_transport import bounded_command
+from ai_quant_os.repair_transport import CommandResult, bounded_command
 
 
 MEMORY_BYTES = 536870912
@@ -29,6 +29,29 @@ VERIFIER_COMMAND = (
     "/job/verifier.py",
     "/job/request.json",
 )
+
+
+def local_docker_command(
+    executable: str, *arguments: str, input_bytes: bytes | None = None, timeout: float = 10
+) -> CommandResult:
+    """Use the fixed local engine with bounded transport and a minimal environment."""
+    endpoint = (
+        "npipe:////./pipe/dockerDesktopLinuxEngine"
+        if os.name == "nt"
+        else "unix:///var/run/docker.sock"
+    )
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if key.upper() in {"PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP"}
+    }
+    return bounded_command(
+        [executable, "--host", endpoint, *arguments],
+        environment=environment,
+        timeout=timeout,
+        output_limit=65536,
+        input_bytes=input_bytes,
+    )
 
 
 @dataclass(frozen=True)
@@ -163,23 +186,7 @@ class DockerConfinement:
             raise ValueError("Repair container confinement metadata invalid") from error
 
     def _command(self, executable: str, *arguments: str):
-        # Fix a local socket endpoint; never inherit a remote DOCKER_HOST/context.
-        endpoint = (
-            "npipe:////./pipe/dockerDesktopLinuxEngine"
-            if os.name == "nt"
-            else "unix:///var/run/docker.sock"
-        )
-        environment = {
-            key: value
-            for key, value in os.environ.items()
-            if key.upper() in {"PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP"}
-        }
-        return bounded_command(
-            [executable, "--host", endpoint, *arguments],
-            environment=environment,
-            timeout=10,
-            output_limit=65536,
-        )
+        return local_docker_command(executable, *arguments)
 
     def _read(self, executable: str, *arguments: str) -> object:
         result = self._command(executable, *arguments)

@@ -169,11 +169,26 @@ def _runtime(config: dict, base_config: dict) -> None:
 def verify_repair_image_archive(
     archive: Path, *, recipes: Path, archive_sha256: str, manifest_digest: str, config_digest: str
 ) -> dict:
+    """Read a bounded ordinary archive and verify explicit independent pins."""
+    return verify_repair_image_archive_bytes(
+        read_repair_image_input(archive, 536870912),
+        recipes=recipes,
+        archive_sha256=archive_sha256,
+        manifest_digest=manifest_digest,
+        config_digest=config_digest,
+    )
+
+
+def verify_repair_image_archive_bytes(
+    raw: bytes, *, recipes: Path, archive_sha256: str, manifest_digest: str, config_digest: str
+) -> dict:
     """Verify explicit operator pins and structure without creating files or running code.
 
     Pins/base profile must come from trusted independent review, never the archive.
     Hash agreement is transport/inventory evidence and grants no execution authority.
     """
+    if type(raw) is not bytes or not 0 < len(raw) <= 536870912:
+        raise ValueError("Image archive requires bounded immutable bytes")
     for value, pattern in (
         (archive_sha256, r"[a-f0-9]{64}"),
         (manifest_digest, r"sha256:[a-f0-9]{64}"),
@@ -181,7 +196,6 @@ def verify_repair_image_archive(
     ):
         if not isinstance(value, str) or not re.fullmatch(pattern, value):
             raise ValueError("Independent archive pins are required")
-    raw = read_repair_image_input(archive, 536870912)
     if sha256(raw).hexdigest() != archive_sha256:
         raise ValueError("Archive hash differs from independent pin")
     members = _members(raw)

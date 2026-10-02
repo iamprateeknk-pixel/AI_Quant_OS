@@ -86,6 +86,13 @@ explicit independent pins and validates blob/base/rootfs/runtime metadata while
 keeping all execution authority false. See
 [the archive check handoff](../../docs/REPAIR_IMAGE_VERIFICATION_HANDOFF.md).
 
+An explicit parent import command now verifies those immutable bytes, requires
+the local containerd store/API 1.49, loads once through bounded stdin and inspects
+the exact manifest ID with platform selection. It retains all false authority
+flags and never starts a worker or migrates approved pins. Real import is pending
+because this engine is unavailable. See
+[the import handoff](../../docs/REPAIR_IMAGE_LOADING_HANDOFF.md).
+
 Dockerfile-based builds, actual Linux pip installation/import/regression runs,
 dependency/security/license review, native enforcement probes and an admitted
 immutable worker image ID remain pending. The local Docker probe reports

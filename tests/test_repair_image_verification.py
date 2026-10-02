@@ -71,6 +71,21 @@ def test_read_only_archive_check_verifies_pins_and_keeps_execution_unapproved(as
     assert "worker_fixture" not in sys.modules
 
 
+def test_immutable_byte_verifier_agrees_with_file_check(assembled):
+    module = importlib.import_module("ai_quant_os.repair_image_verification")
+    assert hasattr(module, "verify_repair_image_archive_bytes"), (
+        "Missing immutable byte verification"
+    )
+    archive, recipes, pins = assembled
+    assert module.verify_repair_image_archive_bytes(
+        archive.read_bytes(),
+        recipes=recipes,
+        archive_sha256=pins["archive_sha256"],
+        manifest_digest=pins["manifest_digest"],
+        config_digest=pins["config_digest"],
+    ) == check(assembled)
+
+
 @pytest.mark.parametrize("pin", ["archive_sha256", "manifest_digest", "config_digest"])
 def test_independent_pin_mismatch_is_rejected(assembled, pin):
     pins = {**assembled[2], pin: ("" if pin == "archive_sha256" else "sha256:") + "0" * 64}
