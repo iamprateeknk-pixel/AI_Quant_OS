@@ -45,6 +45,8 @@ The read-only `ai-quant-repair sandbox-status` command checks local isolated-run
 
 `ai-quant-repair snapshot` inspects complete committed package hashes for a repair candidate. Trusted-parent job preparation retains those exact bytes and a pinned verifier program without executing either. See [source/job handoff](docs/REPAIR_SOURCE_JOB_HANDOFF.md) for pending execution and incident-replay requirements.
 
+`ai-quant-repair replay <candidate-id> --graph-store <archive>` verifies the original failed invocation's receipt and captured inline inputs through read-only archival access. It reports hashes and retains historical expiry; it executes no repair. See [archived input handoff](docs/REPAIR_REPLAY_HANDOFF.md).
+
 ```powershell
 python -m ruff check src tests scripts
 python -m ruff format --check src tests scripts

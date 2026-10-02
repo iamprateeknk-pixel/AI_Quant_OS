@@ -75,10 +75,14 @@ to candidate writes. The future controller must enforce the read-only mount and
 resource/network/credential boundary before source execution. Existing local
 Docker startup remains unavailable; rejected socket cleanup was not retried.
 
-The job currently includes the archived **health incident**, not the referenced full
+The original schema 1.0 job includes the archived **health incident**, not the referenced full
 LangGraph context checkpoint and datasets needed to replay an actual failed
 invocation. Those verified context/source closures must be added before claiming
 incident replay. Synthetic tests cannot substitute for that missing evidence.
+
+The subsequent archived-input increment adds an optional schema 1.1 job with the
+verified full graph record and captured inline context. See `REPAIR_REPLAY_HANDOFF.md`
+for its binding, historical expiry and remaining execution/source coverage limits.
 
 No existing health/candidate schema is migrated. Snapshot identity, CLI summary
 and job request use schema 1.0. There is no persistent job journal to migrate and

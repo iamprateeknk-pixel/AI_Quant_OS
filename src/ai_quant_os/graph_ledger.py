@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from hashlib import sha256
 from pathlib import Path
 from threading import Lock
@@ -93,6 +94,24 @@ class GraphRecord(BaseModel):
 
 
 class GraphLedger:
+    @classmethod
+    @contextmanager
+    def archive(cls, path: Path):
+        """Read an existing archive with SQLite-enforced read-only access; no migration."""
+        path = Path(path).resolve()
+        if not path.is_file():
+            raise ValueError("An existing graph archive is required")
+        ledger = cls.__new__(cls)
+        ledger._db = sqlite3.connect(
+            path.as_uri() + "?mode=ro", uri=True, check_same_thread=False, timeout=5
+        )
+        ledger._lock = Lock()
+        ledger._audit = AuditChain(ledger._db)
+        try:
+            yield ledger
+        finally:
+            ledger.close()
+
     def __init__(self, path: Path) -> None:
         self._db = sqlite3.connect(str(path), check_same_thread=False, timeout=5)
         self._lock = Lock()

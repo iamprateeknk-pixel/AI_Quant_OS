@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Iterator
 
 from ai_quant_os.repair_snapshots import RepairSourceSnapshot, canonical_json
+from ai_quant_os.repair_replay import RepairIncidentReplay
 
 
 def _reparse(metadata) -> bool:
@@ -98,7 +99,12 @@ class PreparedRepairJob:
 
 @contextmanager
 def prepared_repair_job(
-    snapshot: RepairSourceSnapshot, program: bytes, *, suite_sha256: str, root: Path
+    snapshot: RepairSourceSnapshot,
+    program: bytes,
+    *,
+    suite_sha256: str,
+    root: Path,
+    replay: RepairIncidentReplay | None = None,
 ) -> Iterator[PreparedRepairJob]:
     """Copy already-verified inputs; never import, compile or execute the suite/source."""
     if type(snapshot) is not RepairSourceSnapshot:
@@ -111,21 +117,32 @@ def prepared_repair_job(
         or sha256(program).hexdigest() != suite_sha256
     ):
         raise ValueError("Repair job requires the exact bounded owned suite")
-    request = canonical_json(
-        {
-            "schema_version": "1.0",
-            "candidate_id": snapshot.candidate_id,
-            "candidate_commit": snapshot.candidate_commit,
-            "rollback_commit": snapshot.rollback_commit,
-            "snapshot_sha256": snapshot.snapshot_sha256,
-            "suite_sha256": suite_sha256,
-            "manifest": snapshot.proposed_manifest,
-            "incident": snapshot.incident,
-            "inventory": snapshot.inventory,
-            "scope": "SANDBOX",
-            "promotion_allowed": False,
-        }
-    ).encode()
+    if replay is not None and (
+        type(replay) is not RepairIncidentReplay
+        or replay.snapshot_sha256 != snapshot.snapshot_sha256
+    ):
+        raise ValueError("Repair job replay must bind the exact source snapshot")
+    payload = {
+        "schema_version": "1.0",
+        "candidate_id": snapshot.candidate_id,
+        "candidate_commit": snapshot.candidate_commit,
+        "rollback_commit": snapshot.rollback_commit,
+        "snapshot_sha256": snapshot.snapshot_sha256,
+        "suite_sha256": suite_sha256,
+        "manifest": snapshot.proposed_manifest,
+        "incident": snapshot.incident,
+        "inventory": snapshot.inventory,
+        "scope": "SANDBOX",
+        "promotion_allowed": False,
+    }
+    if replay is not None:
+        payload.update(
+            schema_version="1.1",
+            replay_sha256=replay.replay_sha256,
+            record_sha256=replay.record_sha256,
+            replay_kind=replay.kind,
+        )
+    request = canonical_json(payload).encode()
     if len(request) > 65536:
         raise ValueError("Serialized repair job request exceeds bound")
     parent = Path(root).resolve()
@@ -136,6 +153,11 @@ def prepared_repair_job(
                 *((source.path, source.content) for source in snapshot.files),
                 ("verifier.py", program),
                 ("request.json", request),
+                *(
+                    []
+                    if replay is None
+                    else [("incident-record.json", replay.record_json.encode())]
+                ),
             ]
         )
     )

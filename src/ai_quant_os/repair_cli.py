@@ -13,6 +13,7 @@ from ai_quant_os.agent_registry import load_agent_catalog
 from ai_quant_os.health_store import HealthStore
 from ai_quant_os.repair_workspace import RepairWorkspace
 from ai_quant_os.repair_sandbox import DockerConfinement
+from ai_quant_os.repair_replay import load_incident_replay
 
 
 class RepairPlan(BaseModel):
@@ -43,6 +44,11 @@ def main(argv: list[str] | None = None) -> int:
         "snapshot", help="Inspect complete committed source inventory; execute nothing"
     )
     snapshot.add_argument("candidate_id")
+    replay = commands.add_parser(
+        "replay", help="Inspect verified archival incident inputs; execute nothing"
+    )
+    replay.add_argument("candidate_id")
+    replay.add_argument("--graph-store", required=True, type=Path)
     sandbox = commands.add_parser(
         "sandbox-status", help="Read local sandbox prerequisites; execute nothing"
     )
@@ -82,7 +88,23 @@ def main(argv: list[str] | None = None) -> int:
                 )
         root = args.root if args.root is not None else args.repository / "data-local" / "repairs"
         workspace = RepairWorkspace(args.repository, root, health, registry)
-        if args.command == "snapshot":
+        if args.command == "replay":
+            source = workspace.snapshot(args.candidate_id)
+            replay = load_incident_replay(source, args.graph_store)
+            original = replay.record.receipt
+            receipt = {
+                "schema_version": "1.0",
+                "candidate_id": source.candidate_id,
+                "snapshot_sha256": source.snapshot_sha256,
+                "replay_sha256": replay.replay_sha256,
+                "record_sha256": replay.record_sha256,
+                "kind": replay.kind,
+                "original_run_id": original.run_id,
+                "original_agent_version": original.agent_version,
+                "state": "ARCHIVED_INPUTS_ONLY",
+                "promotion_allowed": False,
+            }
+        elif args.command == "snapshot":
             snapshot = workspace.snapshot(args.candidate_id)
             receipt = {
                 "schema_version": "1.0",
