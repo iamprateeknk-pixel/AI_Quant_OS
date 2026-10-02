@@ -1,0 +1,24 @@
+{
+  "archive_bytes": 112629760,
+  "archive_sha256": "035f1f8e53d728ff705291e859ce8b106db34c812a8c41213ade495f009204ce",
+  "base_reference": "docker.io/library/python@sha256:31feac62e3aa66d2cdddb4e1f80f839d8f14ad02b98b77e7eee90df6dc65f0c5",
+  "config_digest": "sha256:5bff8eafad1f5bf04d50f475d82d838eebb0bbb069506f95be1abf1f8a5b31e1",
+  "execution_verified": false,
+  "image_verified": false,
+  "inputs": {
+    ".dockerignore": "40123a996f29e98bb4888a809213eafb93d282828c8fd92cfe8e4f1a43ecce6c",
+    "Dockerfile": "49c9369ea2eb4df707364c38a84ab47b2495d7850d02aa75dae0fda6d839f381",
+    "base_config.json": "5883930d537197d2148ae3b6cdf01f9553435fd209c8d8b5486b6d6a099a293f",
+    "base_image.json": "ff573cba1440c5efb4da15bcebde35674097d389b8ac622f40e18e33404e71a3",
+    "base_index.json": "0c2f9c8d0d9dcd10781f9ac49a4d101eacbe73108ff14490a6b1139c985ffcb9",
+    "base_manifest.json": "31feac62e3aa66d2cdddb4e1f80f839d8f14ad02b98b77e7eee90df6dc65f0c5",
+    "requirements.lock": "a4851e16e40243c32ad28ef5fefab94d058ef7fb9d67854724caaa5dc331908f",
+    "wheel_manifest.json": "6dedca3278a955a365abefb8236ba8796172af170b57714c1d16a0bed7f45359"
+  },
+  "manifest_digest": "sha256:6ee588187410da41ca8908c2a852c72f5d9c1ee5fabcdad41f0c0ee4caec785b",
+  "promotion_allowed": false,
+  "schema_version": "1.0",
+  "state": "OCI_ARCHIVE_ONLY",
+  "wheel_count": 51,
+  "wheel_layer_digest": "sha256:90bfecdfe8313406122f93427e13257ca30eb164d4231046be8305cd018e491f"
+}

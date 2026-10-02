@@ -22,6 +22,8 @@ The index selects exactly one Linux/amd64 manifest, which binds the config with
 `PYTHON_VERSION=3.11.17`. These are published metadata hashes, not downloaded layer
 verification, a runnable worker image ID, security acceptance or signed provenance.
 The historical CPython 3.11.9 base investigated during preparation was not selected.
+Base blobs and a static OCI archive have since been assembled and inspected; see
+`REPAIR_IMAGE_ARCHIVE_HANDOFF.md` for current artifact evidence and remaining gates.
 Digest pinning follows [Docker's guidance](https://docs.docker.com/build/building/best-practices/#pin-base-image-versions);
 the Python base recipe is maintained by [Docker Official Images](https://github.com/docker-library/python/blob/master/3.11/slim-bookworm/Dockerfile).
 
@@ -67,9 +69,10 @@ input wheels or project/verifier source. The pinned base's existing toolchain
 remains inherited. Network may be needed to retrieve the base; offline installation
 does not mean the entire build has already been performed disconnected.
 
-No build/load/push/container start occurred. Docker remains `ENGINE_UNAVAILABLE`;
-service/socket repair is untouched. Before execution, remaining gates include
-verified layer retrieval and image build, package/security/license review,
+The Dockerfile has not been executed; no load/push/container start occurred. Static
+assembly has since produced a structurally verified OCI archive without a daemon;
+Docker remains `ENGINE_UNAVAILABLE`, and service/socket repair is untouched.
+Before execution, remaining gates include runtime image admission, package/security/license review,
 actual Linux imports/regressions, immutable worker image ID admission, actual
 UID 65534 readability and kernel isolation/resource/deadline probes, reviewed
 source-bound verifier/runner, independent baseline/behavior certificates and

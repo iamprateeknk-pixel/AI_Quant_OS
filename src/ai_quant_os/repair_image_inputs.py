@@ -31,13 +31,14 @@ def _directory(path: Path) -> Path:
     return path.resolve(strict=True)
 
 
-def _read_file(path: Path, limit: int) -> bytes:
+def read_repair_image_input(path: Path, limit: int) -> bytes:
+    """Read one bounded ordinary build-input file without importing its contents."""
     before = path.lstat()
     if (
         _reparse(before)
         or not stat.S_ISREG(before.st_mode)
         or before.st_nlink != 1
-        or not 0 < before.st_size <= limit
+        or not 0 <= before.st_size <= limit
     ):
         raise ValueError("Build input must be a bounded ordinary single-link file")
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
@@ -174,7 +175,7 @@ def _locked_wheels(inputs: dict[str, bytes], wheels: Path) -> dict[str, bytes]:
         total += row["bytes"]
         if total > _BUNDLE_LIMIT:
             raise ValueError("Worker wheel bundle exceeds limit")
-        raw = _read_file(wheels / row["filename"], _WHEEL_LIMIT)
+        raw = read_repair_image_input(wheels / row["filename"], _WHEEL_LIMIT)
         if len(raw) != row["bytes"] or sha256(raw).hexdigest() != row["sha256"]:
             raise ValueError("Locked wheel bytes mismatch")
         payload["wheels/" + row["filename"]] = raw
@@ -201,7 +202,7 @@ def prepare_repair_image_context(recipes: Path, wheels: Path, destination: Path)
     if os.path.lexists(destination):
         raise FileExistsError("Build destination already exists; preserved")
     inputs = {
-        name: _read_file(recipes / name, _METADATA_LIMIT)
+        name: read_repair_image_input(recipes / name, _METADATA_LIMIT)
         for name in (
             "base_image.json",
             "base_index.json",
@@ -213,6 +214,8 @@ def prepare_repair_image_context(recipes: Path, wheels: Path, destination: Path)
             ".dockerignore",
         )
     }
+    if any(not raw for raw in inputs.values()):
+        raise ValueError("Required build metadata must not be empty")
     reference = _base_reference(inputs)
     payload = _locked_wheels(inputs, wheels)
     wheel_count = len(payload)

@@ -1,8 +1,8 @@
 # Offline repair worker dependency inputs
 
 This directory records a pinned CPython 3.11.17 Linux x86-64 base, wheel inputs
-and a dependency-only build recipe. It does not contain a built/admitted worker
-image or an execution certificate.
+and a dependency-only build recipe. A local static OCI archive has been assembled;
+runtime image admission and an execution certificate remain pending.
 
 - `requirements.in`: eight direct versions matching the current verified host
   runtime and test tools. This profile covers core advisory A02/A07 imports and
@@ -30,8 +30,8 @@ installed environment or satisfy the repository-wide dependency locking gate.
 The official Python `3.11.17-slim-bookworm` tag was resolved through the public
 Docker registry. `base_image.json` pins its selected Linux/amd64 manifest digest;
 the retained index, manifest and config bytes reproduce their declared hashes,
-platform selection, layer inventory and Python version. Base layers have not been
-downloaded or run. A matching manifest/config hash is not a security review or
+platform selection, layer inventory and Python version. Base layers are now cached
+and their compressed/expanded hashes verified; they have not been run. A matching manifest/config hash is not a security review or
 signed provenance certificate. Dependency closure was also rechecked against
 CPython 3.11.17 with the same 51 selected wheels; no target package was imported.
 
@@ -71,13 +71,23 @@ source or private files. The `.dockerignore` further excludes the receipt from
 the build context. Inspect its copied bytes before a future local-only Linux/amd64
 BuildKit build; no build/load/push is performed by the preparation command.
 
-Actual image build/offline Linux installation/import/regression runs,
+Two independent static assemblies produced the same local OCI archive with the
+base layers and all 51 distributions. The assembler uses the pinned PyPA installer
+as a data-copy tool, creates Linux launchers/RECORD paths and compiles/imports no
+target source. It does not execute this Dockerfile. The ignored binary and tracked
+`archive_manifest.json` are structurally verified artifacts, not runtime admission
+or behavioral evidence. See [the archive handoff](../../docs/REPAIR_IMAGE_ARCHIVE_HANDOFF.md)
+for the assembly command, exact hashes, OCI validation and limits. Build-tool wheel
+hashes are in `build-tools.lock`; the tool is included in the development extra.
+
+Dockerfile-based builds, actual Linux pip installation/import/regression runs,
 dependency/security/license review, native enforcement probes and an admitted
 immutable worker image ID remain pending. The local Docker probe reports
 `ENGINE_UNAVAILABLE`. The wheel manifest states
 `image_verified=false`, `execution_verified=false`, `promotion_allowed=false`.
 PyPI hashes establish matching published artifacts, not independent security
 approval or signed behavioral evidence. Preserve the lock/inventory and wheel
-bytes; do not install these Linux native wheels into the Windows project environment.
+bytes; these Linux wheels are laid out only in the ignored image staging root,
+never in the Windows project import environment.
 
 See [the image input handoff](../../docs/REPAIR_IMAGE_INPUTS_HANDOFF.md).
