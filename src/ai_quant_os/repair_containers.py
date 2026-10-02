@@ -55,6 +55,15 @@ def _require_owner(value, *, owner, identity, image):
         raise ValueError("Repair container ownership metadata invalid") from error
 
 
+def _remove_owned(policy, executable, identity, owner) -> str:
+    value = _inspect(policy, executable, identity)
+    container_id = _require_owner(value, owner=owner, identity=identity, image=policy.image_id)
+    removed = policy._command(executable, "container", "rm", "--force", "--volumes", container_id)
+    if removed.returncode or removed.stdout.decode("ascii").strip() != container_id:
+        raise ValueError("Repair container removal unconfirmed")
+    return container_id
+
+
 def _create_arguments(policy, job, owner):
     source = str(job.path.resolve())
     if any(character in source for character in (",", "\n", "\r", '"')):
@@ -149,15 +158,39 @@ def prepared_repair_container(policy: DockerConfinement, job: PreparedRepairJob)
         yield CreatedRepairContainer(identity, owner, job.snapshot_sha256, policy.image_id)
     finally:
         try:
-            value = _inspect(policy, executable, identity)
-            container_id = _require_owner(
-                value, owner=owner, identity=identity, image=policy.image_id
-            )
-            removed = policy._command(
-                executable, "container", "rm", "--force", "--volumes", container_id
-            )
-            if removed.returncode or removed.stdout.decode("ascii").strip() != container_id:
-                raise ValueError("Repair container removal unconfirmed")
+            job.verify_container_lease(owner)
+            _remove_owned(policy, executable, identity, owner)
             job.release_container(owner)
         except (OSError, ValueError, RuntimeError) as error:
             raise RuntimeError("Repair container cleanup unconfirmed; job retained") from error
+
+
+def cleanup_retained_repair_container(policy: DockerConfinement, job: PreparedRepairJob) -> dict:
+    """Reconcile only a present, exactly owned container; absence remains unresolved."""
+    if (
+        type(policy) is not DockerConfinement
+        or type(job) is not PreparedRepairJob
+        or policy.suite_sha256 != job.suite_sha256
+    ):
+        raise ValueError("Retained repair cleanup pins invalid")
+    owners = job.pending_containers
+    if len(owners) != 1 or job.container_image(owners[0]) != policy.image_id:
+        raise ValueError("Retained repair cleanup ownership invalid")
+    job.verify()
+    job.verify_container_lease(owners[0])
+    executable = shutil.which("docker")
+    if executable is None:
+        raise ValueError("Retained repair cleanup runtime unavailable")
+    owner = owners[0]
+    container_id = _remove_owned(policy, executable, "ai-quant-repair-" + owner, owner)
+    job.release_container(owner)
+    job.cleanup()
+    return {
+        "schema_version": "1.0",
+        "owner": owner,
+        "container_id": container_id,
+        "snapshot_sha256": job.snapshot_sha256,
+        "state": "REMOVED_AFTER_RESTART_RECONCILIATION",
+        "execution_verified": False,
+        "promotion_allowed": False,
+    }

@@ -14,8 +14,11 @@ from ai_quant_os.health_store import HealthStore
 from ai_quant_os.repair_workspace import RepairWorkspace
 from ai_quant_os.repair_sandbox import DockerConfinement
 from ai_quant_os.repair_replay import load_incident_replay
-from ai_quant_os.repair_jobs import prepared_repair_job
-from ai_quant_os.repair_containers import prepared_repair_container
+from ai_quant_os.repair_jobs import prepared_repair_job, load_retained_repair_job
+from ai_quant_os.repair_containers import (
+    prepared_repair_container,
+    cleanup_retained_repair_container,
+)
 
 
 class RepairPlan(BaseModel):
@@ -59,6 +62,15 @@ def main(argv: list[str] | None = None) -> int:
     admit.add_argument("--suite-sha256", required=True)
     admit.add_argument("--suite-file", required=True, type=Path)
     admit.add_argument("--graph-store", type=Path)
+    cleanup = commands.add_parser(
+        "cleanup", help="Reconcile a retained job's exact owned container after restart"
+    )
+    cleanup.add_argument("candidate_id")
+    cleanup.add_argument("--lease", required=True, type=Path)
+    cleanup.add_argument("--image-id", required=True)
+    cleanup.add_argument("--suite-sha256", required=True)
+    cleanup.add_argument("--suite-file", required=True, type=Path)
+    cleanup.add_argument("--graph-store", type=Path)
     sandbox = commands.add_parser(
         "sandbox-status", help="Read local sandbox prerequisites; execute nothing"
     )
@@ -98,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
         root = args.root if args.root is not None else args.repository / "data-local" / "repairs"
         workspace = RepairWorkspace(args.repository, root, health, registry)
-        if args.command == "admit":
+        if args.command in {"admit", "cleanup"}:
             policy = DockerConfinement(args.image_id, args.suite_sha256)
             source = workspace.snapshot(args.candidate_id)
             with args.suite_file.open("rb") as suite:
@@ -106,22 +118,39 @@ def main(argv: list[str] | None = None) -> int:
             replay = (
                 None if args.graph_store is None else load_incident_replay(source, args.graph_store)
             )
-            with prepared_repair_job(
-                source, program, suite_sha256=args.suite_sha256, root=root / "jobs", replay=replay
-            ) as job:
-                with prepared_repair_container(policy, job) as created:
-                    receipt = {
-                        "schema_version": "1.0",
-                        "candidate_id": source.candidate_id,
-                        "snapshot_sha256": source.snapshot_sha256,
-                        "container_id": created.container_id,
-                        "owner": created.owner,
-                        "image_id": policy.image_id,
-                        "suite_sha256": policy.suite_sha256,
-                        "state": "REMOVED_AFTER_ADMISSION",
-                        "execution_verified": False,
-                        "promotion_allowed": False,
-                    }
+            if args.command == "cleanup":
+                job = load_retained_repair_job(
+                    source,
+                    program,
+                    suite_sha256=args.suite_sha256,
+                    image_id=args.image_id,
+                    root=root / "jobs",
+                    lease=args.lease,
+                    replay=replay,
+                )
+                receipt = cleanup_retained_repair_container(policy, job)
+                receipt["candidate_id"] = source.candidate_id
+            else:
+                with prepared_repair_job(
+                    source,
+                    program,
+                    suite_sha256=args.suite_sha256,
+                    root=root / "jobs",
+                    replay=replay,
+                ) as job:
+                    with prepared_repair_container(policy, job) as created:
+                        receipt = {
+                            "schema_version": "1.0",
+                            "candidate_id": source.candidate_id,
+                            "snapshot_sha256": source.snapshot_sha256,
+                            "container_id": created.container_id,
+                            "owner": created.owner,
+                            "image_id": policy.image_id,
+                            "suite_sha256": policy.suite_sha256,
+                            "state": "REMOVED_AFTER_ADMISSION",
+                            "execution_verified": False,
+                            "promotion_allowed": False,
+                        }
         elif args.command == "replay":
             source = workspace.snapshot(args.candidate_id)
             replay = load_incident_replay(source, args.graph_store)

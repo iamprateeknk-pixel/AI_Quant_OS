@@ -1,0 +1,207 @@
+"""Restart cleanup uses real retained jobs and a fault-injected Docker boundary."""
+
+import importlib
+import json
+import os
+
+import pytest
+
+from ai_quant_os.repair_jobs import prepared_repair_job
+from ai_quant_os.repair_sandbox import DockerConfinement
+from test_repair_containers import DockerFixture, CID, module as containers
+from test_repair_jobs import PROGRAM, SUITE_SHA, snapshot
+from test_repair_sandbox import IMAGE
+from test_repair_workspace import repository as repository
+
+
+def loader():
+    module = importlib.import_module("ai_quant_os.repair_jobs")
+    assert hasattr(module, "load_retained_repair_job"), "Missing retained job reconstruction"
+    return module.load_retained_repair_job
+
+
+def retained(tmp_path, repository, monkeypatch, root=None):
+    evidence = snapshot(tmp_path, repository)
+    root = tmp_path / "jobs" if root is None else root
+    with pytest.raises(RuntimeError, match="retained"):
+        with prepared_repair_job(evidence, PROGRAM, suite_sha256=SUITE_SHA, root=root) as job:
+            fixture = DockerFixture(monkeypatch, job, cleanup_error=True)
+            with containers().prepared_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job):
+                pass
+    lease = next(root.glob("*.lease.json"))
+    return evidence, job.path, lease, fixture
+
+
+def read(evidence, lease, root):
+    return loader()(
+        evidence, PROGRAM, suite_sha256=SUITE_SHA, image_id=IMAGE, root=root, lease=lease
+    )
+
+
+def test_reconstructs_exact_retained_inputs_without_changing_files_and_cleans_present_owned_container(
+    tmp_path, repository, monkeypatch
+):
+    evidence, path, lease, fixture = retained(tmp_path, repository, monkeypatch)
+    before = (path / "request.json").read_bytes(), lease.read_bytes()
+    job = read(evidence, lease, tmp_path / "jobs")
+    assert job.path == path
+    assert job.pending_containers == (fixture.owner,)
+    assert ((path / "request.json").read_bytes(), lease.read_bytes()) == before
+    fixture.cleanup_error = False
+    fixture.calls.clear()
+    receipt = containers().cleanup_retained_repair_container(
+        DockerConfinement(IMAGE, SUITE_SHA), job
+    )
+    assert receipt["container_id"] == CID
+    assert receipt["state"] == "REMOVED_AFTER_RESTART_RECONCILIATION"
+    assert receipt["execution_verified"] is False
+    assert receipt["promotion_allowed"] is False
+    assert not path.exists()
+    assert not lease.exists()
+    assert fixture.calls[0][2] == "ai-quant-repair-" + fixture.owner
+    assert fixture.calls[-1] == ("container", "rm", "--force", "--volumes", CID)
+
+
+@pytest.mark.parametrize("fault", ["missing", "foreign", "cleanup_error"])
+def test_restart_unknown_absence_or_ownership_or_removal_never_deletes_inputs(
+    tmp_path, repository, monkeypatch, fault
+):
+    evidence, path, lease, fixture = retained(tmp_path, repository, monkeypatch)
+    fixture.cleanup_error = False
+    setattr(fixture, fault, True)
+    fixture.calls.clear()
+    job = read(evidence, lease, tmp_path / "jobs")
+    with pytest.raises((ValueError, OSError, RuntimeError)):
+        containers().cleanup_retained_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job)
+    assert path.exists() and lease.exists()
+    assert job.pending_containers == (fixture.owner,)
+    if fault != "cleanup_error":
+        assert all(command[:2] != ("container", "rm") for command in fixture.calls)
+
+
+@pytest.mark.parametrize(
+    "fault", ["source", "request", "image", "root_identity", "extra_authority", "format"]
+)
+def test_tampered_retained_inputs_or_receipt_are_denied_before_daemon_access(
+    tmp_path, repository, monkeypatch, fault
+):
+    evidence, path, lease, fixture = retained(tmp_path, repository, monkeypatch)
+    fixture.calls.clear()
+    if fault == "source":
+        (path / "src/ai_quant_os/risk.py").write_bytes(b"LIMIT = 0\n")
+    elif fault == "request":
+        (path / "request.json").write_text("{}", encoding="utf-8")
+    else:
+        value = json.loads(lease.read_bytes())
+        if fault == "image":
+            value["image_id"] = "sha256:" + "f" * 64
+        elif fault == "root_identity":
+            value["root_inode"] += 1
+        elif fault == "extra_authority":
+            value["promotion_allowed"] = True
+        from ai_quant_os.repair_snapshots import canonical_json
+
+        lease.write_text(
+            json.dumps(value, indent=2) if fault == "format" else canonical_json(value),
+            encoding="utf-8",
+        )
+    with pytest.raises(ValueError):
+        read(evidence, lease, tmp_path / "jobs")
+    assert fixture.calls == []
+    assert path.exists() and lease.exists()
+
+
+def test_missing_root_and_hard_linked_or_outside_receipt_are_never_adopted(
+    tmp_path, repository, monkeypatch
+):
+    evidence, path, lease, fixture = retained(tmp_path, repository, monkeypatch)
+    missing = tmp_path / "missing"
+    with pytest.raises(ValueError):
+        read(evidence, lease, missing)
+    assert not missing.exists()
+    external = tmp_path / lease.name
+    os.link(lease, external)
+    for selected in [lease, external]:
+        with pytest.raises(ValueError):
+            read(evidence, selected, tmp_path / "jobs")
+    assert path.exists() and external.exists()
+
+
+def test_receipt_changed_after_reconstruction_is_denied_before_removal(
+    tmp_path, repository, monkeypatch
+):
+    evidence, path, lease, fixture = retained(tmp_path, repository, monkeypatch)
+    job = read(evidence, lease, tmp_path / "jobs")
+    lease.write_text("{}", encoding="utf-8")
+    fixture.cleanup_error = False
+    fixture.calls.clear()
+    with pytest.raises(ValueError):
+        containers().cleanup_retained_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job)
+    assert fixture.calls == []
+    assert path.exists() and lease.exists()
+
+
+def test_cli_reconstructs_retained_job_and_reports_only_after_cleanup(
+    tmp_path, repository, monkeypatch, capsys
+):
+    from ai_quant_os.repair_cli import main
+
+    root = tmp_path / "repairs" / "jobs"
+    evidence, path, lease, fixture = retained(tmp_path, repository, monkeypatch, root)
+    fixture.cleanup_error = False
+    suite = tmp_path / "suite.py"
+    suite.write_bytes(PROGRAM)
+    result = main(
+        [
+            "--repository",
+            str(repository),
+            "--root",
+            str(tmp_path / "repairs"),
+            "--health-store",
+            str(tmp_path / "health.sqlite3"),
+            "cleanup",
+            evidence.candidate_id,
+            "--lease",
+            str(lease),
+            "--suite-file",
+            str(suite),
+            "--suite-sha256",
+            SUITE_SHA,
+            "--image-id",
+            IMAGE,
+        ]
+    )
+    assert result == 0
+    receipt = json.loads(capsys.readouterr().out)
+    assert receipt["state"] == "REMOVED_AFTER_RESTART_RECONCILIATION"
+    assert receipt["candidate_id"] == evidence.candidate_id
+    assert not path.exists() and not lease.exists()
+
+
+def test_new_cli_process_without_local_daemon_preserves_reconstructed_job(
+    tmp_path, repository, monkeypatch
+):
+    from test_repair_cli import cli
+
+    evidence, path, lease, fixture = retained(
+        tmp_path, repository, monkeypatch, tmp_path / "repairs" / "jobs"
+    )
+    suite = tmp_path / "suite.py"
+    suite.write_bytes(PROGRAM)
+    result = cli(
+        repository,
+        tmp_path,
+        "cleanup",
+        evidence.candidate_id,
+        "--lease",
+        str(lease),
+        "--suite-file",
+        str(suite),
+        "--suite-sha256",
+        SUITE_SHA,
+        "--image-id",
+        IMAGE,
+    )
+    assert result.returncode == 2
+    assert not result.stdout
+    assert path.exists() and lease.exists()

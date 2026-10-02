@@ -1,6 +1,7 @@
 """Trusted-parent preparation of disposable, source-bound verifier inputs only."""
 
 import os
+import json
 import re
 import shutil
 import stat
@@ -24,6 +25,18 @@ def _reparse(metadata) -> bool:
     )
 
 
+def _cleanup_job(path: Path, parent: Path, identity: tuple[int, int]) -> None:
+    current = path.lstat()
+    if (
+        path.resolve().parent != parent
+        or _reparse(current)
+        or not stat.S_ISDIR(current.st_mode)
+        or (current.st_dev, current.st_ino) != identity
+    ):
+        raise RuntimeError("Repair job cleanup root identity changed; retained")
+    shutil.rmtree(path)
+
+
 @dataclass(frozen=True)
 class PreparedRepairJob:
     path: Path
@@ -39,6 +52,16 @@ class PreparedRepairJob:
     def pending_containers(self) -> tuple[str, ...]:
         with self._container_lock:
             return tuple(sorted(self._containers))
+
+    def container_image(self, owner: str) -> str:
+        with self._container_lock:
+            if owner not in self._containers:
+                raise ValueError("Repair job container lease does not match")
+            return self._containers[owner]
+
+    def verify_container_lease(self, owner: str) -> None:
+        receipt, raw = self._lease(owner, self.container_image(owner))
+        self._verify_file(receipt, receipt.lstat(), raw)
 
     def _lease(self, owner: str, image_id: str) -> tuple[Path, bytes]:
         if not isinstance(owner, str) or not re.fullmatch(r"[a-f0-9]{32}", owner):
@@ -89,6 +112,12 @@ class PreparedRepairJob:
     @property
     def promotion_allowed(self) -> bool:
         return False
+
+    def cleanup(self) -> None:
+        """Delete only this owned input tree after all container leases are released."""
+        if self.pending_containers:
+            raise RuntimeError(f"Repair job retained pending container cleanup: {self.path}")
+        _cleanup_job(self.path, self.path.parent, self._root_identity)
 
     def verify(self) -> None:
         """Require the exact owned input tree before a future read-only sandbox mount."""
@@ -153,15 +182,13 @@ class PreparedRepairJob:
                 raise ValueError("Repair job file changed during admission")
 
 
-@contextmanager
-def prepared_repair_job(
+def _job_inputs(
     snapshot: RepairSourceSnapshot,
     program: bytes,
     *,
     suite_sha256: str,
-    root: Path,
     replay: RepairIncidentReplay | None = None,
-) -> Iterator[PreparedRepairJob]:
+) -> tuple[bytes, tuple[tuple[str, bytes], ...]]:
     """Copy already-verified inputs; never import, compile or execute the suite/source."""
     if type(snapshot) is not RepairSourceSnapshot:
         raise ValueError("Repair job requires an immutable source snapshot")
@@ -201,10 +228,6 @@ def prepared_repair_job(
     request = canonical_json(payload).encode()
     if len(request) > 65536:
         raise ValueError("Serialized repair job request exceeds bound")
-    parent = Path(root).resolve()
-    parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if next(parent.glob("repair-job-*.*.lease.json"), None) is not None:
-        raise ValueError("Repair job root has an unresolved container lease")
     expected = tuple(
         sorted(
             [
@@ -219,6 +242,24 @@ def prepared_repair_job(
             ]
         )
     )
+    return request, expected
+
+
+@contextmanager
+def prepared_repair_job(
+    snapshot: RepairSourceSnapshot,
+    program: bytes,
+    *,
+    suite_sha256: str,
+    root: Path,
+    replay: RepairIncidentReplay | None = None,
+) -> Iterator[PreparedRepairJob]:
+    """Copy already-verified inputs; never import, compile or execute source/program."""
+    request, expected = _job_inputs(snapshot, program, suite_sha256=suite_sha256, replay=replay)
+    parent = Path(root).resolve()
+    parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if next(parent.glob("repair-job-*.*.lease.json"), None) is not None:
+        raise ValueError("Repair job root has an unresolved container lease")
     path = Path(tempfile.mkdtemp(prefix="repair-job-", dir=parent)).resolve()
     job = None
     root_identity = path.lstat()
@@ -245,13 +286,66 @@ def prepared_repair_job(
         job.verify()
         yield job
     finally:
-        if job is not None and job.pending_containers:
-            raise RuntimeError(f"Repair job retained pending container cleanup: {path}")
-        current = path.lstat()
+        if job is not None:
+            job.cleanup()
+        else:
+            _cleanup_job(path, parent, (root_identity.st_dev, root_identity.st_ino))
+
+
+def load_retained_repair_job(
+    snapshot: RepairSourceSnapshot,
+    program: bytes,
+    *,
+    suite_sha256: str,
+    image_id: str,
+    root: Path,
+    lease: Path,
+    replay: RepairIncidentReplay | None = None,
+) -> PreparedRepairJob:
+    """Reconstruct exact expected bytes from independent pins; read existing files only."""
+    request, expected = _job_inputs(snapshot, program, suite_sha256=suite_sha256, replay=replay)
+    parent, receipt = Path(root).resolve(), Path(lease).absolute()
+    match = re.fullmatch(r"(repair-job-[a-z0-9_]{1,64})\.([a-f0-9]{32})\.lease\.json", receipt.name)
+    if not parent.is_dir() or receipt.parent.resolve() != parent or match is None:
+        raise ValueError("Retained repair lease boundary invalid")
+    metadata = receipt.lstat()
+    if (
+        _reparse(metadata)
+        or not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_nlink != 1
+        or not 1 <= metadata.st_size <= 8192
+    ):
+        raise ValueError("Retained repair lease file identity invalid")
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(receipt, flags)
+    with os.fdopen(descriptor, "rb") as source:
+        opened = os.fstat(source.fileno())
         if (
-            path.resolve().parent != parent
-            or _reparse(current)
-            or (current.st_dev, current.st_ino) != (root_identity.st_dev, root_identity.st_ino)
+            (opened.st_dev, opened.st_ino) != (metadata.st_dev, metadata.st_ino)
+            or opened.st_nlink != 1
+            or not stat.S_ISREG(opened.st_mode)
         ):
-            raise RuntimeError("Repair job cleanup root identity changed; retained")
-        shutil.rmtree(path)
+            raise ValueError("Retained repair lease changed while opening")
+        raw = source.read(8193)
+    if len(raw) > 8192:
+        raise ValueError("Retained repair lease exceeds bound")
+    PreparedRepairJob._verify_file(receipt, metadata, raw)
+    value = json.loads(raw)
+    if not isinstance(value, dict) or any(
+        type(value.get(key)) is not int or value[key] < 0 for key in ("root_device", "root_inode")
+    ):
+        raise ValueError("Retained repair lease root identity invalid")
+    job = PreparedRepairJob(
+        parent / match[1],
+        snapshot.snapshot_sha256,
+        suite_sha256,
+        sha256(request).hexdigest(),
+        (value["root_device"], value["root_inode"]),
+        expected,
+    )
+    _, canonical = job._lease(match[2], image_id)
+    if raw != canonical:
+        raise ValueError("Retained repair lease binding failed")
+    job.verify()
+    job._containers[match[2]] = image_id
+    return job

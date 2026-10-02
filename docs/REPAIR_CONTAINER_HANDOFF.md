@@ -75,6 +75,11 @@ requires implementation. Cross-process job-root leases and races are not solved
 by the single-job lock or pre-staging receipt check. Do not remove retained inputs
 until independent ownership and container termination are confirmed.
 
+The subsequent restart-cleanup increment now reconstructs existing schema 1.0
+receipts against independently supplied source/image/suite pins and supports
+cleanup of a present exact owned container. See `REPAIR_CLEANUP_HANDOFF.md` for
+its verification and unresolved-absence/concurrency limits.
+
 Existing health, candidate, graph and job-request schemas remain unchanged. For
 rollback, preserve unresolved ownership receipts and input trees; reverting this
 layer does not prove their containers absent or make their deletion safe.

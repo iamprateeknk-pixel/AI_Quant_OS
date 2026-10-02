@@ -65,7 +65,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -e ".[dev]"
-      - run: python -m pytest -q tests/test_repair_workspace.py tests/test_repair_cli.py tests/test_repair_sandbox.py tests/test_repair_transport.py tests/test_repair_containers.py tests/test_repair_snapshots.py tests/test_repair_jobs.py tests/test_repair_replay.py tests/test_health_store.py
+      - run: python -m pytest -q tests/test_repair_workspace.py tests/test_repair_cli.py tests/test_repair_sandbox.py tests/test_repair_transport.py tests/test_repair_containers.py tests/test_repair_cleanup.py tests/test_repair_snapshots.py tests/test_repair_jobs.py tests/test_repair_replay.py tests/test_health_store.py
   temporal-recovery:
     runs-on: ${{ matrix.os }}
     strategy:
