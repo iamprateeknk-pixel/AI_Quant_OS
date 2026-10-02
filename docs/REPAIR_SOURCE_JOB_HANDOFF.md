@@ -75,6 +75,11 @@ to candidate writes. The future controller must enforce the read-only mount and
 resource/network/credential boundary before source execution. Existing local
 Docker startup remains unavailable; rejected socket cleanup was not retried.
 
+The subsequent container-ownership increment changes cleanup when a controller
+holds a container lease: job inputs and an external ownership receipt are retained
+until exact owned-container removal is confirmed. Ordinary unleased consumer
+failure still removes the job. See `REPAIR_CONTAINER_HANDOFF.md`.
+
 The original schema 1.0 job includes the archived **health incident**, not the referenced full
 LangGraph context checkpoint and datasets needed to replay an actual failed
 invocation. Those verified context/source closures must be added before claiming

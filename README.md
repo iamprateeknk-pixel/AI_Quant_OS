@@ -47,6 +47,8 @@ The read-only `ai-quant-repair sandbox-status` command checks local isolated-run
 
 `ai-quant-repair replay <candidate-id> --graph-store <archive>` verifies the original failed invocation's receipt and captured inline inputs through read-only archival access. It reports hashes and retains historical expiry; it executes no repair. See [archived input handoff](docs/REPAIR_REPLAY_HANDOFF.md).
 
+`ai-quant-repair admit` prepares an owned job, creates and inspects a local pinned container, then removes it without starting it. Unconfirmed cleanup preserves the job and blocks further staging in that job root. See [container ownership handoff](docs/REPAIR_CONTAINER_HANDOFF.md); live confinement and repair execution remain unverified.
+
 ```powershell
 python -m ruff check src tests scripts
 python -m ruff format --check src tests scripts

@@ -14,6 +14,8 @@ from ai_quant_os.health_store import HealthStore
 from ai_quant_os.repair_workspace import RepairWorkspace
 from ai_quant_os.repair_sandbox import DockerConfinement
 from ai_quant_os.repair_replay import load_incident_replay
+from ai_quant_os.repair_jobs import prepared_repair_job
+from ai_quant_os.repair_containers import prepared_repair_container
 
 
 class RepairPlan(BaseModel):
@@ -49,6 +51,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     replay.add_argument("candidate_id")
     replay.add_argument("--graph-store", required=True, type=Path)
+    admit = commands.add_parser(
+        "admit", help="Create, inspect and remove an owned container; never start it"
+    )
+    admit.add_argument("candidate_id")
+    admit.add_argument("--image-id", required=True)
+    admit.add_argument("--suite-sha256", required=True)
+    admit.add_argument("--suite-file", required=True, type=Path)
+    admit.add_argument("--graph-store", type=Path)
     sandbox = commands.add_parser(
         "sandbox-status", help="Read local sandbox prerequisites; execute nothing"
     )
@@ -88,7 +98,31 @@ def main(argv: list[str] | None = None) -> int:
                 )
         root = args.root if args.root is not None else args.repository / "data-local" / "repairs"
         workspace = RepairWorkspace(args.repository, root, health, registry)
-        if args.command == "replay":
+        if args.command == "admit":
+            policy = DockerConfinement(args.image_id, args.suite_sha256)
+            source = workspace.snapshot(args.candidate_id)
+            with args.suite_file.open("rb") as suite:
+                program = suite.read(65537)
+            replay = (
+                None if args.graph_store is None else load_incident_replay(source, args.graph_store)
+            )
+            with prepared_repair_job(
+                source, program, suite_sha256=args.suite_sha256, root=root / "jobs", replay=replay
+            ) as job:
+                with prepared_repair_container(policy, job) as created:
+                    receipt = {
+                        "schema_version": "1.0",
+                        "candidate_id": source.candidate_id,
+                        "snapshot_sha256": source.snapshot_sha256,
+                        "container_id": created.container_id,
+                        "owner": created.owner,
+                        "image_id": policy.image_id,
+                        "suite_sha256": policy.suite_sha256,
+                        "state": "REMOVED_AFTER_ADMISSION",
+                        "execution_verified": False,
+                        "promotion_allowed": False,
+                    }
+        elif args.command == "replay":
             source = workspace.snapshot(args.candidate_id)
             replay = load_incident_replay(source, args.graph_store)
             original = replay.record.receipt
@@ -130,10 +164,10 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(json.dumps(receipt, sort_keys=True))
         return 0
-    except (ValueError, OSError, subprocess.TimeoutExpired):
+    except (ValueError, OSError, RuntimeError, subprocess.TimeoutExpired):
         parser.exit(
             2,
-            "Repair request rejected; check journal, plan, source boundaries and candidate integrity.\n",
+            "Repair request rejected; check journal, plan, source boundaries, candidate integrity and retained container leases.\n",
         )
 
 

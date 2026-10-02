@@ -2,13 +2,16 @@
 
 import os
 import re
+import shutil
 import stat
 import tempfile
 from contextlib import contextmanager
-from dataclasses import dataclass
+from _thread import LockType
+from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
 from typing import Iterator
+from threading import Lock
 
 from ai_quant_os.repair_snapshots import RepairSourceSnapshot, canonical_json
 from ai_quant_os.repair_replay import RepairIncidentReplay
@@ -29,6 +32,59 @@ class PreparedRepairJob:
     request_sha256: str
     _root_identity: tuple[int, int]
     _expected_files: tuple[tuple[str, bytes], ...]
+    _containers: dict[str, str] = field(default_factory=dict, compare=False, repr=False)
+    _container_lock: LockType = field(default_factory=Lock, compare=False, repr=False)
+
+    @property
+    def pending_containers(self) -> tuple[str, ...]:
+        with self._container_lock:
+            return tuple(sorted(self._containers))
+
+    def _lease(self, owner: str, image_id: str) -> tuple[Path, bytes]:
+        if not isinstance(owner, str) or not re.fullmatch(r"[a-f0-9]{32}", owner):
+            raise ValueError("Repair container owner must be an opaque unique identity")
+        if not isinstance(image_id, str) or not re.fullmatch(r"sha256:[a-f0-9]{64}", image_id):
+            raise ValueError("Repair container lease requires a pinned image")
+        return (
+            self.path.parent / f"{self.path.name}.{owner}.lease.json",
+            canonical_json(
+                {
+                    "schema_version": "1.0",
+                    "owner": owner,
+                    "image_id": image_id,
+                    "root_device": self._root_identity[0],
+                    "root_inode": self._root_identity[1],
+                    "container_name": "ai-quant-repair-" + owner,
+                    "job_path": str(self.path),
+                    "snapshot_sha256": self.snapshot_sha256,
+                    "suite_sha256": self.suite_sha256,
+                    "request_sha256": self.request_sha256,
+                }
+            ).encode(),
+        )
+
+    def hold_container(self, owner: str, *, image_id: str) -> None:
+        """Trusted controller must publish ownership before a possibly ambiguous create."""
+        self.verify()
+        receipt, raw = self._lease(owner, image_id)
+        with self._container_lock:
+            if self._containers:
+                raise ValueError("Repair job already has a pending container")
+            with receipt.open("xb") as output:
+                output.write(raw)
+                output.flush()
+                os.fsync(output.fileno())
+            self._containers[owner] = image_id
+
+    def release_container(self, owner: str) -> None:
+        """Trusted controller calls only after confirmed removal of its exact container."""
+        with self._container_lock:
+            if owner not in self._containers:
+                raise ValueError("Repair job container lease does not match")
+            receipt, raw = self._lease(owner, self._containers[owner])
+            self._verify_file(receipt, receipt.lstat(), raw)
+            receipt.unlink()
+            del self._containers[owner]
 
     @property
     def promotion_allowed(self) -> bool:
@@ -147,6 +203,8 @@ def prepared_repair_job(
         raise ValueError("Serialized repair job request exceeds bound")
     parent = Path(root).resolve()
     parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if next(parent.glob("repair-job-*.*.lease.json"), None) is not None:
+        raise ValueError("Repair job root has an unresolved container lease")
     expected = tuple(
         sorted(
             [
@@ -161,8 +219,10 @@ def prepared_repair_job(
             ]
         )
     )
-    with tempfile.TemporaryDirectory(prefix="repair-job-", dir=parent) as temporary:
-        path = Path(temporary).resolve()
+    path = Path(tempfile.mkdtemp(prefix="repair-job-", dir=parent)).resolve()
+    job = None
+    root_identity = path.lstat()
+    try:
         if path.parent != parent:
             raise ValueError("Repair job directory escaped its owned parent")
         # Non-root sandbox users must be able to read the eventual /job mount.
@@ -184,3 +244,14 @@ def prepared_repair_job(
         )
         job.verify()
         yield job
+    finally:
+        if job is not None and job.pending_containers:
+            raise RuntimeError(f"Repair job retained pending container cleanup: {path}")
+        current = path.lstat()
+        if (
+            path.resolve().parent != parent
+            or _reparse(current)
+            or (current.st_dev, current.st_ino) != (root_identity.st_dev, root_identity.st_ino)
+        ):
+            raise RuntimeError("Repair job cleanup root identity changed; retained")
+        shutil.rmtree(path)

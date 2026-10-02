@@ -162,7 +162,7 @@ class DockerConfinement:
         except (KeyError, TypeError, AttributeError) as error:
             raise ValueError("Repair container confinement metadata invalid") from error
 
-    def _read(self, executable: str, *arguments: str) -> object:
+    def _command(self, executable: str, *arguments: str):
         # Fix a local socket endpoint; never inherit a remote DOCKER_HOST/context.
         endpoint = (
             "npipe:////./pipe/dockerDesktopLinuxEngine"
@@ -174,12 +174,15 @@ class DockerConfinement:
             for key, value in os.environ.items()
             if key.upper() in {"PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP"}
         }
-        result = bounded_command(
+        return bounded_command(
             [executable, "--host", endpoint, *arguments],
             environment=environment,
             timeout=10,
             output_limit=65536,
         )
+
+    def _read(self, executable: str, *arguments: str) -> object:
+        result = self._command(executable, *arguments)
         if result.returncode or len(result.stdout) > 65536:
             raise ValueError("Sandbox read admission failed")
         return json.loads(result.stdout)
