@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 from ai_quant_os.repair_jobs import PreparedRepairJob
+from ai_quant_os.repair_locks import repair_root_lock
 from ai_quant_os.repair_sandbox import (
     DockerConfinement,
     MEMORY_BYTES,
@@ -173,6 +174,11 @@ def cleanup_retained_repair_container(policy: DockerConfinement, job: PreparedRe
         or policy.suite_sha256 != job.suite_sha256
     ):
         raise ValueError("Retained repair cleanup pins invalid")
+    with repair_root_lock(job.path.parent):
+        return _cleanup_retained_repair_container(policy, job)
+
+
+def _cleanup_retained_repair_container(policy, job):
     owners = job.pending_containers
     if len(owners) != 1 or job.container_image(owners[0]) != policy.image_id:
         raise ValueError("Retained repair cleanup ownership invalid")

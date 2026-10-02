@@ -69,3 +69,8 @@ suite was executed, and no quarantine or capital authority was changed.
 Rollback removes this recovery entry point without changing candidate, health,
 graph or job-request schemas. Preserve unresolved jobs and receipts; absence of
 the recovery feature is not evidence that their containers are absent.
+
+The subsequent local-root ownership increment now serializes cooperating staging,
+reconstruction and cleanup through an OS-held lock, including across processes.
+See `REPAIR_ROOT_OWNERSHIP_HANDOFF.md`; unknown absence, transactional cleanup and
+distributed ownership remain open.

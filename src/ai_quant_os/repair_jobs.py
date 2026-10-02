@@ -16,6 +16,7 @@ from threading import Lock
 
 from ai_quant_os.repair_snapshots import RepairSourceSnapshot, canonical_json
 from ai_quant_os.repair_replay import RepairIncidentReplay
+from ai_quant_os.repair_locks import repair_root_lock
 
 
 def _reparse(metadata) -> bool:
@@ -258,6 +259,15 @@ def prepared_repair_job(
     request, expected = _job_inputs(snapshot, program, suite_sha256=suite_sha256, replay=replay)
     parent = Path(root).resolve()
     parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with repair_root_lock(parent):
+        with _staged_repair_job(
+            snapshot, suite_sha256=suite_sha256, parent=parent, request=request, expected=expected
+        ) as job:
+            yield job
+
+
+@contextmanager
+def _staged_repair_job(snapshot, *, suite_sha256, parent, request, expected):
     if next(parent.glob("repair-job-*.*.lease.json"), None) is not None:
         raise ValueError("Repair job root has an unresolved container lease")
     path = Path(tempfile.mkdtemp(prefix="repair-job-", dir=parent)).resolve()
@@ -304,6 +314,20 @@ def load_retained_repair_job(
 ) -> PreparedRepairJob:
     """Reconstruct exact expected bytes from independent pins; read existing files only."""
     request, expected = _job_inputs(snapshot, program, suite_sha256=suite_sha256, replay=replay)
+    parent = Path(root).resolve()
+    with repair_root_lock(parent):
+        return _load_retained_repair_job(
+            snapshot,
+            suite_sha256=suite_sha256,
+            image_id=image_id,
+            root=parent,
+            lease=lease,
+            request=request,
+            expected=expected,
+        )
+
+
+def _load_retained_repair_job(snapshot, *, suite_sha256, image_id, root, lease, request, expected):
     parent, receipt = Path(root).resolve(), Path(lease).absolute()
     match = re.fullmatch(r"(repair-job-[a-z0-9_]{1,64})\.([a-f0-9]{32})\.lease\.json", receipt.name)
     if not parent.is_dir() or receipt.parent.resolve() != parent or match is None:
