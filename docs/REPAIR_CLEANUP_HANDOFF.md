@@ -74,3 +74,9 @@ The subsequent local-root ownership increment now serializes cooperating staging
 reconstruction and cleanup through an OS-held lock, including across processes.
 See `REPAIR_ROOT_OWNERSHIP_HANDOFF.md`; unknown absence, transactional cleanup and
 distributed ownership remain open.
+
+The subsequent removal journal increment records exact owner/container/lease-bound
+intent and acknowledgement. It recovers interrupted lease release when the intact
+job and current receipt remain, without further daemon access. Missing acknowledgement,
+missing lease and partially deleted job recovery remain open. See
+`REPAIR_REMOVAL_JOURNAL_HANDOFF.md`.

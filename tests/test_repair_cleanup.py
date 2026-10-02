@@ -205,3 +205,67 @@ def test_new_cli_process_without_local_daemon_preserves_reconstructed_job(
     assert result.returncode == 2
     assert not result.stdout
     assert path.exists() and lease.exists()
+
+
+def test_confirmed_removal_survives_interrupted_lease_release_and_resumes_without_daemon(
+    tmp_path, repository, monkeypatch
+):
+    from ai_quant_os.repair_jobs import PreparedRepairJob
+    from test_repair_jobs import snapshot as make_snapshot
+    from ai_quant_os.repair_jobs import prepared_repair_job
+    from test_repair_containers import DockerFixture
+
+    evidence = make_snapshot(tmp_path, repository)
+    original = PreparedRepairJob.release_container
+
+    def fail_release(*args):
+        raise RuntimeError("injected lease release interruption")
+
+    monkeypatch.setattr(PreparedRepairJob, "release_container", fail_release)
+    with pytest.raises(RuntimeError, match="retained"):
+        with prepared_repair_job(
+            evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+        ) as job:
+            fixture = DockerFixture(monkeypatch, job)
+            with containers().prepared_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job):
+                pass
+    lease = next((tmp_path / "jobs").glob("*.lease.json"))
+    monkeypatch.setattr(PreparedRepairJob, "release_container", original)
+    fixture.missing = True
+    fixture.calls.clear()
+    rebuilt = read(evidence, lease, tmp_path / "jobs")
+    receipt = containers().cleanup_retained_repair_container(
+        DockerConfinement(IMAGE, SUITE_SHA), rebuilt
+    )
+    assert receipt["container_id"] == CID
+    assert fixture.calls == []
+    assert not job.path.exists() and not lease.exists()
+
+
+def test_missing_ack_commit_never_turns_absence_into_removal_confirmation(
+    tmp_path, repository, monkeypatch
+):
+    from ai_quant_os.repair_removals import RemovalJournal
+    from test_repair_containers import DockerFixture
+
+    evidence = snapshot(tmp_path, repository)
+    original = RemovalJournal.removed
+
+    def fail_ack(*args):
+        raise ValueError("injected acknowledgement persistence failure")
+
+    monkeypatch.setattr(RemovalJournal, "removed", fail_ack)
+    with pytest.raises(RuntimeError, match="retained"):
+        with prepared_repair_job(
+            evidence, PROGRAM, suite_sha256=SUITE_SHA, root=tmp_path / "jobs"
+        ) as job:
+            fixture = DockerFixture(monkeypatch, job)
+            with containers().prepared_repair_container(DockerConfinement(IMAGE, SUITE_SHA), job):
+                pass
+    lease = next((tmp_path / "jobs").glob("*.lease.json"))
+    monkeypatch.setattr(RemovalJournal, "removed", original)
+    fixture.missing = True
+    rebuilt = read(evidence, lease, tmp_path / "jobs")
+    with pytest.raises(ValueError):
+        containers().cleanup_retained_repair_container(DockerConfinement(IMAGE, SUITE_SHA), rebuilt)
+    assert job.path.exists() and lease.exists()

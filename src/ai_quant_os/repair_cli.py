@@ -3,6 +3,7 @@
 import argparse
 import json
 import subprocess
+import sqlite3
 from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
@@ -193,7 +194,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(json.dumps(receipt, sort_keys=True))
         return 0
-    except (ValueError, OSError, RuntimeError, subprocess.TimeoutExpired):
+    except (ValueError, OSError, RuntimeError, sqlite3.Error, subprocess.TimeoutExpired):
         parser.exit(
             2,
             "Repair request rejected; check journal, plan, source boundaries, candidate integrity and retained container leases.\n",
