@@ -214,7 +214,7 @@ def load_agent_catalog() -> AgentRegistry:
                 allowed_tools=tuple(sorted(ROLE_CEILINGS[identifier])),
             )
         )
-    for identifier in ("A02", "A04", "A07"):
+    for identifier in ("A02", "A04", "A05", "A07"):
         original = registry.get(identifier, "0.1.0")
         registry.register(
             AgentManifest.model_validate(

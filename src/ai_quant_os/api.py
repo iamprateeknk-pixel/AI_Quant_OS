@@ -2,6 +2,7 @@ import asyncio
 import hmac
 import os
 import sqlite3
+from dataclasses import asdict
 from contextlib import AsyncExitStack, asynccontextmanager
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -21,6 +22,14 @@ from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
 from ai_quant_os.graph_runtime import GraphRuntime
 from ai_quant_os.regime_agent import regime_implementation
 from ai_quant_os.currency_strength_agent import currency_strength_implementation
+from ai_quant_os.liquidity_agent import liquidity_implementation
+from ai_quant_os.liquidity_sources import (
+    LIQUIDITY_INPUT_BYTES,
+    LIQUIDITY_CONTEXT_BYTES,
+    liquidity_sources,
+    DisplayedDepth,
+    require_liquidity_quote,
+)
 from ai_quant_os.currency_strength_sources import (
     STRENGTH_INPUT_BYTES,
     STRENGTH_CONTEXT_BYTES,
@@ -41,7 +50,7 @@ from ai_quant_os.broker import BrokerRouter, SimulatedBroker
 from ai_quant_os.execution import PaperExecutionGateway, PaperOrder
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.market_data import Bar
-from ai_quant_os.world_state import WorldState, WorldStateEngine
+from ai_quant_os.world_state import WorldState, WorldStateEngine, fingerprint
 from ai_quant_os.world_state_store import WorldStateStore
 from ai_quant_os.decision_gateway import DecisionGateway, FastClassifier, require_current_decision
 from ai_quant_os.deep_review import DeepReviewer, DeepReviewDispatcher, require_current_review
@@ -61,6 +70,13 @@ class QuoteInput(BaseModel):
     ask: Decimal
     observed_at: datetime
     world_state_version: str
+
+
+class PaperL1QuoteInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    quote: QuoteInput
+    bid_size: Decimal = Field(ge=0, le=Decimal("1e12"), allow_inf_nan=False)
+    ask_size: Decimal = Field(ge=0, le=Decimal("1e12"), allow_inf_nan=False)
 
 
 class WorldStateBarInput(BaseModel):
@@ -255,6 +271,7 @@ def create_app(
         clock=current_time,
     )
     quotes: dict[str, MarketSnapshot] = {}
+    displayed_depth: dict[str, DisplayedDepth] = {}
     control_lock = Lock()
     health_worker = None
     if configured_path is not None:
@@ -309,6 +326,7 @@ def create_app(
                 implementations={
                     ("A02", "0.2.0"): regime_implementation(agent_registry),
                     ("A04", "0.2.0"): currency_strength_implementation(agent_registry),
+                    ("A05", "0.2.0"): liquidity_implementation(agent_registry),
                     ("A07", "0.2.0"): integrity_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(agent_registry, {}),
@@ -846,11 +864,20 @@ def create_app(
 
     @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
-        snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
+        context_quotes = tuple(quotes.copy().values())
+        snapshot = world_state.snapshot(context_quotes, now=current_time())
         try:
             strength_mission = (payload.agent_id, payload.agent_version) == ("A04", "0.2.0")
+            liquidity_mission = (payload.agent_id, payload.agent_version) == ("A05", "0.2.0")
             if strength_mission:
                 sources = currency_strength_sources(snapshot, world_state.histories())
+            elif liquidity_mission:
+                sources = liquidity_sources(
+                    snapshot,
+                    world_state.histories(),
+                    context_quotes,
+                    tuple(displayed_depth.copy().values()),
+                )
             elif payload.agent_id == "A07":
                 sources = integrity_sources(
                     snapshot, world_state.histories(), ingress_health.snapshot()
@@ -861,8 +888,16 @@ def create_app(
                 agent_registry,
                 sources,
                 clock=current_time,
-                max_input_bytes=STRENGTH_INPUT_BYTES if strength_mission else 8192,
-                max_context_bytes=STRENGTH_CONTEXT_BYTES if strength_mission else 32768,
+                max_input_bytes=STRENGTH_INPUT_BYTES
+                if strength_mission
+                else LIQUIDITY_INPUT_BYTES
+                if liquidity_mission
+                else 8192,
+                max_context_bytes=STRENGTH_CONTEXT_BYTES
+                if strength_mission
+                else LIQUIDITY_CONTEXT_BYTES
+                if liquidity_mission
+                else 32768,
             ).compile(
                 payload.agent_id, payload.agent_version, task_id=payload.task_id, scope="PAPER"
             )
@@ -1017,7 +1052,33 @@ def create_app(
             ingress_health.note("INVALID_QUOTE")
             raise HTTPException(status_code=422, detail=str(error)) from error
         quotes[snapshot.instrument_id] = snapshot
+        displayed_depth.pop(snapshot.instrument_id, None)
         return {"instrument_id": snapshot.instrument_id, "mode": "PAPER"}
+
+    @app.post("/api/v1/paper/l1-quotes", dependencies=[Depends(require_operator)])
+    def record_l1_quote(payload: PaperL1QuoteInput) -> dict[str, str]:
+        try:
+            if payload.quote.instrument_id not in {row.instrument_id for row in PAPER_INSTRUMENTS}:
+                raise ValueError("Unknown paper instrument")
+            snapshot = MarketSnapshot(**payload.quote.model_dump(), trusted=True)
+            require_liquidity_quote(snapshot)
+            depth = DisplayedDepth(
+                instrument_id=snapshot.instrument_id,
+                observed_at=snapshot.observed_at,
+                quote_ref="paper-quote:" + fingerprint(asdict(snapshot)),
+                bid_size=payload.bid_size,
+                ask_size=payload.ask_size,
+            )
+        except ValueError as error:
+            ingress_health.note("INVALID_QUOTE")
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        quotes[snapshot.instrument_id] = snapshot
+        displayed_depth[snapshot.instrument_id] = depth
+        return {
+            "instrument_id": snapshot.instrument_id,
+            "mode": "PAPER",
+            "provenance": depth.provenance,
+        }
 
     @app.post("/api/v1/paper/intents", dependencies=[Depends(require_operator)])
     def submit_intent(

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "provenance": "SYNTHETIC_DEVELOPMENT_BASELINE_NOT_HOLDOUT",
+  "cases": [
+    {"id":"alternating-l1","prices":["1","2","1","2"],"quote_age_seconds":0,"bid_size":"300","ask_size":"100","expected_quote_status":"FRESH","expected_liquidity_status":"SYNTHETIC_L1_OBSERVED","expected_abnormality_status":"AVAILABLE","expected_abnormality_score":"0.5","expected_imbalance":"0.5"},
+    {"id":"flat-empty-l1","prices":["2","2","2","2"],"quote_age_seconds":0,"bid_size":"0","ask_size":"0","expected_quote_status":"FRESH","expected_liquidity_status":"SYNTHETIC_L1_OBSERVED","expected_abnormality_status":"ZERO_VARIANCE_MATCH","expected_abnormality_score":"0","expected_imbalance":null},
+    {"id":"degenerate-change","prices":["1","1","1","2"],"quote_age_seconds":0,"expected_quote_status":"FRESH","expected_liquidity_status":"UNAVAILABLE","expected_abnormality_status":"DEGENERATE_BASELINE","expected_abnormality_score":null,"expected_imbalance":null},
+    {"id":"stale-l1","prices":["1","2","1","2"],"quote_age_seconds":6,"bid_size":"300","ask_size":"100","expected_quote_status":"STALE","expected_liquidity_status":"UNAVAILABLE","expected_abnormality_status":"AVAILABLE","expected_abnormality_score":"0.5","expected_imbalance":null},
+    {"id":"missing-all","prices":[],"quote_age_seconds":null,"expected_quote_status":"MISSING","expected_liquidity_status":"UNAVAILABLE","expected_abnormality_status":"INSUFFICIENT_BASELINE","expected_abnormality_score":null,"expected_imbalance":null},
+    {"id":"short-history","prices":["1","2"],"quote_age_seconds":0,"expected_quote_status":"FRESH","expected_liquidity_status":"UNAVAILABLE","expected_abnormality_status":"INSUFFICIENT_BASELINE","expected_abnormality_score":null,"expected_imbalance":null}
+  ]
+}

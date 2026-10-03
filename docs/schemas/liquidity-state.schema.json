@@ -1,0 +1,481 @@
+{
+  "$defs": {
+    "LiquidityAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_status": {
+          "enum": [
+            "FRESH",
+            "STALE",
+            "FUTURE",
+            "UNTRUSTED",
+            "MISSING"
+          ],
+          "title": "Quote Status",
+          "type": "string"
+        },
+        "history_status": {
+          "enum": [
+            "FRESH",
+            "STALE",
+            "INSUFFICIENT"
+          ],
+          "title": "History Status",
+          "type": "string"
+        },
+        "quote_usable": {
+          "title": "Quote Usable",
+          "type": "boolean"
+        },
+        "history_usable": {
+          "title": "History Usable",
+          "type": "boolean"
+        },
+        "spread_bps": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Bps"
+        },
+        "volatility": {
+          "$ref": "#/$defs/VolatilityMetrics"
+        },
+        "liquidity_status": {
+          "default": "UNAVAILABLE",
+          "enum": [
+            "UNAVAILABLE",
+            "SYNTHETIC_L1_OBSERVED"
+          ],
+          "title": "Liquidity Status",
+          "type": "string"
+        },
+        "bid_displayed_base_units": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bid Displayed Base Units"
+        },
+        "ask_displayed_base_units": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ask Displayed Base Units"
+        },
+        "displayed_imbalance": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": -1.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayed Imbalance"
+        },
+        "tradeability_status": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Tradeability Status",
+          "type": "string"
+        },
+        "may_add_risk": {
+          "const": false,
+          "default": false,
+          "title": "May Add Risk",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "quote_status",
+        "history_status",
+        "quote_usable",
+        "history_usable",
+        "spread_bps",
+        "volatility"
+      ],
+      "title": "LiquidityAssessment",
+      "type": "object"
+    },
+    "VolatilityMetrics": {
+      "properties": {
+        "status": {
+          "enum": [
+            "AVAILABLE",
+            "INSUFFICIENT"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "bar_count": {
+          "title": "Bar Count",
+          "type": "integer"
+        },
+        "return_count": {
+          "title": "Return Count",
+          "type": "integer"
+        },
+        "window_start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Window Start"
+        },
+        "window_end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Window End"
+        },
+        "cadence_regular": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cadence Regular"
+        },
+        "cadence_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cadence Seconds"
+        },
+        "mean_return_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mean Return Bps"
+        },
+        "standard_deviation_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Standard Deviation Bps"
+        },
+        "latest_return_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Latest Return Bps"
+        },
+        "abnormality_status": {
+          "enum": [
+            "AVAILABLE",
+            "INSUFFICIENT_BASELINE",
+            "ZERO_VARIANCE_MATCH",
+            "DEGENERATE_BASELINE",
+            "IRREGULAR_CADENCE"
+          ],
+          "title": "Abnormality Status",
+          "type": "string"
+        },
+        "abnormality_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Abnormality Score"
+        }
+      },
+      "required": [
+        "status",
+        "bar_count",
+        "return_count",
+        "window_start",
+        "window_end",
+        "cadence_regular",
+        "cadence_seconds",
+        "mean_return_bps",
+        "standard_deviation_bps",
+        "latest_return_bps",
+        "abnormality_status",
+        "abnormality_score"
+      ],
+      "title": "VolatilityMetrics",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A05",
+      "default": "A05",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.2.0",
+      "default": "0.2.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "output_type": {
+      "const": "LiquidityState",
+      "default": "LiquidityState",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "policy_version": {
+      "const": "paper-log-volatility-v1",
+      "default": "paper-log-volatility-v1",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "units": {
+      "const": "LOG_RETURN_BPS_PER_OBSERVATION",
+      "default": "LOG_RETURN_BPS_PER_OBSERVATION",
+      "title": "Units",
+      "type": "string"
+    },
+    "abnormality_kind": {
+      "const": "UNCALIBRATED_LAST_RETURN_DEVIATION",
+      "default": "UNCALIBRATED_LAST_RETURN_DEVIATION",
+      "title": "Abnormality Kind",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "hard_gate_authority": {
+      "const": "RISK_KERNEL",
+      "default": "RISK_KERNEL",
+      "title": "Hard Gate Authority",
+      "type": "string"
+    },
+    "session_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Session Status",
+      "type": "string"
+    },
+    "broker_telemetry_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Broker Telemetry Status",
+      "type": "string"
+    },
+    "calibration_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Calibration Status",
+      "type": "string"
+    },
+    "assessments": {
+      "items": {
+        "$ref": "#/$defs/LiquidityAssessment"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "title": "Assessments",
+      "type": "array"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "confidence",
+    "uncertainty",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "assessments"
+  ],
+  "title": "LiquidityState",
+  "type": "object"
+}
