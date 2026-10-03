@@ -10,7 +10,8 @@ Mission Control together:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python -m pip install -e ".[dev]"
+.\.venv\Scripts\python -m pip install --require-hashes --only-binary=:all: -r requirements/windows-py311.lock
+.\.venv\Scripts\python -m pip install --no-deps --no-build-isolation -e .
 npm --prefix apps/web ci
 npm --prefix apps/web run build
 .\.venv\Scripts\ai-quant-local --state data-local/local-app
@@ -23,6 +24,9 @@ ports and duplicate local API owners refuse startup. Without a privately configu
 passed only to the backend. Paid providers and optional background workers stay
 disabled in this launcher. See [local application handoff](docs/LOCAL_APPLICATION_HANDOFF.md)
 for custom ports, bounded smoke checks, ownership limits and remaining deployment work.
+The application lock includes every declared Python extra. See the
+[dependency handoff](docs/DEPENDENCY_LOCK_HANDOFF.md) for Linux setup, compiler
+bootstrap, regeneration and the limits of these dependency profiles.
 
 For separate manual API/frontend sessions:
 
