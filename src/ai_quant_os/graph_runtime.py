@@ -51,6 +51,8 @@ class BoundAgentTools:
             tool,
             scope=self._context.scope,
             payload=payload,
+            context_ref=self._context.context_ref,
+            task_id=self._context.task_id,
         )
         self._runtime.require_context(self._context)
         return result

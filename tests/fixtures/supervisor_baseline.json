@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0",
+  "provenance": "DEVELOPMENT_API_REPLAY_WITH_SYNTHETIC_WORLD_EVENTS_AND_LOCAL_CSV_IMPORT_NOT_HOLDOUT",
+  "rate_csv": "KEY,FREQ,REF_AREA,CURRENCY,PROVIDER_FM,INSTRUMENT_FM,PROVIDER_FM_ID,DATA_TYPE_FM,TIME_PERIOD,OBS_VALUE,OBS_STATUS,OBS_CONF,OBS_PRE_BREAK,OBS_COM,TIME_FORMAT,BREAKS,COLLECTION,COMPILING_ORG,DISS_ORG,DOM_SER_IDS,FM_CONTRACT_TIME,FM_COUPON_RATE,FM_IDENTIFIER,FM_LOT_SIZE,FM_MATURITY,FM_OUTS_AMOUNT,FM_PUT_CALL,FM_STRIKE_PRICE,PUBL_MU,PUBL_PUBLIC,UNIT_INDEX_BASE,COMPILATION,COVERAGE,DECIMALS,SOURCE_AGENCY,SOURCE_PUB,TITLE,TITLE_COMPL,UNIT,UNIT_MULT\r\nFM.B.U2.EUR.4F.KR.DFR.LEV,B,U2,EUR,4F,KR,DFR,LEV,2026-06-17,2.25,A,F,,,P1D,,E,4F0,,,,,,,,,,,,,,,,7,,,Deposit facility - date of changes (raw data) - Level,\"Euro area (changing composition) - Key interest rate - Deposit facility - date of changes (raw data) - Level - Euro, provided by ECB\",PCPA,0\r\nFM.B.U2.EUR.4F.KR.DFR.LEV,B,U2,EUR,4F,KR,DFR,LEV,2026-09-16,2.5,A,F,,,P1D,,E,4F0,,,,,,,,,,,,,,,,7,,,Deposit facility - date of changes (raw data) - Level,\"Euro area (changing composition) - Key interest rate - Deposit facility - date of changes (raw data) - Level - Euro, provided by ECB\",PCPA,0\r\nFM.B.U2.EUR.4F.KR.MLFR.LEV,B,U2,EUR,4F,KR,MLFR,LEV,2026-06-17,2.65,A,F,,,P1D,,E,4F0,,,,,,,,,,,,,,,,7,,,Marginal lending facility - date of changes (raw data) - Level,\"Euro area (changing composition) - Key interest rate - Marginal lending facility - date of changes (raw data) - Level - Euro, provided by ECB\",PCPA,0\r\nFM.B.U2.EUR.4F.KR.MLFR.LEV,B,U2,EUR,4F,KR,MLFR,LEV,2026-09-16,2.9,A,F,,,P1D,,E,4F0,,,,,,,,,,,,,,,,7,,,Marginal lending facility - date of changes (raw data) - Level,\"Euro area (changing composition) - Key interest rate - Marginal lending facility - date of changes (raw data) - Level - Euro, provided by ECB\",PCPA,0\r\nFM.B.U2.EUR.4F.KR.MRR_FR.LEV,B,U2,EUR,4F,KR,MRR_FR,LEV,2026-06-17,2.4,A,F,,,P1D,,E,4F0,,,,,,,,,,,,,,,,7,,,Main refinancing operations - fixed rate tenders (fixed rate) (date of changes) - Level,\"Euro area (changing composition) - Key interest rate - Main refinancing operations - fixed rate tenders (fixed rate) (date of changes) - Level - Euro, provided by ECB\",PCPA,0\r\nFM.B.U2.EUR.4F.KR.MRR_FR.LEV,B,U2,EUR,4F,KR,MRR_FR,LEV,2026-09-16,2.65,A,F,,,P1D,,E,4F0,,,,,,,,,,,,,,,,7,,,Main refinancing operations - fixed rate tenders (fixed rate) (date of changes) - Level,\"Euro area (changing composition) - Key interest rate - Main refinancing operations - fixed rate tenders (fixed rate) (date of changes) - Level - Euro, provided by ECB\",PCPA,0\r\n",
+  "cases": [
+    {
+      "id": "empty",
+      "as_of": "2026-10-03T12:00:00+00:00",
+      "market": "EMPTY",
+      "rates": "MISSING",
+      "feed": null,
+      "expected_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "expected_rate_status": "MISSING",
+      "expected_event_status": "MISSING"
+    },
+    {
+      "id": "fresh",
+      "as_of": "2026-10-03T12:00:00+00:00",
+      "market": "FRESH",
+      "rates": "MISSING",
+      "feed": null,
+      "expected_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "COMPLETED",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "expected_rate_status": "MISSING",
+      "expected_event_status": "MISSING"
+    },
+    {
+      "id": "stale",
+      "as_of": "2026-10-03T12:00:00+00:00",
+      "market": "STALE",
+      "rates": "MISSING",
+      "feed": null,
+      "expected_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "expected_rate_status": "MISSING",
+      "expected_event_status": "MISSING"
+    },
+    {
+      "id": "rates",
+      "as_of": "2026-10-03T12:00:00+00:00",
+      "market": "EMPTY",
+      "rates": "LOCAL_CSV_IMPORT",
+      "feed": null,
+      "expected_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "expected_rate_status": "RECENT_RECEIPT",
+      "expected_event_status": "MISSING"
+    },
+    {
+      "id": "corrupt_rates",
+      "as_of": "2026-10-03T12:00:00+00:00",
+      "market": "EMPTY",
+      "rates": "CORRUPT_LOCAL_ARCHIVE",
+      "feed": null,
+      "expected_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "NOT_STARTED_SOURCE"
+      },
+      "expected_rate_status": null,
+      "expected_event_status": "MISSING"
+    },
+    {
+      "id": "events",
+      "as_of": "2026-10-03T12:00:00+00:00",
+      "market": "EMPTY",
+      "rates": "MISSING",
+      "feed": {
+        "observed_at": "2026-10-03T12:00:00+00:00",
+        "valid_until": "2026-10-03T12:00:03+00:00",
+        "coverage_start": "2026-10-02T12:00:00+00:00",
+        "coverage_end": "2026-10-04T12:00:00+00:00",
+        "economic_calendar": [
+          {
+            "event_id": "synthetic-usd",
+            "kind": "SCHEDULED",
+            "currencies": [
+              "USD"
+            ],
+            "severity": "HIGH",
+            "occurs_at": "2026-10-03T12:00:20+00:00",
+            "reported_at": "2026-10-03T11:04:49.926859+00:00"
+          }
+        ]
+      },
+      "expected_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "expected_rate_status": "MISSING",
+      "expected_event_status": "FRESH"
+    }
+  ]
+}

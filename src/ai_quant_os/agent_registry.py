@@ -141,6 +141,8 @@ class ToolInvocation:
     tool: str
     scope: str
     payload: dict[str, object]
+    context_ref: str | None = None
+    task_id: str | None = None
 
 
 class AgentToolBoundary:
@@ -170,7 +172,15 @@ class AgentToolBoundary:
         return tuple(sorted(tools))
 
     async def call(
-        self, agent_id: str, version: str, tool: str, *, scope: str, payload: dict[str, object]
+        self,
+        agent_id: str,
+        version: str,
+        tool: str,
+        *,
+        scope: str,
+        payload: dict[str, object],
+        context_ref: str | None = None,
+        task_id: str | None = None,
     ) -> dict[str, object]:
         self._registry.require_tool(agent_id, version, tool, scope=scope)
         handler = self._handlers.get(tool)
@@ -183,7 +193,9 @@ class AgentToolBoundary:
         raw = json.dumps(payload, allow_nan=False, separators=(",", ":"))
         if len(raw.encode()) > 16384:
             raise ValueError("Agent tool input exceeds limit")
-        invocation = ToolInvocation(agent_id, version, tool, scope, json.loads(raw))
+        invocation = ToolInvocation(
+            agent_id, version, tool, scope, json.loads(raw), context_ref, task_id
+        )
         timeout = self._registry.get(agent_id, version).timeout_seconds
         try:
             result = await asyncio.wait_for(handler(invocation), timeout=timeout)
@@ -191,6 +203,7 @@ class AgentToolBoundary:
             raise TimeoutError("Agent tool timed out") from None
         except Exception:
             raise ValueError("Agent tool failed") from None
+        self._registry.require_tool(agent_id, version, tool, scope=scope)
         if (
             not isinstance(result, dict)
             or len(json.dumps(result, allow_nan=False).encode()) > 65536
@@ -214,7 +227,7 @@ def load_agent_catalog() -> AgentRegistry:
                 allowed_tools=tuple(sorted(ROLE_CEILINGS[identifier])),
             )
         )
-    for identifier in ("A02", "A03", "A04", "A05", "A06", "A07"):
+    for identifier in ("A01", "A02", "A03", "A04", "A05", "A06", "A07"):
         original = registry.get(identifier, "0.1.0")
         registry.register(
             AgentManifest.model_validate(
@@ -222,6 +235,7 @@ def load_agent_catalog() -> AgentRegistry:
                     **original.model_dump(),
                     "agent_version": "0.2.0",
                     "implementation_status": "PARTIAL",
+                    **({"timeout_seconds": 5} if identifier == "A01" else {}),
                 }
             )
         )

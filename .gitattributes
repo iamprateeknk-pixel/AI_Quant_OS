@@ -30,3 +30,7 @@ src/ai_quant_os/macro*.py text eol=lf
 tests/fixtures/macro_baseline.json text eol=lf
 docs/evaluations/macro-baseline.json text eol=lf
 docs/schemas/currency-macro-bias.schema.json text eol=lf
+src/ai_quant_os/supervisor*.py text eol=lf
+tests/fixtures/supervisor_baseline.json text eol=lf
+docs/evaluations/supervisor-baseline.json text eol=lf
+docs/schemas/task-plan.schema.json text eol=lf

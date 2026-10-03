@@ -106,14 +106,30 @@ def test_tool_boundary_denies_before_handler_and_exposes_only_installed_allowed_
         AgentToolBoundary(registry, {"BROKER_SUBMIT": read})
 
 
+def test_tool_boundary_withholds_result_if_orchestration_is_revoked_during_call():
+    registry = load_agent_catalog()
+
+    async def revoke(invocation):
+        registry.set_lifecycle("A01", "0.2.0", "LIMITED")
+        return {"calls": []}
+
+    async def invoke():
+        boundary = AgentToolBoundary(registry, {"TASK_ORCHESTRATE": revoke})
+        with pytest.raises(PermissionError):
+            await boundary.call("A01", "0.2.0", "TASK_ORCHESTRATE", scope="PAPER", payload={})
+
+    asyncio.run(invoke())
+
+
 def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
     client = TestClient(create_app(operator_token="fixture-token"))
     body = client.get("/api/v1/agents/registry").json()
     assert body["mode"] == "PAPER"
-    assert len(body["agents"]) == 24
+    assert len(body["agents"]) == 25
     assert {(item["agent_id"], item["agent_version"]) for item in body["agents"]} == (
         {(f"A{index:02}", "0.1.0") for index in range(1, 19)}
         | {
+            ("A01", "0.2.0"),
             ("A02", "0.2.0"),
             ("A03", "0.2.0"),
             ("A04", "0.2.0"),

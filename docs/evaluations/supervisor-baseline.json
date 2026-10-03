@@ -1,0 +1,1627 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "A01",
+  "agent_version": "0.2.0",
+  "fixture_sha256": "1f44400dcdc764a7900e9878a859941b901f9d34a3013284717aeee576b770c1",
+  "provenance": "DEVELOPMENT_API_REPLAY_WITH_SYNTHETIC_WORLD_EVENTS_AND_LOCAL_CSV_IMPORT_NOT_HOLDOUT",
+  "source_sha256": {
+    "supervisor_sources.py": "89eb6ff57b1818f814a6c39c3df24f75f4f61d89093a36f742755acad5589d30",
+    "supervisor_agent.py": "53fb20aa76daba4716fb0c76b795161a43583e8b78f9a6090ecb0615bbb8f9dc",
+    "supervisor_dispatch.py": "9ed79af09e1c2bb8890daa3705132334af132c80a6adc996e9d628497ef7980a"
+  },
+  "evaluator_sha256": "5d8727f6ff50224067a96924ecfde5da3672169b0e2db04ef85d4959f4d79c01",
+  "case_count": 6,
+  "matching_cases": 6,
+  "calibration_status": "UNAVAILABLE",
+  "promotion_approved": false,
+  "results": [
+    {
+      "case_id": "empty",
+      "status": "COMPLETED",
+      "elapsed_ms": 327.11399998515844,
+      "context_ref": "agent-context:c5dc467c83e82e24db9414d954711e31e5e6ff3d5248a1e0d621f22ffb005bf6",
+      "matches": true,
+      "restart_exact": true,
+      "actual_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "actual_rate_status": "MISSING",
+      "actual_event_status": "MISSING",
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A01",
+        "agent_version": "0.2.0",
+        "task_id": "empty",
+        "input_refs": [
+          "context-evidence:f80a20dd4e213ee174932032389ff3e9720ec6d9b939c6bb8dd99a8191055389",
+          "context-evidence:adbc7056571cdc55481b1d8a79ffe198df519a4e2f86c07ebf8f5614b4063f08",
+          "context-evidence:e3b3a828b8f027da520a697a8a95987ebe8b7ed4e421ebd2d68b363ba1f1d11a",
+          "context-evidence:34aeb1e889406220e5ecfb9c5f8c43826493f305a0780f58a476747308ba6bc4"
+        ],
+        "evidence_refs": [
+          "context-evidence:f80a20dd4e213ee174932032389ff3e9720ec6d9b939c6bb8dd99a8191055389",
+          "context-evidence:adbc7056571cdc55481b1d8a79ffe198df519a4e2f86c07ebf8f5614b4063f08",
+          "context-evidence:e3b3a828b8f027da520a697a8a95987ebe8b7ed4e421ebd2d68b363ba1f1d11a",
+          "context-evidence:34aeb1e889406220e5ecfb9c5f8c43826493f305a0780f58a476747308ba6bc4"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "contradictions": [
+          "SPECIALIST_CALIBRATION_UNAVAILABLE",
+          "REPUTATION_UNAVAILABLE",
+          "HEALTH_UNAVAILABLE",
+          "WORLD_EMPTY",
+          "A02_WAIT_FOR_DATA"
+        ],
+        "trace_id": "cd887fc7-d03e-4828-a5ee-dfab7c35f90b",
+        "requires_escalation": true,
+        "output_type": "TaskPlan",
+        "policy_version": "paper-specialist-supervisor-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "max_calls": 6,
+        "dispatch_mode": "SEQUENTIAL_PARENT_DEADLINE",
+        "parent_context_ref": "agent-context:c5dc467c83e82e24db9414d954711e31e5e6ff3d5248a1e0d621f22ffb005bf6",
+        "world_state_version": "world:66fe697adecf41e564061d02509a9ee5db39c17cc4d0085ec00f474fa4b53e2c",
+        "health_status": "UNAVAILABLE",
+        "selected": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410"
+          }
+        ],
+        "deferred": [
+          {
+            "agent_id": "A01",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:178cecb2cd65e57d6b13725af5cd208c188b80f5f85d6d3c376d81f1caac154b",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c23d6d881cf368a90c4491bbee116cd7c50c06687aa0654659f5074931625452",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:bd71b926b9d8d8ff3e13b7ae4a24351398c46feb7989741e4fc4ff2873d69ed0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:cc8b79b541d2275db0b77fcc3740cc1f9c0db823b54f453de80bbdc961aea4d0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c975d5123a8167f4f0d3c47cea6b240663a2fc08181bae53b33b8fbf48bb6908",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:747e4032c6b101f9d7184b1118fa57e34639c22206b9eab3635fac7ec3f9bae3",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A07",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e2000465c86f963ee059b4e96a9d845fa35719a9663a41cd09467ab81f74b200",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A08",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:1f27cb89c06b7462030cb7b54880473976e8c1da916c10daddf20b1d334e14a5",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A09",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:07a3dc356791528a06481f698f13e1821638fb88aa7f84355531e8b16498f2f2",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A10",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:49c88ddf01f40dca047fe772a58e8e14261ad33f41ed0e617df606792c912d0d",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A11",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:10999d887c47d643ee85c76cc6876e3dfff74254355c14c373a53ba6aab9d70e",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A12",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:b03303e77b7b97765f08944a4f7098561183c102040a518c23c114e96410eaa6",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A13",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:39cb03c2cc6437dd492f65851928c92d8d6287db3aeefbff913057c656268184",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A14",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e58b53b87405764861d535a44ea5e5d8d860c0aaa7a361cd41dd3962e2a14ed4",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A15",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:8eef4ace9f6dee4a7c601a9224eb5ca69a2ad678cd31cd124f1b04c9e4210cfc",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A16",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:67cf7514faa7dbff7ddbc78053f6583016cfc2719690426e095e188e912b1c6f",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A17",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:d358d97980983c944be304bbd2b783890c1d1414f929db803448f4765a765b11",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A18",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:abb305012fb5089936bb1e3ec0ede8585ea4021b68fd398b2342bd3838a23ed8",
+            "reason": "PLANNED"
+          }
+        ],
+        "calls": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde",
+            "run_id": "supervisor_5396f2300e17cb7f674e757a3c8eab789bbb18d56ebd91038fafd5d83bfde0a3",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:7eac3c1f32b13ead7db2ffc78aa5ee82738cb7422e670807078ffea4b3638f82",
+            "output_sha256": "dc2741669d71f435abbf4385ef110e411d32777e2f471bf9419e136dd20a55a3",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e",
+            "run_id": "supervisor_a2ecfc3bc49de3a29177b40c17c504963edfb0b4a0afbf7218e215309e86df04",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:ea9e41ef7c7818d5cae7532672863677bc292d64f641b19acd664963aca14cda",
+            "output_sha256": "8f8c84e95fe9105f9a21ef9408573ce4e5c278cc2a9f2c1437bd2add868bc296",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324",
+            "run_id": "supervisor_7aefb292664d9b8b3b3ee37b5618966574fe1329605f2c5a0b1ef4b1b065a6a8",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:5099e81bc6ffba4a4a038734449b5da02ff4b62fee8860d00d83cc74c4f82968",
+            "output_sha256": "c12fd330921c9786e20fe28dfd1f3009ac3c11019f01adfc47891ecd7da2d476",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d",
+            "run_id": "supervisor_5cfdbd492002268bb299bd6c911007bb10f0d3bee468c2cba6b3089bd74c5237",
+            "status": "WAIT_FOR_DATA",
+            "context_ref": "agent-context:99ee3f94569e38b874b6a9e276aeb92e36238f011e9d1a38f550e660aeb61519",
+            "output_sha256": null,
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851",
+            "run_id": "supervisor_02fdb8f1dae8ca951d68244b400971b9c7ded05cd8345baf6b1aa663c24a4cfb",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:992a32ac6514dd2bf1eca4843dc8d5ac49b9fb5a8c8a677553b5933f2d97aa40",
+            "output_sha256": "fbeb7866c7f933dcb03209df14f13c8fa34a6d3a1381d4c5c3f2de7bd424586e",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410",
+            "run_id": "supervisor_134062d46114af20919b8bfd2ef1ff5229c76599c88cc2f8188704e6f3db84f7",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:4f64316e4aa568e202f844253b455a5053586a4df7d8dffe8b37d54574f3b840",
+            "output_sha256": "a237db2b1cc1c9c281caa7ab14bdb6289c789027110a2ba2b70efbcfebc4c6e4",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "fresh",
+      "status": "COMPLETED",
+      "elapsed_ms": 313.57240001671016,
+      "context_ref": "agent-context:72d307a52b90a530db23f65bd87900d68bdfdc13a773fe6d312cb05d2cb6267a",
+      "matches": true,
+      "restart_exact": true,
+      "actual_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "COMPLETED",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "actual_rate_status": "MISSING",
+      "actual_event_status": "MISSING",
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A01",
+        "agent_version": "0.2.0",
+        "task_id": "fresh",
+        "input_refs": [
+          "context-evidence:1bb513038a0a100ad7356397a4cdab99407b4951c7408fe87c8ef955506370a4",
+          "context-evidence:2d902661e66f4dc11c17ac2b64d91773c1545f00c1db0ee9331898d3d0f25940",
+          "context-evidence:cbd1bd435cfd4f4a5a8898a193c9f4254323f8aca60ea38f6f445c19a928ff8d",
+          "context-evidence:479f61d16d4cf6b3edbc0761244272fd0b0e439fca116bedb2cda419ed7aa542"
+        ],
+        "evidence_refs": [
+          "context-evidence:1bb513038a0a100ad7356397a4cdab99407b4951c7408fe87c8ef955506370a4",
+          "context-evidence:2d902661e66f4dc11c17ac2b64d91773c1545f00c1db0ee9331898d3d0f25940",
+          "context-evidence:cbd1bd435cfd4f4a5a8898a193c9f4254323f8aca60ea38f6f445c19a928ff8d",
+          "context-evidence:479f61d16d4cf6b3edbc0761244272fd0b0e439fca116bedb2cda419ed7aa542"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "contradictions": [
+          "SPECIALIST_CALIBRATION_UNAVAILABLE",
+          "REPUTATION_UNAVAILABLE",
+          "HEALTH_UNAVAILABLE",
+          "WORLD_DEGRADED"
+        ],
+        "trace_id": "9b94d1c4-15ac-4b71-a10b-7cfe0418ad0b",
+        "requires_escalation": true,
+        "output_type": "TaskPlan",
+        "policy_version": "paper-specialist-supervisor-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "max_calls": 6,
+        "dispatch_mode": "SEQUENTIAL_PARENT_DEADLINE",
+        "parent_context_ref": "agent-context:72d307a52b90a530db23f65bd87900d68bdfdc13a773fe6d312cb05d2cb6267a",
+        "world_state_version": "world:dbbb3dfb350e455cfc9b41f4c0e631b1c2611a6f57769adaa81d7a2b7737a5c6",
+        "health_status": "UNAVAILABLE",
+        "selected": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410"
+          }
+        ],
+        "deferred": [
+          {
+            "agent_id": "A01",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:178cecb2cd65e57d6b13725af5cd208c188b80f5f85d6d3c376d81f1caac154b",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c23d6d881cf368a90c4491bbee116cd7c50c06687aa0654659f5074931625452",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:bd71b926b9d8d8ff3e13b7ae4a24351398c46feb7989741e4fc4ff2873d69ed0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:cc8b79b541d2275db0b77fcc3740cc1f9c0db823b54f453de80bbdc961aea4d0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c975d5123a8167f4f0d3c47cea6b240663a2fc08181bae53b33b8fbf48bb6908",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:747e4032c6b101f9d7184b1118fa57e34639c22206b9eab3635fac7ec3f9bae3",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A07",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e2000465c86f963ee059b4e96a9d845fa35719a9663a41cd09467ab81f74b200",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A08",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:1f27cb89c06b7462030cb7b54880473976e8c1da916c10daddf20b1d334e14a5",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A09",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:07a3dc356791528a06481f698f13e1821638fb88aa7f84355531e8b16498f2f2",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A10",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:49c88ddf01f40dca047fe772a58e8e14261ad33f41ed0e617df606792c912d0d",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A11",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:10999d887c47d643ee85c76cc6876e3dfff74254355c14c373a53ba6aab9d70e",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A12",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:b03303e77b7b97765f08944a4f7098561183c102040a518c23c114e96410eaa6",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A13",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:39cb03c2cc6437dd492f65851928c92d8d6287db3aeefbff913057c656268184",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A14",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e58b53b87405764861d535a44ea5e5d8d860c0aaa7a361cd41dd3962e2a14ed4",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A15",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:8eef4ace9f6dee4a7c601a9224eb5ca69a2ad678cd31cd124f1b04c9e4210cfc",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A16",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:67cf7514faa7dbff7ddbc78053f6583016cfc2719690426e095e188e912b1c6f",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A17",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:d358d97980983c944be304bbd2b783890c1d1414f929db803448f4765a765b11",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A18",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:abb305012fb5089936bb1e3ec0ede8585ea4021b68fd398b2342bd3838a23ed8",
+            "reason": "PLANNED"
+          }
+        ],
+        "calls": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde",
+            "run_id": "supervisor_560686282409b02bc115fbe5eceff42d53a8f2026ab12b2ab5cc19105c270f1d",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:63cbdcefb1d32d1403748f1cc87f34c3466a6ec5aff167f3a6ea71c5215edde6",
+            "output_sha256": "117f89eb0db265ea4b1b7871eb3c8a7a2e3edd7e82cea1294a3ef982e3748054",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e",
+            "run_id": "supervisor_3b2da2b9c946919cd306f89fd94db0113ace71439146515b03feb903d3040022",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:fb433f42cd2a50e69e448caf37980722dc2308d43a64bdc18b36e4dc6b25ee91",
+            "output_sha256": "55a8d2ee86d8f362219583764e0b4b113a891383216abf2818c90464388328a4",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324",
+            "run_id": "supervisor_2bc4974788220a6b1c228e99c28c7c67d11ec14509acd8df2f9a3f88ddeea297",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:70d3cf9e29cdf6a4897e4271625043d69d6d939652cd4f28504d4f368f78e015",
+            "output_sha256": "a5e4e1c93cc5bdd00ac534fedc8850c56c2d03718eb81878c2d0cc010a03fed8",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d",
+            "run_id": "supervisor_9e30103b1cbff4ba7f065d2eb74589fafe7ff09e1465f43ee5c9ff176eb4ffcb",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:53f5941715ebe3d2039e51007700c9ef53b59e3d31c15a8522fb171b13629463",
+            "output_sha256": "f49ebe5a6a0ee598fb2b3de2255259e92f38bfc8ef660739fbaddd83ebb0cf98",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851",
+            "run_id": "supervisor_313da4eb88bf87ad350482cd028765034f019aed0dcecd308fc4c3456c1c6d2a",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:7d282d204e193636ee30ec9f742018cd741e5779e8eeb19a16681c429898d6cf",
+            "output_sha256": "b9ab43b8efc6e05e74410f29c316b359894f4826f2a311572bf99623613ee026",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410",
+            "run_id": "supervisor_80b30c44bd1af1a9e903c7b7f0896d27bfb6dc259b3886546ea75a7d3dc4b443",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:e6a2cd2a9ce1853eaced55e6b900efb0e06d953d32f7024aa81244e9f7960367",
+            "output_sha256": "3f9a8e553721e902a7349f0504ae178a036f1efe72de569a4577251f1f0f6ec9",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "stale",
+      "status": "COMPLETED",
+      "elapsed_ms": 318.3789999457076,
+      "context_ref": "agent-context:c614414baa40d90baab418accadd3f1cb9978523f2b7f3ae263b18bcbac5bfcb",
+      "matches": true,
+      "restart_exact": true,
+      "actual_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "actual_rate_status": "MISSING",
+      "actual_event_status": "MISSING",
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A01",
+        "agent_version": "0.2.0",
+        "task_id": "stale",
+        "input_refs": [
+          "context-evidence:c10a5a972c839952c1e8d6e0d63f67dd8877cab55b19e3af558dc9a626c136d1",
+          "context-evidence:5c5706fe8885b701e1ae406ea574443e528537c88fe7ab5ad5830563f641d25d",
+          "context-evidence:270f8a813cc88950f01592d8374a0ff92c777a04a0e9bb424d96711231057d3d",
+          "context-evidence:dde702d44bfc6c1622c4f9ad05c2bf8237fab8117017e3f69588e457f9208642"
+        ],
+        "evidence_refs": [
+          "context-evidence:c10a5a972c839952c1e8d6e0d63f67dd8877cab55b19e3af558dc9a626c136d1",
+          "context-evidence:5c5706fe8885b701e1ae406ea574443e528537c88fe7ab5ad5830563f641d25d",
+          "context-evidence:270f8a813cc88950f01592d8374a0ff92c777a04a0e9bb424d96711231057d3d",
+          "context-evidence:dde702d44bfc6c1622c4f9ad05c2bf8237fab8117017e3f69588e457f9208642"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "contradictions": [
+          "SPECIALIST_CALIBRATION_UNAVAILABLE",
+          "REPUTATION_UNAVAILABLE",
+          "HEALTH_UNAVAILABLE",
+          "WORLD_DEGRADED",
+          "A02_WAIT_FOR_DATA"
+        ],
+        "trace_id": "a3fa52e3-72d0-497c-b064-4fda82be270c",
+        "requires_escalation": true,
+        "output_type": "TaskPlan",
+        "policy_version": "paper-specialist-supervisor-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "max_calls": 6,
+        "dispatch_mode": "SEQUENTIAL_PARENT_DEADLINE",
+        "parent_context_ref": "agent-context:c614414baa40d90baab418accadd3f1cb9978523f2b7f3ae263b18bcbac5bfcb",
+        "world_state_version": "world:fab75bbc24483cb4c772dcc50640d55a17c8dbc911b2fb95da4e96f1ebbeabd3",
+        "health_status": "UNAVAILABLE",
+        "selected": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410"
+          }
+        ],
+        "deferred": [
+          {
+            "agent_id": "A01",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:178cecb2cd65e57d6b13725af5cd208c188b80f5f85d6d3c376d81f1caac154b",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c23d6d881cf368a90c4491bbee116cd7c50c06687aa0654659f5074931625452",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:bd71b926b9d8d8ff3e13b7ae4a24351398c46feb7989741e4fc4ff2873d69ed0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:cc8b79b541d2275db0b77fcc3740cc1f9c0db823b54f453de80bbdc961aea4d0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c975d5123a8167f4f0d3c47cea6b240663a2fc08181bae53b33b8fbf48bb6908",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:747e4032c6b101f9d7184b1118fa57e34639c22206b9eab3635fac7ec3f9bae3",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A07",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e2000465c86f963ee059b4e96a9d845fa35719a9663a41cd09467ab81f74b200",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A08",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:1f27cb89c06b7462030cb7b54880473976e8c1da916c10daddf20b1d334e14a5",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A09",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:07a3dc356791528a06481f698f13e1821638fb88aa7f84355531e8b16498f2f2",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A10",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:49c88ddf01f40dca047fe772a58e8e14261ad33f41ed0e617df606792c912d0d",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A11",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:10999d887c47d643ee85c76cc6876e3dfff74254355c14c373a53ba6aab9d70e",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A12",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:b03303e77b7b97765f08944a4f7098561183c102040a518c23c114e96410eaa6",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A13",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:39cb03c2cc6437dd492f65851928c92d8d6287db3aeefbff913057c656268184",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A14",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e58b53b87405764861d535a44ea5e5d8d860c0aaa7a361cd41dd3962e2a14ed4",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A15",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:8eef4ace9f6dee4a7c601a9224eb5ca69a2ad678cd31cd124f1b04c9e4210cfc",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A16",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:67cf7514faa7dbff7ddbc78053f6583016cfc2719690426e095e188e912b1c6f",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A17",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:d358d97980983c944be304bbd2b783890c1d1414f929db803448f4765a765b11",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A18",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:abb305012fb5089936bb1e3ec0ede8585ea4021b68fd398b2342bd3838a23ed8",
+            "reason": "PLANNED"
+          }
+        ],
+        "calls": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde",
+            "run_id": "supervisor_8cb25bda4585cd8f84ae13be682fde4b565c4ff8c37e53ee68f38f082680a24c",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:aeaea96881c19b8f30331f996571674683b62e8ee475dced31cca536c8cb853d",
+            "output_sha256": "cf3702c9aa40b028de396c7d94e3d6697ebec57897226dd932da7199095715d5",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e",
+            "run_id": "supervisor_daf5d32768449d483584ffead0b6b3df40c397d78c2b7c93091a62f968a4158e",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:940eba8291af7bf6178b8f017c3a2a8513874721443019b1d8e8c74b579a204e",
+            "output_sha256": "514e7085c8e256428765eb0ab713efe2465a35889da69f55851be154403c746b",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324",
+            "run_id": "supervisor_79530fd6bca5b0b1a44f04e3f86a4a5a1b6297677b14467126fac4f3b5ac189e",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:689ac4a23ad69e709d0d9c0ba66b17c4f294a4f7970db83a035295d5f06bcb9f",
+            "output_sha256": "ecaf63faa099196ddfe950550099b965e42fdbfb8a15540b1ca571c34e42c2ef",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d",
+            "run_id": "supervisor_0e1e3dc64c788ab91eb732d081c898e77465f681b2ec5425c8245434ee943941",
+            "status": "WAIT_FOR_DATA",
+            "context_ref": "agent-context:d09a9734997e424bce201ac88c2ef643ddc5294aec21e901415733e1352c8fc6",
+            "output_sha256": null,
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851",
+            "run_id": "supervisor_251b2ca9aac8473da010110ddc41c2d1c6885758ab0164186d4b5ebb06d3e455",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:eeee77c7bcde12bf7a81665c58df545143acc990e4676cf83fc220e809b8a5d2",
+            "output_sha256": "d1c8df87c06a28bb7635c95bfd30bc70fbe9303e1c6134a11ddec60ddeda61bf",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410",
+            "run_id": "supervisor_d4db63344adb4100b6c5b6c1a3669c9339bc0cdb25977330ac431d8d0ae13820",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:454b5fe4182c171bf4a65e9af1d3b192a78f17382eecdad2405935c63218af21",
+            "output_sha256": "8676370e032c68fb38b00a2d643a0278561a3d94e3da078799cac12a6e037bdc",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "rates",
+      "status": "COMPLETED",
+      "elapsed_ms": 316.70710002072155,
+      "context_ref": "agent-context:238b96321b2e9ad235082df99ecbf3ff43692e9049dfb1863b2ab60d7fa868bf",
+      "matches": true,
+      "restart_exact": true,
+      "actual_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "actual_rate_status": "RECENT_RECEIPT",
+      "actual_event_status": "MISSING",
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A01",
+        "agent_version": "0.2.0",
+        "task_id": "rates",
+        "input_refs": [
+          "context-evidence:f80a20dd4e213ee174932032389ff3e9720ec6d9b939c6bb8dd99a8191055389",
+          "context-evidence:adbc7056571cdc55481b1d8a79ffe198df519a4e2f86c07ebf8f5614b4063f08",
+          "context-evidence:e3b3a828b8f027da520a697a8a95987ebe8b7ed4e421ebd2d68b363ba1f1d11a",
+          "context-evidence:34aeb1e889406220e5ecfb9c5f8c43826493f305a0780f58a476747308ba6bc4"
+        ],
+        "evidence_refs": [
+          "context-evidence:f80a20dd4e213ee174932032389ff3e9720ec6d9b939c6bb8dd99a8191055389",
+          "context-evidence:adbc7056571cdc55481b1d8a79ffe198df519a4e2f86c07ebf8f5614b4063f08",
+          "context-evidence:e3b3a828b8f027da520a697a8a95987ebe8b7ed4e421ebd2d68b363ba1f1d11a",
+          "context-evidence:34aeb1e889406220e5ecfb9c5f8c43826493f305a0780f58a476747308ba6bc4"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "contradictions": [
+          "SPECIALIST_CALIBRATION_UNAVAILABLE",
+          "REPUTATION_UNAVAILABLE",
+          "HEALTH_UNAVAILABLE",
+          "WORLD_EMPTY",
+          "A02_WAIT_FOR_DATA"
+        ],
+        "trace_id": "65914a4b-aff7-4eeb-a684-62f0b09e3286",
+        "requires_escalation": true,
+        "output_type": "TaskPlan",
+        "policy_version": "paper-specialist-supervisor-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "max_calls": 6,
+        "dispatch_mode": "SEQUENTIAL_PARENT_DEADLINE",
+        "parent_context_ref": "agent-context:238b96321b2e9ad235082df99ecbf3ff43692e9049dfb1863b2ab60d7fa868bf",
+        "world_state_version": "world:66fe697adecf41e564061d02509a9ee5db39c17cc4d0085ec00f474fa4b53e2c",
+        "health_status": "UNAVAILABLE",
+        "selected": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410"
+          }
+        ],
+        "deferred": [
+          {
+            "agent_id": "A01",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:178cecb2cd65e57d6b13725af5cd208c188b80f5f85d6d3c376d81f1caac154b",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c23d6d881cf368a90c4491bbee116cd7c50c06687aa0654659f5074931625452",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:bd71b926b9d8d8ff3e13b7ae4a24351398c46feb7989741e4fc4ff2873d69ed0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:cc8b79b541d2275db0b77fcc3740cc1f9c0db823b54f453de80bbdc961aea4d0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c975d5123a8167f4f0d3c47cea6b240663a2fc08181bae53b33b8fbf48bb6908",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:747e4032c6b101f9d7184b1118fa57e34639c22206b9eab3635fac7ec3f9bae3",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A07",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e2000465c86f963ee059b4e96a9d845fa35719a9663a41cd09467ab81f74b200",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A08",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:1f27cb89c06b7462030cb7b54880473976e8c1da916c10daddf20b1d334e14a5",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A09",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:07a3dc356791528a06481f698f13e1821638fb88aa7f84355531e8b16498f2f2",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A10",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:49c88ddf01f40dca047fe772a58e8e14261ad33f41ed0e617df606792c912d0d",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A11",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:10999d887c47d643ee85c76cc6876e3dfff74254355c14c373a53ba6aab9d70e",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A12",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:b03303e77b7b97765f08944a4f7098561183c102040a518c23c114e96410eaa6",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A13",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:39cb03c2cc6437dd492f65851928c92d8d6287db3aeefbff913057c656268184",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A14",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e58b53b87405764861d535a44ea5e5d8d860c0aaa7a361cd41dd3962e2a14ed4",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A15",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:8eef4ace9f6dee4a7c601a9224eb5ca69a2ad678cd31cd124f1b04c9e4210cfc",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A16",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:67cf7514faa7dbff7ddbc78053f6583016cfc2719690426e095e188e912b1c6f",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A17",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:d358d97980983c944be304bbd2b783890c1d1414f929db803448f4765a765b11",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A18",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:abb305012fb5089936bb1e3ec0ede8585ea4021b68fd398b2342bd3838a23ed8",
+            "reason": "PLANNED"
+          }
+        ],
+        "calls": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde",
+            "run_id": "supervisor_d4dcf97cf23040dcbf116187c2e06c8be9a7e77471c4a743e505ca47cdba20a5",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:9c74469b1028979b41e212d1fa47db045c20f84f68772117a28d1c24cdb88a2d",
+            "output_sha256": "b0f8eb98c452e612cd37e615717c8266ceb728288c6c08e7516824cf92c13105",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e",
+            "run_id": "supervisor_f06add6b3475b43c19eb930231eda8c4790a938f191045c1fc712bb286fe446a",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:f0e2264607e2109f90d77be151a4fa016d388a8ed1722ef77fe0687ebc1c557e",
+            "output_sha256": "a23dc668905c0a66bc268efe51ff5a7504db9a80cbde758f68835021691e4a10",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324",
+            "run_id": "supervisor_c28897576920b4dc6c45a180f0bc7ec16bc15acda689f4c0ebacbb35d0021a4b",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:e05218c5e9335f8ed9ab65c31e57dcc9b4f73dc31dc6d9089259e979e4f1494f",
+            "output_sha256": "cf930ac2452b557c290a54e6022f7223202caace6dcb79da1e15c0f33f875f41",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d",
+            "run_id": "supervisor_83fbe04346207439a46d532c02c5895d9e96d8a1c421a5196e33d0424feac67e",
+            "status": "WAIT_FOR_DATA",
+            "context_ref": "agent-context:a8a79127a3451341baa983e3a22771bdcfde4e09f9c9996c511c3a08d7e918d5",
+            "output_sha256": null,
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851",
+            "run_id": "supervisor_ad97e133bca60d83025a3295c9af5264f9c4c61c1ad510c6df9a7f860a359429",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:06a1bb2b73c339f487826313ecaa4cea8754a8c717a6ba0de7cb5b4357fa20f2",
+            "output_sha256": "54ab58761262eb90590e4e526585d4c0e22af6176b971e895d0f821a18bfe4a4",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410",
+            "run_id": "supervisor_5a532caae49689e69b737ca4d934f25905ee1c4bf871d89149beaf5587c3e02c",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:9a092ebfddc4e4b87f2257ad8caae3d6aa4848284409b83389e2e0c5cc752066",
+            "output_sha256": "efeef4819730cf8f67750507f7c3c25a3e9127a3f7efb6de8dc39ebab0eaa152",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "corrupt_rates",
+      "status": "COMPLETED",
+      "elapsed_ms": 273.02540000528097,
+      "context_ref": "agent-context:03c93413fb3f27bee757f6bea3ae1a9d132692f9d5e863f005936c0d88def394",
+      "matches": true,
+      "restart_exact": true,
+      "actual_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "NOT_STARTED_SOURCE"
+      },
+      "actual_rate_status": null,
+      "actual_event_status": "MISSING",
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A01",
+        "agent_version": "0.2.0",
+        "task_id": "corrupt_rates",
+        "input_refs": [
+          "context-evidence:f80a20dd4e213ee174932032389ff3e9720ec6d9b939c6bb8dd99a8191055389",
+          "context-evidence:adbc7056571cdc55481b1d8a79ffe198df519a4e2f86c07ebf8f5614b4063f08",
+          "context-evidence:e3b3a828b8f027da520a697a8a95987ebe8b7ed4e421ebd2d68b363ba1f1d11a",
+          "context-evidence:34aeb1e889406220e5ecfb9c5f8c43826493f305a0780f58a476747308ba6bc4"
+        ],
+        "evidence_refs": [
+          "context-evidence:f80a20dd4e213ee174932032389ff3e9720ec6d9b939c6bb8dd99a8191055389",
+          "context-evidence:adbc7056571cdc55481b1d8a79ffe198df519a4e2f86c07ebf8f5614b4063f08",
+          "context-evidence:e3b3a828b8f027da520a697a8a95987ebe8b7ed4e421ebd2d68b363ba1f1d11a",
+          "context-evidence:34aeb1e889406220e5ecfb9c5f8c43826493f305a0780f58a476747308ba6bc4"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "contradictions": [
+          "SPECIALIST_CALIBRATION_UNAVAILABLE",
+          "REPUTATION_UNAVAILABLE",
+          "HEALTH_UNAVAILABLE",
+          "WORLD_EMPTY",
+          "A02_WAIT_FOR_DATA",
+          "A03_NOT_STARTED_SOURCE"
+        ],
+        "trace_id": "ab49ea12-d858-4e46-b610-a4544e512095",
+        "requires_escalation": true,
+        "output_type": "TaskPlan",
+        "policy_version": "paper-specialist-supervisor-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "max_calls": 6,
+        "dispatch_mode": "SEQUENTIAL_PARENT_DEADLINE",
+        "parent_context_ref": "agent-context:03c93413fb3f27bee757f6bea3ae1a9d132692f9d5e863f005936c0d88def394",
+        "world_state_version": "world:66fe697adecf41e564061d02509a9ee5db39c17cc4d0085ec00f474fa4b53e2c",
+        "health_status": "UNAVAILABLE",
+        "selected": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410"
+          }
+        ],
+        "deferred": [
+          {
+            "agent_id": "A01",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:178cecb2cd65e57d6b13725af5cd208c188b80f5f85d6d3c376d81f1caac154b",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c23d6d881cf368a90c4491bbee116cd7c50c06687aa0654659f5074931625452",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:bd71b926b9d8d8ff3e13b7ae4a24351398c46feb7989741e4fc4ff2873d69ed0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:cc8b79b541d2275db0b77fcc3740cc1f9c0db823b54f453de80bbdc961aea4d0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c975d5123a8167f4f0d3c47cea6b240663a2fc08181bae53b33b8fbf48bb6908",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:747e4032c6b101f9d7184b1118fa57e34639c22206b9eab3635fac7ec3f9bae3",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A07",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e2000465c86f963ee059b4e96a9d845fa35719a9663a41cd09467ab81f74b200",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A08",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:1f27cb89c06b7462030cb7b54880473976e8c1da916c10daddf20b1d334e14a5",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A09",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:07a3dc356791528a06481f698f13e1821638fb88aa7f84355531e8b16498f2f2",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A10",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:49c88ddf01f40dca047fe772a58e8e14261ad33f41ed0e617df606792c912d0d",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A11",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:10999d887c47d643ee85c76cc6876e3dfff74254355c14c373a53ba6aab9d70e",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A12",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:b03303e77b7b97765f08944a4f7098561183c102040a518c23c114e96410eaa6",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A13",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:39cb03c2cc6437dd492f65851928c92d8d6287db3aeefbff913057c656268184",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A14",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e58b53b87405764861d535a44ea5e5d8d860c0aaa7a361cd41dd3962e2a14ed4",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A15",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:8eef4ace9f6dee4a7c601a9224eb5ca69a2ad678cd31cd124f1b04c9e4210cfc",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A16",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:67cf7514faa7dbff7ddbc78053f6583016cfc2719690426e095e188e912b1c6f",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A17",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:d358d97980983c944be304bbd2b783890c1d1414f929db803448f4765a765b11",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A18",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:abb305012fb5089936bb1e3ec0ede8585ea4021b68fd398b2342bd3838a23ed8",
+            "reason": "PLANNED"
+          }
+        ],
+        "calls": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde",
+            "run_id": "supervisor_d22cf7a832d696ed25c92895d4c13d67b7de5d3e12892a6a5ad59bb0542bae64",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:3dd72752445bd3f556554de0919d2a399fadcdeac0f2989575eae5ddc9e0e393",
+            "output_sha256": "7a2e55552373d91f8b01491557fb1ebc9400a01ec49abb5fc3681d768aded89e",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e",
+            "run_id": "supervisor_7aa82cb93a3b96e221381a426e379080c2a5e852d298f4d379b2766506cef0c1",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:99fbe346c145af3ffec84ef5ee17add4874408df6b4b8fc4c8f2a93a0c8ffd63",
+            "output_sha256": "f6a2c1a1372d2134a985f53640d2944736cfa34281f97cf6e5e89f2b501bc86f",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324",
+            "run_id": "supervisor_dd6cefd4b572c88e6ab96063d498678abf734d169c0730bf94acfedeaae620b8",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:9486d3dddaf40c5da1b70b06377e22cff80dec52ca6216b1c1e1b781cccb5b16",
+            "output_sha256": "49c876c5a7820d039458fef632b2c0bd233533d87976bd8dc5d34cde965dfa9b",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d",
+            "run_id": "supervisor_5dce600aaac5cebd3821a244535f0f03813a627a2105afd4542aaf4d856b3f9e",
+            "status": "WAIT_FOR_DATA",
+            "context_ref": "agent-context:eb771892f45ce2abb7ba10e27c61f010d7f4e38d38ba37274a19fbed80e362bb",
+            "output_sha256": null,
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851",
+            "run_id": "supervisor_511da53547dbc130530f0fad17ed5dad4825ced06e75bf11730218488b9b387d",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:f3ca85f46d8d4e50136e5397d1fb10334478f4e4cfb19aaae12c796ee591908e",
+            "output_sha256": "fa92e14b2df9102792b2e6af3cf9ddf45e80ac4e9d29cbc7a4eb02df2cee9a8c",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410",
+            "run_id": "supervisor_eceb76363176b87d324a8ee2e4181ed6ae9b2f5396d71ef20282209ef7ce43f6",
+            "status": "NOT_STARTED_SOURCE",
+            "context_ref": null,
+            "output_sha256": null,
+            "valid_until": null,
+            "requires_escalation": true
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "events",
+      "status": "COMPLETED",
+      "elapsed_ms": 332.5458000181243,
+      "context_ref": "agent-context:ed552c7536e547e162f1c40f61afb015e29a730f19cdf1bb14c005907556cf57",
+      "matches": true,
+      "restart_exact": true,
+      "actual_statuses": {
+        "A07": "COMPLETED",
+        "A06": "COMPLETED",
+        "A05": "COMPLETED",
+        "A02": "WAIT_FOR_DATA",
+        "A04": "COMPLETED",
+        "A03": "COMPLETED"
+      },
+      "actual_rate_status": "MISSING",
+      "actual_event_status": "FRESH",
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A01",
+        "agent_version": "0.2.0",
+        "task_id": "events",
+        "input_refs": [
+          "context-evidence:f80a20dd4e213ee174932032389ff3e9720ec6d9b939c6bb8dd99a8191055389",
+          "context-evidence:adbc7056571cdc55481b1d8a79ffe198df519a4e2f86c07ebf8f5614b4063f08",
+          "context-evidence:e3b3a828b8f027da520a697a8a95987ebe8b7ed4e421ebd2d68b363ba1f1d11a",
+          "context-evidence:34aeb1e889406220e5ecfb9c5f8c43826493f305a0780f58a476747308ba6bc4"
+        ],
+        "evidence_refs": [
+          "context-evidence:f80a20dd4e213ee174932032389ff3e9720ec6d9b939c6bb8dd99a8191055389",
+          "context-evidence:adbc7056571cdc55481b1d8a79ffe198df519a4e2f86c07ebf8f5614b4063f08",
+          "context-evidence:e3b3a828b8f027da520a697a8a95987ebe8b7ed4e421ebd2d68b363ba1f1d11a",
+          "context-evidence:34aeb1e889406220e5ecfb9c5f8c43826493f305a0780f58a476747308ba6bc4"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:03Z",
+        "contradictions": [
+          "SPECIALIST_CALIBRATION_UNAVAILABLE",
+          "REPUTATION_UNAVAILABLE",
+          "HEALTH_UNAVAILABLE",
+          "WORLD_EMPTY",
+          "A02_WAIT_FOR_DATA"
+        ],
+        "trace_id": "567e2c85-f8be-4c2a-b6f2-80f716468452",
+        "requires_escalation": true,
+        "output_type": "TaskPlan",
+        "policy_version": "paper-specialist-supervisor-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "max_calls": 6,
+        "dispatch_mode": "SEQUENTIAL_PARENT_DEADLINE",
+        "parent_context_ref": "agent-context:ed552c7536e547e162f1c40f61afb015e29a730f19cdf1bb14c005907556cf57",
+        "world_state_version": "world:66fe697adecf41e564061d02509a9ee5db39c17cc4d0085ec00f474fa4b53e2c",
+        "health_status": "UNAVAILABLE",
+        "selected": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410"
+          }
+        ],
+        "deferred": [
+          {
+            "agent_id": "A01",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:178cecb2cd65e57d6b13725af5cd208c188b80f5f85d6d3c376d81f1caac154b",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c23d6d881cf368a90c4491bbee116cd7c50c06687aa0654659f5074931625452",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:bd71b926b9d8d8ff3e13b7ae4a24351398c46feb7989741e4fc4ff2873d69ed0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:cc8b79b541d2275db0b77fcc3740cc1f9c0db823b54f453de80bbdc961aea4d0",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:c975d5123a8167f4f0d3c47cea6b240663a2fc08181bae53b33b8fbf48bb6908",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:747e4032c6b101f9d7184b1118fa57e34639c22206b9eab3635fac7ec3f9bae3",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A07",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e2000465c86f963ee059b4e96a9d845fa35719a9663a41cd09467ab81f74b200",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A08",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:1f27cb89c06b7462030cb7b54880473976e8c1da916c10daddf20b1d334e14a5",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A09",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:07a3dc356791528a06481f698f13e1821638fb88aa7f84355531e8b16498f2f2",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A10",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:49c88ddf01f40dca047fe772a58e8e14261ad33f41ed0e617df606792c912d0d",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A11",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:10999d887c47d643ee85c76cc6876e3dfff74254355c14c373a53ba6aab9d70e",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A12",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:b03303e77b7b97765f08944a4f7098561183c102040a518c23c114e96410eaa6",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A13",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:39cb03c2cc6437dd492f65851928c92d8d6287db3aeefbff913057c656268184",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A14",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:e58b53b87405764861d535a44ea5e5d8d860c0aaa7a361cd41dd3962e2a14ed4",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A15",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:8eef4ace9f6dee4a7c601a9224eb5ca69a2ad678cd31cd124f1b04c9e4210cfc",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A16",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:67cf7514faa7dbff7ddbc78053f6583016cfc2719690426e095e188e912b1c6f",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A17",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:d358d97980983c944be304bbd2b783890c1d1414f929db803448f4765a765b11",
+            "reason": "PLANNED"
+          },
+          {
+            "agent_id": "A18",
+            "agent_version": "0.1.0",
+            "manifest_ref": "agent-manifest:abb305012fb5089936bb1e3ec0ede8585ea4021b68fd398b2342bd3838a23ed8",
+            "reason": "PLANNED"
+          }
+        ],
+        "calls": [
+          {
+            "agent_id": "A07",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:47d2f2d9fb86953be5c2a270531612d032df86d6c3db071ea566e1e625284dde",
+            "run_id": "supervisor_9228d4a5756c8136d8012ef2b4fef48ea880a1b415dce3c6cd51adb18450c1df",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:3bd34e3f4e794a4dd6df153469358a0aabbe6aa849c1cf00a539a573e295fffb",
+            "output_sha256": "a9aa4a9e3eb88995622d3fca5b086c65a6fef0065b96993309cc9cbe343aa66c",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A06",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:c240e6e36d0ce485bcc584706a0a1f3392a3d67c76d980232e1bd6b1a934261e",
+            "run_id": "supervisor_9c5621facf7055f4906506c3031694880228872fcf3c8f12dd7e5739bd2a1e6a",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:bb7c189e57db3000e6afa17d1e8850469e67e1adf79c877701a100749e279c0b",
+            "output_sha256": "474bd21bce1fb2a467e2b6e65b3bdb75671c4b7c6451fa66316d00698215b61f",
+            "valid_until": "2026-10-03T12:00:03Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A05",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:3381368f8bb1ec0679217f2ced66e7ab5c5eeb5501afe8b6df189b3ad6da9324",
+            "run_id": "supervisor_21852f4354aaf0306740684c0af6992648d30af69e6c864d2ace0de95bd4f4cc",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:2245f7096f39846ce2b5f44cbc1107e93dd4193d1926d5a623e4fa3b89e96952",
+            "output_sha256": "e5900d1dfea1c7ab9e5d0d04cd1303cd9d1d934b95508508983d2b9b501d0e91",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A02",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:ebf31530b5b2a3518fe781d9b3785cfee48a27a24de274082a1c5a0d4977853d",
+            "run_id": "supervisor_17a506cee9198825490c097cd0c70e0401d688e48b7c7faa137c4185500988b3",
+            "status": "WAIT_FOR_DATA",
+            "context_ref": "agent-context:5af803d64acf76123490223264c936e51a750883b2304ac4eba354cf73ed2954",
+            "output_sha256": null,
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A04",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:2bc95ffcef220f67b96e8959c9debbccbeb22f2c9902eeb7a8ce6b696f8e9851",
+            "run_id": "supervisor_abd4ab3e27025438ff10c5f922f3f5f2d2724fd08cd8ac23bb2d430077bc6b99",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:13845d55ff3a9ea55b060bf029b19d12b745b3ce6e4c6821310540ae43dde1fd",
+            "output_sha256": "1119f09ab32b3b8a1f993eef43a94f70b50b5175f8b48c72dd1ba28c62ba3f12",
+            "valid_until": "2026-10-03T12:00:05Z",
+            "requires_escalation": true
+          },
+          {
+            "agent_id": "A03",
+            "agent_version": "0.2.0",
+            "manifest_ref": "agent-manifest:f0a38e028d6aea9c4264dc70ba5f4b6c1f67a8b13075eeb34a3a7ff73a2de410",
+            "run_id": "supervisor_034a1e1f5de59881ef770c780eae27c619f29c10c507cadd0c17bc8d58512935",
+            "status": "COMPLETED",
+            "context_ref": "agent-context:a05f90d82afc80cc4a2f1c4bd7204c14b4bdcdc37db050768430f776e86571e5",
+            "output_sha256": "ac5da6ac22cd7cc967b01287ff5e77fad739b112373ebf6dfabb4ee7abd089a1",
+            "valid_until": "2026-10-03T12:00:03Z",
+            "requires_escalation": true
+          }
+        ]
+      }
+    }
+  ]
+}

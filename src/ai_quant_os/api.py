@@ -20,6 +20,13 @@ from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
 from ai_quant_os.graph_runtime import GraphRuntime
+from ai_quant_os.supervisor_agent import supervisor_implementation
+from ai_quant_os.supervisor_dispatch import SupervisorDispatch
+from ai_quant_os.supervisor_sources import (
+    SUPERVISOR_INPUT_BYTES,
+    SUPERVISOR_CONTEXT_BYTES,
+    supervisor_sources,
+)
 from ai_quant_os.regime_agent import regime_implementation
 from ai_quant_os.currency_strength_agent import currency_strength_implementation
 from ai_quant_os.liquidity_agent import liquidity_implementation
@@ -47,7 +54,7 @@ from ai_quant_os.currency_strength_sources import (
 )
 from ai_quant_os.integrity_agent import integrity_implementation, integrity_sources
 from ai_quant_os.ingress_health import IngressHealth
-from ai_quant_os.agent_context import ContextCompiler, require_context_for_agent
+from ai_quant_os.agent_context import CompiledContext, ContextCompiler, require_context_for_agent
 from ai_quant_os.paper_context_sources import paper_context_sources
 from ai_quant_os.context_checkpoints import ContextCheckpoint
 from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
@@ -340,6 +347,7 @@ def create_app(
                 graph_path,
                 registry=agent_registry,
                 implementations={
+                    ("A01", "0.2.0"): supervisor_implementation(agent_registry),
                     ("A02", "0.2.0"): regime_implementation(agent_registry),
                     ("A03", "0.2.0"): macro_implementation(agent_registry),
                     ("A04", "0.2.0"): currency_strength_implementation(agent_registry),
@@ -347,7 +355,18 @@ def create_app(
                     ("A06", "0.2.0"): event_implementation(agent_registry),
                     ("A07", "0.2.0"): integrity_implementation(agent_registry),
                 },
-                tools=AgentToolBoundary(agent_registry, {}),
+                tools=AgentToolBoundary(
+                    agent_registry,
+                    {
+                        "TASK_ORCHESTRATE": SupervisorDispatch(
+                            agent_registry,
+                            runtime=require_graph_runtime,
+                            context=supervisor_parent_context,
+                            compile_child=compile_supervisor_child,
+                            admission=supervisor_admission,
+                        ),
+                    },
+                ),
                 clock=current_time,
             ) as runtime,
             AsyncExitStack() as services,
@@ -882,18 +901,40 @@ def create_app(
 
     @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
+        supervisor_mission = (payload.agent_id, payload.agent_version) == ("A01", "0.2.0")
         event_mission = (payload.agent_id, payload.agent_version) == ("A06", "0.2.0")
         macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
             None
-            if event_mission or macro_mission
+            if event_mission or macro_mission or supervisor_mission
             else world_state.snapshot(context_quotes, now=current_time())
         )
         try:
             strength_mission = (payload.agent_id, payload.agent_version) == ("A04", "0.2.0")
             liquidity_mission = (payload.agent_id, payload.agent_version) == ("A05", "0.2.0")
-            if event_mission:
+            if supervisor_mission:
+                await supervisor_admission()
+                try:
+                    health = (
+                        await asyncio.to_thread(health_worker.status) if health_worker else None
+                    )
+                except (ValueError, OSError, sqlite3.Error) as error:
+                    raise HTTPException(503, "Supervisor health storage unavailable") from error
+                snapshot = world_state.snapshot(context_quotes, now=current_time())
+                sources = supervisor_sources(
+                    snapshot,
+                    agent_registry,
+                    health_status="UNAVAILABLE"
+                    if health is None
+                    else "ERROR"
+                    if health["last_error"]
+                    else "MONITORED"
+                    if enabled_health
+                    else "RESTORED_ONLY",
+                    open_incidents=health["open_incidents"] if health else None,
+                )
+            elif event_mission:
                 try:
                     feed, ledger = await asyncio.to_thread(
                         lambda: (event_feed_store.latest(), execution.currency_ledger)
@@ -948,6 +989,8 @@ def create_app(
                 if event_mission
                 else MACRO_INPUT_BYTES
                 if macro_mission
+                else SUPERVISOR_INPUT_BYTES
+                if supervisor_mission
                 else 8192,
                 max_context_bytes=STRENGTH_CONTEXT_BYTES
                 if strength_mission
@@ -957,6 +1000,8 @@ def create_app(
                 if event_mission
                 else MACRO_CONTEXT_BYTES
                 if macro_mission
+                else SUPERVISOR_CONTEXT_BYTES
+                if supervisor_mission
                 else 32768,
             ).compile(
                 payload.agent_id, payload.agent_version, task_id=payload.task_id, scope="PAPER"
@@ -1019,6 +1064,35 @@ def create_app(
         if runtime is None:
             raise HTTPException(status_code=503, detail="Persistent agent runtime is unavailable")
         return runtime
+
+    def supervisor_parent_context(context_ref: str) -> CompiledContext:
+        checkpoint = state_store.context_checkpoint(context_ref)
+        if checkpoint is None:
+            raise ValueError("Supervisor parent context missing")
+        return checkpoint.context
+
+    async def supervisor_admission() -> None:
+        if not state_store.audit_integrity().valid:
+            raise ValueError("Supervisor audit admission failed")
+        if health_worker is not None:
+            await asyncio.to_thread(health_worker.verify_admission)
+
+    async def compile_supervisor_child(agent_id: str, task_id: str) -> CompiledContext:
+        try:
+            result = await compile_agent_context(
+                AgentContextInput(
+                    agent_id=agent_id,
+                    agent_version="0.2.0",
+                    task_id=task_id,
+                )
+            )
+        except HTTPException as error:
+            if error.status_code == 403:
+                raise PermissionError("Specialist context admission denied") from error
+            raise ValueError("Specialist context compilation unavailable") from error
+        return CompiledContext.model_validate(
+            {key: value for key, value in result.items() if key not in {"mode", "checkpoint_ref"}}
+        )
 
     @app.post("/api/v1/paper/agents/execute", dependencies=[Depends(require_operator)])
     async def execute_agent_graph(payload: AgentGraphInput) -> dict[str, object]:
