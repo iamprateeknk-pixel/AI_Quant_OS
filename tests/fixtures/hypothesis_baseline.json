@@ -1,0 +1,103 @@
+{
+  "schema_version": "1.0",
+  "provenance": "DEVELOPMENT_API_REPLAY_WITH_SYNTHETIC_BARS_NOT_HOLDOUT_QUALITY",
+  "cases": [
+    {
+      "id": "trend",
+      "as_of": "2026-10-04T12:00:00Z",
+      "closes": [
+        "1.1",
+        "1.1001",
+        "1.1002",
+        "1.1003",
+        "1.1004",
+        "1.1005",
+        "1.1006",
+        "1.1007",
+        "1.1008",
+        "1.1009",
+        "1.101",
+        "1.1011"
+      ],
+      "resource_class": "TRAINING",
+      "archive_spread": false,
+      "expected_status": "PROPOSED",
+      "expected_rule": "FOLLOW_PREVIOUS_CLOSE_DIRECTION"
+    },
+    {
+      "id": "reversal",
+      "as_of": "2026-10-04T12:00:00Z",
+      "closes": [
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001"
+      ],
+      "resource_class": "TRAINING",
+      "archive_spread": true,
+      "expected_status": "PROPOSED",
+      "expected_rule": "FADE_PREVIOUS_CLOSE_DIRECTION"
+    },
+    {
+      "id": "flat",
+      "as_of": "2026-10-04T12:00:00Z",
+      "closes": [
+        "1.1",
+        "1.1",
+        "1.1",
+        "1.1",
+        "1.1",
+        "1.1",
+        "1.1",
+        "1.1",
+        "1.1",
+        "1.1",
+        "1.1",
+        "1.1"
+      ],
+      "resource_class": "TRAINING",
+      "archive_spread": false,
+      "expected_status": "WAIT_FOR_EVIDENCE",
+      "expected_rule": null
+    },
+    {
+      "id": "empty",
+      "as_of": "2026-10-04T12:00:00Z",
+      "closes": [],
+      "resource_class": "TRAINING",
+      "archive_spread": false,
+      "expected_status": "WAIT_FOR_EVIDENCE",
+      "expected_rule": null
+    },
+    {
+      "id": "holdout",
+      "as_of": "2026-10-04T12:00:00Z",
+      "closes": [
+        "1.1",
+        "1.1001",
+        "1.1002",
+        "1.1003",
+        "1.1004",
+        "1.1005",
+        "1.1006",
+        "1.1007",
+        "1.1008",
+        "1.1009",
+        "1.101",
+        "1.1011"
+      ],
+      "resource_class": "HOLDOUT",
+      "archive_spread": false,
+      "expected_status": "WAIT_FOR_EVIDENCE",
+      "expected_rule": null
+    }
+  ]
+}

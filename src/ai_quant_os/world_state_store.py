@@ -102,6 +102,10 @@ class WorldStateStore:
             ).fetchone()
         if row is None:
             return None
+        return self._decode(world_state_version, row)
+
+    @staticmethod
+    def _decode(world_state_version: str, row: tuple[str, str]) -> WorldState:
         try:
             raw, digest = row
             encoded = raw.encode()
@@ -117,3 +121,15 @@ class WorldStateStore:
         except (ValueError, TypeError, AttributeError) as error:
             raise ValueError("World-state archive integrity verification failed") from error
         return snapshot
+
+    def research_snapshots(self, *, limit: int = 64) -> tuple[WorldState, ...]:
+        if type(limit) is not int or not 1 <= limit <= 64:
+            raise ValueError("Invalid world research archive bound")
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT world_state_version,snapshot_json,content_hash FROM world_state_snapshots ORDER BY rowid LIMIT ?",
+                (limit + 1,),
+            ).fetchall()
+        if len(rows) > limit:
+            raise ValueError("World research archive exceeds collection bound")
+        return tuple(self._decode(reference, (raw, digest)) for reference, raw, digest in rows)

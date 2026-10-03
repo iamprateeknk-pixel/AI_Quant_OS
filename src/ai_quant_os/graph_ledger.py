@@ -1,6 +1,7 @@
 """Atomic graph invocation reservations and audit-bound results, independent of graph replay."""
 
 import json
+import re
 import sqlite3
 from contextlib import contextmanager
 from hashlib import sha256
@@ -209,6 +210,56 @@ class GraphLedger:
                 (after_run_id, limit),
             ).fetchall()
             return tuple(self._read(row[0]).receipt for row in rows)
+
+    def records_for_agent(
+        self, agent_id: str, agent_version: str, *, limit: int = 128
+    ) -> tuple[GraphRecord, ...]:
+        if (
+            not isinstance(agent_id, str)
+            or re.fullmatch(r"A(?:0[1-9]|1[0-8])", agent_id) is None
+            or not isinstance(agent_version, str)
+            or len(agent_version) > 32
+            or re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", agent_version) is None
+            or type(limit) is not int
+            or not 1 <= limit <= 128
+        ):
+            raise ValueError("Invalid agent graph collection bound")
+        with self._lock, self._db:
+            self._db.execute("BEGIN")
+            rows = self._db.execute(
+                "SELECT run_id FROM graph_runs ORDER BY run_id LIMIT 10001"
+            ).fetchall()
+            count, largest = self._db.execute(
+                "SELECT COUNT(*),COALESCE(MAX(LENGTH(event_json)),0) FROM audit_events"
+            ).fetchone()
+            if len(rows) > 10000 or count > 30000 or largest > 4096:
+                raise ValueError("Agent graph collection exceeds archive bound")
+            self._audit.require_valid()
+            audited_ids = set()
+            for key, raw in self._db.execute("SELECT event_key,event_json FROM audit_events"):
+                event = json.loads(raw)
+                if (
+                    not isinstance(event, dict)
+                    or set(event) != {"action", "run_id", "status", "record_hash", "context_ref"}
+                    or event["action"] != "AGENT_GRAPH_TRANSITION"
+                    or not isinstance(event["run_id"], str)
+                    or key != f"graph:{event['run_id']}:{event['status']}"
+                ):
+                    raise ValueError("Agent graph collection journal mismatch")
+                audited_ids.add(event["run_id"])
+            if audited_ids != {row[0] for row in rows}:
+                raise ValueError("Agent graph collection identity mismatch")
+            selected = []
+            for (run_id,) in rows:
+                record = self._read(run_id)
+                if (record.receipt.agent_id, record.receipt.agent_version) == (
+                    agent_id,
+                    agent_version,
+                ):
+                    selected.append(record)
+                    if len(selected) > limit:
+                        raise ValueError("Agent graph collection exceeds requested bound")
+            return tuple(selected)
 
     def create(self, run_id: str, checkpoint: ContextCheckpoint) -> GraphRecord:
         context, manifest = checkpoint.context, checkpoint.manifest

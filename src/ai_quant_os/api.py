@@ -86,6 +86,15 @@ from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
 from ai_quant_os.research_data_api import install_research_data_routes
 from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog
+from ai_quant_os.research_hypothesis_agent import hypothesis_implementation
+from ai_quant_os.research_hypothesis_api import install_hypothesis_routes
+from ai_quant_os.research_hypothesis_sources import (
+    HYPOTHESIS_INPUT_BYTES,
+    HYPOTHESIS_CONTEXT_BYTES,
+    hypothesis_sources,
+)
+from ai_quant_os.graph_ledger import GraphLedger
+from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
 from ai_quant_os.execution_attribution import build_execution_contributions
@@ -374,6 +383,7 @@ def create_app(
                     ("A05", "0.2.0"): liquidity_implementation(agent_registry),
                     ("A06", "0.2.0"): event_implementation(agent_registry),
                     ("A07", "0.2.0"): integrity_implementation(agent_registry),
+                    ("A08", "0.2.0"): hypothesis_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(
@@ -1111,6 +1121,49 @@ def create_app(
             raise ValueError("Supervisor parent context missing")
         return checkpoint.context
 
+    async def compile_research_context(task_id: str) -> CompiledContext:
+        require_graph_runtime()
+        await supervisor_admission()
+        agent_registry.require_tool("A08", "0.2.0", "TRAINING_READ", scope="SANDBOX")
+
+        def capture_research():
+            training = research_data_catalog.training(
+                agent_registry, "A08", "0.2.0", scope="SANDBOX"
+            )
+            graph_path = configured_path.with_name(configured_path.stem + ".agents.sqlite3")
+            with GraphLedger.archive(graph_path) as archive:
+                records = archive.records_for_agent("A08", "0.2.0")
+            return training, records, world_state_store.research_snapshots()
+
+        training, records, worlds = await owned_research_call(capture_research)
+        sources = hypothesis_sources(training, records, worlds, now=current_time())
+        context = await ContextCompiler(
+            agent_registry,
+            sources,
+            clock=current_time,
+            max_input_bytes=HYPOTHESIS_INPUT_BYTES,
+            max_context_bytes=HYPOTHESIS_CONTEXT_BYTES,
+        ).compile("A08", "0.2.0", task_id=task_id, scope="SANDBOX")
+        state_store.record_context_checkpoint(
+            ContextCheckpoint(
+                schema_version="1.0", manifest=agent_registry.get("A08", "0.2.0"), context=context
+            )
+        )
+        require_context_for_agent(
+            context,
+            registry=agent_registry,
+            agent_id="A08",
+            agent_version="0.2.0",
+            task_id=task_id,
+            scope="SANDBOX",
+            now=current_time(),
+        )
+        return context
+
+    async def observe_research_receipt(receipt) -> None:
+        if enabled_health:
+            await owned_research_call(health_worker.observe_receipt, receipt)
+
     def capture_incident_observation() -> dict:
         incidents = health_worker.store.incidents() if health_worker else None
         health = health_worker.status() if health_worker else None
@@ -1202,6 +1255,10 @@ def create_app(
     async def resume_agent_graph(run_id: str) -> dict[str, object]:
         runtime = require_graph_runtime()
         try:
+            original = runtime.receipt(run_id)
+            checkpoint = state_store.context_checkpoint(original.context_ref)
+            if checkpoint is None or checkpoint.context.scope != "PAPER":
+                raise HTTPException(status_code=403, detail="Paper context required")
             receipt = await runtime.resume(run_id)
             if enabled_health:
                 await owned_health_call(health_worker.observe_receipt, receipt)
@@ -1543,6 +1600,14 @@ def create_app(
     install_health_routes(app, require_operator, health_worker, enabled_health)
     install_incident_proposal_routes(app, require_operator, incident_proposal_store)
     install_research_data_routes(app, research_data_catalog, require_operator, current_time)
+    install_hypothesis_routes(
+        app,
+        require_operator,
+        compile_context=compile_research_context,
+        archived_context=archived_agent_context,
+        runtime=require_graph_runtime,
+        observe_receipt=observe_research_receipt,
+    )
     install_daily_routes(
         app,
         configured_path,
