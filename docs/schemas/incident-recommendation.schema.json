@@ -1,0 +1,220 @@
+{
+  "$defs": {
+    "SafetyState": {
+      "enum": [
+        "NORMAL",
+        "NO_NEW_RISK",
+        "FLATTEN_ONLY",
+        "HALT"
+      ],
+      "title": "SafetyState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A18",
+      "default": "A18",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.2.0",
+      "default": "0.2.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "1",
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "output_type": {
+      "const": "IncidentRecommendation",
+      "default": "IncidentRecommendation",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "hard_gate_owner": {
+      "const": "RiskKernel",
+      "default": "RiskKernel",
+      "title": "Hard Gate Owner",
+      "type": "string"
+    },
+    "proposal_ref": {
+      "pattern": "^incident-proposal:[a-f0-9]{64}$",
+      "title": "Proposal Ref",
+      "type": "string"
+    },
+    "incident_class": {
+      "enum": [
+        "CRITICAL",
+        "WARNING",
+        "DEGRADED_EVIDENCE",
+        "NO_NEW_INCIDENT_FOUND"
+      ],
+      "title": "Incident Class",
+      "type": "string"
+    },
+    "recommended_state": {
+      "$ref": "#/$defs/SafetyState"
+    },
+    "findings": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Findings",
+      "type": "array"
+    },
+    "workflow": {
+      "enum": [
+        "RECONCILE_PAPER_RECORDS",
+        "INSPECT_UNCERTAIN_PAPER_ORDER",
+        "OPERATOR_EVIDENCE_REVIEW"
+      ],
+      "title": "Workflow",
+      "type": "string"
+    },
+    "watchdog_incident_count": {
+      "anyOf": [
+        {
+          "maximum": 1000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Watchdog Incident Count"
+    },
+    "recovery_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Recovery Authorized",
+      "type": "boolean"
+    },
+    "workflow_dispatched": {
+      "const": false,
+      "default": false,
+      "title": "Workflow Dispatched",
+      "type": "boolean"
+    },
+    "may_add_risk": {
+      "const": false,
+      "default": false,
+      "title": "May Add Risk",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "proposal_ref",
+    "incident_class",
+    "recommended_state",
+    "findings",
+    "workflow",
+    "watchdog_incident_count"
+  ],
+  "title": "IncidentRecommendation",
+  "type": "object"
+}

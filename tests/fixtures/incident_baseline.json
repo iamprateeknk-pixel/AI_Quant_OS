@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "provenance": "DEVELOPMENT_API_REPLAY_WITH_SYNTHETIC_INCIDENTS_NOT_HOLDOUT",
+  "cases": [
+    {"id": "missing-evidence", "as_of": "2026-10-03T12:00:00Z", "code": null, "expected_state": "NO_NEW_RISK", "expected_class": "DEGRADED_EVIDENCE"},
+    {"id": "stale-quote", "as_of": "2026-10-03T12:00:00Z", "code": "QUOTE_STALE", "expected_state": "NO_NEW_RISK", "expected_class": "WARNING"},
+    {"id": "position-mismatch", "as_of": "2026-10-03T12:00:00Z", "code": "POSITION_MISMATCH", "expected_state": "HALT", "expected_class": "CRITICAL"},
+    {"id": "future-observation", "as_of": "2026-10-03T12:00:00Z", "code": "QUOTE_STALE", "future": true, "expected_state": "HALT", "expected_class": "CRITICAL"}
+  ]
+}

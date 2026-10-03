@@ -20,6 +20,14 @@ from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
 from ai_quant_os.graph_runtime import GraphRuntime
+from ai_quant_os.incident_agent import incident_implementation
+from ai_quant_os.incident_sources import (
+    INCIDENT_INPUT_BYTES,
+    INCIDENT_CONTEXT_BYTES,
+    incident_sources,
+)
+from ai_quant_os.incident_proposal_store import IncidentProposalStore
+from ai_quant_os.incident_proposal_api import IncidentPropose, install_incident_proposal_routes
 from ai_quant_os.supervisor_agent import supervisor_implementation
 from ai_quant_os.supervisor_dispatch import SupervisorDispatch
 from ai_quant_os.supervisor_sources import (
@@ -273,6 +281,11 @@ def create_app(
         if configured_path
         else None
     )
+    incident_proposal_store = IncidentProposalStore(
+        configured_path.with_name(configured_path.stem + ".incident-proposals.sqlite3")
+        if configured_path
+        else None
+    )
     agent_registry = load_agent_catalog()
     ingress_health = IngressHealth()
     risk.set_safety_state(state_store.safety_state())
@@ -354,6 +367,7 @@ def create_app(
                     ("A05", "0.2.0"): liquidity_implementation(agent_registry),
                     ("A06", "0.2.0"): event_implementation(agent_registry),
                     ("A07", "0.2.0"): integrity_implementation(agent_registry),
+                    ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(
                     agent_registry,
@@ -361,9 +375,16 @@ def create_app(
                         "TASK_ORCHESTRATE": SupervisorDispatch(
                             agent_registry,
                             runtime=require_graph_runtime,
-                            context=supervisor_parent_context,
+                            context=archived_agent_context,
                             compile_child=compile_supervisor_child,
                             admission=supervisor_admission,
+                        ),
+                        "INCIDENT_PROPOSE": IncidentPropose(
+                            incident_proposal_store,
+                            agent_registry,
+                            context=archived_agent_context,
+                            clock=current_time,
+                            risk_states=lambda: (risk.safety_state, state_store.safety_state()),
                         ),
                     },
                 ),
@@ -901,19 +922,27 @@ def create_app(
 
     @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
+        incident_mission = (payload.agent_id, payload.agent_version) == ("A18", "0.2.0")
         supervisor_mission = (payload.agent_id, payload.agent_version) == ("A01", "0.2.0")
         event_mission = (payload.agent_id, payload.agent_version) == ("A06", "0.2.0")
         macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
             None
-            if event_mission or macro_mission or supervisor_mission
+            if event_mission or macro_mission or supervisor_mission or incident_mission
             else world_state.snapshot(context_quotes, now=current_time())
         )
         try:
             strength_mission = (payload.agent_id, payload.agent_version) == ("A04", "0.2.0")
             liquidity_mission = (payload.agent_id, payload.agent_version) == ("A05", "0.2.0")
-            if supervisor_mission:
+            if incident_mission:
+                try:
+                    observed = await asyncio.to_thread(capture_incident_observation)
+                except (ValueError, TypeError, OSError, sqlite3.Error) as error:
+                    raise HTTPException(503, "Incident evidence storage unavailable") from error
+                snapshot = world_state.snapshot(context_quotes, now=current_time())
+                sources = incident_sources(snapshot, **observed)
+            elif supervisor_mission:
                 await supervisor_admission()
                 try:
                     health = (
@@ -991,6 +1020,8 @@ def create_app(
                 if macro_mission
                 else SUPERVISOR_INPUT_BYTES
                 if supervisor_mission
+                else INCIDENT_INPUT_BYTES
+                if incident_mission
                 else 8192,
                 max_context_bytes=STRENGTH_CONTEXT_BYTES
                 if strength_mission
@@ -1002,6 +1033,8 @@ def create_app(
                 if macro_mission
                 else SUPERVISOR_CONTEXT_BYTES
                 if supervisor_mission
+                else INCIDENT_CONTEXT_BYTES
+                if incident_mission
                 else 32768,
             ).compile(
                 payload.agent_id, payload.agent_version, task_id=payload.task_id, scope="PAPER"
@@ -1065,11 +1098,32 @@ def create_app(
             raise HTTPException(status_code=503, detail="Persistent agent runtime is unavailable")
         return runtime
 
-    def supervisor_parent_context(context_ref: str) -> CompiledContext:
+    def archived_agent_context(context_ref: str) -> CompiledContext:
         checkpoint = state_store.context_checkpoint(context_ref)
         if checkpoint is None:
             raise ValueError("Supervisor parent context missing")
         return checkpoint.context
+
+    def capture_incident_observation() -> dict:
+        incidents = health_worker.store.incidents() if health_worker else None
+        health = health_worker.status() if health_worker else None
+        broker = next(row for row in router.snapshot() if row["broker_id"] == "PAPER")
+        return dict(
+            incidents=incidents,
+            watchdog_status="UNAVAILABLE"
+            if health is None
+            else "ERROR"
+            if health["last_error"]
+            else "MONITORED"
+            if enabled_health
+            else "RESTORED_ONLY",
+            broker=broker,
+            orders=execution.orders,
+            local_fills=execution.fills,
+            broker_fills=router.all_fills("PAPER"),
+            live_state=risk.safety_state,
+            durable_state=state_store.safety_state(),
+        )
 
     async def supervisor_admission() -> None:
         if not state_store.audit_integrity().valid:
@@ -1480,6 +1534,7 @@ def create_app(
     install_recovery_routes(app, require_operator)
     install_event_feed_routes(app, event_feed_store, require_operator, current_time)
     install_health_routes(app, require_operator, health_worker, enabled_health)
+    install_incident_proposal_routes(app, require_operator, incident_proposal_store)
     install_daily_routes(
         app,
         configured_path,

@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "SafetyState": {
+      "enum": [
+        "NORMAL",
+        "NO_NEW_RISK",
+        "FLATTEN_ONLY",
+        "HALT"
+      ],
+      "title": "SafetyState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A18",
+      "default": "A18",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.2.0",
+      "default": "0.2.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "policy_version": {
+      "const": "paper-incident-review-v1",
+      "default": "paper-incident-review-v1",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "context_ref": {
+      "pattern": "^agent-context:[a-f0-9]{64}$",
+      "title": "Context Ref",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 5,
+      "minItems": 5,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "incident_class": {
+      "enum": [
+        "CRITICAL",
+        "WARNING",
+        "DEGRADED_EVIDENCE",
+        "NO_NEW_INCIDENT_FOUND"
+      ],
+      "title": "Incident Class",
+      "type": "string"
+    },
+    "recommended_state": {
+      "$ref": "#/$defs/SafetyState"
+    },
+    "findings": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Findings",
+      "type": "array"
+    },
+    "workflow": {
+      "enum": [
+        "RECONCILE_PAPER_RECORDS",
+        "INSPECT_UNCERTAIN_PAPER_ORDER",
+        "OPERATOR_EVIDENCE_REVIEW"
+      ],
+      "title": "Workflow",
+      "type": "string"
+    },
+    "watchdog_incident_count": {
+      "anyOf": [
+        {
+          "maximum": 1000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Watchdog Incident Count"
+    },
+    "status": {
+      "const": "AWAITING_OPERATOR_REVIEW",
+      "default": "AWAITING_OPERATOR_REVIEW",
+      "title": "Status",
+      "type": "string"
+    },
+    "control_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Control Authorized",
+      "type": "boolean"
+    },
+    "recovery_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Recovery Authorized",
+      "type": "boolean"
+    },
+    "workflow_dispatched": {
+      "const": false,
+      "default": false,
+      "title": "Workflow Dispatched",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "context_ref",
+    "task_id",
+    "input_refs",
+    "created_at",
+    "valid_until",
+    "incident_class",
+    "recommended_state",
+    "findings",
+    "workflow",
+    "watchdog_incident_count"
+  ],
+  "title": "WorkflowProposal",
+  "type": "object"
+}

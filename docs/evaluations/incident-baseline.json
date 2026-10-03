@@ -1,0 +1,368 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "A18",
+  "agent_version": "0.2.0",
+  "fixture_sha256": "a060676a81c1b131e55e8735c66a00025e52c470ec9240ee9113ffde5d9ad29e",
+  "provenance": "DEVELOPMENT_API_REPLAY_WITH_SYNTHETIC_INCIDENTS_NOT_HOLDOUT",
+  "source_sha256": {
+    "incident_policy.py": "f0d522eac4c9fc6644364e0ea6079039c8e4638416c42048accb31e156b0ea82",
+    "incident_sources.py": "5f629edfc92f066b95c554d749f4e50427bf27bf6b76802990c2b93c3c45738b",
+    "incident_agent.py": "61cb65491af1bae8784802717a8b5094cc63151aec216427f952909bf106e8d7",
+    "incident_proposal_api.py": "8bbf86381040846d348e943b6fca5563f1074e79ef583fe72c834bf5f7a98db0",
+    "incident_proposal_store.py": "c959aaa719a7bc037d30709843bf062cca5dd4171164ae4d8177ad1ec1c5799a"
+  },
+  "evaluator_sha256": "17e6c8d5cf2fd1b3a8784213ed82df59422b3fac4c842f261ec86314a8ed341d",
+  "case_count": 4,
+  "matching_cases": 4,
+  "calibration_status": "UNAVAILABLE",
+  "promotion_approved": false,
+  "results": [
+    {
+      "case_id": "missing-evidence",
+      "status": "COMPLETED",
+      "restart_exact": true,
+      "controls_unchanged": true,
+      "matches": true,
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A18",
+        "agent_version": "0.2.0",
+        "task_id": "missing-evidence",
+        "input_refs": [
+          "context-evidence:dfb5cb6f867b923c796a0a34793d91cf253d2116adde7f8dc3cc04204b710f8c",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:f74e2cddb42476aed60539fd10b4420f4f63d94dee8008b751877b35f675c70c"
+        ],
+        "evidence_refs": [
+          "context-evidence:dfb5cb6f867b923c796a0a34793d91cf253d2116adde7f8dc3cc04204b710f8c",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:f74e2cddb42476aed60539fd10b4420f4f63d94dee8008b751877b35f675c70c"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "HISTORY_INSUFFICIENT",
+          "LIVE_BROKER_HEALTH_UNAVAILABLE",
+          "QUOTE_MISSING",
+          "WATCHDOG_UNAVAILABLE"
+        ],
+        "trace_id": "09c3e29f-4e72-4790-8dd0-9f74081daa07",
+        "requires_escalation": true,
+        "output_type": "IncidentRecommendation",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "proposal_ref": "incident-proposal:2e0ae8be403f38cff84ce4fb0a4372979e6a8462518e9865e73d4e17258ebc5f",
+        "incident_class": "DEGRADED_EVIDENCE",
+        "recommended_state": "NO_NEW_RISK",
+        "findings": [
+          "HISTORY_INSUFFICIENT",
+          "QUOTE_MISSING",
+          "WATCHDOG_UNAVAILABLE"
+        ],
+        "workflow": "OPERATOR_EVIDENCE_REVIEW",
+        "watchdog_incident_count": null,
+        "recovery_authorized": false,
+        "workflow_dispatched": false,
+        "may_add_risk": false
+      },
+      "proposal": {
+        "schema_version": "1.0",
+        "agent_id": "A18",
+        "agent_version": "0.2.0",
+        "policy_version": "paper-incident-review-v1",
+        "context_ref": "agent-context:731f8db2e0f389c593f0eacc9b897e89e540b5ae8b7290c1409beb85a2a990ce",
+        "task_id": "missing-evidence",
+        "input_refs": [
+          "context-evidence:dfb5cb6f867b923c796a0a34793d91cf253d2116adde7f8dc3cc04204b710f8c",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:f74e2cddb42476aed60539fd10b4420f4f63d94dee8008b751877b35f675c70c"
+        ],
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "incident_class": "DEGRADED_EVIDENCE",
+        "recommended_state": "NO_NEW_RISK",
+        "findings": [
+          "HISTORY_INSUFFICIENT",
+          "QUOTE_MISSING",
+          "WATCHDOG_UNAVAILABLE"
+        ],
+        "workflow": "OPERATOR_EVIDENCE_REVIEW",
+        "watchdog_incident_count": null,
+        "status": "AWAITING_OPERATOR_REVIEW",
+        "control_authorized": false,
+        "recovery_authorized": false,
+        "workflow_dispatched": false
+      }
+    },
+    {
+      "case_id": "stale-quote",
+      "status": "COMPLETED",
+      "restart_exact": true,
+      "controls_unchanged": true,
+      "matches": true,
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A18",
+        "agent_version": "0.2.0",
+        "task_id": "stale-quote",
+        "input_refs": [
+          "context-evidence:2f7cef15602a0c27c322e0a1446b078c0abeca22a997e7ba692184c74989be7d",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:691e605fd59ecfff5eb6a6191fdf7d9dc3cb1ea0913dd5f9aa108b51ee917cfe"
+        ],
+        "evidence_refs": [
+          "context-evidence:2f7cef15602a0c27c322e0a1446b078c0abeca22a997e7ba692184c74989be7d",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:691e605fd59ecfff5eb6a6191fdf7d9dc3cb1ea0913dd5f9aa108b51ee917cfe"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "HISTORY_INSUFFICIENT",
+          "LIVE_BROKER_HEALTH_UNAVAILABLE",
+          "QUOTE_MISSING",
+          "QUOTE_STALE"
+        ],
+        "trace_id": "bb7e5c9f-a63d-41e5-b5ea-2539806bcf05",
+        "requires_escalation": true,
+        "output_type": "IncidentRecommendation",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "proposal_ref": "incident-proposal:cd429f2fc7bc1a3b467c0b3208bc0b859843464b5fd5c4d92cf4b6b95f1c98c1",
+        "incident_class": "WARNING",
+        "recommended_state": "NO_NEW_RISK",
+        "findings": [
+          "HISTORY_INSUFFICIENT",
+          "QUOTE_MISSING",
+          "QUOTE_STALE"
+        ],
+        "workflow": "OPERATOR_EVIDENCE_REVIEW",
+        "watchdog_incident_count": 1,
+        "recovery_authorized": false,
+        "workflow_dispatched": false,
+        "may_add_risk": false
+      },
+      "proposal": {
+        "schema_version": "1.0",
+        "agent_id": "A18",
+        "agent_version": "0.2.0",
+        "policy_version": "paper-incident-review-v1",
+        "context_ref": "agent-context:a6e0c36ff67c9be738060190a548e1806ec7982669342ea1f8d029e93ff67670",
+        "task_id": "stale-quote",
+        "input_refs": [
+          "context-evidence:2f7cef15602a0c27c322e0a1446b078c0abeca22a997e7ba692184c74989be7d",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:691e605fd59ecfff5eb6a6191fdf7d9dc3cb1ea0913dd5f9aa108b51ee917cfe"
+        ],
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "incident_class": "WARNING",
+        "recommended_state": "NO_NEW_RISK",
+        "findings": [
+          "HISTORY_INSUFFICIENT",
+          "QUOTE_MISSING",
+          "QUOTE_STALE"
+        ],
+        "workflow": "OPERATOR_EVIDENCE_REVIEW",
+        "watchdog_incident_count": 1,
+        "status": "AWAITING_OPERATOR_REVIEW",
+        "control_authorized": false,
+        "recovery_authorized": false,
+        "workflow_dispatched": false
+      }
+    },
+    {
+      "case_id": "position-mismatch",
+      "status": "COMPLETED",
+      "restart_exact": true,
+      "controls_unchanged": true,
+      "matches": true,
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A18",
+        "agent_version": "0.2.0",
+        "task_id": "position-mismatch",
+        "input_refs": [
+          "context-evidence:3eeac175a172586895145d5fbecab9aad4501a767a648e2dc7210435afe750bf",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:9a0a6dda04a1cd7b5c1a5e2ec6e630414fa0f7100ef0967fe6aa59df6575492d"
+        ],
+        "evidence_refs": [
+          "context-evidence:3eeac175a172586895145d5fbecab9aad4501a767a648e2dc7210435afe750bf",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:9a0a6dda04a1cd7b5c1a5e2ec6e630414fa0f7100ef0967fe6aa59df6575492d"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "HISTORY_INSUFFICIENT",
+          "LIVE_BROKER_HEALTH_UNAVAILABLE",
+          "POSITION_MISMATCH",
+          "QUOTE_MISSING"
+        ],
+        "trace_id": "ec325634-7a36-4416-b2bf-bc5ec571b0cd",
+        "requires_escalation": true,
+        "output_type": "IncidentRecommendation",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "proposal_ref": "incident-proposal:ed4f8d55d882f23079b8d6f5dd715482de14191fcb545d0176c5681f00b56d90",
+        "incident_class": "CRITICAL",
+        "recommended_state": "HALT",
+        "findings": [
+          "HISTORY_INSUFFICIENT",
+          "POSITION_MISMATCH",
+          "QUOTE_MISSING"
+        ],
+        "workflow": "RECONCILE_PAPER_RECORDS",
+        "watchdog_incident_count": 1,
+        "recovery_authorized": false,
+        "workflow_dispatched": false,
+        "may_add_risk": false
+      },
+      "proposal": {
+        "schema_version": "1.0",
+        "agent_id": "A18",
+        "agent_version": "0.2.0",
+        "policy_version": "paper-incident-review-v1",
+        "context_ref": "agent-context:73f8a124f3f50ea17f33ec8c7e8dd8497725b2c2ad8420d1a4403d013d8980e4",
+        "task_id": "position-mismatch",
+        "input_refs": [
+          "context-evidence:3eeac175a172586895145d5fbecab9aad4501a767a648e2dc7210435afe750bf",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:9a0a6dda04a1cd7b5c1a5e2ec6e630414fa0f7100ef0967fe6aa59df6575492d"
+        ],
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "incident_class": "CRITICAL",
+        "recommended_state": "HALT",
+        "findings": [
+          "HISTORY_INSUFFICIENT",
+          "POSITION_MISMATCH",
+          "QUOTE_MISSING"
+        ],
+        "workflow": "RECONCILE_PAPER_RECORDS",
+        "watchdog_incident_count": 1,
+        "status": "AWAITING_OPERATOR_REVIEW",
+        "control_authorized": false,
+        "recovery_authorized": false,
+        "workflow_dispatched": false
+      }
+    },
+    {
+      "case_id": "future-observation",
+      "status": "COMPLETED",
+      "restart_exact": true,
+      "controls_unchanged": true,
+      "matches": true,
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A18",
+        "agent_version": "0.2.0",
+        "task_id": "future-observation",
+        "input_refs": [
+          "context-evidence:79ca0bf4aac4ab6b1dd94e0dc47417d026726e2312c93899d4ba8dcd5f572288",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:691e605fd59ecfff5eb6a6191fdf7d9dc3cb1ea0913dd5f9aa108b51ee917cfe"
+        ],
+        "evidence_refs": [
+          "context-evidence:79ca0bf4aac4ab6b1dd94e0dc47417d026726e2312c93899d4ba8dcd5f572288",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:691e605fd59ecfff5eb6a6191fdf7d9dc3cb1ea0913dd5f9aa108b51ee917cfe"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "FUTURE_LEDGER_OBSERVATION",
+          "HISTORY_INSUFFICIENT",
+          "LIVE_BROKER_HEALTH_UNAVAILABLE",
+          "QUOTE_MISSING",
+          "QUOTE_STALE"
+        ],
+        "trace_id": "4bef7e7f-be4e-40b6-976d-f90c8f71fe5b",
+        "requires_escalation": true,
+        "output_type": "IncidentRecommendation",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_owner": "RiskKernel",
+        "proposal_ref": "incident-proposal:22df9ba2d59cc53a38abb8676e82d3cca20ae06d457ea3466787067375228541",
+        "incident_class": "CRITICAL",
+        "recommended_state": "HALT",
+        "findings": [
+          "FUTURE_LEDGER_OBSERVATION",
+          "HISTORY_INSUFFICIENT",
+          "QUOTE_MISSING",
+          "QUOTE_STALE"
+        ],
+        "workflow": "OPERATOR_EVIDENCE_REVIEW",
+        "watchdog_incident_count": 1,
+        "recovery_authorized": false,
+        "workflow_dispatched": false,
+        "may_add_risk": false
+      },
+      "proposal": {
+        "schema_version": "1.0",
+        "agent_id": "A18",
+        "agent_version": "0.2.0",
+        "policy_version": "paper-incident-review-v1",
+        "context_ref": "agent-context:6641d9287f96f54139cbfbb2d8ce96358cbc5f12f4f86432b21726bb42566f8d",
+        "task_id": "future-observation",
+        "input_refs": [
+          "context-evidence:79ca0bf4aac4ab6b1dd94e0dc47417d026726e2312c93899d4ba8dcd5f572288",
+          "context-evidence:b75aa8594ad6547487c0ccd31d6647791d37291597f74f9cb576daee88f7a907",
+          "context-evidence:46b2ea349c62f5b9f7d7dc1f0e47e1d21ca5ba0b9b65490e9dc595415ff03dfb",
+          "context-evidence:8d67d0427a43a906545b46aa05fc18abc40340124ba2222280809ad9418268b3",
+          "context-evidence:691e605fd59ecfff5eb6a6191fdf7d9dc3cb1ea0913dd5f9aa108b51ee917cfe"
+        ],
+        "created_at": "2026-10-03T12:00:00Z",
+        "valid_until": "2026-10-03T12:00:05Z",
+        "incident_class": "CRITICAL",
+        "recommended_state": "HALT",
+        "findings": [
+          "FUTURE_LEDGER_OBSERVATION",
+          "HISTORY_INSUFFICIENT",
+          "QUOTE_MISSING",
+          "QUOTE_STALE"
+        ],
+        "workflow": "OPERATOR_EVIDENCE_REVIEW",
+        "watchdog_incident_count": 1,
+        "status": "AWAITING_OPERATOR_REVIEW",
+        "control_authorized": false,
+        "recovery_authorized": false,
+        "workflow_dispatched": false
+      }
+    }
+  ]
+}
