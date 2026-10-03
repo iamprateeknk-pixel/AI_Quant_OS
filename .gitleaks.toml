@@ -18,3 +18,11 @@ condition = "AND"
 paths = ['''^infra/repair-worker/base_config\.json$''']
 regexTarget = "match"
 regexes = ['''^GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D"$''']
+
+[[allowlists]]
+description = "Exact retained A06 event HTTP source SHA-256, verified against source bytes"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^docs/evaluations/event-baseline\.json$''']
+regexTarget = "line"
+regexes = ['''^\s*"event_feed_api\.py": "b08e5c616d4dd9bb1de178b1b0f0939b9d32a1851b6e13bc3d46eb3f208323c6",$''']

@@ -1,0 +1,949 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "A06",
+  "agent_version": "0.2.0",
+  "fixture_sha256": "baf32e1b930b632184207ef710af3d9120a3fd3d1eebd028939e1c17ca4bf4dd",
+  "provenance": "SYNTHETIC_DEVELOPMENT_BASELINE_NOT_HOLDOUT",
+  "source_sha256": {
+    "event_risk.py": "9472943b52c6452c5fa973e9ea275b3712d34bf18659a440c40dc0e8d4e96b45",
+    "event_feed.py": "7b2e3d5772bad8b5f01c0235dc86219cb8e41ea9d53b9f63322d3d1a17eeb8c4",
+    "event_feed_store.py": "664e030c5f67bd2a5042a15e5eb17316fe3be9e702f27398209ade7ba06ecad2",
+    "event_feed_api.py": "b08e5c616d4dd9bb1de178b1b0f0939b9d32a1851b6e13bc3d46eb3f208323c6",
+    "event_sources.py": "cc9a7ff32d7ea85ef7039311283c5758665f7af624e11392e9d9a8923adcb7ac",
+    "event_agent.py": "b211d92b0e0bfa0a466ca5a758b71f5c0e01aed48dab789596284bf2f15e08da"
+  },
+  "evaluator_sha256": "950e45f2bb6616a4b64d2b1f1b34a21f6fa238b6cbc8e85199759f76be365ede",
+  "case_count": 7,
+  "matching_cases": 7,
+  "calibration_status": "UNAVAILABLE",
+  "promotion_approved": false,
+  "results": [
+    {
+      "case_id": "scheduled-usd",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 26.643000077456236,
+      "context_ref": "agent-context:770b9bf7d0adba7c4d57409ff15b916cf320afc1cc0c73dc89da808de5425a40",
+      "expectations": {
+        "id": "scheduled-usd",
+        "feed": {
+          "schema_version": "1.0",
+          "provenance": "PAPER_OPERATOR_SYNTHETIC_EVENT_FEED",
+          "observed_at": "2026-01-01T00:00:00Z",
+          "valid_until": "2026-01-01T00:02:00Z",
+          "coverage_start": "2025-12-31T23:00:00Z",
+          "coverage_end": "2026-01-02T00:00:00Z",
+          "economic_calendar": [
+            {
+              "event_id": "payrolls",
+              "kind": "SCHEDULED",
+              "currencies": [
+                "USD"
+              ],
+              "severity": "HIGH",
+              "occurs_at": "2026-01-01T00:05:00Z",
+              "reported_at": "2025-12-31T23:50:00Z"
+            }
+          ],
+          "event_classifications": []
+        },
+        "expected_feed_status": "FRESH",
+        "expected_blackouts": {
+          "EURUSD": true,
+          "GBPUSD": true,
+          "USDJPY": true,
+          "EURJPY": false
+        },
+        "expected_scores": {
+          "payrolls": "0.66666666666666666666666666666666666666666666666667"
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A06",
+        "agent_version": "0.2.0",
+        "task_id": "scheduled-usd",
+        "input_refs": [
+          "context-evidence:1315ee3da22626e3cf8ae68f83390e6174c104e4665e68a58fab51e01b1d155b",
+          "context-evidence:634a0fc6ddbcb0a7e61a93da415e3823eb7ff019c715d59165be2f0c469bec04",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "evidence_refs": [
+          "context-evidence:1315ee3da22626e3cf8ae68f83390e6174c104e4665e68a58fab51e01b1d155b",
+          "context-evidence:634a0fc6ddbcb0a7e61a93da415e3823eb7ff019c715d59165be2f0c469bec04",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "SYNTHETIC_EVENT_FEED",
+          "INDIRECT_PORTFOLIO_EVENT_RISK_NOT_ASSESSED"
+        ],
+        "trace_id": "c8556ac0-9d7f-42c1-9cb4-4e4d7a70708b",
+        "requires_escalation": true,
+        "output_type": "EventRiskState",
+        "policy_version": "uncalibrated-paper-event-windows-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "relevance_scope": "DIRECT_PAIR_CURRENCIES",
+        "calibration_status": "UNAVAILABLE",
+        "feed_status": "FRESH",
+        "feed_ref": "paper-events:0a573d3b42c11f4e7790fc1901a1bd2ebc9a06ff2d70e4906dddbfcd0e0585a1",
+        "observation_as_of": "2026-01-01T00:00:00Z",
+        "feed_observed_at": "2026-01-01T00:00:00Z",
+        "positions_ref": "paper-event-positions:aa28375858b0d4e2ca9076704a76f0ea1f7d1fd07e8c57e54a553e0c453b84ea",
+        "coverage_complete_for_paper_window": true,
+        "measurements": [
+          {
+            "event_id": "payrolls",
+            "kind": "SCHEDULED",
+            "currencies": [
+              "USD"
+            ],
+            "severity": "HIGH",
+            "seconds_until_event": "300",
+            "window_seconds": 900,
+            "uncalibrated_score": "0.66666666666666666666666666666666666666666666666667",
+            "blackout_recommended": true
+          }
+        ],
+        "assessments": [
+          {
+            "instrument_id": "EURUSD",
+            "event_indices": [
+              0
+            ],
+            "blackout_recommended": true,
+            "recommended_mode": "NO_NEW_RISK",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "GBPUSD",
+            "event_indices": [
+              0
+            ],
+            "blackout_recommended": true,
+            "recommended_mode": "NO_NEW_RISK",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "USDJPY",
+            "event_indices": [
+              0
+            ],
+            "blackout_recommended": true,
+            "recommended_mode": "NO_NEW_RISK",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "EURJPY",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "detected-eur",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 17.58670003619045,
+      "context_ref": "agent-context:7990b3ab324e8e9d54dd1dd6c3235eeb5160eff813b2359c591818e088a7bfb9",
+      "expectations": {
+        "id": "detected-eur",
+        "feed": {
+          "schema_version": "1.0",
+          "provenance": "PAPER_OPERATOR_SYNTHETIC_EVENT_FEED",
+          "observed_at": "2026-01-01T00:00:00Z",
+          "valid_until": "2026-01-01T00:02:00Z",
+          "coverage_start": "2025-12-31T23:00:00Z",
+          "coverage_end": "2026-01-02T00:00:00Z",
+          "economic_calendar": [],
+          "event_classifications": [
+            {
+              "event_id": "eur-news",
+              "kind": "DETECTED",
+              "currencies": [
+                "EUR"
+              ],
+              "severity": "MEDIUM",
+              "occurs_at": "2025-12-31T23:57:30Z",
+              "reported_at": "2025-12-31T23:59:50Z"
+            }
+          ]
+        },
+        "expected_feed_status": "FRESH",
+        "expected_blackouts": {
+          "EURUSD": true,
+          "GBPUSD": false,
+          "USDJPY": false,
+          "EURJPY": true
+        },
+        "expected_scores": {
+          "eur-news": "0.25"
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A06",
+        "agent_version": "0.2.0",
+        "task_id": "detected-eur",
+        "input_refs": [
+          "context-evidence:e3c3c7a3481e291362a939edf99ec7b944967699592a97c69af77ff3a8fddbeb",
+          "context-evidence:ea506a1fbff96c54b568045ce4204e91188131cb95aa842f949a512b639ba1dd",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "evidence_refs": [
+          "context-evidence:e3c3c7a3481e291362a939edf99ec7b944967699592a97c69af77ff3a8fddbeb",
+          "context-evidence:ea506a1fbff96c54b568045ce4204e91188131cb95aa842f949a512b639ba1dd",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "SYNTHETIC_EVENT_FEED",
+          "INDIRECT_PORTFOLIO_EVENT_RISK_NOT_ASSESSED"
+        ],
+        "trace_id": "d8218751-fdf2-4a60-a84d-42bc53602384",
+        "requires_escalation": true,
+        "output_type": "EventRiskState",
+        "policy_version": "uncalibrated-paper-event-windows-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "relevance_scope": "DIRECT_PAIR_CURRENCIES",
+        "calibration_status": "UNAVAILABLE",
+        "feed_status": "FRESH",
+        "feed_ref": "paper-events:211a78b5f723ebecc08179d1d8b73f0e7b78caf6a88260eb3babe1c5a5806f96",
+        "observation_as_of": "2026-01-01T00:00:00Z",
+        "feed_observed_at": "2026-01-01T00:00:00Z",
+        "positions_ref": "paper-event-positions:aa28375858b0d4e2ca9076704a76f0ea1f7d1fd07e8c57e54a553e0c453b84ea",
+        "coverage_complete_for_paper_window": true,
+        "measurements": [
+          {
+            "event_id": "eur-news",
+            "kind": "DETECTED",
+            "currencies": [
+              "EUR"
+            ],
+            "severity": "MEDIUM",
+            "seconds_until_event": "-150",
+            "window_seconds": 300,
+            "uncalibrated_score": "0.25",
+            "blackout_recommended": true
+          }
+        ],
+        "assessments": [
+          {
+            "instrument_id": "EURUSD",
+            "event_indices": [
+              0
+            ],
+            "blackout_recommended": true,
+            "recommended_mode": "NO_NEW_RISK",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "GBPUSD",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "USDJPY",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "EURJPY",
+            "event_indices": [
+              0
+            ],
+            "blackout_recommended": true,
+            "recommended_mode": "NO_NEW_RISK",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "unknown-severity",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 15.535700018517673,
+      "context_ref": "agent-context:a6549a4b4f44b98741f5514423fab91ced2133c4a0881ec56a3a50fddc12c7e5",
+      "expectations": {
+        "id": "unknown-severity",
+        "feed": {
+          "schema_version": "1.0",
+          "provenance": "PAPER_OPERATOR_SYNTHETIC_EVENT_FEED",
+          "observed_at": "2026-01-01T00:00:00Z",
+          "valid_until": "2026-01-01T00:02:00Z",
+          "coverage_start": "2025-12-31T23:00:00Z",
+          "coverage_end": "2026-01-02T00:00:00Z",
+          "economic_calendar": [
+            {
+              "event_id": "gbp-unknown",
+              "kind": "SCHEDULED",
+              "currencies": [
+                "GBP"
+              ],
+              "severity": "UNKNOWN",
+              "occurs_at": "2026-01-01T00:00:00Z",
+              "reported_at": "2025-12-31T23:50:00Z"
+            }
+          ],
+          "event_classifications": []
+        },
+        "expected_feed_status": "FRESH",
+        "expected_blackouts": {
+          "EURUSD": false,
+          "GBPUSD": null,
+          "USDJPY": false,
+          "EURJPY": false
+        },
+        "expected_scores": {
+          "gbp-unknown": null
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A06",
+        "agent_version": "0.2.0",
+        "task_id": "unknown-severity",
+        "input_refs": [
+          "context-evidence:7f32cf2279cb813074835866066f60020d5510d6ba37037f09eae304e707303c",
+          "context-evidence:b7486f38f1970d2286ca5613368f6ecf1ea3d70083b6224f6431f649571f196d",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "evidence_refs": [
+          "context-evidence:7f32cf2279cb813074835866066f60020d5510d6ba37037f09eae304e707303c",
+          "context-evidence:b7486f38f1970d2286ca5613368f6ecf1ea3d70083b6224f6431f649571f196d",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "SYNTHETIC_EVENT_FEED",
+          "INDIRECT_PORTFOLIO_EVENT_RISK_NOT_ASSESSED"
+        ],
+        "trace_id": "c9166ccf-623f-4b56-98c8-e9037babf58a",
+        "requires_escalation": true,
+        "output_type": "EventRiskState",
+        "policy_version": "uncalibrated-paper-event-windows-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "relevance_scope": "DIRECT_PAIR_CURRENCIES",
+        "calibration_status": "UNAVAILABLE",
+        "feed_status": "FRESH",
+        "feed_ref": "paper-events:920d0f6cc7db60806863712c49367c397a19948a282e416f2d05b4f92779037e",
+        "observation_as_of": "2026-01-01T00:00:00Z",
+        "feed_observed_at": "2026-01-01T00:00:00Z",
+        "positions_ref": "paper-event-positions:aa28375858b0d4e2ca9076704a76f0ea1f7d1fd07e8c57e54a553e0c453b84ea",
+        "coverage_complete_for_paper_window": true,
+        "measurements": [
+          {
+            "event_id": "gbp-unknown",
+            "kind": "SCHEDULED",
+            "currencies": [
+              "GBP"
+            ],
+            "severity": "UNKNOWN",
+            "seconds_until_event": "0",
+            "window_seconds": null,
+            "uncalibrated_score": null,
+            "blackout_recommended": null
+          }
+        ],
+        "assessments": [
+          {
+            "instrument_id": "EURUSD",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "GBPUSD",
+            "event_indices": [
+              0
+            ],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "USDJPY",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "EURJPY",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "incomplete-coverage",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 15.860699932090938,
+      "context_ref": "agent-context:39a529bc6ff765448262bebed98b200721512696c545c80560ca989770efec02",
+      "expectations": {
+        "id": "incomplete-coverage",
+        "feed": {
+          "schema_version": "1.0",
+          "provenance": "PAPER_OPERATOR_SYNTHETIC_EVENT_FEED",
+          "observed_at": "2026-01-01T00:00:00Z",
+          "valid_until": "2026-01-01T00:02:00Z",
+          "coverage_start": "2025-12-31T23:59:00Z",
+          "coverage_end": "2026-01-02T00:00:00Z",
+          "economic_calendar": [
+            {
+              "event_id": "payrolls",
+              "kind": "SCHEDULED",
+              "currencies": [
+                "USD"
+              ],
+              "severity": "HIGH",
+              "occurs_at": "2026-01-01T00:05:00Z",
+              "reported_at": "2025-12-31T23:50:00Z"
+            }
+          ],
+          "event_classifications": []
+        },
+        "expected_feed_status": "FRESH",
+        "expected_blackouts": {
+          "EURUSD": true,
+          "GBPUSD": true,
+          "USDJPY": true,
+          "EURJPY": null
+        },
+        "expected_scores": {
+          "payrolls": "0.66666666666666666666666666666666666666666666666667"
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A06",
+        "agent_version": "0.2.0",
+        "task_id": "incomplete-coverage",
+        "input_refs": [
+          "context-evidence:d32a1659f126794ff287f812f9e34f8ae50d8ae496cc5a630a986ff19a73371d",
+          "context-evidence:c3af2b0978108208ff0c0d0f5f4c76e791ad21716bbd6e227404bb61a7e4a401",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "evidence_refs": [
+          "context-evidence:d32a1659f126794ff287f812f9e34f8ae50d8ae496cc5a630a986ff19a73371d",
+          "context-evidence:c3af2b0978108208ff0c0d0f5f4c76e791ad21716bbd6e227404bb61a7e4a401",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "SYNTHETIC_EVENT_FEED",
+          "INDIRECT_PORTFOLIO_EVENT_RISK_NOT_ASSESSED",
+          "PAPER_WINDOW_COVERAGE_INCOMPLETE"
+        ],
+        "trace_id": "ce1b099b-ce7e-415e-932e-1c68d4df6c8b",
+        "requires_escalation": true,
+        "output_type": "EventRiskState",
+        "policy_version": "uncalibrated-paper-event-windows-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "relevance_scope": "DIRECT_PAIR_CURRENCIES",
+        "calibration_status": "UNAVAILABLE",
+        "feed_status": "FRESH",
+        "feed_ref": "paper-events:363eae74901aed6ff79274eedf12edeff7bb5c7cbbc0d5a8982500ed659f4c59",
+        "observation_as_of": "2026-01-01T00:00:00Z",
+        "feed_observed_at": "2026-01-01T00:00:00Z",
+        "positions_ref": "paper-event-positions:aa28375858b0d4e2ca9076704a76f0ea1f7d1fd07e8c57e54a553e0c453b84ea",
+        "coverage_complete_for_paper_window": false,
+        "measurements": [
+          {
+            "event_id": "payrolls",
+            "kind": "SCHEDULED",
+            "currencies": [
+              "USD"
+            ],
+            "severity": "HIGH",
+            "seconds_until_event": "300",
+            "window_seconds": 900,
+            "uncalibrated_score": "0.66666666666666666666666666666666666666666666666667",
+            "blackout_recommended": true
+          }
+        ],
+        "assessments": [
+          {
+            "instrument_id": "EURUSD",
+            "event_indices": [
+              0
+            ],
+            "blackout_recommended": true,
+            "recommended_mode": "NO_NEW_RISK",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "GBPUSD",
+            "event_indices": [
+              0
+            ],
+            "blackout_recommended": true,
+            "recommended_mode": "NO_NEW_RISK",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "USDJPY",
+            "event_indices": [
+              0
+            ],
+            "blackout_recommended": true,
+            "recommended_mode": "NO_NEW_RISK",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "EURJPY",
+            "event_indices": [],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "expired-feed",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 15.819399966858327,
+      "context_ref": "agent-context:77726914f408afb55506ce8a2bb8e95072fec13dd687ae36bf6a376cc680e634",
+      "expectations": {
+        "id": "expired-feed",
+        "feed": {
+          "schema_version": "1.0",
+          "provenance": "PAPER_OPERATOR_SYNTHETIC_EVENT_FEED",
+          "observed_at": "2025-12-31T23:57:00Z",
+          "valid_until": "2025-12-31T23:59:00Z",
+          "coverage_start": "2025-12-31T23:00:00Z",
+          "coverage_end": "2026-01-02T00:00:00Z",
+          "economic_calendar": [
+            {
+              "event_id": "payrolls",
+              "kind": "SCHEDULED",
+              "currencies": [
+                "USD"
+              ],
+              "severity": "HIGH",
+              "occurs_at": "2026-01-01T00:05:00Z",
+              "reported_at": "2025-12-31T23:50:00Z"
+            }
+          ],
+          "event_classifications": []
+        },
+        "expected_feed_status": "STALE",
+        "expected_blackouts": {
+          "EURUSD": null,
+          "GBPUSD": null,
+          "USDJPY": null,
+          "EURJPY": null
+        },
+        "expected_scores": {}
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A06",
+        "agent_version": "0.2.0",
+        "task_id": "expired-feed",
+        "input_refs": [
+          "context-evidence:d3ef9eb1bf648b59a05e15bea8801909f5c649ce6bce1ef516555318c0424d30",
+          "context-evidence:d82af8b943e76424137566667afac96dec4a3839b2843769279bb1ef5d963634",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "evidence_refs": [
+          "context-evidence:d3ef9eb1bf648b59a05e15bea8801909f5c649ce6bce1ef516555318c0424d30",
+          "context-evidence:d82af8b943e76424137566667afac96dec4a3839b2843769279bb1ef5d963634",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "SYNTHETIC_EVENT_FEED",
+          "INDIRECT_PORTFOLIO_EVENT_RISK_NOT_ASSESSED",
+          "EVENT_FEED_STALE",
+          "PAPER_WINDOW_COVERAGE_INCOMPLETE"
+        ],
+        "trace_id": "e413b61e-066e-4bad-9f41-cf872b36b24b",
+        "requires_escalation": true,
+        "output_type": "EventRiskState",
+        "policy_version": "uncalibrated-paper-event-windows-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "relevance_scope": "DIRECT_PAIR_CURRENCIES",
+        "calibration_status": "UNAVAILABLE",
+        "feed_status": "STALE",
+        "feed_ref": "paper-events:506163ad17de2e4f0250da3446ce26b87c514046ca3cd54c92e8b19c807122cd",
+        "observation_as_of": "2026-01-01T00:00:00Z",
+        "feed_observed_at": "2025-12-31T23:57:00Z",
+        "positions_ref": "paper-event-positions:aa28375858b0d4e2ca9076704a76f0ea1f7d1fd07e8c57e54a553e0c453b84ea",
+        "coverage_complete_for_paper_window": false,
+        "measurements": [],
+        "assessments": [
+          {
+            "instrument_id": "EURUSD",
+            "event_indices": [],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "GBPUSD",
+            "event_indices": [],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "USDJPY",
+            "event_indices": [],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "EURJPY",
+            "event_indices": [],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "missing-feed",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 17.436600057408214,
+      "context_ref": "agent-context:ffbbc697cfbbfc1a32a395591c4969d7e2f94577f6bd8c9ee6e398afa35eef92",
+      "expectations": {
+        "id": "missing-feed",
+        "feed": null,
+        "expected_feed_status": "MISSING",
+        "expected_blackouts": {
+          "EURUSD": null,
+          "GBPUSD": null,
+          "USDJPY": null,
+          "EURJPY": null
+        },
+        "expected_scores": {}
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A06",
+        "agent_version": "0.2.0",
+        "task_id": "missing-feed",
+        "input_refs": [
+          "context-evidence:f5b8659e5829b120c164f92cfcf0973a0d89d69c096b319aa8f7fdc7255bb20b",
+          "context-evidence:7699cba6ed40aea62de0aabd95040347c7a406b1398b8c13fe839b09c712cd91",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "evidence_refs": [
+          "context-evidence:f5b8659e5829b120c164f92cfcf0973a0d89d69c096b319aa8f7fdc7255bb20b",
+          "context-evidence:7699cba6ed40aea62de0aabd95040347c7a406b1398b8c13fe839b09c712cd91",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "SYNTHETIC_EVENT_FEED",
+          "INDIRECT_PORTFOLIO_EVENT_RISK_NOT_ASSESSED",
+          "EVENT_FEED_MISSING",
+          "PAPER_WINDOW_COVERAGE_INCOMPLETE"
+        ],
+        "trace_id": "11e31c99-dc97-4f98-a098-1cb6decb4e56",
+        "requires_escalation": true,
+        "output_type": "EventRiskState",
+        "policy_version": "uncalibrated-paper-event-windows-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "relevance_scope": "DIRECT_PAIR_CURRENCIES",
+        "calibration_status": "UNAVAILABLE",
+        "feed_status": "MISSING",
+        "feed_ref": null,
+        "observation_as_of": "2026-01-01T00:00:00Z",
+        "feed_observed_at": null,
+        "positions_ref": "paper-event-positions:aa28375858b0d4e2ca9076704a76f0ea1f7d1fd07e8c57e54a553e0c453b84ea",
+        "coverage_complete_for_paper_window": false,
+        "measurements": [],
+        "assessments": [
+          {
+            "instrument_id": "EURUSD",
+            "event_indices": [],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "GBPUSD",
+            "event_indices": [],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "USDJPY",
+            "event_indices": [],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "EURJPY",
+            "event_indices": [],
+            "blackout_recommended": null,
+            "recommended_mode": "UNASSESSED",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "empty-observed-feed",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 18.364599905908108,
+      "context_ref": "agent-context:ee289d9d855d09911ebc15be902013a598d2a684eb6d3850a6cd0d30b266a9f1",
+      "expectations": {
+        "id": "empty-observed-feed",
+        "feed": {
+          "schema_version": "1.0",
+          "provenance": "PAPER_OPERATOR_SYNTHETIC_EVENT_FEED",
+          "observed_at": "2026-01-01T00:00:00Z",
+          "valid_until": "2026-01-01T00:02:00Z",
+          "coverage_start": "2025-12-31T23:00:00Z",
+          "coverage_end": "2026-01-02T00:00:00Z",
+          "economic_calendar": [],
+          "event_classifications": []
+        },
+        "expected_feed_status": "FRESH",
+        "expected_blackouts": {
+          "EURUSD": false,
+          "GBPUSD": false,
+          "USDJPY": false,
+          "EURJPY": false
+        },
+        "expected_scores": {}
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A06",
+        "agent_version": "0.2.0",
+        "task_id": "empty-observed-feed",
+        "input_refs": [
+          "context-evidence:be89cf0a2f0c381f78c6a717ddc5c53075415d074e41422951985c4e56bbbcff",
+          "context-evidence:b64875d78143303f258eb53e7501c2c6021086cf5c19b52faa6c38a7c8ed1099",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "evidence_refs": [
+          "context-evidence:be89cf0a2f0c381f78c6a717ddc5c53075415d074e41422951985c4e56bbbcff",
+          "context-evidence:b64875d78143303f258eb53e7501c2c6021086cf5c19b52faa6c38a7c8ed1099",
+          "context-evidence:da2d7a00f8fd16a12fa31ae2be34654d1109e77a015216ea670f16dabc156e35"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "CALIBRATION_UNAVAILABLE",
+          "SYNTHETIC_EVENT_FEED",
+          "INDIRECT_PORTFOLIO_EVENT_RISK_NOT_ASSESSED"
+        ],
+        "trace_id": "59dd1516-f1d0-4d85-862f-a16318308eb6",
+        "requires_escalation": true,
+        "output_type": "EventRiskState",
+        "policy_version": "uncalibrated-paper-event-windows-v1",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "relevance_scope": "DIRECT_PAIR_CURRENCIES",
+        "calibration_status": "UNAVAILABLE",
+        "feed_status": "FRESH",
+        "feed_ref": "paper-events:95218cb4bd27fbf78e9d0e40fafdfaf37af26181a6e0e43f607768193b0a5059",
+        "observation_as_of": "2026-01-01T00:00:00Z",
+        "feed_observed_at": "2026-01-01T00:00:00Z",
+        "positions_ref": "paper-event-positions:aa28375858b0d4e2ca9076704a76f0ea1f7d1fd07e8c57e54a553e0c453b84ea",
+        "coverage_complete_for_paper_window": true,
+        "measurements": [],
+        "assessments": [
+          {
+            "instrument_id": "EURUSD",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "GBPUSD",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "USDJPY",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          },
+          {
+            "instrument_id": "EURJPY",
+            "event_indices": [],
+            "blackout_recommended": false,
+            "recommended_mode": "OBSERVE_ONLY",
+            "filled_net_base_units": "0",
+            "pending_buy_base_units": "0",
+            "pending_sell_base_units": "0",
+            "has_local_unit_exposure": false,
+            "may_add_risk": false
+          }
+        ]
+      }
+    }
+  ]
+}

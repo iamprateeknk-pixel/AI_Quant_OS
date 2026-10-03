@@ -23,12 +23,15 @@ from ai_quant_os.graph_runtime import GraphRuntime
 from ai_quant_os.regime_agent import regime_implementation
 from ai_quant_os.currency_strength_agent import currency_strength_implementation
 from ai_quant_os.liquidity_agent import liquidity_implementation
+from ai_quant_os.event_agent import event_implementation
+from ai_quant_os.event_feed_store import EventFeedStore
+from ai_quant_os.event_feed_api import install_event_feed_routes
+from ai_quant_os.event_sources import EVENT_INPUT_BYTES, EVENT_CONTEXT_BYTES, event_sources
 from ai_quant_os.liquidity_sources import (
     LIQUIDITY_INPUT_BYTES,
     LIQUIDITY_CONTEXT_BYTES,
     liquidity_sources,
     DisplayedDepth,
-    require_liquidity_quote,
 )
 from ai_quant_os.currency_strength_sources import (
     STRENGTH_INPUT_BYTES,
@@ -46,6 +49,7 @@ from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
+from ai_quant_os.paper_market_ingress import require_paper_prices
 from ai_quant_os.broker import BrokerRouter, SimulatedBroker
 from ai_quant_os.execution import PaperExecutionGateway, PaperOrder
 from ai_quant_os.market import MarketSnapshot
@@ -250,6 +254,11 @@ def create_app(
     state_store = PaperStateStore(configured_path)
     calibration_store = CalibrationStore(configured_path)
     world_state_store = WorldStateStore(configured_path)
+    event_feed_store = EventFeedStore(
+        configured_path.with_name(configured_path.stem + ".events.sqlite3")
+        if configured_path
+        else None
+    )
     agent_registry = load_agent_catalog()
     ingress_health = IngressHealth()
     risk.set_safety_state(state_store.safety_state())
@@ -327,6 +336,7 @@ def create_app(
                     ("A02", "0.2.0"): regime_implementation(agent_registry),
                     ("A04", "0.2.0"): currency_strength_implementation(agent_registry),
                     ("A05", "0.2.0"): liquidity_implementation(agent_registry),
+                    ("A06", "0.2.0"): event_implementation(agent_registry),
                     ("A07", "0.2.0"): integrity_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(agent_registry, {}),
@@ -864,12 +874,25 @@ def create_app(
 
     @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
+        event_mission = (payload.agent_id, payload.agent_version) == ("A06", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
-        snapshot = world_state.snapshot(context_quotes, now=current_time())
+        snapshot = (
+            None if event_mission else world_state.snapshot(context_quotes, now=current_time())
+        )
         try:
             strength_mission = (payload.agent_id, payload.agent_version) == ("A04", "0.2.0")
             liquidity_mission = (payload.agent_id, payload.agent_version) == ("A05", "0.2.0")
-            if strength_mission:
+            if event_mission:
+                try:
+                    feed, ledger = await asyncio.to_thread(
+                        lambda: (event_feed_store.latest(), execution.currency_ledger)
+                    )
+                except (ValueError, sqlite3.Error) as error:
+                    raise HTTPException(
+                        status_code=503, detail="Event evidence storage unavailable"
+                    ) from error
+                sources = event_sources(feed, *ledger, now=current_time())
+            elif strength_mission:
                 sources = currency_strength_sources(snapshot, world_state.histories())
             elif liquidity_mission:
                 sources = liquidity_sources(
@@ -892,11 +915,15 @@ def create_app(
                 if strength_mission
                 else LIQUIDITY_INPUT_BYTES
                 if liquidity_mission
+                else EVENT_INPUT_BYTES
+                if event_mission
                 else 8192,
                 max_context_bytes=STRENGTH_CONTEXT_BYTES
                 if strength_mission
                 else LIQUIDITY_CONTEXT_BYTES
                 if liquidity_mission
+                else EVENT_CONTEXT_BYTES
+                if event_mission
                 else 32768,
             ).compile(
                 payload.agent_id, payload.agent_version, task_id=payload.task_id, scope="PAPER"
@@ -1026,6 +1053,8 @@ def create_app(
     def record_world_state_bars(payload: WorldStateBarsInput) -> dict[str, object]:
         try:
             bars = tuple(Bar(**item.model_dump()) for item in payload.bars)
+            for bar in bars:
+                require_paper_prices(bar.instrument_id, (bar.open, bar.high, bar.low, bar.close))
             inserted, duplicates = world_state.record_bars_with_health(bars, now=current_time())
         except ValueError as error:
             code = (
@@ -1048,6 +1077,7 @@ def create_app(
     def record_quote(quote: QuoteInput) -> dict[str, str]:
         try:
             snapshot = MarketSnapshot(**quote.model_dump(), trusted=True)
+            require_paper_prices(snapshot.instrument_id, (snapshot.bid, snapshot.ask))
         except ValueError as error:
             ingress_health.note("INVALID_QUOTE")
             raise HTTPException(status_code=422, detail=str(error)) from error
@@ -1058,10 +1088,8 @@ def create_app(
     @app.post("/api/v1/paper/l1-quotes", dependencies=[Depends(require_operator)])
     def record_l1_quote(payload: PaperL1QuoteInput) -> dict[str, str]:
         try:
-            if payload.quote.instrument_id not in {row.instrument_id for row in PAPER_INSTRUMENTS}:
-                raise ValueError("Unknown paper instrument")
             snapshot = MarketSnapshot(**payload.quote.model_dump(), trusted=True)
-            require_liquidity_quote(snapshot)
+            require_paper_prices(snapshot.instrument_id, (snapshot.bid, snapshot.ask))
             depth = DisplayedDepth(
                 instrument_id=snapshot.instrument_id,
                 observed_at=snapshot.observed_at,
@@ -1343,6 +1371,7 @@ def create_app(
             return receipt
 
     install_recovery_routes(app, require_operator)
+    install_event_feed_routes(app, event_feed_store, require_operator, current_time)
     install_health_routes(app, require_operator, health_worker, enabled_health)
     install_daily_routes(
         app,

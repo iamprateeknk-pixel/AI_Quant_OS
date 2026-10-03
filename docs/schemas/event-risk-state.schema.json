@@ -1,0 +1,420 @@
+{
+  "$defs": {
+    "EventAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "event_indices": {
+          "items": {
+            "maximum": 127,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 128,
+          "title": "Event Indices",
+          "type": "array"
+        },
+        "blackout_recommended": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Blackout Recommended"
+        },
+        "recommended_mode": {
+          "enum": [
+            "NO_NEW_RISK",
+            "OBSERVE_ONLY",
+            "UNASSESSED"
+          ],
+          "title": "Recommended Mode",
+          "type": "string"
+        },
+        "filled_net_base_units": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Filled Net Base Units"
+        },
+        "pending_buy_base_units": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Pending Buy Base Units"
+        },
+        "pending_sell_base_units": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Pending Sell Base Units"
+        },
+        "has_local_unit_exposure": {
+          "title": "Has Local Unit Exposure",
+          "type": "boolean"
+        },
+        "may_add_risk": {
+          "const": false,
+          "default": false,
+          "title": "May Add Risk",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "event_indices",
+        "blackout_recommended",
+        "recommended_mode",
+        "filled_net_base_units",
+        "pending_buy_base_units",
+        "pending_sell_base_units",
+        "has_local_unit_exposure"
+      ],
+      "title": "EventAssessment",
+      "type": "object"
+    },
+    "EventMeasurement": {
+      "properties": {
+        "event_id": {
+          "title": "Event Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "SCHEDULED",
+            "DETECTED"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "currencies": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Currencies",
+          "type": "array"
+        },
+        "severity": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "UNKNOWN"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "seconds_until_event": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Seconds Until Event"
+        },
+        "window_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Window Seconds"
+        },
+        "uncalibrated_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Uncalibrated Score"
+        },
+        "blackout_recommended": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Blackout Recommended"
+        }
+      },
+      "required": [
+        "event_id",
+        "kind",
+        "currencies",
+        "severity",
+        "seconds_until_event",
+        "window_seconds",
+        "uncalibrated_score",
+        "blackout_recommended"
+      ],
+      "title": "EventMeasurement",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A06",
+      "default": "A06",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.2.0",
+      "default": "0.2.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "output_type": {
+      "const": "EventRiskState",
+      "default": "EventRiskState",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "policy_version": {
+      "const": "uncalibrated-paper-event-windows-v1",
+      "default": "uncalibrated-paper-event-windows-v1",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "hard_gate_authority": {
+      "const": "RISK_KERNEL",
+      "default": "RISK_KERNEL",
+      "title": "Hard Gate Authority",
+      "type": "string"
+    },
+    "relevance_scope": {
+      "const": "DIRECT_PAIR_CURRENCIES",
+      "default": "DIRECT_PAIR_CURRENCIES",
+      "title": "Relevance Scope",
+      "type": "string"
+    },
+    "calibration_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Calibration Status",
+      "type": "string"
+    },
+    "feed_status": {
+      "enum": [
+        "FRESH",
+        "MISSING",
+        "STALE",
+        "FUTURE"
+      ],
+      "title": "Feed Status",
+      "type": "string"
+    },
+    "feed_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Feed Ref"
+    },
+    "observation_as_of": {
+      "format": "date-time",
+      "title": "Observation As Of",
+      "type": "string"
+    },
+    "feed_observed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Feed Observed At"
+    },
+    "positions_ref": {
+      "title": "Positions Ref",
+      "type": "string"
+    },
+    "coverage_complete_for_paper_window": {
+      "title": "Coverage Complete For Paper Window",
+      "type": "boolean"
+    },
+    "measurements": {
+      "items": {
+        "$ref": "#/$defs/EventMeasurement"
+      },
+      "maxItems": 128,
+      "title": "Measurements",
+      "type": "array"
+    },
+    "assessments": {
+      "items": {
+        "$ref": "#/$defs/EventAssessment"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "title": "Assessments",
+      "type": "array"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "confidence",
+    "uncertainty",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "feed_status",
+    "feed_ref",
+    "observation_as_of",
+    "feed_observed_at",
+    "positions_ref",
+    "coverage_complete_for_paper_window",
+    "measurements",
+    "assessments"
+  ],
+  "title": "EventRiskState",
+  "type": "object"
+}

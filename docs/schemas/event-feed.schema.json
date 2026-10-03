@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "EventObservation": {
+      "properties": {
+        "event_id": {
+          "title": "Event Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "SCHEDULED",
+            "DETECTED"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "currencies": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Currencies",
+          "type": "array"
+        },
+        "severity": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "UNKNOWN"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "occurs_at": {
+          "format": "date-time",
+          "title": "Occurs At",
+          "type": "string"
+        },
+        "reported_at": {
+          "format": "date-time",
+          "title": "Reported At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "kind",
+        "currencies",
+        "severity",
+        "occurs_at",
+        "reported_at"
+      ],
+      "title": "EventObservation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "provenance": {
+      "const": "PAPER_OPERATOR_SYNTHETIC_EVENT_FEED",
+      "default": "PAPER_OPERATOR_SYNTHETIC_EVENT_FEED",
+      "title": "Provenance",
+      "type": "string"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "coverage_start": {
+      "format": "date-time",
+      "title": "Coverage Start",
+      "type": "string"
+    },
+    "coverage_end": {
+      "format": "date-time",
+      "title": "Coverage End",
+      "type": "string"
+    },
+    "economic_calendar": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EventObservation"
+      },
+      "maxItems": 128,
+      "title": "Economic Calendar",
+      "type": "array"
+    },
+    "event_classifications": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EventObservation"
+      },
+      "maxItems": 128,
+      "title": "Event Classifications",
+      "type": "array"
+    }
+  },
+  "required": [
+    "observed_at",
+    "valid_until",
+    "coverage_start",
+    "coverage_end"
+  ],
+  "title": "EventFeed",
+  "type": "object"
+}
