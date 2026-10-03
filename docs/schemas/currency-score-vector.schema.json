@@ -1,0 +1,393 @@
+{
+  "$defs": {
+    "CurrencyEstimate": {
+      "properties": {
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "component": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Component",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "AVAILABLE",
+            "WITHHELD",
+            "UNAVAILABLE"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "score_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Score Bps"
+        },
+        "decomposition": {
+          "items": {
+            "$ref": "#/$defs/EdgeContribution"
+          },
+          "title": "Decomposition",
+          "type": "array"
+        }
+      },
+      "required": [
+        "currency",
+        "component",
+        "status",
+        "score_bps",
+        "decomposition"
+      ],
+      "title": "CurrencyEstimate",
+      "type": "object"
+    },
+    "CurrencyStrength": {
+      "properties": {
+        "status": {
+          "enum": [
+            "AVAILABLE",
+            "PARTIAL",
+            "UNAVAILABLE",
+            "UNALIGNED",
+            "INCONSISTENT"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "estimates": {
+          "items": {
+            "$ref": "#/$defs/CurrencyEstimate"
+          },
+          "title": "Estimates",
+          "type": "array"
+        },
+        "basis_instruments": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Basis Instruments",
+          "type": "array"
+        },
+        "dependent_instruments": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dependent Instruments",
+          "type": "array"
+        },
+        "residuals": {
+          "items": {
+            "$ref": "#/$defs/PairResidual"
+          },
+          "title": "Residuals",
+          "type": "array"
+        },
+        "window_start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Window Start"
+        },
+        "window_end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Window End"
+        },
+        "observation_count": {
+          "title": "Observation Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "status",
+        "estimates",
+        "basis_instruments",
+        "dependent_instruments",
+        "residuals",
+        "window_start",
+        "window_end",
+        "observation_count"
+      ],
+      "title": "CurrencyStrength",
+      "type": "object"
+    },
+    "EdgeContribution": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "coefficient": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Coefficient"
+        },
+        "return_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Return Bps"
+        },
+        "contribution_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Contribution Bps"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "coefficient",
+        "return_bps",
+        "contribution_bps"
+      ],
+      "title": "EdgeContribution",
+      "type": "object"
+    },
+    "PairResidual": {
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "dependent": {
+          "title": "Dependent",
+          "type": "boolean"
+        },
+        "max_residual_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Max Residual Bps"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "dependent",
+        "max_residual_bps"
+      ],
+      "title": "PairResidual",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A04",
+      "default": "A04",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.2.0",
+      "default": "0.2.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "output_type": {
+      "const": "CurrencyScoreVector",
+      "default": "CurrencyScoreVector",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "policy_version": {
+      "const": "paper-currency-log-basis-v1",
+      "default": "paper-currency-log-basis-v1",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "units": {
+      "const": "LOG_RETURN_BPS",
+      "default": "LOG_RETURN_BPS",
+      "title": "Units",
+      "type": "string"
+    },
+    "rank_scope": {
+      "const": "WITHIN_CONNECTED_COMPONENT",
+      "default": "WITHIN_CONNECTED_COMPONENT",
+      "title": "Rank Scope",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "macro_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Macro Status",
+      "type": "string"
+    },
+    "calibration_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Calibration Status",
+      "type": "string"
+    },
+    "statistical_dependence_status": {
+      "const": "NOT_ESTIMATED",
+      "default": "NOT_ESTIMATED",
+      "title": "Statistical Dependence Status",
+      "type": "string"
+    },
+    "result": {
+      "$ref": "#/$defs/CurrencyStrength"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "confidence",
+    "uncertainty",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "result"
+  ],
+  "title": "CurrencyScoreVector",
+  "type": "object"
+}

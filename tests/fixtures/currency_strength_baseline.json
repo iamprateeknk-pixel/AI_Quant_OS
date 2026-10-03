@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "provenance": "SYNTHETIC_DEVELOPMENT_BASELINE_NOT_HOLDOUT",
+  "cases": [
+    {"id": "coherent_triangle", "prices": {"EURUSD": ["1", "1.01", "1.02"], "USDJPY": ["100", "101", "102"], "EURJPY": ["100", "102.01", "104.04"], "GBPUSD": ["1.2", "1.2", "1.2"]}, "expected_status": "AVAILABLE", "expected_basis": 3, "expected_scores": {"EUR": "198.02627296179713", "JPY": "-198.02627296179713", "GBP": "0", "USD": "0"}},
+    {"id": "flat", "prices": {"EURUSD": ["1", "1", "1"], "USDJPY": ["100", "100", "100"], "EURJPY": ["100", "100", "100"], "GBPUSD": ["1.2", "1.2", "1.2"]}, "expected_status": "AVAILABLE", "expected_basis": 3, "expected_scores": {"EUR": "0", "JPY": "0", "GBP": "0", "USD": "0"}},
+    {"id": "middle_contradiction", "prices": {"EURUSD": ["1", "1", "1"], "USDJPY": ["100", "100", "100"], "EURJPY": ["100", "101", "100"], "GBPUSD": ["1.2", "1.2", "1.2"]}, "expected_status": "INCONSISTENT", "expected_basis": 3, "expected_scores": {"EUR": null, "JPY": null, "GBP": null, "USD": null}},
+    {"id": "missing", "prices": {}, "expected_status": "UNAVAILABLE", "expected_basis": 0, "expected_scores": {"EUR": null, "JPY": null, "GBP": null, "USD": null}},
+    {"id": "partial", "prices": {"EURUSD": ["1", "1", "1.02"]}, "expected_status": "PARTIAL", "expected_basis": 1, "expected_scores": {"EUR": "99.013136480898565", "USD": "-99.013136480898565", "GBP": null, "JPY": null}},
+    {"id": "unaligned", "prices": {"EURUSD": ["1", "1", "1.02"], "USDJPY": ["100", "101", "102"]}, "offset_seconds": {"USDJPY": 1}, "expected_status": "UNALIGNED", "expected_basis": 0, "expected_scores": {"EUR": null, "JPY": null, "GBP": null, "USD": null}}
+  ]
+}

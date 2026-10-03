@@ -5,3 +5,7 @@ infra/repair-worker/base_index.json -text
 infra/repair-worker/base_manifest.json -text
 infra/repair-worker/base_config.json -text
 requirements/*.lock text eol=lf
+src/ai_quant_os/currency_strength*.py text eol=lf
+tests/fixtures/currency_strength_baseline.json text eol=lf
+docs/evaluations/currency-strength-baseline.json text eol=lf
+docs/schemas/currency-score-vector.schema.json text eol=lf

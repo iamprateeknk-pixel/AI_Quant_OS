@@ -1,0 +1,922 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "A04",
+  "agent_version": "0.2.0",
+  "fixture_sha256": "9163ac6a25c5f9f8c7a32752c336543baeb10302f56e04d8f353c6670187a6cd",
+  "provenance": "SYNTHETIC_DEVELOPMENT_BASELINE_NOT_HOLDOUT",
+  "source_sha256": {
+    "currency_strength.py": "b6c1b35a3404297ef016d4dc8b6ad56850fddcde6eea2af935206a29344a22e0",
+    "currency_strength_sources.py": "e8f256c86b674250d2a6c29dda42d2288ed95c59a757925a4133bc912c2d9ba5",
+    "currency_strength_agent.py": "22ae262789fb574ce0afd284025ddca9a688343850c80f3550373d3ecdd6c4d6"
+  },
+  "evaluator_sha256": "c43ec0892125e7640683f8962e7dd70ad2e0be646330caa6b679684d471a372f",
+  "case_count": 6,
+  "matching_cases": 6,
+  "calibration_status": "UNAVAILABLE",
+  "promotion_approved": false,
+  "results": [
+    {
+      "case_id": "coherent_triangle",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 50.424600020051,
+      "context_ref": "agent-context:38782d1a79c75a48508f9ba22a4ea1951673c19b8c1eb616daf1f5abf1180180",
+      "expected_status": "AVAILABLE",
+      "expected_basis": 3,
+      "expected_scores": {
+        "EUR": "198.02627296179713",
+        "JPY": "-198.02627296179713",
+        "GBP": "0",
+        "USD": "0"
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A04",
+        "agent_version": "0.2.0",
+        "task_id": "coherent_triangle",
+        "input_refs": [
+          "context-evidence:f6a8f7f592ca081839e987c54fd23d667407164d74fde0e638b0103baaea7327",
+          "context-evidence:05ec39bc1d2144d1bb74f6c7fa788c3919839ebfddaaf2380c0b0a52b897a189",
+          "context-evidence:4745171fbf1440c24e18aafaa50923c0edf802314b054ddad382944f52fdc797",
+          "context-evidence:8d09a0acd1e86f1943fdffd316ab7aa0521a8540ab5403bf92d76b4cd2ad88e8"
+        ],
+        "evidence_refs": [
+          "context-evidence:f6a8f7f592ca081839e987c54fd23d667407164d74fde0e638b0103baaea7327",
+          "context-evidence:05ec39bc1d2144d1bb74f6c7fa788c3919839ebfddaaf2380c0b0a52b897a189",
+          "context-evidence:4745171fbf1440c24e18aafaa50923c0edf802314b054ddad382944f52fdc797",
+          "context-evidence:8d09a0acd1e86f1943fdffd316ab7aa0521a8540ab5403bf92d76b4cd2ad88e8"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "MACRO_EVIDENCE_UNAVAILABLE",
+          "CALIBRATION_UNAVAILABLE",
+          "STATISTICAL_DEPENDENCE_NOT_ESTIMATED"
+        ],
+        "trace_id": "5018ceb5-d4ac-4b25-a0d2-1263c4ec47d4",
+        "requires_escalation": true,
+        "output_type": "CurrencyScoreVector",
+        "policy_version": "paper-currency-log-basis-v1",
+        "units": "LOG_RETURN_BPS",
+        "rank_scope": "WITHIN_CONNECTED_COMPONENT",
+        "model_route": "DETERMINISTIC_ONLY",
+        "macro_status": "UNAVAILABLE",
+        "calibration_status": "UNAVAILABLE",
+        "statistical_dependence_status": "NOT_ESTIMATED",
+        "result": {
+          "status": "AVAILABLE",
+          "estimates": [
+            {
+              "currency": "EUR",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "198.02627296179713026029066885100393108990727511204",
+              "decomposition": [
+                {
+                  "instrument_id": "EURJPY",
+                  "coefficient": "0.25",
+                  "return_bps": "396.05254592359426052058133770200786217981455022407",
+                  "contribution_bps": "99.013136480898565130145334425501965544953637556018"
+                },
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "0.5",
+                  "return_bps": "198.02627296179713026029066885100393108990727511204",
+                  "contribution_bps": "99.013136480898565130145334425501965544953637556020"
+                },
+                {
+                  "instrument_id": "GBPUSD",
+                  "coefficient": "-0.25",
+                  "return_bps": "0",
+                  "contribution_bps": "-0.00"
+                }
+              ]
+            },
+            {
+              "currency": "GBP",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "-0.000000000000000000000000000000000000000000000002",
+              "decomposition": [
+                {
+                  "instrument_id": "EURJPY",
+                  "coefficient": "0.25",
+                  "return_bps": "396.05254592359426052058133770200786217981455022407",
+                  "contribution_bps": "99.013136480898565130145334425501965544953637556018"
+                },
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "-0.5",
+                  "return_bps": "198.02627296179713026029066885100393108990727511204",
+                  "contribution_bps": "-99.013136480898565130145334425501965544953637556020"
+                },
+                {
+                  "instrument_id": "GBPUSD",
+                  "coefficient": "0.75",
+                  "return_bps": "0",
+                  "contribution_bps": "0.00"
+                }
+              ]
+            },
+            {
+              "currency": "JPY",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "-198.02627296179713026029066885100393108990727511203",
+              "decomposition": [
+                {
+                  "instrument_id": "EURJPY",
+                  "coefficient": "-0.75",
+                  "return_bps": "396.05254592359426052058133770200786217981455022407",
+                  "contribution_bps": "-297.03940944269569539043600327650589663486091266805"
+                },
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "0.5",
+                  "return_bps": "198.02627296179713026029066885100393108990727511204",
+                  "contribution_bps": "99.013136480898565130145334425501965544953637556020"
+                },
+                {
+                  "instrument_id": "GBPUSD",
+                  "coefficient": "-0.25",
+                  "return_bps": "0",
+                  "contribution_bps": "-0.00"
+                }
+              ]
+            },
+            {
+              "currency": "USD",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "-0.000000000000000000000000000000000000000000000002",
+              "decomposition": [
+                {
+                  "instrument_id": "EURJPY",
+                  "coefficient": "0.25",
+                  "return_bps": "396.05254592359426052058133770200786217981455022407",
+                  "contribution_bps": "99.013136480898565130145334425501965544953637556018"
+                },
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "-0.5",
+                  "return_bps": "198.02627296179713026029066885100393108990727511204",
+                  "contribution_bps": "-99.013136480898565130145334425501965544953637556020"
+                },
+                {
+                  "instrument_id": "GBPUSD",
+                  "coefficient": "-0.25",
+                  "return_bps": "0",
+                  "contribution_bps": "-0.00"
+                }
+              ]
+            }
+          ],
+          "basis_instruments": [
+            "EURJPY",
+            "EURUSD",
+            "GBPUSD"
+          ],
+          "dependent_instruments": [
+            "USDJPY"
+          ],
+          "residuals": [
+            {
+              "instrument_id": "EURJPY",
+              "dependent": false,
+              "max_residual_bps": "0.00"
+            },
+            {
+              "instrument_id": "EURUSD",
+              "dependent": false,
+              "max_residual_bps": "0.00"
+            },
+            {
+              "instrument_id": "GBPUSD",
+              "dependent": false,
+              "max_residual_bps": "0.00"
+            },
+            {
+              "instrument_id": "USDJPY",
+              "dependent": true,
+              "max_residual_bps": "0.00000000000000000000000000000000000000000000001"
+            }
+          ],
+          "window_start": "2025-12-31T23:59:58+00:00",
+          "window_end": "2026-01-01T00:00:00+00:00",
+          "observation_count": 3
+        }
+      }
+    },
+    {
+      "case_id": "flat",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 33.111700089648366,
+      "context_ref": "agent-context:b78c191610369ddf9d3708e6a1cf9c51639d8b2dd79c9f2a224c5c79cdeb4d33",
+      "expected_status": "AVAILABLE",
+      "expected_basis": 3,
+      "expected_scores": {
+        "EUR": "0",
+        "JPY": "0",
+        "GBP": "0",
+        "USD": "0"
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A04",
+        "agent_version": "0.2.0",
+        "task_id": "flat",
+        "input_refs": [
+          "context-evidence:507ba38be3d299abea5bcd46875f61f5da96dde6cc6844504bf6d029422fcf38",
+          "context-evidence:f85738fdf8b7249197234a6fea99abc0cb455849f204f8b0ac005736d8484758",
+          "context-evidence:6c6524121930c64882792935f452f1bb3e9e835027a88b6b2dadd31eb035a99f",
+          "context-evidence:2795e3d85273fe0f28aa5329d949b4e4bae011f6747708e10d06d89bb024d991"
+        ],
+        "evidence_refs": [
+          "context-evidence:507ba38be3d299abea5bcd46875f61f5da96dde6cc6844504bf6d029422fcf38",
+          "context-evidence:f85738fdf8b7249197234a6fea99abc0cb455849f204f8b0ac005736d8484758",
+          "context-evidence:6c6524121930c64882792935f452f1bb3e9e835027a88b6b2dadd31eb035a99f",
+          "context-evidence:2795e3d85273fe0f28aa5329d949b4e4bae011f6747708e10d06d89bb024d991"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "MACRO_EVIDENCE_UNAVAILABLE",
+          "CALIBRATION_UNAVAILABLE",
+          "STATISTICAL_DEPENDENCE_NOT_ESTIMATED"
+        ],
+        "trace_id": "fd7e76e3-1c3d-48ad-995d-4ee0c87411e9",
+        "requires_escalation": true,
+        "output_type": "CurrencyScoreVector",
+        "policy_version": "paper-currency-log-basis-v1",
+        "units": "LOG_RETURN_BPS",
+        "rank_scope": "WITHIN_CONNECTED_COMPONENT",
+        "model_route": "DETERMINISTIC_ONLY",
+        "macro_status": "UNAVAILABLE",
+        "calibration_status": "UNAVAILABLE",
+        "statistical_dependence_status": "NOT_ESTIMATED",
+        "result": {
+          "status": "AVAILABLE",
+          "estimates": [
+            {
+              "currency": "EUR",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "0.00",
+              "decomposition": [
+                {
+                  "instrument_id": "EURJPY",
+                  "coefficient": "0.25",
+                  "return_bps": "0",
+                  "contribution_bps": "0.00"
+                },
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "0.5",
+                  "return_bps": "0",
+                  "contribution_bps": "0.0"
+                },
+                {
+                  "instrument_id": "GBPUSD",
+                  "coefficient": "-0.25",
+                  "return_bps": "0",
+                  "contribution_bps": "-0.00"
+                }
+              ]
+            },
+            {
+              "currency": "GBP",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "0.00",
+              "decomposition": [
+                {
+                  "instrument_id": "EURJPY",
+                  "coefficient": "0.25",
+                  "return_bps": "0",
+                  "contribution_bps": "0.00"
+                },
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "-0.5",
+                  "return_bps": "0",
+                  "contribution_bps": "-0.0"
+                },
+                {
+                  "instrument_id": "GBPUSD",
+                  "coefficient": "0.75",
+                  "return_bps": "0",
+                  "contribution_bps": "0.00"
+                }
+              ]
+            },
+            {
+              "currency": "JPY",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "0.00",
+              "decomposition": [
+                {
+                  "instrument_id": "EURJPY",
+                  "coefficient": "-0.75",
+                  "return_bps": "0",
+                  "contribution_bps": "-0.00"
+                },
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "0.5",
+                  "return_bps": "0",
+                  "contribution_bps": "0.0"
+                },
+                {
+                  "instrument_id": "GBPUSD",
+                  "coefficient": "-0.25",
+                  "return_bps": "0",
+                  "contribution_bps": "-0.00"
+                }
+              ]
+            },
+            {
+              "currency": "USD",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "0.00",
+              "decomposition": [
+                {
+                  "instrument_id": "EURJPY",
+                  "coefficient": "0.25",
+                  "return_bps": "0",
+                  "contribution_bps": "0.00"
+                },
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "-0.5",
+                  "return_bps": "0",
+                  "contribution_bps": "-0.0"
+                },
+                {
+                  "instrument_id": "GBPUSD",
+                  "coefficient": "-0.25",
+                  "return_bps": "0",
+                  "contribution_bps": "-0.00"
+                }
+              ]
+            }
+          ],
+          "basis_instruments": [
+            "EURJPY",
+            "EURUSD",
+            "GBPUSD"
+          ],
+          "dependent_instruments": [
+            "USDJPY"
+          ],
+          "residuals": [
+            {
+              "instrument_id": "EURJPY",
+              "dependent": false,
+              "max_residual_bps": "0.00"
+            },
+            {
+              "instrument_id": "EURUSD",
+              "dependent": false,
+              "max_residual_bps": "0.00"
+            },
+            {
+              "instrument_id": "GBPUSD",
+              "dependent": false,
+              "max_residual_bps": "0.00"
+            },
+            {
+              "instrument_id": "USDJPY",
+              "dependent": true,
+              "max_residual_bps": "0.00"
+            }
+          ],
+          "window_start": "2025-12-31T23:59:58+00:00",
+          "window_end": "2026-01-01T00:00:00+00:00",
+          "observation_count": 3
+        }
+      }
+    },
+    {
+      "case_id": "middle_contradiction",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 35.87610006798059,
+      "context_ref": "agent-context:1fd52c18ff1f566a70f375c4cc4b986ccb5a2535c6cd115f6e4ec3544af8f786",
+      "expected_status": "INCONSISTENT",
+      "expected_basis": 3,
+      "expected_scores": {
+        "EUR": null,
+        "JPY": null,
+        "GBP": null,
+        "USD": null
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A04",
+        "agent_version": "0.2.0",
+        "task_id": "middle_contradiction",
+        "input_refs": [
+          "context-evidence:91465e471ca0b5444963a0fe555d4ad5403ca6f399c5e2d077088959b1ed8d72",
+          "context-evidence:093279c0474e304e25eaaf05a618a9ec263b7c848a4aa1b488b0632c68f5bd58",
+          "context-evidence:b3f0e216e74076b11696f3ac31b27e6a7f2b8189c477308e1ace843ed846ec93",
+          "context-evidence:ed94f778b50b6340f1cfc6d56cddca713b5984448fd5549e2c798d3fd4273715"
+        ],
+        "evidence_refs": [
+          "context-evidence:91465e471ca0b5444963a0fe555d4ad5403ca6f399c5e2d077088959b1ed8d72",
+          "context-evidence:093279c0474e304e25eaaf05a618a9ec263b7c848a4aa1b488b0632c68f5bd58",
+          "context-evidence:b3f0e216e74076b11696f3ac31b27e6a7f2b8189c477308e1ace843ed846ec93",
+          "context-evidence:ed94f778b50b6340f1cfc6d56cddca713b5984448fd5549e2c798d3fd4273715"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "MACRO_EVIDENCE_UNAVAILABLE",
+          "CALIBRATION_UNAVAILABLE",
+          "STATISTICAL_DEPENDENCE_NOT_ESTIMATED",
+          "INCONSISTENT_CROSS_PAIR_RETURNS"
+        ],
+        "trace_id": "c28c842f-09b1-42b1-a7b1-319d1026df42",
+        "requires_escalation": true,
+        "output_type": "CurrencyScoreVector",
+        "policy_version": "paper-currency-log-basis-v1",
+        "units": "LOG_RETURN_BPS",
+        "rank_scope": "WITHIN_CONNECTED_COMPONENT",
+        "model_route": "DETERMINISTIC_ONLY",
+        "macro_status": "UNAVAILABLE",
+        "calibration_status": "UNAVAILABLE",
+        "statistical_dependence_status": "NOT_ESTIMATED",
+        "result": {
+          "status": "INCONSISTENT",
+          "estimates": [
+            {
+              "currency": "EUR",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "WITHHELD",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "GBP",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "WITHHELD",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "JPY",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "WITHHELD",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "USD",
+              "component": [
+                "EUR",
+                "GBP",
+                "JPY",
+                "USD"
+              ],
+              "status": "WITHHELD",
+              "score_bps": null,
+              "decomposition": []
+            }
+          ],
+          "basis_instruments": [
+            "EURJPY",
+            "EURUSD",
+            "GBPUSD"
+          ],
+          "dependent_instruments": [
+            "USDJPY"
+          ],
+          "residuals": [
+            {
+              "instrument_id": "EURJPY",
+              "dependent": false,
+              "max_residual_bps": "0.00"
+            },
+            {
+              "instrument_id": "EURUSD",
+              "dependent": false,
+              "max_residual_bps": "0.00"
+            },
+            {
+              "instrument_id": "GBPUSD",
+              "dependent": false,
+              "max_residual_bps": "0.00"
+            },
+            {
+              "instrument_id": "USDJPY",
+              "dependent": true,
+              "max_residual_bps": "99.503308531680828482153575442607416886796099400588"
+            }
+          ],
+          "window_start": "2025-12-31T23:59:58+00:00",
+          "window_end": "2026-01-01T00:00:00+00:00",
+          "observation_count": 3
+        }
+      }
+    },
+    {
+      "case_id": "missing",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 33.18949998356402,
+      "context_ref": "agent-context:d617a1647a54682725654ce4072d7169aa3f72a98e205a36272740eb5664da0a",
+      "expected_status": "UNAVAILABLE",
+      "expected_basis": 0,
+      "expected_scores": {
+        "EUR": null,
+        "JPY": null,
+        "GBP": null,
+        "USD": null
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A04",
+        "agent_version": "0.2.0",
+        "task_id": "missing",
+        "input_refs": [
+          "context-evidence:afecacb564d29d89487223f68b40d5fdfa8eab2f2c3d5280b5538f48be3b5373",
+          "context-evidence:d086584e9a65b323aff240070a9677fe7c83f76d8c63f94b6e28e19783cd6daa",
+          "context-evidence:9b41452baeb960aec56bac812b1998d33f7728a44cb237b39cabfadd7ca495ce",
+          "context-evidence:10f3405bc12c0f4ef4e82c056a1dbd8276689be0d15b9add4346e3fae2718de5"
+        ],
+        "evidence_refs": [
+          "context-evidence:afecacb564d29d89487223f68b40d5fdfa8eab2f2c3d5280b5538f48be3b5373",
+          "context-evidence:d086584e9a65b323aff240070a9677fe7c83f76d8c63f94b6e28e19783cd6daa",
+          "context-evidence:9b41452baeb960aec56bac812b1998d33f7728a44cb237b39cabfadd7ca495ce",
+          "context-evidence:10f3405bc12c0f4ef4e82c056a1dbd8276689be0d15b9add4346e3fae2718de5"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "MACRO_EVIDENCE_UNAVAILABLE",
+          "CALIBRATION_UNAVAILABLE",
+          "STATISTICAL_DEPENDENCE_NOT_ESTIMATED",
+          "EURJPY:MARKET_EVIDENCE_UNAVAILABLE",
+          "EURUSD:MARKET_EVIDENCE_UNAVAILABLE",
+          "GBPUSD:MARKET_EVIDENCE_UNAVAILABLE",
+          "USDJPY:MARKET_EVIDENCE_UNAVAILABLE",
+          "CURRENCY_RETURNS_UNAVAILABLE",
+          "REGIME_EVIDENCE_INCOMPLETE"
+        ],
+        "trace_id": "fbac5490-d319-4ee2-b9dc-40c2a384549e",
+        "requires_escalation": true,
+        "output_type": "CurrencyScoreVector",
+        "policy_version": "paper-currency-log-basis-v1",
+        "units": "LOG_RETURN_BPS",
+        "rank_scope": "WITHIN_CONNECTED_COMPONENT",
+        "model_route": "DETERMINISTIC_ONLY",
+        "macro_status": "UNAVAILABLE",
+        "calibration_status": "UNAVAILABLE",
+        "statistical_dependence_status": "NOT_ESTIMATED",
+        "result": {
+          "status": "UNAVAILABLE",
+          "estimates": [
+            {
+              "currency": "EUR",
+              "component": [
+                "EUR"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "GBP",
+              "component": [
+                "GBP"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "JPY",
+              "component": [
+                "JPY"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "USD",
+              "component": [
+                "USD"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            }
+          ],
+          "basis_instruments": [],
+          "dependent_instruments": [],
+          "residuals": [],
+          "window_start": null,
+          "window_end": null,
+          "observation_count": 0
+        }
+      }
+    },
+    {
+      "case_id": "partial",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 31.135300057940185,
+      "context_ref": "agent-context:ffc955d239d13e49258c3a184603be41e60b7158cb8895954893f08ff632cd6f",
+      "expected_status": "PARTIAL",
+      "expected_basis": 1,
+      "expected_scores": {
+        "EUR": "99.013136480898565",
+        "USD": "-99.013136480898565",
+        "GBP": null,
+        "JPY": null
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A04",
+        "agent_version": "0.2.0",
+        "task_id": "partial",
+        "input_refs": [
+          "context-evidence:97e62d13982ecb6abe9042361711b5f16b88fe2a0700c77de9bc082dbf02e575",
+          "context-evidence:0fa4f674590e53fe739ff7f91db3338a9aa12c944ff156eb0c29d030253ca6f6",
+          "context-evidence:7b2732f508af7d463d06a8fd008cd83b633c01d96dee84dea8658c9d1068c6f8",
+          "context-evidence:9c7d6e8ad33e5f7fc61e8fc16fe534afde034a936858812d5064e736abd8bd6d"
+        ],
+        "evidence_refs": [
+          "context-evidence:97e62d13982ecb6abe9042361711b5f16b88fe2a0700c77de9bc082dbf02e575",
+          "context-evidence:0fa4f674590e53fe739ff7f91db3338a9aa12c944ff156eb0c29d030253ca6f6",
+          "context-evidence:7b2732f508af7d463d06a8fd008cd83b633c01d96dee84dea8658c9d1068c6f8",
+          "context-evidence:9c7d6e8ad33e5f7fc61e8fc16fe534afde034a936858812d5064e736abd8bd6d"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "MACRO_EVIDENCE_UNAVAILABLE",
+          "CALIBRATION_UNAVAILABLE",
+          "STATISTICAL_DEPENDENCE_NOT_ESTIMATED",
+          "EURJPY:MARKET_EVIDENCE_UNAVAILABLE",
+          "GBPUSD:MARKET_EVIDENCE_UNAVAILABLE",
+          "USDJPY:MARKET_EVIDENCE_UNAVAILABLE",
+          "DISCONNECTED_CURRENCY_GRAPH",
+          "REGIME_EVIDENCE_INCOMPLETE"
+        ],
+        "trace_id": "e8a275fd-c0ec-49be-8581-39747e78465a",
+        "requires_escalation": true,
+        "output_type": "CurrencyScoreVector",
+        "policy_version": "paper-currency-log-basis-v1",
+        "units": "LOG_RETURN_BPS",
+        "rank_scope": "WITHIN_CONNECTED_COMPONENT",
+        "model_route": "DETERMINISTIC_ONLY",
+        "macro_status": "UNAVAILABLE",
+        "calibration_status": "UNAVAILABLE",
+        "statistical_dependence_status": "NOT_ESTIMATED",
+        "result": {
+          "status": "PARTIAL",
+          "estimates": [
+            {
+              "currency": "EUR",
+              "component": [
+                "EUR",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "99.013136480898565130145334425501965544953637556020",
+              "decomposition": [
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "0.5",
+                  "return_bps": "198.02627296179713026029066885100393108990727511204",
+                  "contribution_bps": "99.013136480898565130145334425501965544953637556020"
+                }
+              ]
+            },
+            {
+              "currency": "GBP",
+              "component": [
+                "GBP"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "JPY",
+              "component": [
+                "JPY"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "USD",
+              "component": [
+                "EUR",
+                "USD"
+              ],
+              "status": "AVAILABLE",
+              "score_bps": "-99.013136480898565130145334425501965544953637556020",
+              "decomposition": [
+                {
+                  "instrument_id": "EURUSD",
+                  "coefficient": "-0.5",
+                  "return_bps": "198.02627296179713026029066885100393108990727511204",
+                  "contribution_bps": "-99.013136480898565130145334425501965544953637556020"
+                }
+              ]
+            }
+          ],
+          "basis_instruments": [
+            "EURUSD"
+          ],
+          "dependent_instruments": [],
+          "residuals": [
+            {
+              "instrument_id": "EURUSD",
+              "dependent": false,
+              "max_residual_bps": "0.0"
+            }
+          ],
+          "window_start": "2025-12-31T23:59:58+00:00",
+          "window_end": "2026-01-01T00:00:00+00:00",
+          "observation_count": 3
+        }
+      }
+    },
+    {
+      "case_id": "unaligned",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 34.23660004045814,
+      "context_ref": "agent-context:a91d9377ad32a8c89d06c956e394bd57dcbcdb13c7b98145e17539ce725e4ebc",
+      "expected_status": "UNALIGNED",
+      "expected_basis": 0,
+      "expected_scores": {
+        "EUR": null,
+        "JPY": null,
+        "GBP": null,
+        "USD": null
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A04",
+        "agent_version": "0.2.0",
+        "task_id": "unaligned",
+        "input_refs": [
+          "context-evidence:7f6cba27571c7f824e30adbc137fd85a06977e76803df6834a300c7163f42a5b",
+          "context-evidence:17c333c51fc223327efc8f849b25b8f7ec437735b43fd93d1ee45f53b7f22bc6",
+          "context-evidence:7c33c5ee477d02be59ee30d152c6e9b9e510697d2e9edde29d237ed37a3fe55d",
+          "context-evidence:eb0959fb42d3c641bf9f8ec4ecec13875cb51d0242508583d92795614c2431ce"
+        ],
+        "evidence_refs": [
+          "context-evidence:7f6cba27571c7f824e30adbc137fd85a06977e76803df6834a300c7163f42a5b",
+          "context-evidence:17c333c51fc223327efc8f849b25b8f7ec437735b43fd93d1ee45f53b7f22bc6",
+          "context-evidence:7c33c5ee477d02be59ee30d152c6e9b9e510697d2e9edde29d237ed37a3fe55d",
+          "context-evidence:eb0959fb42d3c641bf9f8ec4ecec13875cb51d0242508583d92795614c2431ce"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "valid_until": "2026-01-01T00:00:05Z",
+        "contradictions": [
+          "MACRO_EVIDENCE_UNAVAILABLE",
+          "CALIBRATION_UNAVAILABLE",
+          "STATISTICAL_DEPENDENCE_NOT_ESTIMATED",
+          "EURJPY:MARKET_EVIDENCE_UNAVAILABLE",
+          "GBPUSD:MARKET_EVIDENCE_UNAVAILABLE",
+          "UNALIGNED_RETURN_WINDOWS",
+          "REGIME_EVIDENCE_INCOMPLETE"
+        ],
+        "trace_id": "f3f81f6c-b44a-41ae-b0f4-f42cc3b789de",
+        "requires_escalation": true,
+        "output_type": "CurrencyScoreVector",
+        "policy_version": "paper-currency-log-basis-v1",
+        "units": "LOG_RETURN_BPS",
+        "rank_scope": "WITHIN_CONNECTED_COMPONENT",
+        "model_route": "DETERMINISTIC_ONLY",
+        "macro_status": "UNAVAILABLE",
+        "calibration_status": "UNAVAILABLE",
+        "statistical_dependence_status": "NOT_ESTIMATED",
+        "result": {
+          "status": "UNALIGNED",
+          "estimates": [
+            {
+              "currency": "EUR",
+              "component": [
+                "EUR"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "GBP",
+              "component": [
+                "GBP"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "JPY",
+              "component": [
+                "JPY"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            },
+            {
+              "currency": "USD",
+              "component": [
+                "USD"
+              ],
+              "status": "UNAVAILABLE",
+              "score_bps": null,
+              "decomposition": []
+            }
+          ],
+          "basis_instruments": [],
+          "dependent_instruments": [],
+          "residuals": [],
+          "window_start": null,
+          "window_end": null,
+          "observation_count": 0
+        }
+      }
+    }
+  ]
+}

@@ -20,6 +20,12 @@ from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
 from ai_quant_os.graph_runtime import GraphRuntime
 from ai_quant_os.regime_agent import regime_implementation
+from ai_quant_os.currency_strength_agent import currency_strength_implementation
+from ai_quant_os.currency_strength_sources import (
+    STRENGTH_INPUT_BYTES,
+    STRENGTH_CONTEXT_BYTES,
+    currency_strength_sources,
+)
 from ai_quant_os.integrity_agent import integrity_implementation, integrity_sources
 from ai_quant_os.ingress_health import IngressHealth
 from ai_quant_os.agent_context import ContextCompiler, require_context_for_agent
@@ -302,6 +308,7 @@ def create_app(
                 registry=agent_registry,
                 implementations={
                     ("A02", "0.2.0"): regime_implementation(agent_registry),
+                    ("A04", "0.2.0"): currency_strength_implementation(agent_registry),
                     ("A07", "0.2.0"): integrity_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(agent_registry, {}),
@@ -841,15 +848,21 @@ def create_app(
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
         snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
         try:
-            sources = (
-                integrity_sources(snapshot, world_state.histories(), ingress_health.snapshot())
-                if payload.agent_id == "A07"
-                else paper_context_sources(snapshot, world_state.histories())
-            )
+            strength_mission = (payload.agent_id, payload.agent_version) == ("A04", "0.2.0")
+            if strength_mission:
+                sources = currency_strength_sources(snapshot, world_state.histories())
+            elif payload.agent_id == "A07":
+                sources = integrity_sources(
+                    snapshot, world_state.histories(), ingress_health.snapshot()
+                )
+            else:
+                sources = paper_context_sources(snapshot, world_state.histories())
             context = await ContextCompiler(
                 agent_registry,
                 sources,
                 clock=current_time,
+                max_input_bytes=STRENGTH_INPUT_BYTES if strength_mission else 8192,
+                max_context_bytes=STRENGTH_CONTEXT_BYTES if strength_mission else 32768,
             ).compile(
                 payload.agent_id, payload.agent_version, task_id=payload.task_id, scope="PAPER"
             )
