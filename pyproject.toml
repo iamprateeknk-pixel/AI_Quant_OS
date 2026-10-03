@@ -26,6 +26,7 @@ ai-quant-counterfactual = "ai_quant_os.counterfactual_cli:main"
 ai-quant-shadow = "ai_quant_os.shadow_cli:main"
 ai-quant-repair = "ai_quant_os.repair_cli:main"
 ai-quant-evolve = "ai_quant_os.evolution_cli:main"
+ai-quant-local = "ai_quant_os.local_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

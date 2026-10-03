@@ -4,7 +4,27 @@ This repository starts the execution pack as a **local, paper-only** trading fou
 
 ## Run locally
 
-Use Python 3.11 or newer.
+Install Python 3.11 and the frontend's supported Node.js runtime. After dependency
+setup and a frontend build, one foreground command starts the paper API and
+Mission Control together:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -e ".[dev]"
+npm --prefix apps/web ci
+npm --prefix apps/web run build
+.\.venv\Scripts\ai-quant-local --state data-local/local-app
+```
+
+Open `http://127.0.0.1:3000` after the READY message. Ctrl+C stops the processes
+this command created. Paper state persists under `data-local/local-app`; occupied
+ports and duplicate local API owners refuse startup. Without a privately configured
+`AI_QUANT_OPERATOR_TOKEN`, paper write endpoints remain disabled. The token is
+passed only to the backend. Paid providers and optional background workers stay
+disabled in this launcher. See [local application handoff](docs/LOCAL_APPLICATION_HANDOFF.md)
+for custom ports, bounded smoke checks, ownership limits and remaining deployment work.
+
+For separate manual API/frontend sessions:
 
 ```powershell
 python -m venv .venv
@@ -71,7 +91,7 @@ The optional local data stack starts PostgreSQL, ClickHouse, Valkey, and an S3 e
 - The API requires an operator token for all commands and never exposes a broker route other than `PAPER`.
 - `NO_NEW_RISK` paper recovery requires a separately configured `AI_QUANT_RECOVERY_TOKEN`, both token headers, an idempotency key and reason, no unresolved paper orders, and matching local and simulated broker fill ledgers. `FLATTEN_ONLY` and `HALT` cannot be lowered through this API.
 
-The local data module normalizes UTC bars, detects conflicting duplicates, and replays a fixed dataset deterministically. A simple paper backtest applies fees and slippage on the next bar; NautilusTrader integration is still pending. The authenticated `/api/v1/paper/fills` endpoint records **manual simulated fills** directly in the local portfolio. `/api/v1/paper/broker-fills` records a fill in the durable paper simulator, and `/api/v1/paper/orders/{order_id}/sync-fills` imports its fills into the portfolio atomically. `/api/v1/paper/positions/reconcile` compares local and simulator fill IDs, net base units, and quote-currency cash flow separately for every instrument. Its version 1.1 response contains an instruments list; legacy scalar fields explicitly summarize EURUSD. A mismatch persists `NO_NEW_RISK` and requires reconciliation. The backend `/api/v1/portfolio/snapshot` defaults to EURUSD and accepts an `instrument` query parameter; `/api/v1/portfolio/positions` reports all configured positions with their base and quote currencies; a missing or stale quote leaves marked values unavailable. Paper `desired_exposure` is interpreted as the selected instrument's base units, and fill fees are in its quote currency. `/api/v1/instruments` exposes the fixed paper catalog. `/api/v1/risk?instrument=GBPUSD` selects the corresponding unit ledger. These values are not broker account equity.
+The local data module normalizes UTC bars, detects conflicting duplicates, and replays a fixed dataset deterministically. A simple paper backtest applies fees and slippage on the next bar; the separate pinned Nautilus runtime now supports native replay as described in its handoff. The authenticated `/api/v1/paper/fills` endpoint records **manual simulated fills** directly in the local portfolio. `/api/v1/paper/broker-fills` records a fill in the durable paper simulator, and `/api/v1/paper/orders/{order_id}/sync-fills` imports its fills into the portfolio atomically. `/api/v1/paper/positions/reconcile` compares local and simulator fill IDs, net base units, and quote-currency cash flow separately for every instrument. Its version 1.1 response contains an instruments list; legacy scalar fields explicitly summarize EURUSD. A mismatch persists `NO_NEW_RISK` and requires reconciliation. The backend `/api/v1/portfolio/snapshot` defaults to EURUSD and accepts an `instrument` query parameter; `/api/v1/portfolio/positions` reports all configured positions with their base and quote currencies; a missing or stale quote leaves marked values unavailable. Paper `desired_exposure` is interpreted as the selected instrument's base units, and fill fees are in its quote currency. `/api/v1/instruments` exposes the fixed paper catalog. `/api/v1/risk?instrument=GBPUSD` selects the corresponding unit ledger. These values are not broker account equity.
 
 For historical bars, install `.[data]` and use `ai-quant-data ingest <csv> --root ./data-local --source-id <source>`. The archive preserves exact CSV bytes, writes a typed Parquet copy, records lineage and duplicate counts, and verifies checksums on replay. `ai-quant-data health <archive-id> --root ./data-local --max-age-seconds 300` reports freshness. See [data/HANDOFF.md](data/HANDOFF.md) for the object layout and migration status.
 
