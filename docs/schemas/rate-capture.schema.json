@@ -1,0 +1,160 @@
+{
+  "$defs": {
+    "PolicyRateObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "period": {
+          "format": "date",
+          "title": "Period",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 100.0,
+              "minimum": -100.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        },
+        "observation_status": {
+          "const": "A",
+          "default": "A",
+          "title": "Observation Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "period",
+        "value"
+      ],
+      "title": "PolicyRateObservation",
+      "type": "object"
+    },
+    "PolicyRateSeries": {
+      "additionalProperties": false,
+      "properties": {
+        "rate_id": {
+          "enum": [
+            "DFR",
+            "MRR_FR",
+            "MLFR"
+          ],
+          "title": "Rate Id",
+          "type": "string"
+        },
+        "series_key": {
+          "title": "Series Key",
+          "type": "string"
+        },
+        "currency": {
+          "const": "EUR",
+          "default": "EUR",
+          "title": "Currency",
+          "type": "string"
+        },
+        "unit": {
+          "const": "PERCENT_PER_ANNUM",
+          "default": "PERCENT_PER_ANNUM",
+          "title": "Unit",
+          "type": "string"
+        },
+        "observations": {
+          "items": {
+            "$ref": "#/$defs/PolicyRateObservation"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "title": "Observations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "rate_id",
+        "series_key",
+        "observations"
+      ],
+      "title": "PolicyRateSeries",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "adapter_version": {
+      "const": "ECB_FM_POLICY_RATES_V1",
+      "default": "ECB_FM_POLICY_RATES_V1",
+      "title": "Adapter Version",
+      "type": "string"
+    },
+    "source_url": {
+      "const": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+      "default": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+      "title": "Source Url",
+      "type": "string"
+    },
+    "capture_mode": {
+      "enum": [
+        "ECB_HTTPS_RETRIEVAL",
+        "LOCAL_CSV_IMPORT"
+      ],
+      "title": "Capture Mode",
+      "type": "string"
+    },
+    "received_at": {
+      "format": "date-time",
+      "title": "Received At",
+      "type": "string"
+    },
+    "raw_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Sha256",
+      "type": "string"
+    },
+    "date_semantics": {
+      "const": "DATE_OF_RATE_CHANGE",
+      "default": "DATE_OF_RATE_CHANGE",
+      "title": "Date Semantics",
+      "type": "string"
+    },
+    "current_applicability": {
+      "const": "UNASSESSED",
+      "default": "UNASSESSED",
+      "title": "Current Applicability",
+      "type": "string"
+    },
+    "historical_vintage_guarantee": {
+      "const": false,
+      "default": false,
+      "title": "Historical Vintage Guarantee",
+      "type": "boolean"
+    },
+    "series": {
+      "items": {
+        "$ref": "#/$defs/PolicyRateSeries"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Series",
+      "type": "array"
+    }
+  },
+  "required": [
+    "capture_mode",
+    "received_at",
+    "raw_sha256",
+    "series"
+  ],
+  "title": "RateCapture",
+  "type": "object"
+}

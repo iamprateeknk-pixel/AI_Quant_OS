@@ -1,0 +1,80 @@
+{
+  "capture_ref": "rate-capture:e9bcc5671215ea616670ad7175696d26ddeff605ada9648ec5943a5566be0209",
+  "capture": {
+    "schema_version": "1.0",
+    "adapter_version": "ECB_FM_POLICY_RATES_V1",
+    "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+    "capture_mode": "ECB_HTTPS_RETRIEVAL",
+    "received_at": "2026-10-03T11:04:39.926859Z",
+    "raw_sha256": "42ef697489ce2f2a5027132a9791e6a2ea68f926f8707254c980fd58888bba65",
+    "date_semantics": "DATE_OF_RATE_CHANGE",
+    "current_applicability": "UNASSESSED",
+    "historical_vintage_guarantee": false,
+    "series": [
+      {
+        "rate_id": "DFR",
+        "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+        "currency": "EUR",
+        "unit": "PERCENT_PER_ANNUM",
+        "observations": [
+          {
+            "period": "2026-06-17",
+            "value": "2.25",
+            "observation_status": "A"
+          },
+          {
+            "period": "2026-09-16",
+            "value": "2.5",
+            "observation_status": "A"
+          }
+        ]
+      },
+      {
+        "rate_id": "MLFR",
+        "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+        "currency": "EUR",
+        "unit": "PERCENT_PER_ANNUM",
+        "observations": [
+          {
+            "period": "2026-06-17",
+            "value": "2.65",
+            "observation_status": "A"
+          },
+          {
+            "period": "2026-09-16",
+            "value": "2.9",
+            "observation_status": "A"
+          }
+        ]
+      },
+      {
+        "rate_id": "MRR_FR",
+        "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+        "currency": "EUR",
+        "unit": "PERCENT_PER_ANNUM",
+        "observations": [
+          {
+            "period": "2026-06-17",
+            "value": "2.4",
+            "observation_status": "A"
+          },
+          {
+            "period": "2026-09-16",
+            "value": "2.65",
+            "observation_status": "A"
+          }
+        ]
+      }
+    ]
+  },
+  "raw_artifact": "ecb-policy-rates.csv",
+  "raw_bytes": 2421,
+  "source_sha256": {
+    "policy_rates.py": "24541fb1013b867b7a54bd2e85824e9c455b7ae48b83262922e71d00ea972f06",
+    "ecb_rates.py": "a768d69e1587dfed2c7fa0d27d2104dbeafbef5f53fc383251aa9f71693fdd6c",
+    "rate_archive.py": "45c53718cdbc5711ea4ec853602c0431d7347a4a63df2d0967d3ab315bc7107a",
+    "rate_cli.py": "cfbd7c37e8e8f41f4d7bb4ddad5ad539ec373839df86a5a780a3e6555254c2f3"
+  },
+  "verification": "ACTUAL_PUBLIC_HTTPS_CAPTURE_AND_LOCAL_RAW_RECONSTRUCTION",
+  "promotion_approved": false
+}

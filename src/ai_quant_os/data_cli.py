@@ -7,11 +7,13 @@ from pathlib import Path
 
 from ai_quant_os.data_archive import BarArchive
 from ai_quant_os.tick_archive import TickArchive
+from ai_quant_os.rate_cli import RATE_COMMANDS, configure_rate_commands, execute_rate_command
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ai-quant-data")
     commands = parser.add_subparsers(dest="command", required=True)
+    configure_rate_commands(commands)
     for suffix in ("", "-ticks"):
         ingest = commands.add_parser(
             f"ingest{suffix}", help="Archive an immutable CSV source and Parquet dataset"
@@ -44,6 +46,8 @@ def main(argv: list[str] | None = None) -> int:
     cache.add_argument("--root", type=Path, required=True)
     cache.add_argument("--ttl-seconds", type=int, required=True)
     args = parser.parse_args(argv)
+    if args.command in RATE_COMMANDS:
+        return execute_rate_command(args)
     if args.command == "cache-ticks":
         import redis
 
