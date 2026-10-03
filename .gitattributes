@@ -26,3 +26,7 @@ src/ai_quant_os/rate_cli.py text eol=lf
 docs/evaluations/ecb-policy-rate-capture.json text eol=lf
 docs/evaluations/ecb-policy-rates.csv -text whitespace=cr-at-eol
 docs/schemas/rate-capture.schema.json text eol=lf
+src/ai_quant_os/macro*.py text eol=lf
+tests/fixtures/macro_baseline.json text eol=lf
+docs/evaluations/macro-baseline.json text eol=lf
+docs/schemas/currency-macro-bias.schema.json text eol=lf

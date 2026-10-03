@@ -1,0 +1,1338 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "A03",
+  "agent_version": "0.2.0",
+  "fixture_sha256": "24767496897d916040447d6130e9440205183ac1c1a3d24c9850e3023bba5c65",
+  "provenance": "DEVELOPMENT_REPLAY_WITH_RETAINED_ECB_AND_SYNTHETIC_WORLD_EVENTS_NOT_HOLDOUT",
+  "source_sha256": {
+    "macro_drivers.py": "322cf7740460bfae0f1fc1e8e70e6043ab74a1dbb3ec64a72d7a3a48d49e3ada",
+    "macro_sources.py": "29914f1d3c1edccf40c0f926b83e9e8bb4285d08a1562d350fce7069af1ab2a1",
+    "macro_agent.py": "9c622f0ac510888c91fed7ee45484b55826562c89bf2b89c133b3fbde900ecd7"
+  },
+  "evaluator_sha256": "3d146fd636609671db9632ce58c61444385e15af7a8aa8cfc2da718516d85d9e",
+  "case_count": 6,
+  "matching_cases": 6,
+  "calibration_status": "UNAVAILABLE",
+  "promotion_approved": false,
+  "results": [
+    {
+      "case_id": "retained-ecb-recent",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 33.32140005659312,
+      "context_ref": "agent-context:177850664f6bdcb31d64cbc30b094b59018cc3311bd4045259d8bfcef90c11dc",
+      "expectations": {
+        "id": "retained-ecb-recent",
+        "as_of": "2026-10-03T11:04:49.926859Z",
+        "capture": {
+          "schema_version": "1.0",
+          "adapter_version": "ECB_FM_POLICY_RATES_V1",
+          "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+          "capture_mode": "ECB_HTTPS_RETRIEVAL",
+          "received_at": "2026-10-03T11:04:39.926859Z",
+          "raw_sha256": "42ef697489ce2f2a5027132a9791e6a2ea68f926f8707254c980fd58888bba65",
+          "date_semantics": "DATE_OF_RATE_CHANGE",
+          "current_applicability": "UNASSESSED",
+          "historical_vintage_guarantee": false,
+          "series": [
+            {
+              "rate_id": "DFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.25",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.5",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MLFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.65",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.9",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MRR_FR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.4",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.65",
+                  "observation_status": "A"
+                }
+              ]
+            }
+          ]
+        },
+        "feed": null,
+        "expected_receipt_status": "RECENT_RECEIPT",
+        "expected_basis_points": {
+          "DFR": "25",
+          "MLFR": "25",
+          "MRR_FR": "25"
+        },
+        "expected_event_counts": {
+          "EUR": null,
+          "GBP": null,
+          "JPY": null,
+          "USD": null
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A03",
+        "agent_version": "0.2.0",
+        "task_id": "retained-ecb-recent",
+        "input_refs": [
+          "context-evidence:10eda3a2ae985b9a1b69c6a93ab93ab64d14a0d3cd651d467a826751cf180030",
+          "context-evidence:d74571d4de861b812a96d1e05c7ee3ec30a18de85322cf57df3f5e7449c4fcee",
+          "context-evidence:5dea7b839f864e9ee245638a2ae4d454d964c01e52e4e3d1adf9a80fbcfdd8ef",
+          "context-evidence:5960ed94c473f61021edae6fa575a0cebefe31e90edc9b60b204e08d3c92df39"
+        ],
+        "evidence_refs": [
+          "context-evidence:10eda3a2ae985b9a1b69c6a93ab93ab64d14a0d3cd651d467a826751cf180030",
+          "context-evidence:d74571d4de861b812a96d1e05c7ee3ec30a18de85322cf57df3f5e7449c4fcee",
+          "context-evidence:5dea7b839f864e9ee245638a2ae4d454d964c01e52e4e3d1adf9a80fbcfdd8ef",
+          "context-evidence:5960ed94c473f61021edae6fa575a0cebefe31e90edc9b60b204e08d3c92df39"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T11:04:49.926859Z",
+        "valid_until": "2026-10-03T11:04:54.926859Z",
+        "contradictions": [
+          "NO_MACRO_RELEASE_FEED",
+          "NO_CENTRAL_BANK_TEXT",
+          "NO_YIELD_FEED",
+          "NO_NON_EUR_RATE_FEED",
+          "BIAS_CALIBRATION_UNAVAILABLE",
+          "WORLD_MACRO_FEED_NOT_CONNECTED",
+          "RATE_RECEIPT_RECENT_RECEIPT",
+          "EVENT_FEED_MISSING"
+        ],
+        "trace_id": "69b318e1-bcad-457d-b97d-b4bbca80dca1",
+        "requires_escalation": true,
+        "output_type": "CurrencyMacroBias",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "calibration_status": "UNAVAILABLE",
+        "world_state_version": "world:da154eb0a861e46cafd0bff99126d6f77a2c0b0b2893f410fc237c6a89b9fa1b",
+        "observation_as_of": "2026-10-03T11:04:49.926859Z",
+        "rate_capture_ref": "rate-capture:e9bcc5671215ea616670ad7175696d26ddeff605ada9648ec5943a5566be0209",
+        "rate_received_at": "2026-10-03T11:04:39.926859Z",
+        "rate_receipt_status": "RECENT_RECEIPT",
+        "rate_capture_mode": "ECB_HTTPS_RETRIEVAL",
+        "event_feed_status": "MISSING",
+        "event_feed_ref": null,
+        "macro_release_status": "UNAVAILABLE",
+        "central_bank_text_status": "UNAVAILABLE",
+        "yield_status": "UNAVAILABLE",
+        "historical_vintage_guarantee": false,
+        "drivers": [
+          {
+            "rate_id": "DFR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.25"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.5"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-09-16",
+            "latest_percent": "2.5",
+            "previous_period": "2026-06-17",
+            "previous_percent": "2.25",
+            "change_percentage_points": "0.25",
+            "change_basis_points": "25.00",
+            "future_periods": [],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          },
+          {
+            "rate_id": "MLFR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.65"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.9"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-09-16",
+            "latest_percent": "2.9",
+            "previous_period": "2026-06-17",
+            "previous_percent": "2.65",
+            "change_percentage_points": "0.25",
+            "change_basis_points": "25.00",
+            "future_periods": [],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          },
+          {
+            "rate_id": "MRR_FR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.4"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.65"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-09-16",
+            "latest_percent": "2.65",
+            "previous_period": "2026-06-17",
+            "previous_percent": "2.4",
+            "change_percentage_points": "0.25",
+            "change_basis_points": "25.00",
+            "future_periods": [],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          }
+        ],
+        "currencies": [
+          {
+            "currency": "EUR",
+            "bias": "UNASSESSED",
+            "driver_indices": [
+              0,
+              1,
+              2
+            ],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "GBP",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "JPY",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "USD",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "retained-ecb-old",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 33.541099983267486,
+      "context_ref": "agent-context:0daad0d83594095e58f2778c9b7cf1f2211ea0115af29f95a43a8aad482c4a07",
+      "expectations": {
+        "id": "retained-ecb-old",
+        "as_of": "2026-10-03T11:11:19.926859Z",
+        "capture": {
+          "schema_version": "1.0",
+          "adapter_version": "ECB_FM_POLICY_RATES_V1",
+          "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+          "capture_mode": "ECB_HTTPS_RETRIEVAL",
+          "received_at": "2026-10-03T11:04:39.926859Z",
+          "raw_sha256": "42ef697489ce2f2a5027132a9791e6a2ea68f926f8707254c980fd58888bba65",
+          "date_semantics": "DATE_OF_RATE_CHANGE",
+          "current_applicability": "UNASSESSED",
+          "historical_vintage_guarantee": false,
+          "series": [
+            {
+              "rate_id": "DFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.25",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.5",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MLFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.65",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.9",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MRR_FR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.4",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.65",
+                  "observation_status": "A"
+                }
+              ]
+            }
+          ]
+        },
+        "feed": null,
+        "expected_receipt_status": "OLD_RECEIPT",
+        "expected_basis_points": {
+          "DFR": "25",
+          "MLFR": "25",
+          "MRR_FR": "25"
+        },
+        "expected_event_counts": {
+          "EUR": null,
+          "GBP": null,
+          "JPY": null,
+          "USD": null
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A03",
+        "agent_version": "0.2.0",
+        "task_id": "retained-ecb-old",
+        "input_refs": [
+          "context-evidence:358778d467f4a80616ad2b8266527bf8b9cb0a73cfc6c87690825fafeae7e2ab",
+          "context-evidence:8d255828ebe1e460840b4179c226f15c77851ee75dc914d1f7c9a8e07db92cd1",
+          "context-evidence:dbe92ede479bd8093ef6dab90bd504754882ee71b5824fdda34e900d4ed69e64",
+          "context-evidence:299b3ac427ae24c31fab69fff897f1bc2d7b1b48da16b7854a8bfab884dcccb3"
+        ],
+        "evidence_refs": [
+          "context-evidence:358778d467f4a80616ad2b8266527bf8b9cb0a73cfc6c87690825fafeae7e2ab",
+          "context-evidence:8d255828ebe1e460840b4179c226f15c77851ee75dc914d1f7c9a8e07db92cd1",
+          "context-evidence:dbe92ede479bd8093ef6dab90bd504754882ee71b5824fdda34e900d4ed69e64",
+          "context-evidence:299b3ac427ae24c31fab69fff897f1bc2d7b1b48da16b7854a8bfab884dcccb3"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T11:11:19.926859Z",
+        "valid_until": "2026-10-03T11:11:24.926859Z",
+        "contradictions": [
+          "NO_MACRO_RELEASE_FEED",
+          "NO_CENTRAL_BANK_TEXT",
+          "NO_YIELD_FEED",
+          "NO_NON_EUR_RATE_FEED",
+          "BIAS_CALIBRATION_UNAVAILABLE",
+          "WORLD_MACRO_FEED_NOT_CONNECTED",
+          "RATE_RECEIPT_OLD_RECEIPT",
+          "EVENT_FEED_MISSING"
+        ],
+        "trace_id": "8a42a4f5-3658-47b4-82a6-7fc27fbaa07f",
+        "requires_escalation": true,
+        "output_type": "CurrencyMacroBias",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "calibration_status": "UNAVAILABLE",
+        "world_state_version": "world:1829be69ba96830faca79c5c4afc340ea0eec2676f6c8a0565182446fd572865",
+        "observation_as_of": "2026-10-03T11:11:19.926859Z",
+        "rate_capture_ref": "rate-capture:e9bcc5671215ea616670ad7175696d26ddeff605ada9648ec5943a5566be0209",
+        "rate_received_at": "2026-10-03T11:04:39.926859Z",
+        "rate_receipt_status": "OLD_RECEIPT",
+        "rate_capture_mode": "ECB_HTTPS_RETRIEVAL",
+        "event_feed_status": "MISSING",
+        "event_feed_ref": null,
+        "macro_release_status": "UNAVAILABLE",
+        "central_bank_text_status": "UNAVAILABLE",
+        "yield_status": "UNAVAILABLE",
+        "historical_vintage_guarantee": false,
+        "drivers": [
+          {
+            "rate_id": "DFR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.25"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.5"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-09-16",
+            "latest_percent": "2.5",
+            "previous_period": "2026-06-17",
+            "previous_percent": "2.25",
+            "change_percentage_points": "0.25",
+            "change_basis_points": "25.00",
+            "future_periods": [],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          },
+          {
+            "rate_id": "MLFR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.65"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.9"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-09-16",
+            "latest_percent": "2.9",
+            "previous_period": "2026-06-17",
+            "previous_percent": "2.65",
+            "change_percentage_points": "0.25",
+            "change_basis_points": "25.00",
+            "future_periods": [],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          },
+          {
+            "rate_id": "MRR_FR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.4"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.65"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-09-16",
+            "latest_percent": "2.65",
+            "previous_period": "2026-06-17",
+            "previous_percent": "2.4",
+            "change_percentage_points": "0.25",
+            "change_basis_points": "25.00",
+            "future_periods": [],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          }
+        ],
+        "currencies": [
+          {
+            "currency": "EUR",
+            "bias": "UNASSESSED",
+            "driver_indices": [
+              0,
+              1,
+              2
+            ],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "GBP",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "JPY",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "USD",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "retained-ecb-future-receipt",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 31.006000004708767,
+      "context_ref": "agent-context:285d34d9a037727cf1765f7e5b678d230c243a7f5c941f9807d652c7e833e03c",
+      "expectations": {
+        "id": "retained-ecb-future-receipt",
+        "as_of": "2026-10-03T11:04:38.926859Z",
+        "capture": {
+          "schema_version": "1.0",
+          "adapter_version": "ECB_FM_POLICY_RATES_V1",
+          "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+          "capture_mode": "ECB_HTTPS_RETRIEVAL",
+          "received_at": "2026-10-03T11:04:39.926859Z",
+          "raw_sha256": "42ef697489ce2f2a5027132a9791e6a2ea68f926f8707254c980fd58888bba65",
+          "date_semantics": "DATE_OF_RATE_CHANGE",
+          "current_applicability": "UNASSESSED",
+          "historical_vintage_guarantee": false,
+          "series": [
+            {
+              "rate_id": "DFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.25",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.5",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MLFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.65",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.9",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MRR_FR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.4",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.65",
+                  "observation_status": "A"
+                }
+              ]
+            }
+          ]
+        },
+        "feed": null,
+        "expected_receipt_status": "FUTURE_RECEIPT",
+        "expected_basis_points": {},
+        "expected_event_counts": {
+          "EUR": null,
+          "GBP": null,
+          "JPY": null,
+          "USD": null
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A03",
+        "agent_version": "0.2.0",
+        "task_id": "retained-ecb-future-receipt",
+        "input_refs": [
+          "context-evidence:348f5b490ac42e168b98bb49698ca5fb3205158dbf154464174a7cffa1d4fba8",
+          "context-evidence:c9e8cdfbbbaf8c1ccc40e119e437f5cc63a1db1ccaa60f59d0b9feaf7d573aa7",
+          "context-evidence:b86fbf15dca4131a728dea3da608d6a2f12bf389e4321d196d0b32763b7ddfff",
+          "context-evidence:9554f99fdf6f2b3bc17dd2be81fe43cb91ffc35d17ea0ad7a678e37ed1ac993c"
+        ],
+        "evidence_refs": [
+          "context-evidence:348f5b490ac42e168b98bb49698ca5fb3205158dbf154464174a7cffa1d4fba8",
+          "context-evidence:c9e8cdfbbbaf8c1ccc40e119e437f5cc63a1db1ccaa60f59d0b9feaf7d573aa7",
+          "context-evidence:b86fbf15dca4131a728dea3da608d6a2f12bf389e4321d196d0b32763b7ddfff",
+          "context-evidence:9554f99fdf6f2b3bc17dd2be81fe43cb91ffc35d17ea0ad7a678e37ed1ac993c"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T11:04:38.926859Z",
+        "valid_until": "2026-10-03T11:04:43.926859Z",
+        "contradictions": [
+          "NO_MACRO_RELEASE_FEED",
+          "NO_CENTRAL_BANK_TEXT",
+          "NO_YIELD_FEED",
+          "NO_NON_EUR_RATE_FEED",
+          "BIAS_CALIBRATION_UNAVAILABLE",
+          "WORLD_MACRO_FEED_NOT_CONNECTED",
+          "RATE_RECEIPT_FUTURE_RECEIPT",
+          "EVENT_FEED_MISSING"
+        ],
+        "trace_id": "04cd7b72-a348-433c-95aa-a93308a6829b",
+        "requires_escalation": true,
+        "output_type": "CurrencyMacroBias",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "calibration_status": "UNAVAILABLE",
+        "world_state_version": "world:0cf30674816cb2f66c6060e94f0bacda7c6f6a3c3bbf87209ce7ee4984af0b11",
+        "observation_as_of": "2026-10-03T11:04:38.926859Z",
+        "rate_capture_ref": "rate-capture:e9bcc5671215ea616670ad7175696d26ddeff605ada9648ec5943a5566be0209",
+        "rate_received_at": "2026-10-03T11:04:39.926859Z",
+        "rate_receipt_status": "FUTURE_RECEIPT",
+        "rate_capture_mode": "ECB_HTTPS_RETRIEVAL",
+        "event_feed_status": "MISSING",
+        "event_feed_ref": null,
+        "macro_release_status": "UNAVAILABLE",
+        "central_bank_text_status": "UNAVAILABLE",
+        "yield_status": "UNAVAILABLE",
+        "historical_vintage_guarantee": false,
+        "drivers": [],
+        "currencies": [
+          {
+            "currency": "EUR",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "GBP",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "JPY",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "USD",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "missing-sources",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 32.18149999156594,
+      "context_ref": "agent-context:4e4dc9c877d6fda2ef5bd3dfe85898021520d9451bdb40547974607747d889c8",
+      "expectations": {
+        "id": "missing-sources",
+        "as_of": "2026-10-03T11:04:49.926859Z",
+        "capture": null,
+        "feed": null,
+        "expected_receipt_status": "MISSING",
+        "expected_basis_points": {},
+        "expected_event_counts": {
+          "EUR": null,
+          "GBP": null,
+          "JPY": null,
+          "USD": null
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A03",
+        "agent_version": "0.2.0",
+        "task_id": "missing-sources",
+        "input_refs": [
+          "context-evidence:10eda3a2ae985b9a1b69c6a93ab93ab64d14a0d3cd651d467a826751cf180030",
+          "context-evidence:d74571d4de861b812a96d1e05c7ee3ec30a18de85322cf57df3f5e7449c4fcee",
+          "context-evidence:fab3e0bf1d0e83fadfed918bed1e1ab707ab13e7e923cf672b43894f1b23e4d0",
+          "context-evidence:5960ed94c473f61021edae6fa575a0cebefe31e90edc9b60b204e08d3c92df39"
+        ],
+        "evidence_refs": [
+          "context-evidence:10eda3a2ae985b9a1b69c6a93ab93ab64d14a0d3cd651d467a826751cf180030",
+          "context-evidence:d74571d4de861b812a96d1e05c7ee3ec30a18de85322cf57df3f5e7449c4fcee",
+          "context-evidence:fab3e0bf1d0e83fadfed918bed1e1ab707ab13e7e923cf672b43894f1b23e4d0",
+          "context-evidence:5960ed94c473f61021edae6fa575a0cebefe31e90edc9b60b204e08d3c92df39"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T11:04:49.926859Z",
+        "valid_until": "2026-10-03T11:04:54.926859Z",
+        "contradictions": [
+          "NO_MACRO_RELEASE_FEED",
+          "NO_CENTRAL_BANK_TEXT",
+          "NO_YIELD_FEED",
+          "NO_NON_EUR_RATE_FEED",
+          "BIAS_CALIBRATION_UNAVAILABLE",
+          "WORLD_MACRO_FEED_NOT_CONNECTED",
+          "RATE_RECEIPT_MISSING",
+          "EVENT_FEED_MISSING"
+        ],
+        "trace_id": "e3f3b3dc-dae5-43de-83ca-26cebfef22f1",
+        "requires_escalation": true,
+        "output_type": "CurrencyMacroBias",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "calibration_status": "UNAVAILABLE",
+        "world_state_version": "world:da154eb0a861e46cafd0bff99126d6f77a2c0b0b2893f410fc237c6a89b9fa1b",
+        "observation_as_of": "2026-10-03T11:04:49.926859Z",
+        "rate_capture_ref": null,
+        "rate_received_at": null,
+        "rate_receipt_status": "MISSING",
+        "rate_capture_mode": null,
+        "event_feed_status": "MISSING",
+        "event_feed_ref": null,
+        "macro_release_status": "UNAVAILABLE",
+        "central_bank_text_status": "UNAVAILABLE",
+        "yield_status": "UNAVAILABLE",
+        "historical_vintage_guarantee": false,
+        "drivers": [],
+        "currencies": [
+          {
+            "currency": "EUR",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "GBP",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "JPY",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "USD",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "synthetic-future-period",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 31.753000104799867,
+      "context_ref": "agent-context:4a31d65bff2f25ed59d007879d2cbb7c752005168a5a3e6908b5188190a1b8c9",
+      "expectations": {
+        "id": "synthetic-future-period",
+        "as_of": "2026-10-03T11:04:49.926859Z",
+        "capture": {
+          "schema_version": "1.0",
+          "adapter_version": "ECB_FM_POLICY_RATES_V1",
+          "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+          "capture_mode": "LOCAL_CSV_IMPORT",
+          "received_at": "2026-10-03T11:04:39.926859Z",
+          "raw_sha256": "ab31e5210ff6bc41b7e06b565804854c5f3c8179fbc27d0b2442f165ab2b5a0a",
+          "date_semantics": "DATE_OF_RATE_CHANGE",
+          "current_applicability": "UNASSESSED",
+          "historical_vintage_guarantee": false,
+          "series": [
+            {
+              "rate_id": "DFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.25",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-10-07",
+                  "value": "2.5",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MLFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.65",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-10-07",
+                  "value": "2.9",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MRR_FR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.4",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-10-07",
+                  "value": "2.65",
+                  "observation_status": "A"
+                }
+              ]
+            }
+          ]
+        },
+        "feed": null,
+        "expected_receipt_status": "RECENT_RECEIPT",
+        "expected_basis_points": {
+          "DFR": null,
+          "MLFR": null,
+          "MRR_FR": null
+        },
+        "expected_event_counts": {
+          "EUR": null,
+          "GBP": null,
+          "JPY": null,
+          "USD": null
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A03",
+        "agent_version": "0.2.0",
+        "task_id": "synthetic-future-period",
+        "input_refs": [
+          "context-evidence:10eda3a2ae985b9a1b69c6a93ab93ab64d14a0d3cd651d467a826751cf180030",
+          "context-evidence:d74571d4de861b812a96d1e05c7ee3ec30a18de85322cf57df3f5e7449c4fcee",
+          "context-evidence:ef42fbab829de602d4bbe2deba45ece3d47d58ecc57358653dc4d60a213e8e3c",
+          "context-evidence:5960ed94c473f61021edae6fa575a0cebefe31e90edc9b60b204e08d3c92df39"
+        ],
+        "evidence_refs": [
+          "context-evidence:10eda3a2ae985b9a1b69c6a93ab93ab64d14a0d3cd651d467a826751cf180030",
+          "context-evidence:d74571d4de861b812a96d1e05c7ee3ec30a18de85322cf57df3f5e7449c4fcee",
+          "context-evidence:ef42fbab829de602d4bbe2deba45ece3d47d58ecc57358653dc4d60a213e8e3c",
+          "context-evidence:5960ed94c473f61021edae6fa575a0cebefe31e90edc9b60b204e08d3c92df39"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T11:04:49.926859Z",
+        "valid_until": "2026-10-03T11:04:54.926859Z",
+        "contradictions": [
+          "NO_MACRO_RELEASE_FEED",
+          "NO_CENTRAL_BANK_TEXT",
+          "NO_YIELD_FEED",
+          "NO_NON_EUR_RATE_FEED",
+          "BIAS_CALIBRATION_UNAVAILABLE",
+          "WORLD_MACRO_FEED_NOT_CONNECTED",
+          "RATE_RECEIPT_RECENT_RECEIPT",
+          "EVENT_FEED_MISSING",
+          "RATE_CAPTURE_LOCAL_IMPORT",
+          "FUTURE_RATE_PERIODS_WITHHELD"
+        ],
+        "trace_id": "1d661dcf-50b2-4920-b5ef-e3c731cdd5e2",
+        "requires_escalation": true,
+        "output_type": "CurrencyMacroBias",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "calibration_status": "UNAVAILABLE",
+        "world_state_version": "world:da154eb0a861e46cafd0bff99126d6f77a2c0b0b2893f410fc237c6a89b9fa1b",
+        "observation_as_of": "2026-10-03T11:04:49.926859Z",
+        "rate_capture_ref": "rate-capture:44bbc95f09272e4a35800552d2012d4cb305720f32ba2937156259088c36dae6",
+        "rate_received_at": "2026-10-03T11:04:39.926859Z",
+        "rate_receipt_status": "RECENT_RECEIPT",
+        "rate_capture_mode": "LOCAL_CSV_IMPORT",
+        "event_feed_status": "MISSING",
+        "event_feed_ref": null,
+        "macro_release_status": "UNAVAILABLE",
+        "central_bank_text_status": "UNAVAILABLE",
+        "yield_status": "UNAVAILABLE",
+        "historical_vintage_guarantee": false,
+        "drivers": [
+          {
+            "rate_id": "DFR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.25"
+              },
+              {
+                "period": "2026-10-07",
+                "value": "2.5"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-06-17",
+            "latest_percent": "2.25",
+            "previous_period": null,
+            "previous_percent": null,
+            "change_percentage_points": null,
+            "change_basis_points": null,
+            "future_periods": [
+              "2026-10-07"
+            ],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          },
+          {
+            "rate_id": "MLFR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.65"
+              },
+              {
+                "period": "2026-10-07",
+                "value": "2.9"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-06-17",
+            "latest_percent": "2.65",
+            "previous_period": null,
+            "previous_percent": null,
+            "change_percentage_points": null,
+            "change_basis_points": null,
+            "future_periods": [
+              "2026-10-07"
+            ],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          },
+          {
+            "rate_id": "MRR_FR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.4"
+              },
+              {
+                "period": "2026-10-07",
+                "value": "2.65"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-06-17",
+            "latest_percent": "2.4",
+            "previous_period": null,
+            "previous_percent": null,
+            "change_percentage_points": null,
+            "change_basis_points": null,
+            "future_periods": [
+              "2026-10-07"
+            ],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          }
+        ],
+        "currencies": [
+          {
+            "currency": "EUR",
+            "bias": "UNASSESSED",
+            "driver_indices": [
+              0,
+              1,
+              2
+            ],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "GBP",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "JPY",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          },
+          {
+            "currency": "USD",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": null,
+            "detected_event_count": null,
+            "may_add_risk": false
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "synthetic-event-counts",
+      "status": "COMPLETED",
+      "matches": true,
+      "elapsed_ms": 36.479200003668666,
+      "context_ref": "agent-context:a8c7f246d332839fb724c5f44e5740c25d8a3fb6dc61c71089067de7b9b3b94d",
+      "expectations": {
+        "id": "synthetic-event-counts",
+        "as_of": "2026-10-03T11:04:49.926859Z",
+        "capture": {
+          "schema_version": "1.0",
+          "adapter_version": "ECB_FM_POLICY_RATES_V1",
+          "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+          "capture_mode": "ECB_HTTPS_RETRIEVAL",
+          "received_at": "2026-10-03T11:04:39.926859Z",
+          "raw_sha256": "42ef697489ce2f2a5027132a9791e6a2ea68f926f8707254c980fd58888bba65",
+          "date_semantics": "DATE_OF_RATE_CHANGE",
+          "current_applicability": "UNASSESSED",
+          "historical_vintage_guarantee": false,
+          "series": [
+            {
+              "rate_id": "DFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.25",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.5",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MLFR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.65",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.9",
+                  "observation_status": "A"
+                }
+              ]
+            },
+            {
+              "rate_id": "MRR_FR",
+              "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+              "currency": "EUR",
+              "unit": "PERCENT_PER_ANNUM",
+              "observations": [
+                {
+                  "period": "2026-06-17",
+                  "value": "2.4",
+                  "observation_status": "A"
+                },
+                {
+                  "period": "2026-09-16",
+                  "value": "2.65",
+                  "observation_status": "A"
+                }
+              ]
+            }
+          ]
+        },
+        "feed": {
+          "schema_version": "1.0",
+          "provenance": "PAPER_OPERATOR_SYNTHETIC_EVENT_FEED",
+          "observed_at": "2026-10-03T11:04:49.926859Z",
+          "valid_until": "2026-10-03T11:05:49.926859Z",
+          "coverage_start": "2026-10-03T10:04:49.926859Z",
+          "coverage_end": "2026-10-04T11:04:49.926859Z",
+          "economic_calendar": [
+            {
+              "event_id": "synthetic-usd",
+              "kind": "SCHEDULED",
+              "currencies": [
+                "USD"
+              ],
+              "severity": "HIGH",
+              "occurs_at": "2026-10-03T11:09:49.926859Z",
+              "reported_at": "2026-10-03T11:04:49.926859Z"
+            }
+          ],
+          "event_classifications": []
+        },
+        "expected_receipt_status": "RECENT_RECEIPT",
+        "expected_basis_points": {
+          "DFR": "25",
+          "MLFR": "25",
+          "MRR_FR": "25"
+        },
+        "expected_event_counts": {
+          "EUR": 0,
+          "GBP": 0,
+          "JPY": 0,
+          "USD": 1
+        }
+      },
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A03",
+        "agent_version": "0.2.0",
+        "task_id": "synthetic-event-counts",
+        "input_refs": [
+          "context-evidence:10eda3a2ae985b9a1b69c6a93ab93ab64d14a0d3cd651d467a826751cf180030",
+          "context-evidence:4b2f507717c6b597b7f41e73ca9f1f0bc255376564ae83fa2008421f893fae80",
+          "context-evidence:5dea7b839f864e9ee245638a2ae4d454d964c01e52e4e3d1adf9a80fbcfdd8ef",
+          "context-evidence:5960ed94c473f61021edae6fa575a0cebefe31e90edc9b60b204e08d3c92df39"
+        ],
+        "evidence_refs": [
+          "context-evidence:10eda3a2ae985b9a1b69c6a93ab93ab64d14a0d3cd651d467a826751cf180030",
+          "context-evidence:4b2f507717c6b597b7f41e73ca9f1f0bc255376564ae83fa2008421f893fae80",
+          "context-evidence:5dea7b839f864e9ee245638a2ae4d454d964c01e52e4e3d1adf9a80fbcfdd8ef",
+          "context-evidence:5960ed94c473f61021edae6fa575a0cebefe31e90edc9b60b204e08d3c92df39"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-03T11:04:49.926859Z",
+        "valid_until": "2026-10-03T11:04:54.926859Z",
+        "contradictions": [
+          "NO_MACRO_RELEASE_FEED",
+          "NO_CENTRAL_BANK_TEXT",
+          "NO_YIELD_FEED",
+          "NO_NON_EUR_RATE_FEED",
+          "BIAS_CALIBRATION_UNAVAILABLE",
+          "WORLD_MACRO_FEED_NOT_CONNECTED",
+          "RATE_RECEIPT_RECENT_RECEIPT",
+          "EVENT_FEED_FRESH",
+          "EVENT_FEED_OPERATOR_SYNTHETIC"
+        ],
+        "trace_id": "4cc1f7fc-9acf-4880-b4b0-200190313ef3",
+        "requires_escalation": true,
+        "output_type": "CurrencyMacroBias",
+        "model_route": "DETERMINISTIC_ONLY",
+        "hard_gate_authority": "RISK_KERNEL",
+        "calibration_status": "UNAVAILABLE",
+        "world_state_version": "world:da154eb0a861e46cafd0bff99126d6f77a2c0b0b2893f410fc237c6a89b9fa1b",
+        "observation_as_of": "2026-10-03T11:04:49.926859Z",
+        "rate_capture_ref": "rate-capture:e9bcc5671215ea616670ad7175696d26ddeff605ada9648ec5943a5566be0209",
+        "rate_received_at": "2026-10-03T11:04:39.926859Z",
+        "rate_receipt_status": "RECENT_RECEIPT",
+        "rate_capture_mode": "ECB_HTTPS_RETRIEVAL",
+        "event_feed_status": "FRESH",
+        "event_feed_ref": "paper-events:67c474e1e05ae366c5ac78b89562cff46cdbd57be8a873c03b1741f53d0fa6c2",
+        "macro_release_status": "UNAVAILABLE",
+        "central_bank_text_status": "UNAVAILABLE",
+        "yield_status": "UNAVAILABLE",
+        "historical_vintage_guarantee": false,
+        "drivers": [
+          {
+            "rate_id": "DFR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.25"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.5"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-09-16",
+            "latest_percent": "2.5",
+            "previous_period": "2026-06-17",
+            "previous_percent": "2.25",
+            "change_percentage_points": "0.25",
+            "change_basis_points": "25.00",
+            "future_periods": [],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          },
+          {
+            "rate_id": "MLFR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.65"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.9"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-09-16",
+            "latest_percent": "2.9",
+            "previous_period": "2026-06-17",
+            "previous_percent": "2.65",
+            "change_percentage_points": "0.25",
+            "change_basis_points": "25.00",
+            "future_periods": [],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          },
+          {
+            "rate_id": "MRR_FR",
+            "currency": "EUR",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.4"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.65"
+              }
+            ],
+            "cutoff": "2026-10-03",
+            "latest_period": "2026-09-16",
+            "latest_percent": "2.65",
+            "previous_period": "2026-06-17",
+            "previous_percent": "2.4",
+            "change_percentage_points": "0.25",
+            "change_basis_points": "25.00",
+            "future_periods": [],
+            "cutoff_basis": "UTC_DATE_ONLY",
+            "current_applicability": "UNASSESSED"
+          }
+        ],
+        "currencies": [
+          {
+            "currency": "EUR",
+            "bias": "UNASSESSED",
+            "driver_indices": [
+              0,
+              1,
+              2
+            ],
+            "scheduled_event_count": 0,
+            "detected_event_count": 0,
+            "may_add_risk": false
+          },
+          {
+            "currency": "GBP",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": 0,
+            "detected_event_count": 0,
+            "may_add_risk": false
+          },
+          {
+            "currency": "JPY",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": 0,
+            "detected_event_count": 0,
+            "may_add_risk": false
+          },
+          {
+            "currency": "USD",
+            "bias": "UNASSESSED",
+            "driver_indices": [],
+            "scheduled_event_count": 1,
+            "detected_event_count": 0,
+            "may_add_risk": false
+          }
+        ]
+      }
+    }
+  ]
+}

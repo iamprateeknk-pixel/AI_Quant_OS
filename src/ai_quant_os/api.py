@@ -27,6 +27,13 @@ from ai_quant_os.event_agent import event_implementation
 from ai_quant_os.event_feed_store import EventFeedStore
 from ai_quant_os.event_feed_api import install_event_feed_routes
 from ai_quant_os.event_sources import EVENT_INPUT_BYTES, EVENT_CONTEXT_BYTES, event_sources
+from ai_quant_os.macro_agent import macro_implementation
+from ai_quant_os.macro_sources import (
+    MACRO_INPUT_BYTES,
+    MACRO_CONTEXT_BYTES,
+    latest_rate_capture,
+    macro_sources,
+)
 from ai_quant_os.liquidity_sources import (
     LIQUIDITY_INPUT_BYTES,
     LIQUIDITY_CONTEXT_BYTES,
@@ -334,6 +341,7 @@ def create_app(
                 registry=agent_registry,
                 implementations={
                     ("A02", "0.2.0"): regime_implementation(agent_registry),
+                    ("A03", "0.2.0"): macro_implementation(agent_registry),
                     ("A04", "0.2.0"): currency_strength_implementation(agent_registry),
                     ("A05", "0.2.0"): liquidity_implementation(agent_registry),
                     ("A06", "0.2.0"): event_implementation(agent_registry),
@@ -875,9 +883,12 @@ def create_app(
     @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
         event_mission = (payload.agent_id, payload.agent_version) == ("A06", "0.2.0")
+        macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
-            None if event_mission else world_state.snapshot(context_quotes, now=current_time())
+            None
+            if event_mission or macro_mission
+            else world_state.snapshot(context_quotes, now=current_time())
         )
         try:
             strength_mission = (payload.agent_id, payload.agent_version) == ("A04", "0.2.0")
@@ -892,6 +903,24 @@ def create_app(
                         status_code=503, detail="Event evidence storage unavailable"
                     ) from error
                 sources = event_sources(feed, *ledger, now=current_time())
+            elif macro_mission:
+                try:
+                    capture, feed = await asyncio.to_thread(
+                        lambda: (
+                            latest_rate_capture(
+                                configured_path.parent / "rates.sqlite3"
+                                if configured_path
+                                else None
+                            ),
+                            event_feed_store.latest(),
+                        )
+                    )
+                except (ValueError, OSError, sqlite3.Error) as error:
+                    raise HTTPException(
+                        status_code=503, detail="Macro evidence storage unavailable"
+                    ) from error
+                snapshot = world_state.snapshot(context_quotes, now=current_time())
+                sources = macro_sources(snapshot, capture, feed)
             elif strength_mission:
                 sources = currency_strength_sources(snapshot, world_state.histories())
             elif liquidity_mission:
@@ -917,6 +946,8 @@ def create_app(
                 if liquidity_mission
                 else EVENT_INPUT_BYTES
                 if event_mission
+                else MACRO_INPUT_BYTES
+                if macro_mission
                 else 8192,
                 max_context_bytes=STRENGTH_CONTEXT_BYTES
                 if strength_mission
@@ -924,6 +955,8 @@ def create_app(
                 if liquidity_mission
                 else EVENT_CONTEXT_BYTES
                 if event_mission
+                else MACRO_CONTEXT_BYTES
+                if macro_mission
                 else 32768,
             ).compile(
                 payload.agent_id, payload.agent_version, task_id=payload.task_id, scope="PAPER"

@@ -1,0 +1,453 @@
+{
+  "schema_version": "1.0",
+  "provenance": "DEVELOPMENT_REPLAY_WITH_RETAINED_ECB_AND_SYNTHETIC_WORLD_EVENTS_NOT_HOLDOUT",
+  "cases": [
+    {
+      "id": "retained-ecb-recent",
+      "capture": {
+        "schema_version": "1.0",
+        "adapter_version": "ECB_FM_POLICY_RATES_V1",
+        "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+        "capture_mode": "ECB_HTTPS_RETRIEVAL",
+        "received_at": "2026-10-03T11:04:39.926859Z",
+        "raw_sha256": "42ef697489ce2f2a5027132a9791e6a2ea68f926f8707254c980fd58888bba65",
+        "date_semantics": "DATE_OF_RATE_CHANGE",
+        "current_applicability": "UNASSESSED",
+        "historical_vintage_guarantee": false,
+        "series": [
+          {
+            "rate_id": "DFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.25",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.5",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MLFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.65",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.9",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MRR_FR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.4",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.65",
+                "observation_status": "A"
+              }
+            ]
+          }
+        ]
+      },
+      "feed": null,
+      "as_of": "2026-10-03T11:04:49.926859+00:00",
+      "expected_receipt_status": "RECENT_RECEIPT",
+      "expected_basis_points": {
+        "DFR": "25",
+        "MLFR": "25",
+        "MRR_FR": "25"
+      },
+      "expected_event_counts": {
+        "EUR": null,
+        "GBP": null,
+        "JPY": null,
+        "USD": null
+      }
+    },
+    {
+      "id": "retained-ecb-old",
+      "capture": {
+        "schema_version": "1.0",
+        "adapter_version": "ECB_FM_POLICY_RATES_V1",
+        "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+        "capture_mode": "ECB_HTTPS_RETRIEVAL",
+        "received_at": "2026-10-03T11:04:39.926859Z",
+        "raw_sha256": "42ef697489ce2f2a5027132a9791e6a2ea68f926f8707254c980fd58888bba65",
+        "date_semantics": "DATE_OF_RATE_CHANGE",
+        "current_applicability": "UNASSESSED",
+        "historical_vintage_guarantee": false,
+        "series": [
+          {
+            "rate_id": "DFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.25",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.5",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MLFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.65",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.9",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MRR_FR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.4",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.65",
+                "observation_status": "A"
+              }
+            ]
+          }
+        ]
+      },
+      "feed": null,
+      "as_of": "2026-10-03T11:11:19.926859+00:00",
+      "expected_receipt_status": "OLD_RECEIPT",
+      "expected_basis_points": {
+        "DFR": "25",
+        "MLFR": "25",
+        "MRR_FR": "25"
+      },
+      "expected_event_counts": {
+        "EUR": null,
+        "GBP": null,
+        "JPY": null,
+        "USD": null
+      }
+    },
+    {
+      "id": "retained-ecb-future-receipt",
+      "capture": {
+        "schema_version": "1.0",
+        "adapter_version": "ECB_FM_POLICY_RATES_V1",
+        "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+        "capture_mode": "ECB_HTTPS_RETRIEVAL",
+        "received_at": "2026-10-03T11:04:39.926859Z",
+        "raw_sha256": "42ef697489ce2f2a5027132a9791e6a2ea68f926f8707254c980fd58888bba65",
+        "date_semantics": "DATE_OF_RATE_CHANGE",
+        "current_applicability": "UNASSESSED",
+        "historical_vintage_guarantee": false,
+        "series": [
+          {
+            "rate_id": "DFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.25",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.5",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MLFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.65",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.9",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MRR_FR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.4",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.65",
+                "observation_status": "A"
+              }
+            ]
+          }
+        ]
+      },
+      "feed": null,
+      "as_of": "2026-10-03T11:04:38.926859+00:00",
+      "expected_receipt_status": "FUTURE_RECEIPT",
+      "expected_basis_points": {},
+      "expected_event_counts": {
+        "EUR": null,
+        "GBP": null,
+        "JPY": null,
+        "USD": null
+      }
+    },
+    {
+      "id": "missing-sources",
+      "capture": null,
+      "feed": null,
+      "as_of": "2026-10-03T11:04:49.926859+00:00",
+      "expected_receipt_status": "MISSING",
+      "expected_basis_points": {},
+      "expected_event_counts": {
+        "EUR": null,
+        "GBP": null,
+        "JPY": null,
+        "USD": null
+      }
+    },
+    {
+      "id": "synthetic-future-period",
+      "capture": {
+        "schema_version": "1.0",
+        "adapter_version": "ECB_FM_POLICY_RATES_V1",
+        "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+        "capture_mode": "LOCAL_CSV_IMPORT",
+        "received_at": "2026-10-03T11:04:39.926859Z",
+        "raw_sha256": "ab31e5210ff6bc41b7e06b565804854c5f3c8179fbc27d0b2442f165ab2b5a0a",
+        "date_semantics": "DATE_OF_RATE_CHANGE",
+        "current_applicability": "UNASSESSED",
+        "historical_vintage_guarantee": false,
+        "series": [
+          {
+            "rate_id": "DFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.25",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-10-07",
+                "value": "2.5",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MLFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.65",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-10-07",
+                "value": "2.9",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MRR_FR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.4",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-10-07",
+                "value": "2.65",
+                "observation_status": "A"
+              }
+            ]
+          }
+        ]
+      },
+      "feed": null,
+      "as_of": "2026-10-03T11:04:49.926859+00:00",
+      "expected_receipt_status": "RECENT_RECEIPT",
+      "expected_basis_points": {
+        "DFR": null,
+        "MLFR": null,
+        "MRR_FR": null
+      },
+      "expected_event_counts": {
+        "EUR": null,
+        "GBP": null,
+        "JPY": null,
+        "USD": null
+      }
+    },
+    {
+      "id": "synthetic-event-counts",
+      "capture": {
+        "schema_version": "1.0",
+        "adapter_version": "ECB_FM_POLICY_RATES_V1",
+        "source_url": "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR+MRR_FR+MLFR.LEV?format=csvdata&lastNObservations=2",
+        "capture_mode": "ECB_HTTPS_RETRIEVAL",
+        "received_at": "2026-10-03T11:04:39.926859Z",
+        "raw_sha256": "42ef697489ce2f2a5027132a9791e6a2ea68f926f8707254c980fd58888bba65",
+        "date_semantics": "DATE_OF_RATE_CHANGE",
+        "current_applicability": "UNASSESSED",
+        "historical_vintage_guarantee": false,
+        "series": [
+          {
+            "rate_id": "DFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.DFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.25",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.5",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MLFR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MLFR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.65",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.9",
+                "observation_status": "A"
+              }
+            ]
+          },
+          {
+            "rate_id": "MRR_FR",
+            "series_key": "FM.B.U2.EUR.4F.KR.MRR_FR.LEV",
+            "currency": "EUR",
+            "unit": "PERCENT_PER_ANNUM",
+            "observations": [
+              {
+                "period": "2026-06-17",
+                "value": "2.4",
+                "observation_status": "A"
+              },
+              {
+                "period": "2026-09-16",
+                "value": "2.65",
+                "observation_status": "A"
+              }
+            ]
+          }
+        ]
+      },
+      "feed": {
+        "observed_at": "2026-10-03T11:04:49.926859+00:00",
+        "valid_until": "2026-10-03T11:05:49.926859+00:00",
+        "coverage_start": "2026-10-03T10:04:49.926859+00:00",
+        "coverage_end": "2026-10-04T11:04:49.926859+00:00",
+        "economic_calendar": [
+          {
+            "event_id": "synthetic-usd",
+            "kind": "SCHEDULED",
+            "currencies": [
+              "USD"
+            ],
+            "severity": "HIGH",
+            "occurs_at": "2026-10-03T11:09:49.926859+00:00",
+            "reported_at": "2026-10-03T11:04:49.926859+00:00"
+          }
+        ]
+      },
+      "as_of": "2026-10-03T11:04:49.926859+00:00",
+      "expected_receipt_status": "RECENT_RECEIPT",
+      "expected_basis_points": {
+        "DFR": "25",
+        "MLFR": "25",
+        "MRR_FR": "25"
+      },
+      "expected_event_counts": {
+        "EUR": 0,
+        "GBP": 0,
+        "JPY": 0,
+        "USD": 1
+      }
+    }
+  ]
+}

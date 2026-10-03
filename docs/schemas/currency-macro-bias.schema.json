@@ -1,0 +1,521 @@
+{
+  "$defs": {
+    "CurrencyMacroAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "enum": [
+            "EUR",
+            "GBP",
+            "JPY",
+            "USD"
+          ],
+          "title": "Currency",
+          "type": "string"
+        },
+        "bias": {
+          "const": "UNASSESSED",
+          "default": "UNASSESSED",
+          "title": "Bias",
+          "type": "string"
+        },
+        "driver_indices": {
+          "items": {
+            "maximum": 2,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "title": "Driver Indices",
+          "type": "array"
+        },
+        "scheduled_event_count": {
+          "anyOf": [
+            {
+              "maximum": 128,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Scheduled Event Count"
+        },
+        "detected_event_count": {
+          "anyOf": [
+            {
+              "maximum": 128,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Detected Event Count"
+        },
+        "may_add_risk": {
+          "const": false,
+          "default": false,
+          "title": "May Add Risk",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "currency",
+        "driver_indices",
+        "scheduled_event_count",
+        "detected_event_count"
+      ],
+      "title": "CurrencyMacroAssessment",
+      "type": "object"
+    },
+    "RateDriver": {
+      "properties": {
+        "rate_id": {
+          "enum": [
+            "DFR",
+            "MLFR",
+            "MRR_FR"
+          ],
+          "title": "Rate Id",
+          "type": "string"
+        },
+        "currency": {
+          "const": "EUR",
+          "title": "Currency",
+          "type": "string"
+        },
+        "observations": {
+          "items": {
+            "$ref": "#/$defs/RatePoint"
+          },
+          "title": "Observations",
+          "type": "array"
+        },
+        "cutoff": {
+          "format": "date",
+          "title": "Cutoff",
+          "type": "string"
+        },
+        "latest_period": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Latest Period"
+        },
+        "latest_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Latest Percent"
+        },
+        "previous_period": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Period"
+        },
+        "previous_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Percent"
+        },
+        "change_percentage_points": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Change Percentage Points"
+        },
+        "change_basis_points": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Change Basis Points"
+        },
+        "future_periods": {
+          "items": {
+            "format": "date",
+            "type": "string"
+          },
+          "title": "Future Periods",
+          "type": "array"
+        },
+        "cutoff_basis": {
+          "const": "UTC_DATE_ONLY",
+          "default": "UTC_DATE_ONLY",
+          "title": "Cutoff Basis",
+          "type": "string"
+        },
+        "current_applicability": {
+          "const": "UNASSESSED",
+          "default": "UNASSESSED",
+          "title": "Current Applicability",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rate_id",
+        "currency",
+        "observations",
+        "cutoff",
+        "latest_period",
+        "latest_percent",
+        "previous_period",
+        "previous_percent",
+        "change_percentage_points",
+        "change_basis_points",
+        "future_periods"
+      ],
+      "title": "RateDriver",
+      "type": "object"
+    },
+    "RatePoint": {
+      "properties": {
+        "period": {
+          "format": "date",
+          "title": "Period",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "period",
+        "value"
+      ],
+      "title": "RatePoint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A03",
+      "default": "A03",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.2.0",
+      "default": "0.2.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "output_type": {
+      "const": "CurrencyMacroBias",
+      "default": "CurrencyMacroBias",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "hard_gate_authority": {
+      "const": "RISK_KERNEL",
+      "default": "RISK_KERNEL",
+      "title": "Hard Gate Authority",
+      "type": "string"
+    },
+    "calibration_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Calibration Status",
+      "type": "string"
+    },
+    "world_state_version": {
+      "pattern": "^world:[a-f0-9]{64}$",
+      "title": "World State Version",
+      "type": "string"
+    },
+    "observation_as_of": {
+      "format": "date-time",
+      "title": "Observation As Of",
+      "type": "string"
+    },
+    "rate_capture_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rate Capture Ref"
+    },
+    "rate_received_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rate Received At"
+    },
+    "rate_receipt_status": {
+      "enum": [
+        "MISSING",
+        "FUTURE_RECEIPT",
+        "OLD_RECEIPT",
+        "RECENT_RECEIPT"
+      ],
+      "title": "Rate Receipt Status",
+      "type": "string"
+    },
+    "rate_capture_mode": {
+      "anyOf": [
+        {
+          "enum": [
+            "ECB_HTTPS_RETRIEVAL",
+            "LOCAL_CSV_IMPORT"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rate Capture Mode"
+    },
+    "event_feed_status": {
+      "enum": [
+        "FRESH",
+        "MISSING",
+        "STALE",
+        "FUTURE"
+      ],
+      "title": "Event Feed Status",
+      "type": "string"
+    },
+    "event_feed_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Event Feed Ref"
+    },
+    "macro_release_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Macro Release Status",
+      "type": "string"
+    },
+    "central_bank_text_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Central Bank Text Status",
+      "type": "string"
+    },
+    "yield_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Yield Status",
+      "type": "string"
+    },
+    "historical_vintage_guarantee": {
+      "const": false,
+      "default": false,
+      "title": "Historical Vintage Guarantee",
+      "type": "boolean"
+    },
+    "drivers": {
+      "items": {
+        "$ref": "#/$defs/RateDriver"
+      },
+      "maxItems": 3,
+      "title": "Drivers",
+      "type": "array"
+    },
+    "currencies": {
+      "items": {
+        "$ref": "#/$defs/CurrencyMacroAssessment"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Currencies",
+      "type": "array"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "confidence",
+    "uncertainty",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "world_state_version",
+    "observation_as_of",
+    "rate_capture_ref",
+    "rate_received_at",
+    "rate_receipt_status",
+    "rate_capture_mode",
+    "event_feed_status",
+    "event_feed_ref",
+    "drivers",
+    "currencies"
+  ],
+  "title": "CurrencyMacroBias",
+  "type": "object"
+}
