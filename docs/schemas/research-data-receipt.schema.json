@@ -1,0 +1,114 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "dataset_ref": {
+      "pattern": "^research-data:[a-f0-9]{64}$",
+      "title": "Dataset Ref",
+      "type": "string"
+    },
+    "source_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "resource_class": {
+      "enum": [
+        "TRAINING",
+        "HOLDOUT"
+      ],
+      "title": "Resource Class",
+      "type": "string"
+    },
+    "provenance": {
+      "const": "OPERATOR_SUPPLIED_CSV",
+      "default": "OPERATOR_SUPPLIED_CSV",
+      "title": "Provenance",
+      "type": "string"
+    },
+    "raw_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Raw Sha256",
+      "type": "string"
+    },
+    "dataset_fingerprint": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Dataset Fingerprint",
+      "type": "string"
+    },
+    "instrument_id": {
+      "enum": [
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "EURJPY"
+      ],
+      "title": "Instrument Id",
+      "type": "string"
+    },
+    "row_count": {
+      "maximum": 4096,
+      "minimum": 2,
+      "title": "Row Count",
+      "type": "integer"
+    },
+    "first_observed_at": {
+      "format": "date-time",
+      "title": "First Observed At",
+      "type": "string"
+    },
+    "last_observed_at": {
+      "format": "date-time",
+      "title": "Last Observed At",
+      "type": "string"
+    },
+    "received_at": {
+      "format": "date-time",
+      "title": "Received At",
+      "type": "string"
+    },
+    "market_authenticity": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "Market Authenticity",
+      "type": "string"
+    },
+    "statistical_independence": {
+      "const": "UNASSESSED",
+      "default": "UNASSESSED",
+      "title": "Statistical Independence",
+      "type": "string"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "promotion_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Authorized",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "dataset_ref",
+    "source_id",
+    "resource_class",
+    "raw_sha256",
+    "dataset_fingerprint",
+    "instrument_id",
+    "row_count",
+    "first_observed_at",
+    "last_observed_at",
+    "received_at"
+  ],
+  "title": "ResearchDataReceipt",
+  "type": "object"
+}

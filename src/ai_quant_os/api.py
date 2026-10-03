@@ -84,6 +84,8 @@ from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
+from ai_quant_os.research_data_api import install_research_data_routes
+from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
 from ai_quant_os.execution_attribution import build_execution_contributions
@@ -287,6 +289,11 @@ def create_app(
         else None
     )
     agent_registry = load_agent_catalog()
+    research_data_catalog = ResearchEvidenceCatalog(
+        configured_path.with_name(configured_path.stem + ".research-data.sqlite3")
+        if configured_path
+        else None
+    )
     ingress_health = IngressHealth()
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
@@ -1535,6 +1542,7 @@ def create_app(
     install_event_feed_routes(app, event_feed_store, require_operator, current_time)
     install_health_routes(app, require_operator, health_worker, enabled_health)
     install_incident_proposal_routes(app, require_operator, incident_proposal_store)
+    install_research_data_routes(app, research_data_catalog, require_operator, current_time)
     install_daily_routes(
         app,
         configured_path,
