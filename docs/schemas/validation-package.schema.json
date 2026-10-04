@@ -1,0 +1,1412 @@
+{
+  "$defs": {
+    "AgentManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "agent_id": {
+          "pattern": "^A(0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "maxLength": 32,
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "squad": {
+          "enum": [
+            "Control",
+            "Market",
+            "Data",
+            "Research",
+            "Validation",
+            "Portfolio",
+            "Learning",
+            "Reliability",
+            "Evolution",
+            "Safety"
+          ],
+          "title": "Squad",
+          "type": "string"
+        },
+        "mission": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Mission",
+          "type": "string"
+        },
+        "output_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Output Type",
+          "type": "string"
+        },
+        "required_inputs": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Required Inputs",
+          "type": "array"
+        },
+        "allowed_tools": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Allowed Tools",
+          "type": "array"
+        },
+        "implementation_status": {
+          "default": "PLANNED",
+          "enum": [
+            "PLANNED",
+            "PARTIAL",
+            "IMPLEMENTED"
+          ],
+          "title": "Implementation Status",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "maximum": 30,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "agent_id",
+        "agent_version",
+        "name",
+        "squad",
+        "mission",
+        "output_type",
+        "required_inputs",
+        "allowed_tools"
+      ],
+      "title": "AgentManifest",
+      "type": "object"
+    },
+    "CandidateBundle": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "context_ref": {
+          "pattern": "^agent-context:[a-f0-9]{64}$",
+          "title": "Context Ref",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        },
+        "review": {
+          "$ref": "#/$defs/HypothesisReview"
+        },
+        "genome": {
+          "$ref": "#/$defs/StrategyGenome"
+        },
+        "genome_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Genome Sha256",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ProposedFile"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Files",
+          "type": "array"
+        },
+        "sdk_source_pins": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Sdk Source Pins",
+          "type": "array"
+        },
+        "feature": {
+          "const": "PREVIOUS_CLOSED_BAR_DIRECTION",
+          "default": "PREVIOUS_CLOSED_BAR_DIRECTION",
+          "title": "Feature",
+          "type": "string"
+        },
+        "entry_point": {
+          "const": "candidate:HypothesisDirection",
+          "default": "candidate:HypothesisDirection",
+          "title": "Entry Point",
+          "type": "string"
+        },
+        "execution_timing": {
+          "const": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "default": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "title": "Execution Timing",
+          "type": "string"
+        },
+        "assumptions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Assumptions",
+          "type": "array"
+        },
+        "validation_status": {
+          "const": "NOT_RUN",
+          "default": "NOT_RUN",
+          "title": "Validation Status",
+          "type": "string"
+        },
+        "tests_status": {
+          "const": "NOT_RUN",
+          "default": "NOT_RUN",
+          "title": "Tests Status",
+          "type": "string"
+        },
+        "compiler_status": {
+          "const": "NOT_RUN",
+          "default": "NOT_RUN",
+          "title": "Compiler Status",
+          "type": "string"
+        },
+        "isolation_verified": {
+          "const": false,
+          "default": false,
+          "title": "Isolation Verified",
+          "type": "boolean"
+        },
+        "execution_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Execution Authorized",
+          "type": "boolean"
+        },
+        "promotion_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Authorized",
+          "type": "boolean"
+        },
+        "runtime_registered": {
+          "const": false,
+          "default": false,
+          "title": "Runtime Registered",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "context_ref",
+        "task_id",
+        "review",
+        "genome",
+        "genome_sha256",
+        "files",
+        "sdk_source_pins",
+        "assumptions"
+      ],
+      "title": "CandidateBundle",
+      "type": "object"
+    },
+    "CompiledContext": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "context_ref": {
+          "title": "Context Ref",
+          "type": "string"
+        },
+        "agent_id": {
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "manifest_ref": {
+          "title": "Manifest Ref",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "PAPER",
+            "SANDBOX"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "READY",
+            "DEGRADED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/ContextInput"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "input_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "valid_until": {
+          "format": "date-time",
+          "title": "Valid Until",
+          "type": "string"
+        },
+        "requires_escalation": {
+          "const": true,
+          "default": true,
+          "title": "Requires Escalation",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "context_ref",
+        "agent_id",
+        "agent_version",
+        "manifest_ref",
+        "task_id",
+        "scope",
+        "status",
+        "inputs",
+        "input_refs",
+        "created_at",
+        "valid_until"
+      ],
+      "title": "CompiledContext",
+      "type": "object"
+    },
+    "ContextCheckpoint": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "manifest": {
+          "$ref": "#/$defs/AgentManifest"
+        },
+        "context": {
+          "$ref": "#/$defs/CompiledContext"
+        }
+      },
+      "required": [
+        "schema_version",
+        "manifest",
+        "context"
+      ],
+      "title": "ContextCheckpoint",
+      "type": "object"
+    },
+    "ContextInput": {
+      "additionalProperties": false,
+      "properties": {
+        "input_name": {
+          "title": "Input Name",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "AVAILABLE",
+            "MISSING",
+            "DENIED",
+            "STALE",
+            "FUTURE",
+            "UNTRUSTED",
+            "TIMEOUT",
+            "FAILED",
+            "BUDGET_EXCEEDED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "resource_class": {
+          "anyOf": [
+            {
+              "enum": [
+                "GENERAL",
+                "TRAINING",
+                "HOLDOUT"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Class"
+        },
+        "source_tool": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Tool"
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Id"
+        },
+        "as_of": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "As Of"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Until"
+        },
+        "content_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Ref"
+        },
+        "payload_json": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Payload Json"
+        }
+      },
+      "required": [
+        "input_name",
+        "status"
+      ],
+      "title": "ContextInput",
+      "type": "object"
+    },
+    "DatasetSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "receipt": {
+          "$ref": "#/$defs/ResearchDataReceipt"
+        },
+        "raw_base64": {
+          "maxLength": 1398104,
+          "minLength": 1,
+          "title": "Raw Base64",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt",
+        "raw_base64"
+      ],
+      "title": "DatasetSnapshot",
+      "type": "object"
+    },
+    "GraphReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "graph_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Graph Version",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9_-]{1,128}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "agent_id": {
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "context_ref": {
+          "title": "Context Ref",
+          "type": "string"
+        },
+        "manifest_ref": {
+          "title": "Manifest Ref",
+          "type": "string"
+        },
+        "input_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "valid_until": {
+          "format": "date-time",
+          "title": "Valid Until",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "CREATED",
+            "RUNNING",
+            "COMPLETED",
+            "UNAVAILABLE",
+            "EXPIRED",
+            "DENIED",
+            "WAIT_FOR_DATA",
+            "INVALID",
+            "FAILED",
+            "TIMEOUT",
+            "UNCERTAIN"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "output_type": {
+          "title": "Output Type",
+          "type": "string"
+        },
+        "output_json": {
+          "anyOf": [
+            {
+              "maxLength": 65536,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Json"
+        },
+        "requires_escalation": {
+          "const": true,
+          "default": true,
+          "title": "Requires Escalation",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "run_id",
+        "agent_id",
+        "agent_version",
+        "task_id",
+        "context_ref",
+        "manifest_ref",
+        "input_refs",
+        "created_at",
+        "valid_until",
+        "status",
+        "output_type"
+      ],
+      "title": "GraphReceipt",
+      "type": "object"
+    },
+    "GraphRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint": {
+          "$ref": "#/$defs/ContextCheckpoint"
+        },
+        "receipt": {
+          "$ref": "#/$defs/GraphReceipt"
+        }
+      },
+      "required": [
+        "checkpoint",
+        "receipt"
+      ],
+      "title": "GraphRecord",
+      "type": "object"
+    },
+    "HypothesisReview": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "review_id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Review Id",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9_-]{1,128}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "graph_record_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Graph Record Sha256",
+          "type": "string"
+        },
+        "hypothesis": {
+          "$ref": "#/$defs/ResearchHypothesis"
+        },
+        "rationale": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "reviewed_at": {
+          "format": "date-time",
+          "title": "Reviewed At",
+          "type": "string"
+        },
+        "valid_until": {
+          "format": "date-time",
+          "title": "Valid Until",
+          "type": "string"
+        },
+        "decision": {
+          "const": "AUTHORIZE_INERT_CANDIDATE_BUILD",
+          "default": "AUTHORIZE_INERT_CANDIDATE_BUILD",
+          "title": "Decision",
+          "type": "string"
+        },
+        "reviewer_basis": {
+          "const": "LOCAL_OPERATOR_TOKEN",
+          "default": "LOCAL_OPERATOR_TOKEN",
+          "title": "Reviewer Basis",
+          "type": "string"
+        },
+        "alpha_acceptance": {
+          "const": "UNASSESSED",
+          "default": "UNASSESSED",
+          "title": "Alpha Acceptance",
+          "type": "string"
+        },
+        "execution_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Execution Authorized",
+          "type": "boolean"
+        },
+        "promotion_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Authorized",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "review_id",
+        "run_id",
+        "graph_record_sha256",
+        "hypothesis",
+        "rationale",
+        "reviewed_at",
+        "valid_until"
+      ],
+      "title": "HypothesisReview",
+      "type": "object"
+    },
+    "ProposedFile": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "enum": [
+            "candidate.py",
+            "test_candidate.py"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 8192,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "text",
+        "sha256"
+      ],
+      "title": "ProposedFile",
+      "type": "object"
+    },
+    "ResearchDataReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "dataset_ref": {
+          "pattern": "^research-data:[a-f0-9]{64}$",
+          "title": "Dataset Ref",
+          "type": "string"
+        },
+        "source_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "resource_class": {
+          "enum": [
+            "TRAINING",
+            "HOLDOUT"
+          ],
+          "title": "Resource Class",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "OPERATOR_SUPPLIED_CSV",
+          "default": "OPERATOR_SUPPLIED_CSV",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "raw_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Raw Sha256",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "instrument_id": {
+          "enum": [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "EURJPY"
+          ],
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "row_count": {
+          "maximum": 4096,
+          "minimum": 2,
+          "title": "Row Count",
+          "type": "integer"
+        },
+        "first_observed_at": {
+          "format": "date-time",
+          "title": "First Observed At",
+          "type": "string"
+        },
+        "last_observed_at": {
+          "format": "date-time",
+          "title": "Last Observed At",
+          "type": "string"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "market_authenticity": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Market Authenticity",
+          "type": "string"
+        },
+        "statistical_independence": {
+          "const": "UNASSESSED",
+          "default": "UNASSESSED",
+          "title": "Statistical Independence",
+          "type": "string"
+        },
+        "execution_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Execution Authorized",
+          "type": "boolean"
+        },
+        "promotion_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Authorized",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dataset_ref",
+        "source_id",
+        "resource_class",
+        "raw_sha256",
+        "dataset_fingerprint",
+        "instrument_id",
+        "row_count",
+        "first_observed_at",
+        "last_observed_at",
+        "received_at"
+      ],
+      "title": "ResearchDataReceipt",
+      "type": "object"
+    },
+    "ResearchExpectedCosts": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "UNAVAILABLE",
+            "HISTORICAL_SPREAD_ONLY"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "spread_observation_count": {
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Spread Observation Count",
+          "type": "integer"
+        },
+        "minimum_recorded_spread_bps": {
+          "anyOf": [
+            {
+              "maximum": 20000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Minimum Recorded Spread Bps"
+        },
+        "maximum_recorded_spread_bps": {
+          "anyOf": [
+            {
+              "maximum": 20000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Maximum Recorded Spread Bps"
+        },
+        "commission_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Commission Status",
+          "type": "string"
+        },
+        "slippage_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Slippage Status",
+          "type": "string"
+        },
+        "financing_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Financing Status",
+          "type": "string"
+        },
+        "source": {
+          "const": "ARCHIVED_PAPER_QUOTES_ONLY",
+          "default": "ARCHIVED_PAPER_QUOTES_ONLY",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "spread_observation_count",
+        "minimum_recorded_spread_bps",
+        "maximum_recorded_spread_bps"
+      ],
+      "title": "ResearchExpectedCosts",
+      "type": "object"
+    },
+    "ResearchHypothesis": {
+      "additionalProperties": false,
+      "properties": {
+        "dataset_ref": {
+          "pattern": "^research-data:[a-f0-9]{64}$",
+          "title": "Dataset Ref",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "instrument_id": {
+          "enum": [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "EURJPY"
+          ],
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "development_end": {
+          "format": "date-time",
+          "title": "Development End",
+          "type": "string"
+        },
+        "rule": {
+          "enum": [
+            "FOLLOW_PREVIOUS_CLOSE_DIRECTION",
+            "FADE_PREVIOUS_CLOSE_DIRECTION"
+          ],
+          "title": "Rule",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "eligible_pairs": {
+          "maximum": 4094,
+          "minimum": 8,
+          "title": "Eligible Pairs",
+          "type": "integer"
+        },
+        "same_direction_pairs": {
+          "maximum": 4094,
+          "minimum": 0,
+          "title": "Same Direction Pairs",
+          "type": "integer"
+        },
+        "observed_direction_persistence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Observed Direction Persistence"
+        },
+        "execution_timing": {
+          "const": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "default": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "title": "Execution Timing",
+          "type": "string"
+        },
+        "signal_history_bars": {
+          "const": 2,
+          "default": 2,
+          "title": "Signal History Bars",
+          "type": "integer"
+        },
+        "required_data": {
+          "default": [
+            "SEPARATE_CHRONOLOGICAL_OUT_OF_SAMPLE_BARS",
+            "MEASURED_BROKER_COST_MODEL",
+            "CAUSAL_NEXT_BAR_OPEN_REPLAY",
+            "PREDECLARED_MULTIPLE_TESTING_POLICY"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Data",
+          "type": "array"
+        },
+        "falsification_test": {
+          "const": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+          "default": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+          "title": "Falsification Test",
+          "type": "string"
+        },
+        "expected_costs": {
+          "$ref": "#/$defs/ResearchExpectedCosts"
+        },
+        "validation_status": {
+          "const": "NOT_RUN",
+          "default": "NOT_RUN",
+          "title": "Validation Status",
+          "type": "string"
+        },
+        "alpha_acceptance": {
+          "const": "UNASSESSED",
+          "default": "UNASSESSED",
+          "title": "Alpha Acceptance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_ref",
+        "dataset_fingerprint",
+        "instrument_id",
+        "development_end",
+        "rule",
+        "description",
+        "eligible_pairs",
+        "same_direction_pairs",
+        "observed_direction_persistence",
+        "expected_costs"
+      ],
+      "title": "ResearchHypothesis",
+      "type": "object"
+    },
+    "SDKFile": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "enum": [
+            "ai_quant_os/__init__.py",
+            "ai_quant_os/contracts.py",
+            "ai_quant_os/market_data.py",
+            "ai_quant_os/strategy_contracts.py"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "raw_base64": {
+          "maxLength": 87384,
+          "minLength": 1,
+          "title": "Raw Base64",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "raw_base64",
+        "sha256"
+      ],
+      "title": "SDKFile",
+      "type": "object"
+    },
+    "StrategyGenome": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameters",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind"
+      ],
+      "title": "StrategyGenome",
+      "type": "object"
+    },
+    "ValidationPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "plan_id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "spread_bps": {
+          "anyOf": [
+            {
+              "maximum": 10000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Spread Bps"
+        },
+        "slippage_bps": {
+          "anyOf": [
+            {
+              "maximum": 10000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Slippage Bps"
+        },
+        "commission_bps": {
+          "anyOf": [
+            {
+              "maximum": 10000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Commission Bps"
+        },
+        "cost_stress_multiplier": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 1.0,
+              "maximum": 100.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Cost Stress Multiplier"
+        },
+        "walk_forward_train_bars": {
+          "maximum": 4094,
+          "minimum": 8,
+          "title": "Walk Forward Train Bars",
+          "type": "integer"
+        },
+        "walk_forward_test_bars": {
+          "maximum": 4096,
+          "minimum": 2,
+          "title": "Walk Forward Test Bars",
+          "type": "integer"
+        },
+        "monte_carlo_trials": {
+          "maximum": 100000,
+          "minimum": 100,
+          "title": "Monte Carlo Trials",
+          "type": "integer"
+        },
+        "random_seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Random Seed",
+          "type": "integer"
+        },
+        "cost_basis": {
+          "const": "OPERATOR_DECLARED_SYNTHETIC",
+          "default": "OPERATOR_DECLARED_SYNTHETIC",
+          "title": "Cost Basis",
+          "type": "string"
+        },
+        "financing_costs": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Financing Costs",
+          "type": "string"
+        },
+        "account_currency_conversion": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Account Currency Conversion",
+          "type": "string"
+        },
+        "planned_methods": {
+          "default": [
+            "OUT_OF_SAMPLE",
+            "WALK_FORWARD",
+            "MONTE_CARLO",
+            "COST_STRESS",
+            "REALITY_GAP"
+          ],
+          "items": {
+            "enum": [
+              "OUT_OF_SAMPLE",
+              "WALK_FORWARD",
+              "MONTE_CARLO",
+              "COST_STRESS",
+              "REALITY_GAP"
+            ],
+            "type": "string"
+          },
+          "title": "Planned Methods",
+          "type": "array"
+        },
+        "selection_basis": {
+          "const": "OPERATOR_SELECTED_NOT_BLINDNESS_PROOF",
+          "default": "OPERATOR_SELECTED_NOT_BLINDNESS_PROOF",
+          "title": "Selection Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan_id",
+        "rationale",
+        "spread_bps",
+        "slippage_bps",
+        "commission_bps",
+        "cost_stress_multiplier",
+        "walk_forward_train_bars",
+        "walk_forward_test_bars",
+        "monte_carlo_trials",
+        "random_seed"
+      ],
+      "title": "ValidationPlan",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "graph": {
+      "$ref": "#/$defs/GraphRecord"
+    },
+    "candidate": {
+      "$ref": "#/$defs/CandidateBundle"
+    },
+    "training": {
+      "$ref": "#/$defs/DatasetSnapshot"
+    },
+    "holdout": {
+      "$ref": "#/$defs/DatasetSnapshot"
+    },
+    "sdk_files": {
+      "items": {
+        "$ref": "#/$defs/SDKFile"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Sdk Files",
+      "type": "array"
+    },
+    "plan": {
+      "$ref": "#/$defs/ValidationPlan"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "status": {
+      "const": "WAIT_FOR_ISOLATED_VALIDATOR",
+      "default": "WAIT_FOR_ISOLATED_VALIDATOR",
+      "title": "Status",
+      "type": "string"
+    },
+    "validation_status": {
+      "const": "NOT_RUN",
+      "default": "NOT_RUN",
+      "title": "Validation Status",
+      "type": "string"
+    },
+    "tests_status": {
+      "const": "NOT_RUN",
+      "default": "NOT_RUN",
+      "title": "Tests Status",
+      "type": "string"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "promotion_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Authorized",
+      "type": "boolean"
+    },
+    "independent_holdout_storage": {
+      "const": false,
+      "default": false,
+      "title": "Independent Holdout Storage",
+      "type": "boolean"
+    },
+    "runtime_dependency_closure": {
+      "const": "NOT_CAPTURED",
+      "default": "NOT_CAPTURED",
+      "title": "Runtime Dependency Closure",
+      "type": "string"
+    },
+    "execution_adapter": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Execution Adapter",
+      "type": "string"
+    }
+  },
+  "required": [
+    "graph",
+    "candidate",
+    "training",
+    "holdout",
+    "sdk_files",
+    "plan",
+    "captured_at"
+  ],
+  "title": "ValidationPackage",
+  "type": "object"
+}

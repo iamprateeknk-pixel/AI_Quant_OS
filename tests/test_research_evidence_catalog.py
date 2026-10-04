@@ -48,6 +48,20 @@ def test_checked_training_reader_withholds_holdout_and_restarts_exactly(tmp_path
         assert publish(store, raw_bars()) == training
 
 
+def test_operator_preparation_reads_exact_classified_pair_without_training_leak(tmp_path):
+    with catalog(tmp_path / "research.sqlite3") as store:
+        training = publish(store, raw_bars())
+        holdout = publish(store, raw_bars(minute=10), "HOLDOUT", "sealed")
+        assert hasattr(store, "validation_pair"), "Operator preparation needs checked raw snapshots"
+        pair = store.validation_pair(training.dataset_ref, holdout.dataset_ref)
+        assert pair == ((training, raw_bars()), (holdout, raw_bars(minute=10)))
+        with pytest.raises(ValueError, match="classification"):
+            store.validation_pair(holdout.dataset_ref, training.dataset_ref)
+        with pytest.raises(KeyError):
+            store.validation_pair(training.dataset_ref, "research-data:" + "0" * 64)
+        assert len(store.training(load_agent_catalog(), "A08", "0.2.0", scope="SANDBOX")) == 1
+
+
 @pytest.mark.parametrize(
     "incoming, classification",
     [

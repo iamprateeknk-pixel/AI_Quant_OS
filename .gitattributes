@@ -53,3 +53,7 @@ docs/evaluations/strategy-builder-baseline.json text eol=lf
 docs/schemas/strategy-candidate.schema.json text eol=lf
 docs/schemas/strategy-build-candidate.schema.json text eol=lf
 docs/schemas/hypothesis-review.schema.json text eol=lf
+src/ai_quant_os/validation_package*.py text eol=lf
+src/ai_quant_os/research_data_parsing.py text eol=lf
+docs/schemas/validation-package.schema.json text eol=lf
+docs/schemas/validation-plan.schema.json text eol=lf

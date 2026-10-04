@@ -1,0 +1,155 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "plan_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,64}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "rationale": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "spread_bps": {
+      "anyOf": [
+        {
+          "maximum": 10000.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Spread Bps"
+    },
+    "slippage_bps": {
+      "anyOf": [
+        {
+          "maximum": 10000.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Slippage Bps"
+    },
+    "commission_bps": {
+      "anyOf": [
+        {
+          "maximum": 10000.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Commission Bps"
+    },
+    "cost_stress_multiplier": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 1.0,
+          "maximum": 100.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Cost Stress Multiplier"
+    },
+    "walk_forward_train_bars": {
+      "maximum": 4094,
+      "minimum": 8,
+      "title": "Walk Forward Train Bars",
+      "type": "integer"
+    },
+    "walk_forward_test_bars": {
+      "maximum": 4096,
+      "minimum": 2,
+      "title": "Walk Forward Test Bars",
+      "type": "integer"
+    },
+    "monte_carlo_trials": {
+      "maximum": 100000,
+      "minimum": 100,
+      "title": "Monte Carlo Trials",
+      "type": "integer"
+    },
+    "random_seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Random Seed",
+      "type": "integer"
+    },
+    "cost_basis": {
+      "const": "OPERATOR_DECLARED_SYNTHETIC",
+      "default": "OPERATOR_DECLARED_SYNTHETIC",
+      "title": "Cost Basis",
+      "type": "string"
+    },
+    "financing_costs": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Financing Costs",
+      "type": "string"
+    },
+    "account_currency_conversion": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Account Currency Conversion",
+      "type": "string"
+    },
+    "planned_methods": {
+      "default": [
+        "OUT_OF_SAMPLE",
+        "WALK_FORWARD",
+        "MONTE_CARLO",
+        "COST_STRESS",
+        "REALITY_GAP"
+      ],
+      "items": {
+        "enum": [
+          "OUT_OF_SAMPLE",
+          "WALK_FORWARD",
+          "MONTE_CARLO",
+          "COST_STRESS",
+          "REALITY_GAP"
+        ],
+        "type": "string"
+      },
+      "title": "Planned Methods",
+      "type": "array"
+    },
+    "selection_basis": {
+      "const": "OPERATOR_SELECTED_NOT_BLINDNESS_PROOF",
+      "default": "OPERATOR_SELECTED_NOT_BLINDNESS_PROOF",
+      "title": "Selection Basis",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "rationale",
+    "spread_bps",
+    "slippage_bps",
+    "commission_bps",
+    "cost_stress_multiplier",
+    "walk_forward_train_bars",
+    "walk_forward_test_bars",
+    "monte_carlo_trials",
+    "random_seed"
+  ],
+  "title": "ValidationPlan",
+  "type": "object"
+}

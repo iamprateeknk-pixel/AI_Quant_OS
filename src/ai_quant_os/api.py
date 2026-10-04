@@ -97,6 +97,9 @@ from ai_quant_os.graph_ledger import GraphLedger
 from ai_quant_os.strategy_build_store import StrategyBuildStore
 from ai_quant_os.strategy_builder_agent import builder_implementation
 from ai_quant_os.strategy_builder_api import install_builder_routes
+from ai_quant_os.validation_package_api import install_validation_package_routes
+from ai_quant_os.validation_package_service import ValidationPreparation
+from ai_quant_os.validation_package_store import ValidationPackageStore
 from ai_quant_os.strategy_builder_sources import builder_sources
 from ai_quant_os.strategy_builder_service import CandidateCreate
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
@@ -310,6 +313,11 @@ def create_app(
     )
     strategy_build_store = StrategyBuildStore(
         configured_path.with_name(configured_path.stem + ".strategy-builds.sqlite3")
+        if configured_path
+        else None
+    )
+    validation_package_store = ValidationPackageStore(
+        configured_path.with_name(configured_path.stem + ".validation-packages.sqlite3")
         if configured_path
         else None
     )
@@ -1193,6 +1201,15 @@ def create_app(
         with GraphLedger.archive(graph_path) as archive:
             return archive.get(run_id)
 
+    def checked_validation_graph(run_id: str):
+        if configured_path is None or not state_store.audit_integrity().valid:
+            raise ValueError("Persistent checked graph admission required")
+        if health_worker:
+            health_worker.verify_admission()
+        graph_path = configured_path.with_name(configured_path.stem + ".agents.sqlite3")
+        with GraphLedger.archive(graph_path) as archive:
+            return archive.get(run_id)
+
     async def compile_builder_context(task_id: str, review_ref: str) -> CompiledContext:
         require_graph_runtime()
         await supervisor_admission()
@@ -1665,6 +1682,16 @@ def create_app(
     install_health_routes(app, require_operator, health_worker, enabled_health)
     install_incident_proposal_routes(app, require_operator, incident_proposal_store)
     install_research_data_routes(app, research_data_catalog, require_operator, current_time)
+    install_validation_package_routes(
+        app,
+        require_operator,
+        preparation=ValidationPreparation(
+            strategy_build_store, research_data_catalog, validation_package_store
+        ),
+        archive=validation_package_store,
+        graph_record=checked_validation_graph,
+        clock=current_time,
+    )
     install_builder_routes(
         app,
         require_operator,
