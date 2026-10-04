@@ -1,6 +1,7 @@
 """Owned prefix-only JSON staging and guarded pre-container cleanup; execute nothing."""
 
 from dataclasses import dataclass, field
+from contextlib import contextmanager
 from hashlib import sha256
 import os
 from pathlib import Path
@@ -139,6 +140,16 @@ class PreparedPrefixJob:
         if any(_directory(path) != identity for path, identity in self._parents):
             raise ValueError("Prefix parent directory identity changed")
         with kernel_root_lock(self.path.parent, lock_name=LOCK_NAME):
+            self._verify(package)
+
+    @contextmanager
+    def admitted(self, package: ValidationPackage):
+        """Hold cooperative root ownership while a parent preserves exact inputs."""
+        if any(_directory(path) != identity for path, identity in self._parents):
+            raise ValueError("Prefix parent directory identity changed")
+        with kernel_root_lock(self.path.parent, lock_name=LOCK_NAME):
+            self._verify(package)
+            yield self
             self._verify(package)
 
     def discard_unstarted(self, package: ValidationPackage) -> None:
