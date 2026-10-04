@@ -66,3 +66,4 @@ docs/schemas/candidate-target-output.schema.json text eol=lf
 infra/strategy-worker/** text eol=lf
 src/ai_quant_os/strategy_image*.py text eol=lf
 docs/schemas/strategy-worker-image.schema.json text eol=lf
+docs/schemas/strategy-image-handoff.schema.json text eol=lf

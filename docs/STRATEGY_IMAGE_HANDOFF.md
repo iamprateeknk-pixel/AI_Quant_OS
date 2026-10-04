@@ -90,3 +90,59 @@ separate no-holdout compilation/tests, independent source attestation, statistic
 validation, A10 acceptance and every production release gate remain open.
 
 See `CANDIDATE_PREFIX_HANDOFF.md`, the worker README and ADRs 0068–0070.
+
+## Fixed-engine handoff (ADR 0071)
+
+`python -m ai_quant_os.strategy_image_loading inspect` accepts the same archive,
+base metadata and five independent pins as the static verification command above.
+It verifies a single immutable archive snapshot, then reads the fixed local engine
+and existing image. `load` performs the same checks and sends that exact snapshot
+once with `image load --quiet --platform linux/amd64` before inspecting the image.
+Neither command creates, starts or removes a container. The endpoint/environment
+and bounded transport are shared with the existing public repair transport;
+alternate remote endpoints and inherited Docker credentials are excluded.
+
+Example read-only invocation:
+
+```powershell
+python -m ai_quant_os.strategy_image_loading inspect `
+  --archive data-local/strategy-worker/oci-linux-cp311-01/image.oci.tar `
+  --base-metadata infra/repair-worker `
+  --worker-sha256 c94e1dc2a34c31a76bd42413b16dc4b906cec123e107393156d61ef0f3cc09ee `
+  --base-manifest-digest sha256:31feac62e3aa66d2cdddb4e1f80f839d8f14ad02b98b77e7eee90df6dc65f0c5 `
+  --archive-sha256 d233bc9c8a2093d18c4392a913db5aaf18d3d27ae5838af58d339653e268f375 `
+  --manifest-digest sha256:1e0b8a64de1536ba581f7ffaead12574996f48e7385054c62f5a60826ef95e48 `
+  --config-digest sha256:415c3433e8ec2d3ac89463032e6bcad71e25f58b03632f1fe516b02c100b5cf7
+```
+
+Engine admission requires Linux/cgroup v2, advertised memory/swap/PID/CPU limits
+and built-in seccomp, a bounded engine identity, the containerd image store and
+API 1.49 or later. Loaded-image inspection checks the manifest ID and descriptor,
+exact descriptor byte size, linux/amd64 platform, all expanded layer hashes and the
+archive's fixed runtime config. Only enumerated inert defaults are accepted for
+extra legacy Docker config fields; executable hooks, volumes, unknown settings
+and boolean/integer substitutions are refused. These metadata checks are
+prerequisites, without proof of kernel enforcement or runtime behavior.
+
+The typed receipt retains the verified archive, engine ID/API version and hashes
+of inspected engine/image metadata. `IMAGE_LOAD_INSPECTED` means a load was
+acknowledged and inspection matched; `IMAGE_PRESENT_INSPECTED` is read-only
+presence evidence. Both retain false execution/promotion flags, and the nested
+archive still has false image/execution/promotion authority. Receipt construction
+or metadata hashes are not independent certificates. Cross-field model checks
+must accompany the retained `strategy-image-handoff.schema.json`.
+
+A timeout or failure after requesting load is uncertain: retain the archive,
+inspect its exact pinned identity independently, and never retry or delete shared
+images automatically. Load stdout is not identity evidence. CLI errors omit raw
+daemon output and exception details. In this increment, the actual read-only probe
+against the pinned archive exited 2 because the fixed engine was unavailable;
+no load occurred. Simulated daemon tests do not establish live handoff compatibility.
+
+Primary references: [platform-selective image load](https://docs.docker.com/reference/cli/docker/image/load/),
+[image inspection](https://docs.docker.com/reference/cli/docker/image/inspect/),
+[Engine API version history](https://docs.docker.com/reference/api/engine/version-history/)
+and [Moby's containerd image inspection implementation](https://github.com/moby/moby/blob/master/daemon/containerd/image_inspect.go).
+The selected containerd inspection path binds the requested platform's manifest
+descriptor and exposes config/rootfs fields; actual engine compatibility remains
+subject to the live inspection checks.

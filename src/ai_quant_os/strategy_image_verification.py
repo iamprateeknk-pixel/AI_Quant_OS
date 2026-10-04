@@ -117,12 +117,35 @@ def verify_strategy_worker_image(
     manifest_digest: str,
     config_digest: str,
 ) -> StrategyWorkerImageReceipt:
+    return verify_strategy_worker_image_bytes(
+        read_repair_image_input(archive, MAX_ARCHIVE),
+        base_metadata=base_metadata,
+        base_manifest_digest=base_manifest_digest,
+        worker_sha256=worker_sha256,
+        archive_sha256=archive_sha256,
+        manifest_digest=manifest_digest,
+        config_digest=config_digest,
+    )
+
+
+def verify_strategy_worker_image_bytes(
+    raw: bytes,
+    *,
+    base_metadata: Path,
+    base_manifest_digest: str,
+    worker_sha256: str,
+    archive_sha256: str,
+    manifest_digest: str,
+    config_digest: str,
+) -> StrategyWorkerImageReceipt:
+    """Verify a bounded immutable snapshot used unchanged for daemon handoff."""
+    if type(raw) is not bytes or not 0 < len(raw) <= MAX_ARCHIVE:
+        raise ValueError("Worker archive must be bounded immutable bytes")
     for value in (base_manifest_digest, manifest_digest, config_digest):
         require_digest(value)
     for value in (worker_sha256, archive_sha256):
         require_digest(value, prefix="")
     base = read_strategy_image_base(base_metadata, base_manifest_digest)
-    raw = read_repair_image_input(archive, MAX_ARCHIVE)
     if sha256(raw).hexdigest() != archive_sha256:
         raise ValueError("Worker archive differs from independent archive pin")
     members = _members(raw)
