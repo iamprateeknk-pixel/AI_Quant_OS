@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-05: Stage only the exact original package's prefix JSON in a new owned directory, with metadata outside the worker mount. Require the initial independent stage hash for restoration, reject changed filesystem identities, and discard only known unstarted files without recursion or pending ownership sidecars. Host namespace trust and actual container lifecycle remain separate requirements. See ADR 0072.
+
 - 2026-10-05: Verify one immutable strategy archive snapshot before fixed-engine handoff. Separate read-only presence inspection from a single load request; uncertain mutations retain inputs without retry or shared-image cleanup. Inspect platform/descriptor/layers/runtime config and keep execution/promotion authority false. See ADR 0071.
 
 - 2026-10-05: Assemble the strategy worker OCI archive from independently pinned opaque worker/base bytes. Read-only hash inspection confers no execution or promotion authority. Preserve the older repair path and strategy closures; require external engine/container admission before candidate execution. See ADR 0070.
