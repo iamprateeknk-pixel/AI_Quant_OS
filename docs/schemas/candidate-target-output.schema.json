@@ -1,0 +1,46 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "invocation_ref": {
+      "pattern": "^candidate-invocation:[a-f0-9]{64}$",
+      "title": "Invocation Ref",
+      "type": "string"
+    },
+    "target": {
+      "maximum": 1,
+      "minimum": -1,
+      "title": "Target",
+      "type": "integer"
+    },
+    "status": {
+      "const": "UNATTESTED_TARGET_OUTPUT",
+      "default": "UNATTESTED_TARGET_OUTPUT",
+      "title": "Status",
+      "type": "string"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "promotion_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Authorized",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "invocation_ref",
+    "target"
+  ],
+  "title": "CandidateTargetOutput",
+  "type": "object"
+}

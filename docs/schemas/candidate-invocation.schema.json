@@ -1,0 +1,261 @@
+{
+  "$defs": {
+    "ClosedBar": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument_id": {
+          "enum": [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "EURJPY"
+          ],
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "open": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Open"
+        },
+        "high": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "High"
+        },
+        "low": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Low"
+        },
+        "close": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Close"
+        },
+        "volume": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "observed_at",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "title": "ClosedBar",
+      "type": "object"
+    },
+    "ProposedFile": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "enum": [
+            "candidate.py",
+            "test_candidate.py"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 8192,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "text",
+        "sha256"
+      ],
+      "title": "ProposedFile",
+      "type": "object"
+    },
+    "SDKFile": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "enum": [
+            "ai_quant_os/__init__.py",
+            "ai_quant_os/contracts.py",
+            "ai_quant_os/market_data.py",
+            "ai_quant_os/strategy_contracts.py"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "raw_base64": {
+          "maxLength": 87384,
+          "minLength": 1,
+          "title": "Raw Base64",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "raw_base64",
+        "sha256"
+      ],
+      "title": "SDKFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "index": {
+      "maximum": 4095,
+      "minimum": 2,
+      "title": "Index",
+      "type": "integer"
+    },
+    "execute_at": {
+      "format": "date-time",
+      "title": "Execute At",
+      "type": "string"
+    },
+    "instrument_id": {
+      "enum": [
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "EURJPY"
+      ],
+      "title": "Instrument Id",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/ProposedFile"
+    },
+    "sdk_files": {
+      "items": {
+        "$ref": "#/$defs/SDKFile"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Sdk Files",
+      "type": "array"
+    },
+    "history": {
+      "items": {
+        "$ref": "#/$defs/ClosedBar"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "History",
+      "type": "array"
+    },
+    "history_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "History Sha256",
+      "type": "string"
+    },
+    "status": {
+      "const": "WAIT_FOR_CONFINED_PREFIX_WORKER",
+      "default": "WAIT_FOR_CONFINED_PREFIX_WORKER",
+      "title": "Status",
+      "type": "string"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "promotion_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Authorized",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "package_ref",
+    "candidate_ref",
+    "index",
+    "execute_at",
+    "instrument_id",
+    "source",
+    "sdk_files",
+    "history",
+    "history_sha256"
+  ],
+  "title": "CandidateInvocation",
+  "type": "object"
+}

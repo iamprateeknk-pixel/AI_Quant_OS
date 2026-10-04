@@ -60,3 +60,6 @@ docs/schemas/validation-plan.schema.json text eol=lf
 src/ai_quant_os/signal_tape*.py text eol=lf
 docs/schemas/signal-tape.schema.json text eol=lf
 docs/schemas/signal-tape-replay.schema.json text eol=lf
+src/ai_quant_os/candidate_invocation*.py text eol=lf
+docs/schemas/candidate-invocation.schema.json text eol=lf
+docs/schemas/candidate-target-output.schema.json text eol=lf
