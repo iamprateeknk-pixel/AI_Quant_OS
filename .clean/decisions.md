@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-05: Reserve one fixed attached strategy start before its RPC, bound output and independently check successful owned exit. Attempt exact owned kill/removal on every start path; publish only after acknowledged removal and original-input recheck. Completion remains unattested and inputs retained; offline restoration requires independent hashes. See ADR 0075.
+
 - 2026-10-05: Bind the complete strategy create recipe to the original job/image/source and independent hashes; publish an exclusive durable attempt marker before one create RPC. Admit only exact owned created metadata and remove only by independently inspected immutable ID with audited acknowledgements. Unknown outcomes retain all custody; no worker start or automatic input release. See ADR 0074.
 
 - 2026-10-05: Publish exact prefix-job ownership before a durable audited create intent; bind every subsequent acknowledgement to one owner/job/image/source and immutable container ID. Record history grants no runtime authority, performs no Docker action and never releases inputs automatically. Future callers must hold the public admitted-job context and independently observe actual actions. See ADR 0073.

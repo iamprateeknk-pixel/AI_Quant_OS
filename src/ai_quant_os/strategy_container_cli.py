@@ -1,4 +1,4 @@
-"""Operator prepare/create/owned cleanup; no worker start or strategy execution."""
+"""Operator control of an owned strategy worker; outputs remain unattested."""
 
 import argparse
 import json
@@ -13,12 +13,13 @@ from ai_quant_os.strategy_container_lifecycle import (
     cleanup_strategy_container,
 )
 from ai_quant_os.strategy_prefix_jobs import load_prefix_job
+from ai_quant_os.strategy_prefix_execution import execute_strategy_prefix
 from ai_quant_os.validation_package_store import ValidationPackageStore
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Prepare, create or remove an owned unstarted strategy container"
+        description="Prepare, create, execute or remove an owned strategy worker"
     )
     parser.add_argument("--validation-archive", required=True, type=Path)
     parser.add_argument("--package-ref", required=True)
@@ -27,7 +28,7 @@ def main() -> int:
     parser.add_argument("--job-name", required=True)
     parser.add_argument("--stage-sha256", required=True)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("prepare", "create", "cleanup"):
+    for name in ("prepare", "create", "execute", "cleanup"):
         command = commands.add_parser(name)
         if name != "prepare":
             command.add_argument("--create-sha256", required=True)
@@ -106,6 +107,10 @@ def main() -> int:
                     "execution_verified": False,
                     "promotion_allowed": False,
                 }
+            elif args.command == "execute":
+                result = execute_strategy_prefix(plan, job, package, **image_args).model_dump(
+                    mode="json"
+                )
             else:
                 result = cleanup_strategy_container(plan, job, package).model_dump(mode="json")
         print(json.dumps(result, sort_keys=True))

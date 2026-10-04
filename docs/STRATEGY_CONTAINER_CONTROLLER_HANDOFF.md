@@ -1,5 +1,8 @@
 # Owned unstarted strategy container controller
 
+Follow-on increment 0075 adds an explicitly invoked `execute` command to the same
+operator module. The sections below describe increment 0074's create/cleanup scope;
+see STRATEGY_PREFIX_EXECUTION_HANDOFF.md for current start/output/custody semantics.
 ## Implemented scope
 
 The operator entry point is `python -m ai_quant_os.strategy_container_cli`.

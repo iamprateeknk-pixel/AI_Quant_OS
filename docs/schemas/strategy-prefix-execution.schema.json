@@ -1,0 +1,324 @@
+{
+  "$defs": {
+    "CandidateTargetOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "invocation_ref": {
+          "pattern": "^candidate-invocation:[a-f0-9]{64}$",
+          "title": "Invocation Ref",
+          "type": "string"
+        },
+        "target": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Target",
+          "type": "integer"
+        },
+        "status": {
+          "const": "UNATTESTED_TARGET_OUTPUT",
+          "default": "UNATTESTED_TARGET_OUTPUT",
+          "title": "Status",
+          "type": "string"
+        },
+        "isolation_verified": {
+          "const": false,
+          "default": false,
+          "title": "Isolation Verified",
+          "type": "boolean"
+        },
+        "promotion_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Authorized",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "invocation_ref",
+        "target"
+      ],
+      "title": "CandidateTargetOutput",
+      "type": "object"
+    },
+    "StrategyContainerExit": {
+      "additionalProperties": false,
+      "properties": {
+        "container_id": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Container Id",
+          "type": "string"
+        },
+        "status": {
+          "const": "exited",
+          "title": "Status",
+          "type": "string"
+        },
+        "running": {
+          "const": false,
+          "title": "Running",
+          "type": "boolean"
+        },
+        "paused": {
+          "const": false,
+          "title": "Paused",
+          "type": "boolean"
+        },
+        "restarting": {
+          "const": false,
+          "title": "Restarting",
+          "type": "boolean"
+        },
+        "oom_killed": {
+          "const": false,
+          "title": "Oom Killed",
+          "type": "boolean"
+        },
+        "dead": {
+          "const": false,
+          "title": "Dead",
+          "type": "boolean"
+        },
+        "pid": {
+          "maximum": 0,
+          "minimum": 0,
+          "title": "Pid",
+          "type": "integer"
+        },
+        "exit_code": {
+          "maximum": 0,
+          "minimum": 0,
+          "title": "Exit Code",
+          "type": "integer"
+        },
+        "error": {
+          "const": "",
+          "title": "Error",
+          "type": "string"
+        },
+        "started_at": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Started At",
+          "type": "string"
+        },
+        "finished_at": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Finished At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "container_id",
+        "status",
+        "running",
+        "paused",
+        "restarting",
+        "oom_killed",
+        "dead",
+        "pid",
+        "exit_code",
+        "error",
+        "started_at",
+        "finished_at"
+      ],
+      "title": "StrategyContainerExit",
+      "type": "object"
+    },
+    "StrategyContainerOwnership": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "owner": {
+          "pattern": "^[a-f0-9]{32}$",
+          "title": "Owner",
+          "type": "string"
+        },
+        "job_path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Job Path",
+          "type": "string"
+        },
+        "job_name": {
+          "pattern": "^strategy-job-[a-f0-9]{32}$",
+          "title": "Job Name",
+          "type": "string"
+        },
+        "invocation_ref": {
+          "pattern": "^candidate-invocation:[a-f0-9]{64}$",
+          "title": "Invocation Ref",
+          "type": "string"
+        },
+        "stage_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Stage Sha256",
+          "type": "string"
+        },
+        "image_id": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Image Id",
+          "type": "string"
+        },
+        "worker_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Worker Sha256",
+          "type": "string"
+        },
+        "execution_verified": {
+          "const": false,
+          "default": false,
+          "title": "Execution Verified",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "owner",
+        "job_path",
+        "job_name",
+        "invocation_ref",
+        "stage_sha256",
+        "image_id",
+        "worker_sha256"
+      ],
+      "title": "StrategyContainerOwnership",
+      "type": "object"
+    },
+    "StrategyContainerRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "ownership": {
+          "$ref": "#/$defs/StrategyContainerOwnership"
+        },
+        "state": {
+          "enum": [
+            "CREATE_INTENT",
+            "CREATE_ACK",
+            "REMOVE_INTENT",
+            "REMOVED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "container_id": {
+          "pattern": "^(?:[a-f0-9]{64})?$",
+          "title": "Container Id",
+          "type": "string"
+        },
+        "execution_verified": {
+          "const": false,
+          "default": false,
+          "title": "Execution Verified",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ownership",
+        "state",
+        "container_id"
+      ],
+      "title": "StrategyContainerRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "const": "UNATTESTED_PREFIX_COMPLETED_AND_REMOVED",
+      "default": "UNATTESTED_PREFIX_COMPLETED_AND_REMOVED",
+      "title": "State",
+      "type": "string"
+    },
+    "ownership": {
+      "$ref": "#/$defs/StrategyContainerOwnership"
+    },
+    "create_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Create Sha256",
+      "type": "string"
+    },
+    "start_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Start Sha256",
+      "type": "string"
+    },
+    "output_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Output Sha256",
+      "type": "string"
+    },
+    "exit_metadata_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Exit Metadata Sha256",
+      "type": "string"
+    },
+    "target": {
+      "$ref": "#/$defs/CandidateTargetOutput"
+    },
+    "exit": {
+      "$ref": "#/$defs/StrategyContainerExit"
+    },
+    "removal": {
+      "$ref": "#/$defs/StrategyContainerRecord"
+    },
+    "execution_verified": {
+      "const": false,
+      "default": false,
+      "title": "Execution Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "ownership",
+    "create_sha256",
+    "start_sha256",
+    "output_sha256",
+    "exit_metadata_sha256",
+    "target",
+    "exit",
+    "removal"
+  ],
+  "title": "StrategyPrefixExecutionReceipt",
+  "type": "object"
+}

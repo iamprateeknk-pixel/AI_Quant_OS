@@ -1,5 +1,6 @@
-"""Owned strategy create/admission/removal; never start or execute a worker."""
+"""Owned strategy container custody, fixed start transport and removal."""
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from hashlib import sha256
 import os
@@ -9,7 +10,10 @@ import shutil
 
 from ai_quant_os.repair_image_inputs import read_repair_image_input
 from ai_quant_os.repair_sandbox import local_docker_command
-from ai_quant_os.strategy_container_contracts import StrategyContainerOwnership
+from ai_quant_os.strategy_container_contracts import (
+    StrategyContainerOwnership,
+    StrategyContainerRecord,
+)
 from ai_quant_os.strategy_container_journal import (
     StrategyContainerJournal,
     reserve_strategy_container,
@@ -28,6 +32,7 @@ from ai_quant_os.strategy_image_content import (
 from ai_quant_os.strategy_image_loading import inspect_strategy_worker_image
 from ai_quant_os.strategy_image_runtime import StrategyImageHandoff, require_strategy_image_engine
 from ai_quant_os.strategy_prefix_jobs import PreparedPrefixJob
+from ai_quant_os.strategy_prefix_execution_contracts import strategy_start_request
 from ai_quant_os.validation_package_contracts import ValidationPackage
 
 
@@ -250,24 +255,129 @@ def cleanup_strategy_container(
     """Inspect exact ownership and remove by immutable ID; unknown absence refuses."""
     if type(job) is not PreparedPrefixJob or type(plan) is not StrategyContainerPlan:
         raise ValueError("Exact strategy plan and original prepared job required")
+    with strategy_container_custody(plan, job, package) as custody:
+        return custody.remove_owned()
+
+
+@dataclass
+class StrategyContainerCustody:
+    """A process-local session, valid only inside the cooperative root context."""
+
+    plan: StrategyContainerPlan
+    job: PreparedPrefixJob
+    package: ValidationPackage
+    journal: StrategyContainerJournal
+    executable: str | None
+    identity: str
+    active: bool = True
+
+    def _require_active(self):
+        if not self.active:
+            raise ValueError("Strategy custody context has closed")
+
+    def current(self) -> StrategyContainerRecord:
+        self._require_active()
+        record = self.journal.current(self.plan.ownership)
+        if record is None:
+            raise ValueError("Strategy owned create intent unavailable")
+        return record
+
+    def inspect_owned(self) -> dict:
+        self._require_active()
+        if self.executable is None:
+            raise ValueError("Strategy owned container runtime unavailable")
+        value = _read(
+            self.executable, "container", "inspect", self.identity, "--format", "{{json .}}"
+        )
+        require_strategy_container_owner(value, self.plan.ownership, self.identity)
+        return value
+
+    def verify_inputs(self) -> None:
+        self._require_active()
+        # This session already owns the kernel root lock. The public verify method
+        # would acquire the same non-reentrant lock a second time.
+        self.job._verify(self.package)
+        _verify(self.plan, self.job)
+
+    def start_attached(self):
+        record = self.current()
+        if record.state != "CREATE_ACK" or record.container_id != self.identity:
+            raise ValueError("Strategy start requires its exact create acknowledgement")
+        value = self.inspect_owned()
+        require_created_strategy_container(value, self.plan.ownership, self.plan.environment)
+        if type(value.get("RestartCount", 0)) is not int or value.get("RestartCount", 0) != 0:
+            raise ValueError("Strategy container has prior restart history")
+        self.verify_inputs()
+        _publish(
+            _sidecar(self.job, "start-attempt"),
+            strategy_start_request(self.plan.ownership, self.plan.create_sha256, self.identity),
+        )
+        return local_docker_command(
+            self.executable, "container", "start", "--attach", self.identity, timeout=45
+        )
+
+    def kill_if_running(self) -> None:
+        value = self.inspect_owned()
+        running = value["State"]["Running"]
+        if type(running) is not bool:
+            raise ValueError("Strategy running state type invalid")
+        if not running:
+            return
+        result = local_docker_command(
+            self.executable, "container", "kill", "--signal", "SIGKILL", value["Id"]
+        )
+        if result.returncode or result.stdout.decode("ascii").strip() != value["Id"]:
+            raise RuntimeError("Strategy kill acknowledgement uncertain")
+
+    def remove_owned(self) -> StrategyContainerRecord:
+        record = self.current()
+        if record.state == "REMOVED":
+            return record
+        self.executable = _executable(self.plan)
+        value = self.inspect_owned()
+        cid = value["Id"]
+        self.journal.removal_intent(self.plan.ownership, cid)
+        result = local_docker_command(
+            self.executable, "container", "rm", "--force", "--volumes", cid
+        )
+        if result.returncode or result.stdout.decode("ascii").strip() != cid:
+            raise RuntimeError("Strategy removal unconfirmed; retain ownership and inputs")
+        return self.journal.acknowledge_removal(self.plan.ownership, cid)
+
+    def terminate_and_remove(self) -> StrategyContainerRecord:
+        try:
+            self.kill_if_running()
+        except (OSError, ValueError, RuntimeError):
+            # Independently inspected force-removal is the stronger terminal
+            # acknowledgement when a kill/inspection outcome is uncertain.
+            return self.remove_owned()
+        return self.remove_owned()
+
+
+@contextmanager
+def strategy_container_custody(
+    plan: StrategyContainerPlan, job: PreparedPrefixJob, package: ValidationPackage
+):
+    if type(job) is not PreparedPrefixJob or type(plan) is not StrategyContainerPlan:
+        raise ValueError("Exact strategy plan and original prepared job required")
     with job.admitted(package):
         ownership = _verify(plan, job)
         if read_repair_image_input(_sidecar(job, "create-attempt"), 8192) != _attempt(plan):
             raise ValueError("Strategy create attempt custody changed")
         with StrategyContainerJournal(job.path.parent) as journal:
-            current = journal.current(ownership)
-            if current is None:
+            record = journal.current(ownership)
+            if record is None:
                 raise ValueError("Strategy create intent unavailable")
-            if current.state == "REMOVED":
-                return current
-            executable = _executable(plan)
-            identity = current.container_id or ownership.container_name
-            value = _read(executable, "container", "inspect", identity, "--format", "{{json .}}")
-            cid = require_strategy_container_owner(value, ownership, identity)
-            journal.removal_intent(ownership, cid)
-            result = local_docker_command(
-                executable, "container", "rm", "--force", "--volumes", cid
+            executable = None if record.state == "REMOVED" else _executable(plan)
+            custody = StrategyContainerCustody(
+                plan,
+                job,
+                package,
+                journal,
+                executable,
+                record.container_id or ownership.container_name,
             )
-            if result.returncode or result.stdout.decode("ascii").strip() != cid:
-                raise RuntimeError("Strategy removal unconfirmed; retain ownership and inputs")
-            return journal.acknowledge_removal(ownership, cid)
+            try:
+                yield custody
+            finally:
+                custody.active = False
