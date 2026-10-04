@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "SignalDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "execute_at": {
+          "format": "date-time",
+          "title": "Execute At",
+          "type": "string"
+        },
+        "history_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "History Sha256",
+          "type": "string"
+        },
+        "target": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Target",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "execute_at",
+        "history_sha256",
+        "target"
+      ],
+      "title": "SignalDecision",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "dataset_ref": {
+      "pattern": "^research-data:[a-f0-9]{64}$",
+      "title": "Dataset Ref",
+      "type": "string"
+    },
+    "dataset_fingerprint": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Dataset Fingerprint",
+      "type": "string"
+    },
+    "decisions": {
+      "items": {
+        "$ref": "#/$defs/SignalDecision"
+      },
+      "maxItems": 4096,
+      "minItems": 2,
+      "title": "Decisions",
+      "type": "array"
+    },
+    "provenance": {
+      "const": "OPERATOR_SUPPLIED_UNATTESTED_TARGETS",
+      "default": "OPERATOR_SUPPLIED_UNATTESTED_TARGETS",
+      "title": "Provenance",
+      "type": "string"
+    },
+    "source_execution_status": {
+      "const": "UNATTESTED",
+      "default": "UNATTESTED",
+      "title": "Source Execution Status",
+      "type": "string"
+    },
+    "execution_timing": {
+      "const": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+      "default": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+      "title": "Execution Timing",
+      "type": "string"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "promotion_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Authorized",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "package_ref",
+    "candidate_ref",
+    "dataset_ref",
+    "dataset_fingerprint",
+    "decisions"
+  ],
+  "title": "SignalTape",
+  "type": "object"
+}

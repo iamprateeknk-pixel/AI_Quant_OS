@@ -57,3 +57,6 @@ src/ai_quant_os/validation_package*.py text eol=lf
 src/ai_quant_os/research_data_parsing.py text eol=lf
 docs/schemas/validation-package.schema.json text eol=lf
 docs/schemas/validation-plan.schema.json text eol=lf
+src/ai_quant_os/signal_tape*.py text eol=lf
+docs/schemas/signal-tape.schema.json text eol=lf
+docs/schemas/signal-tape-replay.schema.json text eol=lf
