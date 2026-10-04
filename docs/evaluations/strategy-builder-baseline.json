@@ -1,0 +1,345 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "A09",
+  "agent_version": "0.2.0",
+  "fixture_sha256": "393fc5940ba0d9642ae8bab9766c0e1f1f3fe8fdc8a2860c0a6c4ae2f26a59f9",
+  "evaluator_sha256": "2eb6b258b2754a0af5dfdcf5a281ba7773d69fe0cdad15f593035e3783adf25a",
+  "provenance": "SYNTHETIC_OPERATOR_REVIEW_AND_INERT_ARTIFACT_REPLAY_NOT_STRATEGY_VALIDATION",
+  "source_pins": [
+    {
+      "path": "hypothesis_review_contracts.py",
+      "sha256": "57022eeae97f218ada67946aff3da9fb47a7835badb18f75aec3da3bb6959d2d"
+    },
+    {
+      "path": "strategy_candidate_contracts.py",
+      "sha256": "044745f2840ad3040fca11cf4b9160158d9a53b11d1c5a2d890b01ad0b720353"
+    },
+    {
+      "path": "strategy_builder.py",
+      "sha256": "18d3457244ec40d1c07a81e18241ac4e66cc5240f5add6384a83914c95a06872"
+    },
+    {
+      "path": "strategy_build_store.py",
+      "sha256": "b5f2406f9013fc42fa78f977b86b516898560dc1b43cc743dc0aed513220512a"
+    },
+    {
+      "path": "strategy_builder_sources.py",
+      "sha256": "c26b973e68124380db7186fa963116934ddd4f511397e79ce4b7b050572df08f"
+    },
+    {
+      "path": "strategy_builder_agent.py",
+      "sha256": "b99da6e5153cf8d63f2b1bd2d1c0eb23e57491787934c327c4e6d5925fce738a"
+    },
+    {
+      "path": "strategy_builder_service.py",
+      "sha256": "ca992957ff4a2a880d16eaccc14950d16c0ebef2f02c134bf5c3b2cfe8e51af8"
+    },
+    {
+      "path": "strategy_builder_api.py",
+      "sha256": "ef18020672cc0db7273a5876f496e66335975b08a45da594674bea619c76629d"
+    }
+  ],
+  "case_count": 2,
+  "matching_cases": 2,
+  "proposed_code_executed": false,
+  "isolation_verified": false,
+  "promotion_approved": false,
+  "results": [
+    {
+      "case_id": "continuation",
+      "restart_exact": true,
+      "controls_unchanged": true,
+      "matches": true,
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A09",
+        "agent_version": "0.2.0",
+        "task_id": "continuation-build",
+        "input_refs": [
+          "context-evidence:e2ab4c019de1c129e3d98e1c49b3c1134f7410a3f0ab4d13c28871e0741ff626",
+          "context-evidence:31d201f83dc3ca5b042f4073e2f8bcb0a2b66817628b2f11ad9bcf88e09b05c0",
+          "context-evidence:becb172810786ad45f8070dd72bf3382b849d177758fe1d3458fd0cababa13cc"
+        ],
+        "evidence_refs": [
+          "context-evidence:e2ab4c019de1c129e3d98e1c49b3c1134f7410a3f0ab4d13c28871e0741ff626",
+          "context-evidence:31d201f83dc3ca5b042f4073e2f8bcb0a2b66817628b2f11ad9bcf88e09b05c0",
+          "context-evidence:becb172810786ad45f8070dd72bf3382b849d177758fe1d3458fd0cababa13cc"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-04T12:00:00Z",
+        "valid_until": "2026-10-04T12:00:05Z",
+        "contradictions": [
+          "INPUT_HISTORY_CONTAINS_ONLY_COMPLETED_BARS",
+          "EXECUTE_AT_NEXT_BAR_OPEN_WITHOUT_LOOKAHEAD",
+          "SINGLE_INSTRUMENT_LONG_SHORT_FLAT_UNIT_TARGETS",
+          "PROPOSED_SOURCE_NOT_SUPPORTED_BY_INSTALLED_BUILTIN_RUNNER",
+          "BROKER_COSTS_AND_ALPHA_ACCEPTANCE_UNASSESSED",
+          "INDEPENDENT_ISOLATED_TEST_AND_HOLDOUT_VALIDATION_REQUIRED"
+        ],
+        "trace_id": "76c23656-d2af-40ad-b915-ceaf72131448",
+        "requires_escalation": true,
+        "output_type": "StrategyCandidate",
+        "model_route": "DETERMINISTIC_ONLY",
+        "candidate_ref": "strategy-candidate:767e07430d0212dfdcb4411750122003d423687de0438e1b56c87302d0d2b7ec",
+        "review_ref": "hypothesis-review:57b5c9459489ec8dc4c615bbeaa26d2593a80953d4924deacad3d6223f914de7",
+        "genome": {
+          "strategy_ref": "research-direction-a3575e7cbb57cad3@0.1.0",
+          "input_kind": "BAR",
+          "parameters": []
+        },
+        "tests_status": "NOT_RUN",
+        "isolation_verified": false,
+        "execution_authorized": false,
+        "promotion_authorized": false,
+        "runtime_registered": false,
+        "hard_gate_owner": "ResearchPipeline"
+      },
+      "candidate": {
+        "schema_version": "1.0",
+        "context_ref": "agent-context:109e8b794110eeaf17115661eab8569a87cbc60c732be0ac3f10ea4dafbba754",
+        "task_id": "continuation-build",
+        "review": {
+          "schema_version": "1.0",
+          "review_id": "continuation",
+          "run_id": "continuation",
+          "graph_record_sha256": "27f8f07bd7d196319754f5dd5810c6463288426adad2badfba4a0e6fd25f29bd",
+          "hypothesis": {
+            "dataset_ref": "research-data:b1a19927bd1fa3c8eb5eda3495de7524efc9146a9d49d9fa316886f5830c2985",
+            "dataset_fingerprint": "6e0d9c96f49e4795f805e46213f0c7e60c5a1fb1f2458e9e4a15f3bdd4406881",
+            "instrument_id": "EURUSD",
+            "development_end": "2026-10-01T00:11:00Z",
+            "rule": "FOLLOW_PREVIOUS_CLOSE_DIRECTION",
+            "description": "For EURUSD, test whether follow previous close direction at the next bar open yields positive net P&L on separate later data after measured costs.",
+            "eligible_pairs": 10,
+            "same_direction_pairs": 10,
+            "observed_direction_persistence": "1",
+            "execution_timing": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+            "signal_history_bars": 2,
+            "required_data": [
+              "SEPARATE_CHRONOLOGICAL_OUT_OF_SAMPLE_BARS",
+              "MEASURED_BROKER_COST_MODEL",
+              "CAUSAL_NEXT_BAR_OPEN_REPLAY",
+              "PREDECLARED_MULTIPLE_TESTING_POLICY"
+            ],
+            "falsification_test": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+            "expected_costs": {
+              "status": "UNAVAILABLE",
+              "spread_observation_count": 0,
+              "minimum_recorded_spread_bps": null,
+              "maximum_recorded_spread_bps": null,
+              "commission_status": "UNAVAILABLE",
+              "slippage_status": "UNAVAILABLE",
+              "financing_status": "UNAVAILABLE",
+              "source": "ARCHIVED_PAPER_QUOTES_ONLY"
+            },
+            "validation_status": "NOT_RUN",
+            "alpha_acceptance": "UNASSESSED"
+          },
+          "rationale": "Declared synthetic development construction review; no alpha acceptance.",
+          "reviewed_at": "2026-10-04T12:00:00Z",
+          "valid_until": "2026-10-04T13:00:00Z",
+          "decision": "AUTHORIZE_INERT_CANDIDATE_BUILD",
+          "reviewer_basis": "LOCAL_OPERATOR_TOKEN",
+          "alpha_acceptance": "UNASSESSED",
+          "execution_authorized": false,
+          "promotion_authorized": false
+        },
+        "genome": {
+          "strategy_ref": "research-direction-a3575e7cbb57cad3@0.1.0",
+          "input_kind": "BAR",
+          "parameters": []
+        },
+        "genome_sha256": "87e535e20be3afdc3cdca9bc8f9ab0e65468e0b633ede41443992b54057ead80",
+        "files": [
+          {
+            "path": "candidate.py",
+            "text": "\"\"\"Unverified research candidate. Import only inside an admitted isolated worker.\"\"\"\nfrom dataclasses import dataclass\nfrom ai_quant_os.market_data import Bar\n\n\n@dataclass(frozen=True)\nclass HypothesisDirection:\n    def target_position(self, history: tuple[Bar, ...]) -> int:\n        if any(bar.instrument_id != \"EURUSD\" for bar in history):\n            raise ValueError(\"Unexpected candidate instrument\")\n        if len(history) < 2:\n            return 0\n        prior, latest = history[-2:]\n        if prior.observed_at >= latest.observed_at:\n            raise ValueError(\"Completed history must be chronological\")\n        direction = 1 if latest.close > prior.close else -1 if latest.close < prior.close else 0\n        return 1 * direction\n",
+            "sha256": "00410232507cbec680fc581636a1393fbcf9c148f58a59e2e1859a93d8fd91df"
+          },
+          {
+            "path": "test_candidate.py",
+            "text": "\"\"\"Proposed candidate tests; retained but NOT RUN on the parent host.\"\"\"\nfrom datetime import datetime, timedelta, timezone\nfrom decimal import Decimal\nimport pytest\nfrom ai_quant_os.market_data import Bar\nfrom candidate import HypothesisDirection\n\n\ndef bar(minute, price, instrument=\"EURUSD\"):\n    p = Decimal(price)\n    return Bar(instrument, datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(minutes=minute), p, p, p, p, Decimal(1))\n\n\n@pytest.mark.parametrize(\"prices,target\", [((),0), ((\"1\",),0), ((\"1\",\"2\"),1), ((\"2\",\"1\"),-1), ((\"1\",\"1\"),0)])\ndef test_closed_direction_targets(prices,target):\n    assert HypothesisDirection().target_position(tuple(bar(i,p) for i,p in enumerate(prices))) == target\n\n\ndef test_wrong_instrument_and_nonchronological_history_are_rejected():\n    with pytest.raises(ValueError):\n        HypothesisDirection().target_position((bar(0,\"1\",\"OTHER\"),))\n    with pytest.raises(ValueError):\n        HypothesisDirection().target_position((bar(1,\"1\"),bar(0,\"2\")))\n",
+            "sha256": "86677132a993433a8c9e4db5b77daa56dc99bcb221d3e5e6bc608c9c9bd56e2b"
+          }
+        ],
+        "sdk_source_pins": [
+          [
+            "market_data.py",
+            "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+          ],
+          [
+            "strategy_contracts.py",
+            "de94146b3b137e02cd5f39e8b3f439f7b02555799c8cf37e4567369e32518d50"
+          ]
+        ],
+        "feature": "PREVIOUS_CLOSED_BAR_DIRECTION",
+        "entry_point": "candidate:HypothesisDirection",
+        "execution_timing": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+        "assumptions": [
+          "INPUT_HISTORY_CONTAINS_ONLY_COMPLETED_BARS",
+          "EXECUTE_AT_NEXT_BAR_OPEN_WITHOUT_LOOKAHEAD",
+          "SINGLE_INSTRUMENT_LONG_SHORT_FLAT_UNIT_TARGETS",
+          "PROPOSED_SOURCE_NOT_SUPPORTED_BY_INSTALLED_BUILTIN_RUNNER",
+          "BROKER_COSTS_AND_ALPHA_ACCEPTANCE_UNASSESSED",
+          "INDEPENDENT_ISOLATED_TEST_AND_HOLDOUT_VALIDATION_REQUIRED"
+        ],
+        "validation_status": "NOT_RUN",
+        "tests_status": "NOT_RUN",
+        "compiler_status": "NOT_RUN",
+        "isolation_verified": false,
+        "execution_authorized": false,
+        "promotion_authorized": false,
+        "runtime_registered": false
+      }
+    },
+    {
+      "case_id": "reversal",
+      "restart_exact": true,
+      "controls_unchanged": true,
+      "matches": true,
+      "output": {
+        "schema_version": "2.0",
+        "agent_id": "A09",
+        "agent_version": "0.2.0",
+        "task_id": "reversal-build",
+        "input_refs": [
+          "context-evidence:5f0f12acd1e34b437bd0ad654f30ca5e452a533ef786f850a59494ab057abed0",
+          "context-evidence:31d201f83dc3ca5b042f4073e2f8bcb0a2b66817628b2f11ad9bcf88e09b05c0",
+          "context-evidence:becb172810786ad45f8070dd72bf3382b849d177758fe1d3458fd0cababa13cc"
+        ],
+        "evidence_refs": [
+          "context-evidence:5f0f12acd1e34b437bd0ad654f30ca5e452a533ef786f850a59494ab057abed0",
+          "context-evidence:31d201f83dc3ca5b042f4073e2f8bcb0a2b66817628b2f11ad9bcf88e09b05c0",
+          "context-evidence:becb172810786ad45f8070dd72bf3382b849d177758fe1d3458fd0cababa13cc"
+        ],
+        "confidence": "0",
+        "uncertainty": "1",
+        "created_at": "2026-10-04T12:00:00Z",
+        "valid_until": "2026-10-04T12:00:05Z",
+        "contradictions": [
+          "INPUT_HISTORY_CONTAINS_ONLY_COMPLETED_BARS",
+          "EXECUTE_AT_NEXT_BAR_OPEN_WITHOUT_LOOKAHEAD",
+          "SINGLE_INSTRUMENT_LONG_SHORT_FLAT_UNIT_TARGETS",
+          "PROPOSED_SOURCE_NOT_SUPPORTED_BY_INSTALLED_BUILTIN_RUNNER",
+          "BROKER_COSTS_AND_ALPHA_ACCEPTANCE_UNASSESSED",
+          "INDEPENDENT_ISOLATED_TEST_AND_HOLDOUT_VALIDATION_REQUIRED"
+        ],
+        "trace_id": "d7b9a01b-49d5-4ece-be93-64d0e6f5e690",
+        "requires_escalation": true,
+        "output_type": "StrategyCandidate",
+        "model_route": "DETERMINISTIC_ONLY",
+        "candidate_ref": "strategy-candidate:8705bc5620bc6951debb6396ab3c00f3a96e0a57398399c37ceffbc5d1b1edff",
+        "review_ref": "hypothesis-review:896e990d7b3e480ae68496924b50c8bfa4df4b8788599d222aa1c5e7f6766886",
+        "genome": {
+          "strategy_ref": "research-direction-0b6188072468cbc2@0.1.0",
+          "input_kind": "BAR",
+          "parameters": []
+        },
+        "tests_status": "NOT_RUN",
+        "isolation_verified": false,
+        "execution_authorized": false,
+        "promotion_authorized": false,
+        "runtime_registered": false,
+        "hard_gate_owner": "ResearchPipeline"
+      },
+      "candidate": {
+        "schema_version": "1.0",
+        "context_ref": "agent-context:c8c7ea35f38f19b2eb23671d474e02a6ed602f2bf4806dfa106c058d5f239135",
+        "task_id": "reversal-build",
+        "review": {
+          "schema_version": "1.0",
+          "review_id": "reversal",
+          "run_id": "reversal",
+          "graph_record_sha256": "f0734e216910c7eb0183f8677003f107599b1666b1cf3f78a89af225be3219b9",
+          "hypothesis": {
+            "dataset_ref": "research-data:f93136b5c111b3594823f9b5a034a82ae3f8e0fe141cc4ebf0b549a5c7feb5b8",
+            "dataset_fingerprint": "a8f998b2abe8e43690d9bdc17b7d777215aba8c0272415d41bfbeadcb09344e3",
+            "instrument_id": "EURUSD",
+            "development_end": "2026-10-01T00:11:00Z",
+            "rule": "FADE_PREVIOUS_CLOSE_DIRECTION",
+            "description": "For EURUSD, test whether fade previous close direction at the next bar open yields positive net P&L on separate later data after measured costs.",
+            "eligible_pairs": 10,
+            "same_direction_pairs": 0,
+            "observed_direction_persistence": "0",
+            "execution_timing": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+            "signal_history_bars": 2,
+            "required_data": [
+              "SEPARATE_CHRONOLOGICAL_OUT_OF_SAMPLE_BARS",
+              "MEASURED_BROKER_COST_MODEL",
+              "CAUSAL_NEXT_BAR_OPEN_REPLAY",
+              "PREDECLARED_MULTIPLE_TESTING_POLICY"
+            ],
+            "falsification_test": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+            "expected_costs": {
+              "status": "UNAVAILABLE",
+              "spread_observation_count": 0,
+              "minimum_recorded_spread_bps": null,
+              "maximum_recorded_spread_bps": null,
+              "commission_status": "UNAVAILABLE",
+              "slippage_status": "UNAVAILABLE",
+              "financing_status": "UNAVAILABLE",
+              "source": "ARCHIVED_PAPER_QUOTES_ONLY"
+            },
+            "validation_status": "NOT_RUN",
+            "alpha_acceptance": "UNASSESSED"
+          },
+          "rationale": "Declared synthetic development construction review; no alpha acceptance.",
+          "reviewed_at": "2026-10-04T12:00:00Z",
+          "valid_until": "2026-10-04T13:00:00Z",
+          "decision": "AUTHORIZE_INERT_CANDIDATE_BUILD",
+          "reviewer_basis": "LOCAL_OPERATOR_TOKEN",
+          "alpha_acceptance": "UNASSESSED",
+          "execution_authorized": false,
+          "promotion_authorized": false
+        },
+        "genome": {
+          "strategy_ref": "research-direction-0b6188072468cbc2@0.1.0",
+          "input_kind": "BAR",
+          "parameters": []
+        },
+        "genome_sha256": "601ebb49fc0797faa189a91a056ace0efc6bfe322228ac70e86806301702c769",
+        "files": [
+          {
+            "path": "candidate.py",
+            "text": "\"\"\"Unverified research candidate. Import only inside an admitted isolated worker.\"\"\"\nfrom dataclasses import dataclass\nfrom ai_quant_os.market_data import Bar\n\n\n@dataclass(frozen=True)\nclass HypothesisDirection:\n    def target_position(self, history: tuple[Bar, ...]) -> int:\n        if any(bar.instrument_id != \"EURUSD\" for bar in history):\n            raise ValueError(\"Unexpected candidate instrument\")\n        if len(history) < 2:\n            return 0\n        prior, latest = history[-2:]\n        if prior.observed_at >= latest.observed_at:\n            raise ValueError(\"Completed history must be chronological\")\n        direction = 1 if latest.close > prior.close else -1 if latest.close < prior.close else 0\n        return -1 * direction\n",
+            "sha256": "1833d0110e3aca14dbee89de042187fc4efb681fe8f9abbcfbd7b6abdf447684"
+          },
+          {
+            "path": "test_candidate.py",
+            "text": "\"\"\"Proposed candidate tests; retained but NOT RUN on the parent host.\"\"\"\nfrom datetime import datetime, timedelta, timezone\nfrom decimal import Decimal\nimport pytest\nfrom ai_quant_os.market_data import Bar\nfrom candidate import HypothesisDirection\n\n\ndef bar(minute, price, instrument=\"EURUSD\"):\n    p = Decimal(price)\n    return Bar(instrument, datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(minutes=minute), p, p, p, p, Decimal(1))\n\n\n@pytest.mark.parametrize(\"prices,target\", [((),0), ((\"1\",),0), ((\"1\",\"2\"),-1), ((\"2\",\"1\"),1), ((\"1\",\"1\"),0)])\ndef test_closed_direction_targets(prices,target):\n    assert HypothesisDirection().target_position(tuple(bar(i,p) for i,p in enumerate(prices))) == target\n\n\ndef test_wrong_instrument_and_nonchronological_history_are_rejected():\n    with pytest.raises(ValueError):\n        HypothesisDirection().target_position((bar(0,\"1\",\"OTHER\"),))\n    with pytest.raises(ValueError):\n        HypothesisDirection().target_position((bar(1,\"1\"),bar(0,\"2\")))\n",
+            "sha256": "c66b2eb2ef71dc04c0766617634934cf94e1722db6c10fa4f38e4058bbd2cd3f"
+          }
+        ],
+        "sdk_source_pins": [
+          [
+            "market_data.py",
+            "8724a770a429d6db9922bacee7c7913013d4ae607801601107a1ad2ac5d83a90"
+          ],
+          [
+            "strategy_contracts.py",
+            "de94146b3b137e02cd5f39e8b3f439f7b02555799c8cf37e4567369e32518d50"
+          ]
+        ],
+        "feature": "PREVIOUS_CLOSED_BAR_DIRECTION",
+        "entry_point": "candidate:HypothesisDirection",
+        "execution_timing": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+        "assumptions": [
+          "INPUT_HISTORY_CONTAINS_ONLY_COMPLETED_BARS",
+          "EXECUTE_AT_NEXT_BAR_OPEN_WITHOUT_LOOKAHEAD",
+          "SINGLE_INSTRUMENT_LONG_SHORT_FLAT_UNIT_TARGETS",
+          "PROPOSED_SOURCE_NOT_SUPPORTED_BY_INSTALLED_BUILTIN_RUNNER",
+          "BROKER_COSTS_AND_ALPHA_ACCEPTANCE_UNASSESSED",
+          "INDEPENDENT_ISOLATED_TEST_AND_HOLDOUT_VALIDATION_REQUIRED"
+        ],
+        "validation_status": "NOT_RUN",
+        "tests_status": "NOT_RUN",
+        "compiler_status": "NOT_RUN",
+        "isolation_verified": false,
+        "execution_authorized": false,
+        "promotion_authorized": false,
+        "runtime_registered": false
+      }
+    }
+  ]
+}

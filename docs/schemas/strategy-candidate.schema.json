@@ -1,0 +1,224 @@
+{
+  "$defs": {
+    "StrategyGenome": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameters",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind"
+      ],
+      "title": "StrategyGenome",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A09",
+      "default": "A09",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.2.0",
+      "default": "0.2.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "1",
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "output_type": {
+      "const": "StrategyCandidate",
+      "default": "StrategyCandidate",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "review_ref": {
+      "pattern": "^hypothesis-review:[a-f0-9]{64}$",
+      "title": "Review Ref",
+      "type": "string"
+    },
+    "genome": {
+      "$ref": "#/$defs/StrategyGenome"
+    },
+    "tests_status": {
+      "const": "NOT_RUN",
+      "default": "NOT_RUN",
+      "title": "Tests Status",
+      "type": "string"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "promotion_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Authorized",
+      "type": "boolean"
+    },
+    "runtime_registered": {
+      "const": false,
+      "default": false,
+      "title": "Runtime Registered",
+      "type": "boolean"
+    },
+    "hard_gate_owner": {
+      "const": "ResearchPipeline",
+      "default": "ResearchPipeline",
+      "title": "Hard Gate Owner",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "candidate_ref",
+    "review_ref",
+    "genome"
+  ],
+  "title": "StrategyCandidate",
+  "type": "object"
+}

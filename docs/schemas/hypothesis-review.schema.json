@@ -1,0 +1,303 @@
+{
+  "$defs": {
+    "ResearchExpectedCosts": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "UNAVAILABLE",
+            "HISTORICAL_SPREAD_ONLY"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "spread_observation_count": {
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Spread Observation Count",
+          "type": "integer"
+        },
+        "minimum_recorded_spread_bps": {
+          "anyOf": [
+            {
+              "maximum": 20000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Minimum Recorded Spread Bps"
+        },
+        "maximum_recorded_spread_bps": {
+          "anyOf": [
+            {
+              "maximum": 20000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Maximum Recorded Spread Bps"
+        },
+        "commission_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Commission Status",
+          "type": "string"
+        },
+        "slippage_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Slippage Status",
+          "type": "string"
+        },
+        "financing_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Financing Status",
+          "type": "string"
+        },
+        "source": {
+          "const": "ARCHIVED_PAPER_QUOTES_ONLY",
+          "default": "ARCHIVED_PAPER_QUOTES_ONLY",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "spread_observation_count",
+        "minimum_recorded_spread_bps",
+        "maximum_recorded_spread_bps"
+      ],
+      "title": "ResearchExpectedCosts",
+      "type": "object"
+    },
+    "ResearchHypothesis": {
+      "additionalProperties": false,
+      "properties": {
+        "dataset_ref": {
+          "pattern": "^research-data:[a-f0-9]{64}$",
+          "title": "Dataset Ref",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "instrument_id": {
+          "enum": [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "EURJPY"
+          ],
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "development_end": {
+          "format": "date-time",
+          "title": "Development End",
+          "type": "string"
+        },
+        "rule": {
+          "enum": [
+            "FOLLOW_PREVIOUS_CLOSE_DIRECTION",
+            "FADE_PREVIOUS_CLOSE_DIRECTION"
+          ],
+          "title": "Rule",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "eligible_pairs": {
+          "maximum": 4094,
+          "minimum": 8,
+          "title": "Eligible Pairs",
+          "type": "integer"
+        },
+        "same_direction_pairs": {
+          "maximum": 4094,
+          "minimum": 0,
+          "title": "Same Direction Pairs",
+          "type": "integer"
+        },
+        "observed_direction_persistence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Observed Direction Persistence"
+        },
+        "execution_timing": {
+          "const": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "default": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "title": "Execution Timing",
+          "type": "string"
+        },
+        "signal_history_bars": {
+          "const": 2,
+          "default": 2,
+          "title": "Signal History Bars",
+          "type": "integer"
+        },
+        "required_data": {
+          "default": [
+            "SEPARATE_CHRONOLOGICAL_OUT_OF_SAMPLE_BARS",
+            "MEASURED_BROKER_COST_MODEL",
+            "CAUSAL_NEXT_BAR_OPEN_REPLAY",
+            "PREDECLARED_MULTIPLE_TESTING_POLICY"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Data",
+          "type": "array"
+        },
+        "falsification_test": {
+          "const": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+          "default": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+          "title": "Falsification Test",
+          "type": "string"
+        },
+        "expected_costs": {
+          "$ref": "#/$defs/ResearchExpectedCosts"
+        },
+        "validation_status": {
+          "const": "NOT_RUN",
+          "default": "NOT_RUN",
+          "title": "Validation Status",
+          "type": "string"
+        },
+        "alpha_acceptance": {
+          "const": "UNASSESSED",
+          "default": "UNASSESSED",
+          "title": "Alpha Acceptance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_ref",
+        "dataset_fingerprint",
+        "instrument_id",
+        "development_end",
+        "rule",
+        "description",
+        "eligible_pairs",
+        "same_direction_pairs",
+        "observed_direction_persistence",
+        "expected_costs"
+      ],
+      "title": "ResearchHypothesis",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "review_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,64}$",
+      "title": "Review Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,128}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "graph_record_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Graph Record Sha256",
+      "type": "string"
+    },
+    "hypothesis": {
+      "$ref": "#/$defs/ResearchHypothesis"
+    },
+    "rationale": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "reviewed_at": {
+      "format": "date-time",
+      "title": "Reviewed At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "decision": {
+      "const": "AUTHORIZE_INERT_CANDIDATE_BUILD",
+      "default": "AUTHORIZE_INERT_CANDIDATE_BUILD",
+      "title": "Decision",
+      "type": "string"
+    },
+    "reviewer_basis": {
+      "const": "LOCAL_OPERATOR_TOKEN",
+      "default": "LOCAL_OPERATOR_TOKEN",
+      "title": "Reviewer Basis",
+      "type": "string"
+    },
+    "alpha_acceptance": {
+      "const": "UNASSESSED",
+      "default": "UNASSESSED",
+      "title": "Alpha Acceptance",
+      "type": "string"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "promotion_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Authorized",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "review_id",
+    "run_id",
+    "graph_record_sha256",
+    "hypothesis",
+    "rationale",
+    "reviewed_at",
+    "valid_until"
+  ],
+  "title": "HypothesisReview",
+  "type": "object"
+}

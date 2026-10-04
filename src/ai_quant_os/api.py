@@ -94,6 +94,11 @@ from ai_quant_os.research_hypothesis_sources import (
     hypothesis_sources,
 )
 from ai_quant_os.graph_ledger import GraphLedger
+from ai_quant_os.strategy_build_store import StrategyBuildStore
+from ai_quant_os.strategy_builder_agent import builder_implementation
+from ai_quant_os.strategy_builder_api import install_builder_routes
+from ai_quant_os.strategy_builder_sources import builder_sources
+from ai_quant_os.strategy_builder_service import CandidateCreate
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
@@ -303,6 +308,11 @@ def create_app(
         if configured_path
         else None
     )
+    strategy_build_store = StrategyBuildStore(
+        configured_path.with_name(configured_path.stem + ".strategy-builds.sqlite3")
+        if configured_path
+        else None
+    )
     ingress_health = IngressHealth()
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
@@ -384,11 +394,18 @@ def create_app(
                     ("A06", "0.2.0"): event_implementation(agent_registry),
                     ("A07", "0.2.0"): integrity_implementation(agent_registry),
                     ("A08", "0.2.0"): hypothesis_implementation(agent_registry),
+                    ("A09", "0.2.0"): builder_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(
                     agent_registry,
                     {
+                        "CANDIDATE_CREATE": CandidateCreate(
+                            strategy_build_store,
+                            agent_registry,
+                            context=archived_agent_context,
+                            clock=current_time,
+                        ),
                         "TASK_ORCHESTRATE": SupervisorDispatch(
                             agent_registry,
                             runtime=require_graph_runtime,
@@ -1164,6 +1181,54 @@ def create_app(
         if enabled_health:
             await owned_research_call(health_worker.observe_receipt, receipt)
 
+    def checked_research_graph(run_id: str):
+        if configured_path is None:
+            raise ValueError("Persistent research graphs required")
+        if not state_store.audit_integrity().valid:
+            raise ValueError("Research review audit admission failed")
+        if health_worker:
+            health_worker.verify_admission()
+        agent_registry.require_tool("A08", "0.2.0", "TRAINING_READ", scope="SANDBOX")
+        graph_path = configured_path.with_name(configured_path.stem + ".agents.sqlite3")
+        with GraphLedger.archive(graph_path) as archive:
+            return archive.get(run_id)
+
+    async def compile_builder_context(task_id: str, review_ref: str) -> CompiledContext:
+        require_graph_runtime()
+        await supervisor_admission()
+        agent_registry.require_tool("A09", "0.2.0", "CANDIDATE_CREATE", scope="SANDBOX")
+
+        def capture():
+            review = strategy_build_store.active(review_ref, now=current_time())
+            return builder_sources(review, now=current_time())
+
+        sources = await owned_research_call(capture)
+        context = await ContextCompiler(
+            agent_registry,
+            sources,
+            clock=current_time,
+            max_input_bytes=65536,
+            max_context_bytes=100000,
+        ).compile("A09", "0.2.0", task_id=task_id, scope="SANDBOX")
+        state_store.record_context_checkpoint(
+            ContextCheckpoint(
+                schema_version="1.0", manifest=agent_registry.get("A09", "0.2.0"), context=context
+            )
+        )
+        await owned_research_call(
+            lambda: strategy_build_store.active(review_ref, now=current_time())
+        )
+        require_context_for_agent(
+            context,
+            registry=agent_registry,
+            agent_id="A09",
+            agent_version="0.2.0",
+            task_id=task_id,
+            scope="SANDBOX",
+            now=current_time(),
+        )
+        return context
+
     def capture_incident_observation() -> dict:
         incidents = health_worker.store.incidents() if health_worker else None
         health = health_worker.status() if health_worker else None
@@ -1600,6 +1665,20 @@ def create_app(
     install_health_routes(app, require_operator, health_worker, enabled_health)
     install_incident_proposal_routes(app, require_operator, incident_proposal_store)
     install_research_data_routes(app, research_data_catalog, require_operator, current_time)
+    install_builder_routes(
+        app,
+        require_operator,
+        store=strategy_build_store,
+        graph_record=checked_research_graph,
+        clock=current_time,
+        compile_context=compile_builder_context,
+        archived_context=archived_agent_context,
+        runtime=require_graph_runtime,
+        observe_receipt=observe_research_receipt,
+        require_build_permission=lambda: agent_registry.require_tool(
+            "A09", "0.2.0", "CANDIDATE_CREATE", scope="SANDBOX"
+        ),
+    )
     install_hypothesis_routes(
         app,
         require_operator,

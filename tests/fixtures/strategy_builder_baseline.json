@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "provenance": "SYNTHETIC_OPERATOR_REVIEW_AND_INERT_ARTIFACT_REPLAY_NOT_STRATEGY_VALIDATION",
+  "cases": [
+    {
+      "id": "continuation",
+      "as_of": "2026-10-04T12:00:00Z",
+      "closes": [
+        "1.1",
+        "1.1001",
+        "1.1002",
+        "1.1003",
+        "1.1004",
+        "1.1005",
+        "1.1006",
+        "1.1007",
+        "1.1008",
+        "1.1009",
+        "1.101",
+        "1.1011"
+      ],
+      "expected_rule": "FOLLOW_PREVIOUS_CLOSE_DIRECTION"
+    },
+    {
+      "id": "reversal",
+      "as_of": "2026-10-04T12:00:00Z",
+      "closes": [
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001",
+        "1.1",
+        "1.1001"
+      ],
+      "expected_rule": "FADE_PREVIOUS_CLOSE_DIRECTION"
+    }
+  ]
+}
