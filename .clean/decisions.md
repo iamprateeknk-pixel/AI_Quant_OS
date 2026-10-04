@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-05: Publish an exact independently pinned recovery archive before explicitly releasing a successfully completed and audited removed prefix's known inputs. Retain archive/attempt/final observation and journal; recover partial deletion under original package/root/file bindings without recursive cleanup, daemon calls or execution authority. See ADR 0077.
+
 - 2026-10-05: Bind complete operator-pinned successful/removed prefix receipt inventories to original invocation/source/SDK/history identities, canonical numeric tapes and independently checked native replay. Portable metadata grants no local filesystem or execution authority. Keep daemon/source attestation and all promotion gates open. See ADR 0076.
 
 - 2026-10-05: Reserve one fixed attached strategy start before its RPC, bound output and independently check successful owned exit. Attempt exact owned kill/removal on every start path; publish only after acknowledged removal and original-input recheck. Completion remains unattested and inputs retained; offline restoration requires independent hashes. See ADR 0075.

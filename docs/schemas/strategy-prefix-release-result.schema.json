@@ -1,0 +1,69 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "release_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Release Sha256",
+      "type": "string"
+    },
+    "receipt_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Receipt Sha256",
+      "type": "string"
+    },
+    "owner": {
+      "pattern": "^[a-f0-9]{32}$",
+      "title": "Owner",
+      "type": "string"
+    },
+    "container_id": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Container Id",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "invocation_ref": {
+      "pattern": "^candidate-invocation:[a-f0-9]{64}$",
+      "title": "Invocation Ref",
+      "type": "string"
+    },
+    "state": {
+      "const": "PREFIX_INPUTS_RELEASED",
+      "default": "PREFIX_INPUTS_RELEASED",
+      "title": "State",
+      "type": "string"
+    },
+    "execution_verified": {
+      "const": false,
+      "default": false,
+      "title": "Execution Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "release_sha256",
+    "receipt_sha256",
+    "owner",
+    "container_id",
+    "package_ref",
+    "invocation_ref"
+  ],
+  "title": "StrategyPrefixReleaseResult",
+  "type": "object"
+}
