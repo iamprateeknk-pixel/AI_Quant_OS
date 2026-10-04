@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "ImageSourcePin": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "enum": [
+            "worker.py",
+            "base_image.json",
+            "base_index.json",
+            "base_manifest.json",
+            "base_config.json"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ImageSourcePin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "default": "OCI_ARCHIVE_ONLY",
+      "enum": [
+        "OCI_ARCHIVE_ONLY",
+        "ARCHIVE_HASHES_VERIFIED"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "platform": {
+      "const": "linux/amd64",
+      "default": "linux/amd64",
+      "title": "Platform",
+      "type": "string"
+    },
+    "python_version": {
+      "const": "3.11.17",
+      "default": "3.11.17",
+      "title": "Python Version",
+      "type": "string"
+    },
+    "base_manifest_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Base Manifest Digest",
+      "type": "string"
+    },
+    "worker_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Worker Sha256",
+      "type": "string"
+    },
+    "source_pins": {
+      "items": {
+        "$ref": "#/$defs/ImageSourcePin"
+      },
+      "maxItems": 5,
+      "minItems": 5,
+      "title": "Source Pins",
+      "type": "array"
+    },
+    "manifest_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Manifest Digest",
+      "type": "string"
+    },
+    "config_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Config Digest",
+      "type": "string"
+    },
+    "worker_layer_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "title": "Worker Layer Digest",
+      "type": "string"
+    },
+    "archive_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Archive Sha256",
+      "type": "string"
+    },
+    "archive_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 134217728,
+      "title": "Archive Bytes",
+      "type": "integer"
+    },
+    "archive_integrity_verified": {
+      "default": false,
+      "title": "Archive Integrity Verified",
+      "type": "boolean"
+    },
+    "image_verified": {
+      "const": false,
+      "default": false,
+      "title": "Image Verified",
+      "type": "boolean"
+    },
+    "execution_verified": {
+      "const": false,
+      "default": false,
+      "title": "Execution Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    },
+    "source_execution_status": {
+      "const": "NOT_RUN",
+      "default": "NOT_RUN",
+      "title": "Source Execution Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "base_manifest_digest",
+    "worker_sha256",
+    "source_pins",
+    "manifest_digest",
+    "config_digest",
+    "worker_layer_digest",
+    "archive_sha256",
+    "archive_bytes"
+  ],
+  "title": "StrategyWorkerImageReceipt",
+  "type": "object"
+}

@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-05: Assemble the strategy worker OCI archive from independently pinned opaque worker/base bytes. Read-only hash inspection confers no execution or promotion authority. Preserve the older repair path and strategy closures; require external engine/container admission before candidate execution. See ADR 0070.
+
 - 2026-09-28: Implement the first executable slice in Python with FastAPI and pure domain types. Keep the broker route paper-only until later phase gates.
 - 2026-09-28: Require an operator token for local write endpoints. All recovery and live-capital enablement remain absent.
 - 2026-09-28: Add a local Mission Control monitoring UI and SQLite paper receipts, control state, and audit. External brokers, agents and distributed workflows remain incomplete.

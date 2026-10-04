@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "state": "OCI_ARCHIVE_ONLY",
+  "platform": "linux/amd64",
+  "python_version": "3.11.17",
+  "base_manifest_digest": "sha256:31feac62e3aa66d2cdddb4e1f80f839d8f14ad02b98b77e7eee90df6dc65f0c5",
+  "worker_sha256": "c94e1dc2a34c31a76bd42413b16dc4b906cec123e107393156d61ef0f3cc09ee",
+  "source_pins": [
+    {
+      "path": "worker.py",
+      "sha256": "c94e1dc2a34c31a76bd42413b16dc4b906cec123e107393156d61ef0f3cc09ee"
+    },
+    {
+      "path": "base_image.json",
+      "sha256": "ff573cba1440c5efb4da15bcebde35674097d389b8ac622f40e18e33404e71a3"
+    },
+    {
+      "path": "base_index.json",
+      "sha256": "0c2f9c8d0d9dcd10781f9ac49a4d101eacbe73108ff14490a6b1139c985ffcb9"
+    },
+    {
+      "path": "base_manifest.json",
+      "sha256": "31feac62e3aa66d2cdddb4e1f80f839d8f14ad02b98b77e7eee90df6dc65f0c5"
+    },
+    {
+      "path": "base_config.json",
+      "sha256": "5883930d537197d2148ae3b6cdf01f9553435fd209c8d8b5486b6d6a099a293f"
+    }
+  ],
+  "manifest_digest": "sha256:1e0b8a64de1536ba581f7ffaead12574996f48e7385054c62f5a60826ef95e48",
+  "config_digest": "sha256:415c3433e8ec2d3ac89463032e6bcad71e25f58b03632f1fe516b02c100b5cf7",
+  "worker_layer_digest": "sha256:27064ef7a45cf241300393d306d35de2c1b324160855c75bd21d32b1794db3ae",
+  "archive_sha256": "d233bc9c8a2093d18c4392a913db5aaf18d3d27ae5838af58d339653e268f375",
+  "archive_bytes": 48291840,
+  "archive_integrity_verified": false,
+  "image_verified": false,
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "source_execution_status": "NOT_RUN"
+}
