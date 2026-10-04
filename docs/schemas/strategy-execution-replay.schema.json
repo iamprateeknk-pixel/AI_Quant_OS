@@ -1,0 +1,967 @@
+{
+  "$defs": {
+    "CandidateTargetOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "invocation_ref": {
+          "pattern": "^candidate-invocation:[a-f0-9]{64}$",
+          "title": "Invocation Ref",
+          "type": "string"
+        },
+        "target": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Target",
+          "type": "integer"
+        },
+        "status": {
+          "const": "UNATTESTED_TARGET_OUTPUT",
+          "default": "UNATTESTED_TARGET_OUTPUT",
+          "title": "Status",
+          "type": "string"
+        },
+        "isolation_verified": {
+          "const": false,
+          "default": false,
+          "title": "Isolation Verified",
+          "type": "boolean"
+        },
+        "promotion_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Authorized",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "invocation_ref",
+        "target"
+      ],
+      "title": "CandidateTargetOutput",
+      "type": "object"
+    },
+    "SignalDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "execute_at": {
+          "format": "date-time",
+          "title": "Execute At",
+          "type": "string"
+        },
+        "history_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "History Sha256",
+          "type": "string"
+        },
+        "target": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Target",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "execute_at",
+        "history_sha256",
+        "target"
+      ],
+      "title": "SignalDecision",
+      "type": "object"
+    },
+    "SignalReplayCosts": {
+      "additionalProperties": false,
+      "properties": {
+        "spread_bps": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Spread Bps"
+        },
+        "slippage_bps": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Slippage Bps"
+        },
+        "commission_bps": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Commission Bps"
+        },
+        "multiplier": {
+          "anyOf": [
+            {
+              "minimum": 1.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Multiplier"
+        },
+        "basis": {
+          "const": "OPERATOR_DECLARED_SYNTHETIC",
+          "default": "OPERATOR_DECLARED_SYNTHETIC",
+          "title": "Basis",
+          "type": "string"
+        },
+        "fee_model": {
+          "const": "NATIVE_TAKER_NOTIONAL_QUOTE_CURRENCY",
+          "default": "NATIVE_TAKER_NOTIONAL_QUOTE_CURRENCY",
+          "title": "Fee Model",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spread_bps",
+        "slippage_bps",
+        "commission_bps",
+        "multiplier"
+      ],
+      "title": "SignalReplayCosts",
+      "type": "object"
+    },
+    "SignalReplayFill": {
+      "additionalProperties": false,
+      "properties": {
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Price"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "maximum": 1000000.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Quantity"
+        },
+        "fee": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee"
+        }
+      },
+      "required": [
+        "observed_at",
+        "side",
+        "price",
+        "quantity",
+        "fee"
+      ],
+      "title": "SignalReplayFill",
+      "type": "object"
+    },
+    "SignalReplayReport": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "const": "UNATTESTED_NATIVE_REPLAY",
+          "default": "UNATTESTED_NATIVE_REPLAY",
+          "title": "Status",
+          "type": "string"
+        },
+        "venue": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Venue",
+          "type": "string"
+        },
+        "engine": {
+          "const": "NAUTILUS_BACKTEST",
+          "default": "NAUTILUS_BACKTEST",
+          "title": "Engine",
+          "type": "string"
+        },
+        "engine_version": {
+          "const": "1.221.0",
+          "default": "1.221.0",
+          "title": "Engine Version",
+          "type": "string"
+        },
+        "adapter_ref": {
+          "const": "precomputed-signal-tape@0.1.0",
+          "default": "precomputed-signal-tape@0.1.0",
+          "title": "Adapter Ref",
+          "type": "string"
+        },
+        "package_ref": {
+          "pattern": "^validation-package:[a-f0-9]{64}$",
+          "title": "Package Ref",
+          "type": "string"
+        },
+        "tape": {
+          "$ref": "#/$defs/SignalTape"
+        },
+        "instrument_id": {
+          "enum": [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "EURJPY"
+          ],
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "pnl_currency": {
+          "enum": [
+            "USD",
+            "JPY"
+          ],
+          "title": "Pnl Currency",
+          "type": "string"
+        },
+        "account_currency_basis": {
+          "const": "INSTRUMENT_QUOTE_ONLY",
+          "default": "INSTRUMENT_QUOTE_ONLY",
+          "title": "Account Currency Basis",
+          "type": "string"
+        },
+        "bar_execution_model": {
+          "const": "SYNTHETIC_OPEN_CLOSE_QUOTES_NEXT_OPEN_TARGETS",
+          "default": "SYNTHETIC_OPEN_CLOSE_QUOTES_NEXT_OPEN_TARGETS",
+          "title": "Bar Execution Model",
+          "type": "string"
+        },
+        "synthetic_quote_size": {
+          "const": 1000000,
+          "default": 1000000,
+          "title": "Synthetic Quote Size",
+          "type": "integer"
+        },
+        "liquidity_basis": {
+          "const": "FIXED_SYNTHETIC_SIZE_NOT_SOURCE_VOLUME_OR_BROKER_DEPTH",
+          "default": "FIXED_SYNTHETIC_SIZE_NOT_SOURCE_VOLUME_OR_BROKER_DEPTH",
+          "title": "Liquidity Basis",
+          "type": "string"
+        },
+        "collateral_model": {
+          "const": "FULL_TARGET_ASK_NOTIONAL_QUOTE_EQUITY_V1",
+          "default": "FULL_TARGET_ASK_NOTIONAL_QUOTE_EQUITY_V1",
+          "title": "Collateral Model",
+          "type": "string"
+        },
+        "cost_scenario": {
+          "enum": [
+            "BASE",
+            "DECLARED_STRESS"
+          ],
+          "title": "Cost Scenario",
+          "type": "string"
+        },
+        "costs": {
+          "$ref": "#/$defs/SignalReplayCosts"
+        },
+        "quantity": {
+          "maximum": 500000,
+          "minimum": 1,
+          "title": "Quantity",
+          "type": "integer"
+        },
+        "initial_balance": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "maximum": 1000000000000.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Initial Balance"
+        },
+        "final_mark": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Final Mark"
+        },
+        "fills": {
+          "items": {
+            "$ref": "#/$defs/SignalReplayFill"
+          },
+          "maxItems": 4096,
+          "title": "Fills",
+          "type": "array"
+        },
+        "native_order_count": {
+          "maximum": 4096,
+          "minimum": 0,
+          "title": "Native Order Count",
+          "type": "integer"
+        },
+        "final_position": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Final Position"
+        },
+        "net_pnl": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Net Pnl"
+        },
+        "native_realized_pnl": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Native Realized Pnl"
+        },
+        "native_realized_pnl_verification": {
+          "const": "NATIVE_CACHE_VALUE_NOT_INDEPENDENTLY_CHECKED",
+          "default": "NATIVE_CACHE_VALUE_NOT_INDEPENDENTLY_CHECKED",
+          "title": "Native Realized Pnl Verification",
+          "type": "string"
+        },
+        "pnl_method": {
+          "const": "FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK_NOT_LIQUIDATION",
+          "default": "FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK_NOT_LIQUIDATION",
+          "title": "Pnl Method",
+          "type": "string"
+        },
+        "source_execution_status": {
+          "const": "UNATTESTED",
+          "default": "UNATTESTED",
+          "title": "Source Execution Status",
+          "type": "string"
+        },
+        "candidate_code_executed": {
+          "const": false,
+          "default": false,
+          "title": "Candidate Code Executed",
+          "type": "boolean"
+        },
+        "candidate_tests_status": {
+          "const": "NOT_RUN",
+          "default": "NOT_RUN",
+          "title": "Candidate Tests Status",
+          "type": "string"
+        },
+        "isolation_verified": {
+          "const": false,
+          "default": false,
+          "title": "Isolation Verified",
+          "type": "boolean"
+        },
+        "execution_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Execution Authorized",
+          "type": "boolean"
+        },
+        "promotion_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Authorized",
+          "type": "boolean"
+        },
+        "financing_costs": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Financing Costs",
+          "type": "string"
+        },
+        "account_currency_conversion": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Account Currency Conversion",
+          "type": "string"
+        },
+        "alpha_acceptance": {
+          "const": "UNASSESSED",
+          "default": "UNASSESSED",
+          "title": "Alpha Acceptance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "package_ref",
+        "tape",
+        "instrument_id",
+        "pnl_currency",
+        "cost_scenario",
+        "costs",
+        "quantity",
+        "initial_balance",
+        "final_mark",
+        "fills",
+        "native_order_count",
+        "final_position",
+        "net_pnl",
+        "native_realized_pnl"
+      ],
+      "title": "SignalReplayReport",
+      "type": "object"
+    },
+    "SignalTape": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "package_ref": {
+          "pattern": "^validation-package:[a-f0-9]{64}$",
+          "title": "Package Ref",
+          "type": "string"
+        },
+        "candidate_ref": {
+          "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+          "title": "Candidate Ref",
+          "type": "string"
+        },
+        "dataset_ref": {
+          "pattern": "^research-data:[a-f0-9]{64}$",
+          "title": "Dataset Ref",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "decisions": {
+          "items": {
+            "$ref": "#/$defs/SignalDecision"
+          },
+          "maxItems": 4096,
+          "minItems": 2,
+          "title": "Decisions",
+          "type": "array"
+        },
+        "provenance": {
+          "const": "OPERATOR_SUPPLIED_UNATTESTED_TARGETS",
+          "default": "OPERATOR_SUPPLIED_UNATTESTED_TARGETS",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "source_execution_status": {
+          "const": "UNATTESTED",
+          "default": "UNATTESTED",
+          "title": "Source Execution Status",
+          "type": "string"
+        },
+        "execution_timing": {
+          "const": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "default": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "title": "Execution Timing",
+          "type": "string"
+        },
+        "isolation_verified": {
+          "const": false,
+          "default": false,
+          "title": "Isolation Verified",
+          "type": "boolean"
+        },
+        "promotion_authorized": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Authorized",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "package_ref",
+        "candidate_ref",
+        "dataset_ref",
+        "dataset_fingerprint",
+        "decisions"
+      ],
+      "title": "SignalTape",
+      "type": "object"
+    },
+    "StrategyContainerExit": {
+      "additionalProperties": false,
+      "properties": {
+        "container_id": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Container Id",
+          "type": "string"
+        },
+        "status": {
+          "const": "exited",
+          "title": "Status",
+          "type": "string"
+        },
+        "running": {
+          "const": false,
+          "title": "Running",
+          "type": "boolean"
+        },
+        "paused": {
+          "const": false,
+          "title": "Paused",
+          "type": "boolean"
+        },
+        "restarting": {
+          "const": false,
+          "title": "Restarting",
+          "type": "boolean"
+        },
+        "oom_killed": {
+          "const": false,
+          "title": "Oom Killed",
+          "type": "boolean"
+        },
+        "dead": {
+          "const": false,
+          "title": "Dead",
+          "type": "boolean"
+        },
+        "pid": {
+          "maximum": 0,
+          "minimum": 0,
+          "title": "Pid",
+          "type": "integer"
+        },
+        "exit_code": {
+          "maximum": 0,
+          "minimum": 0,
+          "title": "Exit Code",
+          "type": "integer"
+        },
+        "error": {
+          "const": "",
+          "title": "Error",
+          "type": "string"
+        },
+        "started_at": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Started At",
+          "type": "string"
+        },
+        "finished_at": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Finished At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "container_id",
+        "status",
+        "running",
+        "paused",
+        "restarting",
+        "oom_killed",
+        "dead",
+        "pid",
+        "exit_code",
+        "error",
+        "started_at",
+        "finished_at"
+      ],
+      "title": "StrategyContainerExit",
+      "type": "object"
+    },
+    "StrategyContainerOwnership": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "owner": {
+          "pattern": "^[a-f0-9]{32}$",
+          "title": "Owner",
+          "type": "string"
+        },
+        "job_path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Job Path",
+          "type": "string"
+        },
+        "job_name": {
+          "pattern": "^strategy-job-[a-f0-9]{32}$",
+          "title": "Job Name",
+          "type": "string"
+        },
+        "invocation_ref": {
+          "pattern": "^candidate-invocation:[a-f0-9]{64}$",
+          "title": "Invocation Ref",
+          "type": "string"
+        },
+        "stage_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Stage Sha256",
+          "type": "string"
+        },
+        "image_id": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Image Id",
+          "type": "string"
+        },
+        "worker_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Worker Sha256",
+          "type": "string"
+        },
+        "execution_verified": {
+          "const": false,
+          "default": false,
+          "title": "Execution Verified",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "owner",
+        "job_path",
+        "job_name",
+        "invocation_ref",
+        "stage_sha256",
+        "image_id",
+        "worker_sha256"
+      ],
+      "title": "StrategyContainerOwnership",
+      "type": "object"
+    },
+    "StrategyContainerRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "ownership": {
+          "$ref": "#/$defs/StrategyContainerOwnership"
+        },
+        "state": {
+          "enum": [
+            "CREATE_INTENT",
+            "CREATE_ACK",
+            "REMOVE_INTENT",
+            "REMOVED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "container_id": {
+          "pattern": "^(?:[a-f0-9]{64})?$",
+          "title": "Container Id",
+          "type": "string"
+        },
+        "execution_verified": {
+          "const": false,
+          "default": false,
+          "title": "Execution Verified",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ownership",
+        "state",
+        "container_id"
+      ],
+      "title": "StrategyContainerRecord",
+      "type": "object"
+    },
+    "StrategyExecutionTape": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "package_ref": {
+          "pattern": "^validation-package:[a-f0-9]{64}$",
+          "title": "Package Ref",
+          "type": "string"
+        },
+        "candidate_ref": {
+          "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+          "title": "Candidate Ref",
+          "type": "string"
+        },
+        "image_id": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Image Id",
+          "type": "string"
+        },
+        "worker_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Worker Sha256",
+          "type": "string"
+        },
+        "receipts": {
+          "items": {
+            "$ref": "#/$defs/StrategyPrefixExecutionReceipt"
+          },
+          "maxItems": 4094,
+          "title": "Receipts",
+          "type": "array"
+        },
+        "tape": {
+          "$ref": "#/$defs/SignalTape"
+        },
+        "provenance": {
+          "const": "OPERATOR_PINNED_UNATTESTED_COMPLETION_RECEIPTS",
+          "default": "OPERATOR_PINNED_UNATTESTED_COMPLETION_RECEIPTS",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "evidence_kind": {
+          "const": "COMPLETION_METADATA_NOT_DAEMON_ATTESTATION",
+          "default": "COMPLETION_METADATA_NOT_DAEMON_ATTESTATION",
+          "title": "Evidence Kind",
+          "type": "string"
+        },
+        "execution_verified": {
+          "const": false,
+          "default": false,
+          "title": "Execution Verified",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "package_ref",
+        "candidate_ref",
+        "image_id",
+        "worker_sha256",
+        "receipts",
+        "tape"
+      ],
+      "title": "StrategyExecutionTape",
+      "type": "object"
+    },
+    "StrategyPrefixExecutionReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "state": {
+          "const": "UNATTESTED_PREFIX_COMPLETED_AND_REMOVED",
+          "default": "UNATTESTED_PREFIX_COMPLETED_AND_REMOVED",
+          "title": "State",
+          "type": "string"
+        },
+        "ownership": {
+          "$ref": "#/$defs/StrategyContainerOwnership"
+        },
+        "create_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Create Sha256",
+          "type": "string"
+        },
+        "start_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Start Sha256",
+          "type": "string"
+        },
+        "output_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Output Sha256",
+          "type": "string"
+        },
+        "exit_metadata_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Exit Metadata Sha256",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/CandidateTargetOutput"
+        },
+        "exit": {
+          "$ref": "#/$defs/StrategyContainerExit"
+        },
+        "removal": {
+          "$ref": "#/$defs/StrategyContainerRecord"
+        },
+        "execution_verified": {
+          "const": false,
+          "default": false,
+          "title": "Execution Verified",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ownership",
+        "create_sha256",
+        "start_sha256",
+        "output_sha256",
+        "exit_metadata_sha256",
+        "target",
+        "exit",
+        "removal"
+      ],
+      "title": "StrategyPrefixExecutionReceipt",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "collection": {
+      "$ref": "#/$defs/StrategyExecutionTape"
+    },
+    "replay": {
+      "$ref": "#/$defs/SignalReplayReport"
+    },
+    "status": {
+      "const": "UNATTESTED_COMPLETION_NATIVE_REPLAY",
+      "default": "UNATTESTED_COMPLETION_NATIVE_REPLAY",
+      "title": "Status",
+      "type": "string"
+    },
+    "execution_verified": {
+      "const": false,
+      "default": false,
+      "title": "Execution Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "collection",
+    "replay"
+  ],
+  "title": "StrategyExecutionReplayReport",
+  "type": "object"
+}

@@ -1,6 +1,6 @@
 """Local container ownership metadata; no execution or promotion certificate."""
 
-from pathlib import Path
+from pathlib import PurePosixPath, PureWindowsPath
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -21,13 +21,17 @@ class StrategyContainerOwnership(BaseModel):
 
     @model_validator(mode="after")
     def local_job_path(self):
+        # Metadata can cross hosts; the journal and custody still bind native paths.
+        windows = PureWindowsPath(self.job_path)
+        path = windows if windows.drive else PurePosixPath(self.job_path)
         if (
-            not Path(self.job_path).is_absolute()
-            or Path(self.job_path).name != self.job_name
+            not path.is_absolute()
+            or path.name != self.job_name
             or any(character in self.job_path for character in ("\x00", "\n", "\r"))
-            or ".." in Path(self.job_path).parts
+            or ".." in windows.parts
+            or ".." in PurePosixPath(self.job_path).parts
         ):
-            raise ValueError("Container ownership requires an exact absolute local job path")
+            raise ValueError("Container ownership requires an exact absolute job path")
         return self
 
     @property

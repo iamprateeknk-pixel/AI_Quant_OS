@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-05: Bind complete operator-pinned successful/removed prefix receipt inventories to original invocation/source/SDK/history identities, canonical numeric tapes and independently checked native replay. Portable metadata grants no local filesystem or execution authority. Keep daemon/source attestation and all promotion gates open. See ADR 0076.
+
 - 2026-10-05: Reserve one fixed attached strategy start before its RPC, bound output and independently check successful owned exit. Attempt exact owned kill/removal on every start path; publish only after acknowledged removal and original-input recheck. Completion remains unattested and inputs retained; offline restoration requires independent hashes. See ADR 0075.
 
 - 2026-10-05: Bind the complete strategy create recipe to the original job/image/source and independent hashes; publish an exclusive durable attempt marker before one create RPC. Admit only exact owned created metadata and remove only by independently inspected immutable ID with audited acknowledgements. Unknown outcomes retain all custody; no worker start or automatic input release. See ADR 0074.
