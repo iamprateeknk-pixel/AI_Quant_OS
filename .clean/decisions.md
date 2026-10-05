@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-05: Verify the original Linux dependency image through a metadata-only trusted probe before proposed compilation/tests. Guard the runtime before imports, compare all 51 versions, run only fixed trusted tests, retain owned intents/observations/removal, and keep certification/promotion authority false. The production candidate test executor remains a separate requirement. See ADR 0080.
+
 - 2026-10-05: Admit actual Docker output-capture booleans without admitting interactive input; accept only empty cgroup selection and the exact protected kernel-path inventories independent of ordering. Preserve the original worker/image/recipe/custody pins. Retain observed synthetic real-engine execution as development evidence with all authority flags false. See ADR 0079.
 
 - 2026-10-05: Run original candidate prefixes only in increasing index order under an independently pinned run manifest and append-only audit. Persist unique names before staging, stop on unknown outcomes, commit each completed receipt/archive before release, and replay the complete identical tape at BASE and declared-stress costs. Keep all execution/promotion claims false and require independent recovery pins. See ADR 0078.

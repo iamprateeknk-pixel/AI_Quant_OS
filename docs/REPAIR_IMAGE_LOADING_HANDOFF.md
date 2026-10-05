@@ -7,6 +7,13 @@ admission, candidate execution or automatic recovery.
 
 ## Command
 
+Runtime update (ADR 0080, 2026-10-05): this original pinned archive has now loaded
+successfully after Docker Desktop was started. A separate metadata-only Linux
+dependency probe passed its real runtime checks and owned cleanup. See
+`DEPENDENCY_RUNTIME_HANDOFF.md` for reproduction and limits. The earlier failed
+invocation below records the original import increment; candidate execution and
+certification remain separate gates.
+
 Use independently reviewed pins and the trusted server recipe directory:
 
 ```powershell

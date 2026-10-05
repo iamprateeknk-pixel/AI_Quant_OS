@@ -1,8 +1,13 @@
 # Offline repair worker dependency inputs
 
 This directory records a pinned CPython 3.11.17 Linux x86-64 base, wheel inputs
-and a dependency-only build recipe. A local static OCI archive has been assembled;
-runtime image admission and an execution certificate remain pending.
+and a dependency-only build recipe. The original static OCI archive has now loaded
+on the local Linux engine and passed the dependency-only runtime probe in ADR 0080:
+51 distribution versions, core imports, trusted native pytest checks and selected
+read-only/network behaviors were observed. Independent execution/isolation
+certification and actual proposed tests remain pending. The earlier preparation
+evidence below records its original scope; see
+`docs/DEPENDENCY_RUNTIME_HANDOFF.md` for the current runtime check.
 
 - `requirements.in`: eight direct versions matching the current verified host
   runtime and test tools. This profile covers core advisory A02/A07 imports and
