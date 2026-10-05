@@ -173,7 +173,13 @@ class PreparedPrefixJob:
             self.stage_path.unlink()
 
 
-def stage_prefix_job(package: ValidationPackage, index: int, *, root: Path) -> PreparedPrefixJob:
+def stage_prefix_job(
+    package: ValidationPackage, index: int, *, root: Path, job_name: str | None = None
+) -> PreparedPrefixJob:
+    if job_name is not None and (
+        type(job_name) is not str or not re.fullmatch(r"strategy-job-[a-f0-9]{32}", job_name)
+    ):
+        raise ValueError("Reserved prefix job name must be an owned opaque identity")
     request = prepare_invocation(package, index)
     raw = request.model_dump_json().encode()
     parents = _chain(root)
@@ -188,7 +194,7 @@ def stage_prefix_job(package: ValidationPackage, index: int, *, root: Path) -> P
             >= 32
         ):
             raise ValueError("Prefix staging capacity exhausted")
-        path = parent / ("strategy-job-" + uuid4().hex)
+        path = parent / (job_name if job_name is not None else "strategy-job-" + uuid4().hex)
         path.mkdir(mode=0o755)
         path.chmod(0o755)
         _persist(path / "request.json", raw, 0o444)
