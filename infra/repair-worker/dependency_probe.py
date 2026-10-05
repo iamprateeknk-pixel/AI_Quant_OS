@@ -69,6 +69,14 @@ def decode_request(raw):
 
 
 def require_runtime():
+    _require_runtime("/job/verifier.py", ["request.json", "verifier.py"])
+
+
+def require_candidate_test_runtime():
+    _require_runtime("/job/runtime_guard.py", ["request.json", "runtime_guard.py", "verifier.py"])
+
+
+def _require_runtime(module_path, inventory):
     # Check host exclusion before importing Linux or third-party runtime modules.
     if sys.platform != "linux" or sys.implementation.name != "cpython":
         raise ValueError("Linux CPython worker required")
@@ -82,9 +90,9 @@ def require_runtime():
         or (os.geteuid(), os.getegid()) != (65534, 65534)
         or os.getgroups() not in ([], [65534])
         or os.getcwd() != "/scratch"
-        or str(Path(__file__).resolve()) != "/job/verifier.py"
+        or str(Path(__file__).resolve()) != module_path
         or sys.argv != ["/job/verifier.py", "/job/request.json"]
-        or sorted(row.name for row in Path("/job").iterdir()) != ["request.json", "verifier.py"]
+        or sorted(row.name for row in Path("/job").iterdir()) != inventory
         or list(Path("/scratch").iterdir())
         or sorted(row.name for row in Path("/sys/class/net").iterdir()) != ["lo"]
     ):

@@ -4,6 +4,12 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Latest candidate compilation and proposed-test increment
+
+- Added a separate original-package source-only request/job/controller and explicit prepare/run/result/cleanup CLI. Six exact candidate/test/SDK files are retained; training and holdout payloads are excluded. The pinned Linux worker guards runtime controls before compilation/import, compiles six units and runs all six proposed cases. Original package/candidate capture statuses and all authority flags remain unchanged. See CANDIDATE_TEST_HANDOFF.md and ADR 0081.
+- Real Linux verification observed six compiled files and six passed proposed tests, exact owned terminal/removal evidence, fresh-process result retrieval without restart, and durable refusal to execute again after a lost start acknowledgement. A clean staged checkout passed all **56 focused checks in 22.27 seconds**, including real Linux execution. The frozen full regression with web, strategy, dependency and candidate-test gates passed **1,913 tests**, with **15 optional integrations skipped**, in **1039.16 seconds**. Lint/format (373 files), original 17-schema/source preservation and staged secret scan passed. See `docs/evaluations/candidate-tests-0081.json`.
+- This closes the separate local compilation/proposed-test execution prerequisite. Independent kernel/source attestation, adversarial behavior, physical holdout isolation, statistical/champion acceptance, complete agent missions and all production/live release gates remain open. The complete P00–P13 build is still in progress; earlier increment sections below describe their state at the time.
+
 | Phase | State | Evidence or next dependency |
 | --- | --- | --- |
 | P00 Architecture and guardrails | In progress | Paper-only boundary, contract types, safety ownership and ADR recorded; full threat model, contract versioning and independent review remain. |

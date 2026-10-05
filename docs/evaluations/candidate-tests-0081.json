@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "status": "LOCAL_CANDIDATE_TESTS_OBSERVED_UNATTESTED",
+  "date": "2026-10-05",
+  "image_id": "sha256:5c86773e1c259ac6b89d6ff2bf8ceca386de0013b66c4e3b0cd1f1e91658e5b4",
+  "worker_sha256": "e653d53494eb12726dc5910de3c0c59eb832d7457c9e5cbcc4cb12eab0ca5a6c",
+  "guard_sha256": "59ac6c56aeaf0c062d8f732b77978a11b6163d16fc326c0a3e8ad8014625aa85",
+  "manifest_sha256": "aaa010342664fd814c7e516fdb1b012c58182efe059598722b20e8c51bf08e51",
+  "result": {
+    "schema_version": "1.0",
+    "request_ref": "candidate-tests:c1819f7136c328a60d12842641d7206903a9bc6e3a7271961cf14fac33559a83",
+    "package_ref": "validation-package:100ccd87ffe50b4b7f755560a3a17f522d4dc1959e4685f191ff91eb0637463f",
+    "candidate_ref": "strategy-candidate:e130abb60ba403551679e3aacd2a835d1a7719c305989dae535faa5092177af2",
+    "python_version": "3.11.17",
+    "pytest_version": "8.4.2",
+    "compiled_files": 6,
+    "collected": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PROPOSED_TESTS_PASSED_UNATTESTED",
+    "isolation_verified": false,
+    "execution_authorized": false,
+    "promotion_allowed": false
+  },
+  "removed_container_id": "08fd9b0d6388e61651c2eeb14773b2643f33183525d3ee7fa2f315fdf23d40bd",
+  "evidence_root": "data-local/candidate-test-cold-evidence-0081/test_actual_six_proposed_tests0/candidate-tests",
+  "cold_verification": {
+    "passed": 56,
+    "skipped": 0,
+    "seconds": 22.27,
+    "real_engine": true
+  },
+  "lost_start_ack_refuses_repeat": true,
+  "fresh_process_result_retrieval": true,
+  "lint": "PASSED",
+  "format_files": 373,
+  "existing_wire_schemas_preserved": 17,
+  "production_source_preservation": "Original strategy worker, custody, execution, replay and release bytes unchanged; shared standalone dependency guard gains one fixed candidate-test role.",
+  "secret_scan": "PASSED",
+  "full_regression": {
+    "status": "PASSED",
+    "passed": 1913,
+    "skipped": 15,
+    "seconds": 1039.16,
+    "exit_code": 0,
+    "gates": [
+      "AI_QUANT_REQUIRE_LOCAL_WEB",
+      "AI_QUANT_STRATEGY_ENGINE_TEST",
+      "AI_QUANT_DEPENDENCY_ENGINE_TEST",
+      "AI_QUANT_CANDIDATE_TEST_ENGINE_TEST"
+    ],
+    "log": "data-local/full-regression-0081.log"
+  },
+  "isolation_verified": false,
+  "execution_authorized": false,
+  "promotion_allowed": false,
+  "remaining": [
+    "Independent kernel/source attestation",
+    "Adversarial source and runtime validation",
+    "Physical holdout isolation",
+    "Actual statistical/champion acceptance",
+    "Complete agent missions",
+    "All remaining P00-P13 production/live gates"
+  ]
+}

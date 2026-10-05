@@ -109,3 +109,14 @@ bytes; these Linux wheels are laid out only in the ignored image staging root,
 never in the Windows project import environment.
 
 See [the image input handoff](../../docs/REPAIR_IMAGE_INPUTS_HANDOFF.md).
+
+## Current local execution verification
+
+The fixed Linux engine is now available. The original dependency archive was
+loaded and its metadata-only runtime probe passed (ADR 0080). Separate
+`candidate_test_worker.py` now compiles the original six candidate/test/SDK units
+and runs the six proposed cases through the same immutable dependency image.
+It shares a pinned guard with a fixed three-file role; the dependency probe's
+two-file role and original image bytes remain unchanged. See
+[the candidate test handoff](../../docs/CANDIDATE_TEST_HANDOFF.md).
+Observed results grant no independent certification or promotion authority.

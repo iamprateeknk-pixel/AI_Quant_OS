@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-05: Compile/test original candidate and SDK bytes only in a separate source-only Linux job. Exclude dataset payloads, bind an independently retained manifest to native identities, persist intents before single create/start, require owned acknowledged removal, and retrieve retained results without execution. Preserve original package statuses and all false authority fields. See ADR 0081.
+
 - 2026-10-05: Verify the original Linux dependency image through a metadata-only trusted probe before proposed compilation/tests. Guard the runtime before imports, compare all 51 versions, run only fixed trusted tests, retain owned intents/observations/removal, and keep certification/promotion authority false. The production candidate test executor remains a separate requirement. See ADR 0080.
 
 - 2026-10-05: Admit actual Docker output-capture booleans without admitting interactive input; accept only empty cgroup selection and the exact protected kernel-path inventories independent of ordering. Preserve the original worker/image/recipe/custody pins. Retain observed synthetic real-engine execution as development evidence with all authority flags false. See ADR 0079.

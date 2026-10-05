@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "CandidateTestFile": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "enum": [
+            "ai_quant_os/__init__.py",
+            "ai_quant_os/contracts.py",
+            "ai_quant_os/market_data.py",
+            "ai_quant_os/strategy_contracts.py",
+            "candidate.py",
+            "test_candidate.py"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "raw_base64": {
+          "maxLength": 87384,
+          "minLength": 1,
+          "title": "Raw Base64",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "raw_base64",
+        "sha256"
+      ],
+      "title": "CandidateTestFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/CandidateTestFile"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "title": "Files",
+      "type": "array"
+    },
+    "status": {
+      "const": "NO_DATA_CANDIDATE_TEST_REQUEST",
+      "default": "NO_DATA_CANDIDATE_TEST_REQUEST",
+      "title": "Status",
+      "type": "string"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "package_ref",
+    "candidate_ref",
+    "files"
+  ],
+  "title": "CandidateTestRequest",
+  "type": "object"
+}

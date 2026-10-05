@@ -71,3 +71,7 @@ src/ai_quant_os/strategy_prefix*.py text eol=lf
 src/ai_quant_os/strategy_container*.py text eol=lf
 docs/schemas/strategy-container-*.schema.json text eol=lf
 docs/schemas/strategy-prefix-execution.schema.json text eol=lf
+infra/repair-worker/dependency_probe.py text eol=lf
+infra/repair-worker/candidate_test_worker.py text eol=lf
+src/ai_quant_os/candidate_test*.py text eol=lf
+tests/test_candidate_test*.py text eol=lf
