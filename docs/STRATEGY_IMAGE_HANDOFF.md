@@ -2,6 +2,14 @@
 
 ## State and evidence
 
+Runtime update (ADR 0079, 2026-10-05): the original independently pinned archive
+has now been loaded and inspected on the actual local Linux engine, and its worker
+completed ten synthetic decisions through the existing owned execution/release
+path. See `STRATEGY_ENGINE_HANDOFF.md` for reproduction and verification scope.
+The archive identity artifact remains the original static assembly record, and all
+authority fields remain false. The following paragraphs record ADR 0070's original
+assembly evidence.
+
 The archive is prepared locally; Docker load/start and candidate execution remain
 unverified. `infra/strategy-worker/archive_manifest.json` retains its identity as
 `OCI_ARCHIVE_ONLY`, with every execution/promotion flag false. Read-only inspection

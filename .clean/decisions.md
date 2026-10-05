@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-05: Admit actual Docker output-capture booleans without admitting interactive input; accept only empty cgroup selection and the exact protected kernel-path inventories independent of ordering. Preserve the original worker/image/recipe/custody pins. Retain observed synthetic real-engine execution as development evidence with all authority flags false. See ADR 0079.
+
 - 2026-10-05: Run original candidate prefixes only in increasing index order under an independently pinned run manifest and append-only audit. Persist unique names before staging, stop on unknown outcomes, commit each completed receipt/archive before release, and replay the complete identical tape at BASE and declared-stress costs. Keep all execution/promotion claims false and require independent recovery pins. See ADR 0078.
 
 - 2026-10-05: Publish an exact independently pinned recovery archive before explicitly releasing a successfully completed and audited removed prefix's known inputs. Retain archive/attempt/final observation and journal; recover partial deletion under original package/root/file bindings without recursive cleanup, daemon calls or execution authority. See ADR 0077.

@@ -8,7 +8,11 @@ import pytest
 
 from ai_quant_os.repair_transport import CommandResult
 from ai_quant_os.strategy_container_journal import StrategyContainerJournal
-from ai_quant_os.strategy_container_policy import CMD, strategy_labels
+from ai_quant_os.strategy_container_policy import (
+    CMD,
+    require_created_strategy_container,
+    strategy_labels,
+)
 from ai_quant_os.strategy_prefix_jobs import stage_prefix_job
 from test_strategy_prefix_worker import package as package
 from test_strategy_image_loading import (
@@ -107,6 +111,83 @@ def test_exact_request_is_persisted_then_created_and_admitted_once(runtime, job,
     with pytest.raises((ValueError, FileExistsError)):
         c.create_strategy_container(plan, job, package, **args)
     assert len([a for a in calls if a[:2] == ("container", "create")]) == 1
+
+
+def test_docker_created_output_capture_is_admitted_without_interactive_input(runtime, job, package):
+    c, plan, args, calls, state, engine = runtime
+    state["inspect"]["Config"].update(AttachStdout=True, AttachStderr=True)
+    assert c.create_strategy_container(plan, job, package, **args) == "3" * 64
+
+
+@pytest.mark.parametrize("field", ["AttachStdout", "AttachStderr"])
+@pytest.mark.parametrize("value", [0, 1, "true", None])
+def test_output_capture_requires_actual_boolean_metadata(runtime, job, package, field, value):
+    c, plan, args, calls, state, engine = runtime
+    state["inspect"]["Config"][field] = value
+    with pytest.raises(RuntimeError, match="uncertain"):
+        c.create_strategy_container(plan, job, package, **args)
+
+
+@pytest.mark.parametrize("field", ["Tty", "OpenStdin", "StdinOnce", "AttachStdin"])
+def test_output_capture_does_not_admit_interactive_input(runtime, job, package, field):
+    c, plan, args, calls, state, engine = runtime
+    state["inspect"]["Config"].update(AttachStdout=True, AttachStderr=True)
+    state["inspect"]["Config"][field] = True
+    with pytest.raises(RuntimeError, match="uncertain"):
+        c.create_strategy_container(plan, job, package, **args)
+
+
+MASKED_PATHS = [
+    "/proc/acpi",
+    "/proc/asound",
+    "/proc/interrupts",
+    "/proc/kcore",
+    "/proc/keys",
+    "/proc/latency_stats",
+    "/proc/sched_debug",
+    "/proc/scsi",
+    "/proc/timer_list",
+    "/proc/timer_stats",
+    "/sys/devices/virtual/powercap",
+    "/sys/firmware",
+]
+
+
+def test_docker_default_masks_are_order_independent_and_cgroup_selector_is_empty(
+    runtime, job, package
+):
+    c, plan, args, calls, state, engine = runtime
+    state["inspect"]["HostConfig"].update(Cgroup="", MaskedPaths=MASKED_PATHS)
+    assert c.create_strategy_container(plan, job, package, **args) == "3" * 64
+
+
+@pytest.mark.parametrize(
+    "paths", [MASKED_PATHS[:-1], MASKED_PATHS + ["/extra"], MASKED_PATHS + [MASKED_PATHS[0]]]
+)
+def test_changed_mask_inventory_is_rejected(runtime, job, package, paths):
+    c, plan, args, calls, state, engine = runtime
+    state["inspect"]["HostConfig"]["MaskedPaths"] = paths
+    with pytest.raises(RuntimeError, match="uncertain"):
+        c.create_strategy_container(plan, job, package, **args)
+
+
+@pytest.mark.parametrize("value", ["host", 0, None])
+def test_active_or_untyped_cgroup_selector_is_rejected(runtime, job, package, value):
+    c, plan, args, calls, state, engine = runtime
+    state["inspect"]["HostConfig"]["Cgroup"] = value
+    with pytest.raises(RuntimeError, match="uncertain"):
+        c.create_strategy_container(plan, job, package, **args)
+
+
+def test_readonly_kernel_paths_are_order_independent_but_inventory_is_exact(runtime, job, package):
+    c, plan, args, calls, state, engine = runtime
+    paths = ["/proc/sysrq-trigger", "/proc/sys", "/proc/irq", "/proc/fs", "/proc/bus"]
+    state["inspect"]["HostConfig"]["ReadonlyPaths"] = paths
+    require_created_strategy_container(state["inspect"], plan.ownership, plan.environment)
+    for invalid in (paths[:-1], paths + ["/extra"], paths + [paths[0]], [None]):
+        state["inspect"]["HostConfig"]["ReadonlyPaths"] = invalid
+        with pytest.raises(ValueError, match="inventory"):
+            require_created_strategy_container(state["inspect"], plan.ownership, plan.environment)
 
 
 def test_cleanup_removes_only_independently_inspected_owned_id_and_retains_inputs(

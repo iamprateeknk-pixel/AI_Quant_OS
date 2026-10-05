@@ -1,7 +1,11 @@
 # Single-decision strategy worker
 
-Status: trusted source and image definition prepared; image build, Linux execution,
-parent admission/lifecycle and candidate behavior remain unverified.
+Status: the original pinned archive now completes the real local Linux execution
+and owned lifecycle for a synthetic twelve-bar candidate fixture. Returned targets,
+BASE/stress replay, removal and fresh-process report recovery were checked in ADR
+0079. Independent isolation/source attestation, proposed tests and broader candidate
+validation remain open. The earlier preparation evidence below records its original
+scope; current runtime evidence is in `docs/STRATEGY_ENGINE_HANDOFF.md`.
 
 ## Execution boundary
 

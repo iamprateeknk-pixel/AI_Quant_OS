@@ -129,9 +129,14 @@ def require_created_strategy_container(
         for key, wanted in expected.items():
             if encode_metadata({"value": config[key]}) != encode_metadata({"value": wanted}):
                 raise ValueError("Strategy created configuration differs from fixed recipe")
-        for key in ("Tty", "OpenStdin", "StdinOnce", "AttachStdin", "AttachStdout", "AttachStderr"):
+        for key in ("Tty", "OpenStdin", "StdinOnce", "AttachStdin"):
             if config.get(key, False) is not False:
                 raise ValueError("Strategy interactive/attached configuration denied")
+        # Docker create enables output capture by default. The owned attached-start
+        # transport bounds both streams; these flags do not permit interactive input.
+        for key in ("AttachStdout", "AttachStderr"):
+            if type(config.get(key, False)) is not bool:
+                raise ValueError("Strategy output attachment metadata must be boolean")
         config_defaults = {
             "Domainname": ("",),
             "StopSignal": ("", "SIGTERM"),
@@ -242,6 +247,7 @@ def require_created_strategy_container(
             "CgroupParent",
         }
         neutral = {
+            "Cgroup": ("",),
             "CpuShares": (0,),
             "CpuPeriod": (0,),
             "CpuQuota": (0,),
@@ -304,6 +310,14 @@ def require_created_strategy_container(
             ),
         }
         for key, actual in host.items():
+            if key in ("MaskedPaths", "ReadonlyPaths"):
+                if (
+                    type(actual) is not list
+                    or any(type(path) is not str for path in actual)
+                    or sorted(actual) != sorted(neutral[key][0])
+                ):
+                    raise ValueError("Strategy kernel path protection inventory changed")
+                continue
             if key not in known and (
                 key not in neutral
                 or not any(

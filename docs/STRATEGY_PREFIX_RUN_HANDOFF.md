@@ -68,6 +68,9 @@ BASE/stress identity, explicit CLI, duplicate-run refusal, interrupted phase han
 per-prefix source-at-most-once, local SQLite corruption, independently pinned prefix
 recovery, report publication recovery and refusal of untrusted output. Scripted daemon
 observations are tests, not real Docker/worker/kernel evidence. The locally available
-Docker Linux endpoint is still unavailable, so actual worker execution, image admission
-and removal remain unverified. See ADR 0078 and `docs/BUILD_STATUS.md` for remaining
-release gates.
+Docker Linux endpoint was unavailable at ADR 0078 verification. ADR 0079 now records
+an actual local synthetic twelve-bar run with ten worker decisions, image/container
+admission, exact target comparison, removal, native BASE/stress replay and a fresh
+process retrieving the identical report. See `STRATEGY_ENGINE_HANDOFF.md` for the
+real-engine test and `docs/BUILD_STATUS.md` for remaining release gates. Independent
+kernel/source attestation and statistical acceptance remain open.
