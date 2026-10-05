@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-05: Exercise actual fixed Linux enforcement with trusted metadata-selected privilege/noexec, memory, CPU, process, file-size and descriptor probes. Keep production worker/guard/controller/image/contract bytes unchanged, retain owned exact terminal/removal evidence, and preserve all false authority claims. See ADR 0082.
+
 - 2026-10-05: Compile/test original candidate and SDK bytes only in a separate source-only Linux job. Exclude dataset payloads, bind an independently retained manifest to native identities, persist intents before single create/start, require owned acknowledged removal, and retrieve retained results without execution. Preserve original package statuses and all false authority fields. See ADR 0081.
 
 - 2026-10-05: Verify the original Linux dependency image through a metadata-only trusted probe before proposed compilation/tests. Guard the runtime before imports, compare all 51 versions, run only fixed trusted tests, retain owned intents/observations/removal, and keep certification/promotion authority false. The production candidate test executor remains a separate requirement. See ADR 0080.

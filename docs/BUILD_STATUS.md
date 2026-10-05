@@ -4,7 +4,13 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
-## Latest candidate compilation and proposed-test increment
+## Latest controlled worker enforcement increment
+
+- Added five fixed trusted adversarial Linux scenarios with metadata-only selectors. Actual UID/GID/groups/raw-socket and scratch direct execution were denied; exceeding memory/CPU produced exact owned expected kills; child creation, file size and descriptor exhaustion were denied. The focused real-engine gate passed all **16 checks in 36.19 seconds**. See WORKER_ENFORCEMENT_HANDOFF.md and ADR 0082.
+- The original dependency image, shared guard, candidate/strategy execution code and wire contracts are unchanged. Source/recipe/create/start/terminal/observations/removal evidence is retained. The clean staged checkout passed **16 checks in 36.78 seconds**. The frozen full regression with all five local gates passed **1,929 tests**, with **15 optional integrations skipped**, in **853.02 seconds**. Lint/format (375 files), broad Git-normalized production/schema preservation, exact original execution-pinned artifacts and staged secret scan passed. See `docs/evaluations/worker-enforcement-0082.json`.
+- This is observed local enforcement evidence. Independent daemon/source attestation, arbitrary malicious-source validation, physical holdout isolation, statistical/champion acceptance, complete agent missions and production/live gates remain open. The full build remains in progress.
+
+## Candidate compilation and proposed-test increment
 
 - Added a separate original-package source-only request/job/controller and explicit prepare/run/result/cleanup CLI. Six exact candidate/test/SDK files are retained; training and holdout payloads are excluded. The pinned Linux worker guards runtime controls before compilation/import, compiles six units and runs all six proposed cases. Original package/candidate capture statuses and all authority flags remain unchanged. See CANDIDATE_TEST_HANDOFF.md and ADR 0081.
 - Real Linux verification observed six compiled files and six passed proposed tests, exact owned terminal/removal evidence, fresh-process result retrieval without restart, and durable refusal to execute again after a lost start acknowledgement. A clean staged checkout passed all **56 focused checks in 22.27 seconds**, including real Linux execution. The frozen full regression with web, strategy, dependency and candidate-test gates passed **1,913 tests**, with **15 optional integrations skipped**, in **1039.16 seconds**. Lint/format (373 files), original 17-schema/source preservation and staged secret scan passed. See `docs/evaluations/candidate-tests-0081.json`.

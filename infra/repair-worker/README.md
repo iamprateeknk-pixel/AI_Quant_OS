@@ -120,3 +120,9 @@ It shares a pinned guard with a fixed three-file role; the dependency probe's
 two-file role and original image bytes remain unchanged. See
 [the candidate test handoff](../../docs/CANDIDATE_TEST_HANDOFF.md).
 Observed results grant no independent certification or promotion authority.
+
+The opt-in trusted enforcement probe now checks actual denial of privilege/raw
+sockets/scratch execution and deliberately exceeds fixed memory, CPU, process,
+file-size and descriptor bounds inside separate owned Linux containers. See
+[the enforcement handoff](../../docs/WORKER_ENFORCEMENT_HANDOFF.md) and ADR 0082.
+The original image, shared guard and production execution controllers are unchanged.

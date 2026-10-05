@@ -1,0 +1,190 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-05",
+  "status": "CONTROLLED_LOCAL_KERNEL_ENFORCEMENT_OBSERVED",
+  "image_id": "sha256:5c86773e1c259ac6b89d6ff2bf8ceca386de0013b66c4e3b0cd1f1e91658e5b4",
+  "probe_sha256": "0e9003512d07b7b469a6487a82a71072605a5c3144c256e46fa745ec2a39dbc4",
+  "guard_sha256": "59ac6c56aeaf0c062d8f732b77978a11b6163d16fc326c0a3e8ad8014625aa85",
+  "scenarios": [
+    {
+      "evidence_root": "data-local/worker-enforcement-0082-complete/test_actual_privilege_and_reso0",
+      "source_pins": {
+        "request.json": "7acb26637e48b080053ce82b8133f6dea889805b368cfd00acba4c6f66cdb97f",
+        "runtime_guard.py": "59ac6c56aeaf0c062d8f732b77978a11b6163d16fc326c0a3e8ad8014625aa85",
+        "verifier.py": "0e9003512d07b7b469a6487a82a71072605a5c3144c256e46fa745ec2a39dbc4"
+      },
+      "observations": {
+        "isolation_verified": false,
+        "observations": {
+          "raw_socket_denied": true,
+          "scratch_direct_execution_denied": true,
+          "setgid_denied": true,
+          "setuid_denied": true,
+          "supplementary_groups_denied": true
+        },
+        "promotion_allowed": false,
+        "proposed_source_executed": false,
+        "scenario": "PRIVILEGE_AND_NOEXEC",
+        "schema_version": "1.0",
+        "status": "CONTROLLED_ENFORCEMENT_OBSERVED"
+      },
+      "container_id": "63fcd86d2758da105baf3453fc55376c009260e81d6916d757fa9d3c52bbadee",
+      "removed": true,
+      "terminal_state": {
+        "Status": "exited",
+        "ExitCode": 0,
+        "OOMKilled": false,
+        "Pid": 0,
+        "Error": ""
+      }
+    },
+    {
+      "evidence_root": "data-local/worker-enforcement-0082-complete/test_actual_privilege_and_reso1",
+      "source_pins": {
+        "request.json": "b04008445fe989895392e32884fe7f0e24dd96440a32fd7f033deb53157d1698",
+        "runtime_guard.py": "59ac6c56aeaf0c062d8f732b77978a11b6163d16fc326c0a3e8ad8014625aa85",
+        "verifier.py": "0e9003512d07b7b469a6487a82a71072605a5c3144c256e46fa745ec2a39dbc4"
+      },
+      "observations": {
+        "exit_code": 137,
+        "oom_killed": true,
+        "scenario": "MEMORY",
+        "status": "CONTROLLED_LIMIT_KILL_OBSERVED"
+      },
+      "container_id": "47331db100593394d648d77382412f430abb737327f482a8bc0a5b2acba94914",
+      "removed": true,
+      "terminal_state": {
+        "Status": "exited",
+        "ExitCode": 137,
+        "OOMKilled": true,
+        "Pid": 0,
+        "Error": ""
+      }
+    },
+    {
+      "evidence_root": "data-local/worker-enforcement-0082-complete/test_actual_privilege_and_reso2",
+      "source_pins": {
+        "request.json": "6b423428db876da05ffe39516d181abf4a0ce38c617aad458a52be35c0ef378d",
+        "runtime_guard.py": "59ac6c56aeaf0c062d8f732b77978a11b6163d16fc326c0a3e8ad8014625aa85",
+        "verifier.py": "0e9003512d07b7b469a6487a82a71072605a5c3144c256e46fa745ec2a39dbc4"
+      },
+      "observations": {
+        "exit_code": 137,
+        "oom_killed": false,
+        "scenario": "CPU",
+        "status": "CONTROLLED_LIMIT_KILL_OBSERVED"
+      },
+      "container_id": "ba117df34fc8e12656152f2f45a104726dddf0c688ba1c9d3768e3e8cf9c5256",
+      "removed": true,
+      "terminal_state": {
+        "Status": "exited",
+        "ExitCode": 137,
+        "OOMKilled": false,
+        "Pid": 0,
+        "Error": ""
+      }
+    },
+    {
+      "evidence_root": "data-local/worker-enforcement-0082-complete/test_actual_privilege_and_reso3",
+      "source_pins": {
+        "request.json": "9e6d4365aa2a83cd28f20df8914bfc16d4bdf07acfbe264c3de451ede25765b0",
+        "runtime_guard.py": "59ac6c56aeaf0c062d8f732b77978a11b6163d16fc326c0a3e8ad8014625aa85",
+        "verifier.py": "0e9003512d07b7b469a6487a82a71072605a5c3144c256e46fa745ec2a39dbc4"
+      },
+      "observations": {
+        "isolation_verified": false,
+        "observations": {
+          "created_children": 63,
+          "observed_pids": 64,
+          "process_creation_denied": true
+        },
+        "promotion_allowed": false,
+        "proposed_source_executed": false,
+        "scenario": "PROCESSES",
+        "schema_version": "1.0",
+        "status": "CONTROLLED_ENFORCEMENT_OBSERVED"
+      },
+      "container_id": "c0365bc7f2a9d597a0d3a67a8a7073e19d48ea2e6cba99ce9b0c56945929b1d9",
+      "removed": true,
+      "terminal_state": {
+        "Status": "exited",
+        "ExitCode": 0,
+        "OOMKilled": false,
+        "Pid": 0,
+        "Error": ""
+      }
+    },
+    {
+      "evidence_root": "data-local/worker-enforcement-0082-complete/test_actual_privilege_and_reso4",
+      "source_pins": {
+        "request.json": "33a9adfd8cc6e6f543467a28d1ae0d99e310facedf6f2f90d1cdb38e85106c16",
+        "runtime_guard.py": "59ac6c56aeaf0c062d8f732b77978a11b6163d16fc326c0a3e8ad8014625aa85",
+        "verifier.py": "0e9003512d07b7b469a6487a82a71072605a5c3144c256e46fa745ec2a39dbc4"
+      },
+      "observations": {
+        "isolation_verified": false,
+        "observations": {
+          "descriptor_limit_denied": true,
+          "file_bytes": 1048576,
+          "file_size_denied": true,
+          "opened_descriptors": 125
+        },
+        "promotion_allowed": false,
+        "proposed_source_executed": false,
+        "scenario": "FILES",
+        "schema_version": "1.0",
+        "status": "CONTROLLED_ENFORCEMENT_OBSERVED"
+      },
+      "container_id": "11509a857b7d9f75a29ae69cd6f531400ebb8a9cd87833c71da66ea0d7582094",
+      "removed": true,
+      "terminal_state": {
+        "Status": "exited",
+        "ExitCode": 0,
+        "OOMKilled": false,
+        "Pid": 0,
+        "Error": ""
+      }
+    }
+  ],
+  "focused": {
+    "passed": 16,
+    "seconds": 36.19,
+    "real_engine": true
+  },
+  "cold_verification": {
+    "passed": 16,
+    "seconds": 36.78,
+    "real_engine": true
+  },
+  "lint": "PASSED",
+  "format_files": 375,
+  "preservation": "Existing production sources, worker/guard/image inputs and wire schemas unchanged against Git-normalized HEAD; original 17 execution wire schemas and pinned strategy custody/execution/replay/release bytes also checked directly.",
+  "structure_map_updated": true,
+  "secret_scan": "PASSED",
+  "full_regression": {
+    "status": "PASSED",
+    "passed": 1929,
+    "skipped": 15,
+    "seconds": 853.02,
+    "exit_code": 0,
+    "gates": [
+      "AI_QUANT_REQUIRE_LOCAL_WEB",
+      "AI_QUANT_STRATEGY_ENGINE_TEST",
+      "AI_QUANT_DEPENDENCY_ENGINE_TEST",
+      "AI_QUANT_CANDIDATE_TEST_ENGINE_TEST",
+      "AI_QUANT_ENFORCEMENT_ENGINE_TEST"
+    ],
+    "log": "data-local/full-regression-0082.log"
+  },
+  "proposed_source_executed": false,
+  "isolation_verified": false,
+  "promotion_allowed": false,
+  "remaining": [
+    "Independent kernel/daemon/source attestation",
+    "Arbitrary malicious-source validation",
+    "Physical holdout isolation",
+    "Actual statistical/champion acceptance",
+    "Complete agent missions",
+    "All remaining P00-P13 production/live gates"
+  ]
+}
