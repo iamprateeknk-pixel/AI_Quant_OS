@@ -33,7 +33,7 @@ from ai_quant_os.strategy_image_loading import inspect_strategy_worker_image
 from ai_quant_os.strategy_image_runtime import StrategyImageHandoff, require_strategy_image_engine
 from ai_quant_os.strategy_prefix_jobs import PreparedPrefixJob
 from ai_quant_os.strategy_prefix_execution_contracts import strategy_start_request
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 
 @dataclass(frozen=True)
@@ -108,7 +108,11 @@ def _verify(plan, job):
 
 
 def restore_strategy_container_plan(
-    job: PreparedPrefixJob, package: ValidationPackage, *, create_sha256: str, ownership_sha256: str
+    job: PreparedPrefixJob,
+    package: CandidateDatasetInput,
+    *,
+    create_sha256: str,
+    ownership_sha256: str,
 ) -> StrategyContainerPlan:
     """Restore only an independently pinned exact recipe; never reissue creation."""
     require_digest(create_sha256, prefix="")
@@ -170,7 +174,7 @@ def _executable(plan):
 
 
 def prepare_strategy_container(
-    job: PreparedPrefixJob, package: ValidationPackage, *, archive: Path, **pins
+    job: PreparedPrefixJob, package: CandidateDatasetInput, *, archive: Path, **pins
 ) -> StrategyContainerPlan:
     if type(job) is not PreparedPrefixJob:
         raise ValueError("Original prepared strategy job required")
@@ -201,7 +205,7 @@ def prepare_strategy_container(
 def create_strategy_container(
     plan: StrategyContainerPlan,
     job: PreparedPrefixJob,
-    package: ValidationPackage,
+    package: CandidateDatasetInput,
     *,
     archive: Path,
     **pins,
@@ -250,7 +254,7 @@ def create_strategy_container(
 
 
 def cleanup_strategy_container(
-    plan: StrategyContainerPlan, job: PreparedPrefixJob, package: ValidationPackage
+    plan: StrategyContainerPlan, job: PreparedPrefixJob, package: CandidateDatasetInput
 ):
     """Inspect exact ownership and remove by immutable ID; unknown absence refuses."""
     if type(job) is not PreparedPrefixJob or type(plan) is not StrategyContainerPlan:
@@ -265,7 +269,7 @@ class StrategyContainerCustody:
 
     plan: StrategyContainerPlan
     job: PreparedPrefixJob
-    package: ValidationPackage
+    package: CandidateDatasetInput
     journal: StrategyContainerJournal
     executable: str | None
     identity: str
@@ -356,7 +360,7 @@ class StrategyContainerCustody:
 
 @contextmanager
 def strategy_container_custody(
-    plan: StrategyContainerPlan, job: PreparedPrefixJob, package: ValidationPackage
+    plan: StrategyContainerPlan, job: PreparedPrefixJob, package: CandidateDatasetInput
 ):
     if type(job) is not PreparedPrefixJob or type(plan) is not StrategyContainerPlan:
         raise ValueError("Exact strategy plan and original prepared job required")

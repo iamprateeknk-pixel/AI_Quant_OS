@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-07: Keep original-source training folds in explicit retrospective dataset views with selection overlap and no independence claim. Bind each run to its exact window and passed source-only test observation; retain partial final intervals, reuse guarded custody and native BASE/stress replay, and preserve original holdout wire models. See ADR 0083.
+
 - 2026-10-05: Exercise actual fixed Linux enforcement with trusted metadata-selected privilege/noexec, memory, CPU, process, file-size and descriptor probes. Keep production worker/guard/controller/image/contract bytes unchanged, retain owned exact terminal/removal evidence, and preserve all false authority claims. See ADR 0082.
 
 - 2026-10-05: Compile/test original candidate and SDK bytes only in a separate source-only Linux job. Exclude dataset payloads, bind an independently retained manifest to native identities, persist intents before single create/start, require owned acknowledged removal, and retrieve retained results without execution. Preserve original package statuses and all false authority fields. See ADR 0081.

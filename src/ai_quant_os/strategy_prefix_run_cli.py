@@ -15,6 +15,8 @@ from ai_quant_os.strategy_prefix_run import (
     recover_strategy_prefix_run_report,
 )
 from ai_quant_os.validation_package_store import ValidationPackageStore
+from ai_quant_os.candidate_dataset_views import development_window, CandidateDatasetView
+from ai_quant_os.candidate_test_execution import read_candidate_test_result
 
 
 def main() -> int:
@@ -24,6 +26,9 @@ def main() -> int:
     parser.add_argument("--validation-archive", required=True, type=Path)
     parser.add_argument("--package-ref", required=True)
     parser.add_argument("--root", required=True, type=Path)
+    parser.add_argument("--development-fold", type=int)
+    parser.add_argument("--candidate-test-root", type=Path)
+    parser.add_argument("--candidate-test-manifest-sha256")
     commands = parser.add_subparsers(dest="command", required=True)
     prepare = commands.add_parser("prepare")
     prepare.add_argument("--image-archive", dest="archive", required=True, type=Path)
@@ -60,6 +65,19 @@ def main() -> int:
             package = archive.get(args.package_ref)
         if package is None:
             raise ValueError("Original validation package not found")
+        if args.development_fold is None:
+            if (
+                args.candidate_test_root is not None
+                or args.candidate_test_manifest_sha256 is not None
+            ):
+                raise ValueError("Test evidence options require an explicit development fold")
+        else:
+            if args.candidate_test_root is None or args.candidate_test_manifest_sha256 is None:
+                raise ValueError("Development folds require independently pinned test job evidence")
+            tested = read_candidate_test_result(
+                args.candidate_test_root, args.candidate_test_manifest_sha256
+            )
+            package = development_window(package, args.development_fold, tested)
         if args.command == "prepare":
             fields = (
                 "archive",
@@ -115,6 +133,9 @@ def main() -> int:
                 "execution_verified": False,
                 "promotion_allowed": False,
             }
+        if type(package) is CandidateDatasetView:
+            result["dataset_window_ref"] = package.window.window_ref
+            result["selection_data_overlap"] = True
         print(json.dumps(result, sort_keys=True))
     except (OSError, ValueError, RuntimeError, sqlite3.Error):
         parser.exit(

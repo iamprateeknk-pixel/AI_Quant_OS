@@ -16,7 +16,7 @@ from ai_quant_os.strategy_container_contracts import (
 )
 from ai_quant_os.strategy_image_content import ordinary_directory, parse_metadata, require_digest
 from ai_quant_os.strategy_prefix_jobs import PreparedPrefixJob
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 
 class StrategyContainerJournal:
@@ -219,7 +219,7 @@ class StrategyContainerJournal:
 
 
 def reserve_strategy_container(
-    job: PreparedPrefixJob, package: ValidationPackage, *, image_id: str, worker_sha256: str
+    job: PreparedPrefixJob, package: CandidateDatasetInput, *, image_id: str, worker_sha256: str
 ) -> StrategyContainerOwnership:
     require_digest(image_id)
     require_digest(worker_sha256, prefix="")
@@ -248,7 +248,7 @@ def reserve_strategy_container(
 
 
 def load_strategy_container_ownership(
-    job: PreparedPrefixJob, package: ValidationPackage, *, ownership_sha256: str
+    job: PreparedPrefixJob, package: CandidateDatasetInput, *, ownership_sha256: str
 ) -> StrategyContainerOwnership:
     require_digest(ownership_sha256, prefix="")
     if type(job) is not PreparedPrefixJob:

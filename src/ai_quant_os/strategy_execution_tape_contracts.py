@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from ai_quant_os.candidate_invocations import assemble_unattested_tape
 from ai_quant_os.signal_tape_contracts import SignalReplayReport, SignalTape
 from ai_quant_os.strategy_prefix_execution_contracts import StrategyPrefixExecutionReceipt
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 
 class StrategyExecutionTape(BaseModel):
@@ -68,7 +68,7 @@ class StrategyExecutionTape(BaseModel):
     def collection_ref(self) -> str:
         return "strategy-execution-tape:" + sha256(self.model_dump_json().encode()).hexdigest()
 
-    def require_package(self, package: ValidationPackage) -> None:
+    def require_package(self, package: CandidateDatasetInput) -> None:
         checked = type(self).model_validate_json(self.model_dump_json())
         expected = assemble_unattested_tape(package, tuple(row.target for row in checked.receipts))
         if checked.tape != expected:

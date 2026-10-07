@@ -13,7 +13,7 @@ from ai_quant_os.candidate_invocations import prepare_invocation
 from ai_quant_os.repair_image_inputs import read_repair_image_input
 from ai_quant_os.root_ownership import kernel_root_lock
 from ai_quant_os.strategy_image_content import encode_metadata, parse_metadata, require_digest
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 
 LOCK_NAME = ".strategy-owner.lock"
@@ -83,7 +83,7 @@ class PreparedPrefixJob:
     def promotion_allowed(self) -> bool:
         return False
 
-    def _payload(self, package: ValidationPackage) -> dict:
+    def _payload(self, package: CandidateDatasetInput) -> dict:
         return {
             "schema_version": "1.0",
             "state": "PREFIX_STAGED",
@@ -108,7 +108,7 @@ class PreparedPrefixJob:
             "promotion_allowed": False,
         }
 
-    def _verify(self, package: ValidationPackage) -> None:
+    def _verify(self, package: CandidateDatasetInput) -> None:
         expected = prepare_invocation(package, self.index)
         if (
             expected.model_dump_json().encode() != self._request
@@ -136,14 +136,14 @@ class PreparedPrefixJob:
         ):
             raise ValueError("Prefix stage identity/binding changed")
 
-    def verify(self, package: ValidationPackage) -> None:
+    def verify(self, package: CandidateDatasetInput) -> None:
         if any(_directory(path) != identity for path, identity in self._parents):
             raise ValueError("Prefix parent directory identity changed")
         with kernel_root_lock(self.path.parent, lock_name=LOCK_NAME):
             self._verify(package)
 
     @contextmanager
-    def admitted(self, package: ValidationPackage):
+    def admitted(self, package: CandidateDatasetInput):
         """Hold cooperative root ownership while a parent preserves exact inputs."""
         if any(_directory(path) != identity for path, identity in self._parents):
             raise ValueError("Prefix parent directory identity changed")
@@ -152,7 +152,7 @@ class PreparedPrefixJob:
             yield self
             self._verify(package)
 
-    def discard_unstarted(self, package: ValidationPackage) -> None:
+    def discard_unstarted(self, package: CandidateDatasetInput) -> None:
         """Remove exact inputs only before any container ownership sidecar exists."""
         if any(_directory(path) != identity for path, identity in self._parents):
             raise ValueError("Prefix parent directory identity changed")
@@ -174,7 +174,7 @@ class PreparedPrefixJob:
 
 
 def stage_prefix_job(
-    package: ValidationPackage, index: int, *, root: Path, job_name: str | None = None
+    package: CandidateDatasetInput, index: int, *, root: Path, job_name: str | None = None
 ) -> PreparedPrefixJob:
     if job_name is not None and (
         type(job_name) is not str or not re.fullmatch(r"strategy-job-[a-f0-9]{32}", job_name)
@@ -227,7 +227,7 @@ def stage_prefix_job(
 
 
 def load_prefix_job(
-    package: ValidationPackage, index: int, *, root: Path, job_name: str, stage_sha256: str
+    package: CandidateDatasetInput, index: int, *, root: Path, job_name: str, stage_sha256: str
 ) -> PreparedPrefixJob:
     request = prepare_invocation(package, index)
     require_digest(stage_sha256, prefix="")

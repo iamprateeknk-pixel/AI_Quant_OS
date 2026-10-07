@@ -4,6 +4,12 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Original-source development-window increment
+
+- Added explicit retrospective TRAINING windows bound to the original package, candidate, plan and passed proposed-test observation. Two closed warmup bars precede each validation interval; partial final intervals are retained explicitly. Separate window manifests/reports pin same-sized fold identity before execution. The CLI reads independently pinned retained test evidence. Original holdout wire models and worker/image/guard/policy remain unchanged. See CANDIDATE_DATASET_WINDOWS_HANDOFF.md and ADR 0083.
+- Focused verification passed **20 checks in 38.66 seconds**, including both actual Linux development folds, original source-only proposed tests, exact owned cleanup, BASE/stress native replay and fresh-process cached retrieval. All **19 existing execution wire schemas** match their current models and HEAD; **277 unchanged production/infrastructure/schema artifacts** match HEAD after Git newline normalization. The frozen full regression with all six local gates passed **1,949 tests**, with **15 optional integrations skipped**, in **1042.19 seconds**. The clean staged checkout passed all **20 checks in 41.40 seconds**, including actual Linux execution. Lint/format (380 files), source/test/schema comparison and staged secret scan passed. Evidence is retained in `docs/evaluations/candidate-dataset-windows-0083.json`.
+- Selection overlap is explicit and statistical independence remains unassessed. This is a prerequisite for candidate statistical validation; scorecard acceptance, physical holdout isolation, independent attestation, complete agent missions and production/live gates remain open. The full build remains incomplete.
+
 ## Latest controlled worker enforcement increment
 
 - Added five fixed trusted adversarial Linux scenarios with metadata-only selectors. Actual UID/GID/groups/raw-socket and scratch direct execution were denied; exceeding memory/CPU produced exact owned expected kills; child creation, file size and descriptor exhaustion were denied. The focused real-engine gate passed all **16 checks in 36.19 seconds**. See WORKER_ENFORCEMENT_HANDOFF.md and ADR 0082.

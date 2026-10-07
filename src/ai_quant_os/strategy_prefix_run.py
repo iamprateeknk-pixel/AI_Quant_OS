@@ -8,6 +8,8 @@ from pathlib import Path
 from uuid import uuid4
 
 from ai_quant_os.candidate_invocations import _inputs, _invocation
+from ai_quant_os.candidate_dataset_views import CandidateDatasetView
+from ai_quant_os.candidate_dataset_run_contracts import run_manifest_model, run_report_model
 from ai_quant_os.repair_image_inputs import read_repair_image_input
 from ai_quant_os.root_ownership import kernel_root_lock
 from ai_quant_os.strategy_container_lifecycle import (
@@ -39,7 +41,7 @@ from ai_quant_os.strategy_prefix_run_contracts import (
     StrategyPrefixRunReport,
 )
 from ai_quant_os.strategy_prefix_run_store import StrategyPrefixRunStore
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 RUN_LOCK = ".strategy-run.lock"
 MAX_REPORT = 134217728
@@ -62,7 +64,7 @@ def _same_image(manifest, fresh):
 
 
 def prepare_strategy_prefix_run(
-    package: ValidationPackage,
+    package: CandidateDatasetInput,
     *,
     root: Path,
     quantity: int = 1,
@@ -81,7 +83,10 @@ def prepare_strategy_prefix_run(
     inputs = StrategyRunImageInputs.model_validate(
         {key: str(value) if isinstance(value, Path) else value for key, value in args.items()}
     )
-    manifest = StrategyPrefixRunManifest(
+    window_fields = (
+        {"dataset_window": package.window} if type(package) is CandidateDatasetView else {}
+    )
+    manifest = run_manifest_model(package)(
         run_id=uuid4().hex,
         package_ref=package.package_ref,
         candidate_ref=package.candidate.candidate_ref,
@@ -93,6 +98,7 @@ def prepare_strategy_prefix_run(
         handoff=handoff,
         quantity=quantity,
         initial_balance=initial_balance,
+        **window_fields,
     )
     raw = manifest.model_dump_json().encode()
     if len(raw) > 65536:
@@ -115,7 +121,9 @@ def _owned_run(package, root, run_sha256):
     raw = read_repair_image_input(parent / "strategy-run.json", 65536)
     if sha256(raw).hexdigest() != run_sha256:
         raise ValueError("Run manifest differs from independent pin")
-    manifest = StrategyPrefixRunManifest.model_validate_json(raw)
+    manifest = run_manifest_model(package).model_validate_json(raw)
+    if type(package) is CandidateDatasetView and manifest.dataset_window != package.window:
+        raise ValueError("Run manifest differs from the original development window")
     if (
         raw != manifest.model_dump_json().encode()
         or tuple((Path(row.path), row.identity) for row in manifest.parents) != parents
@@ -185,7 +193,7 @@ def _collection(package, manifest, records):
 
 
 def _checked_report(package, manifest, records, raw):
-    report = StrategyPrefixRunReport.model_validate_json(raw)
+    report = run_report_model(package).model_validate_json(raw)
     if (
         raw != report.model_dump_json().encode()
         or report.manifest != manifest
@@ -198,7 +206,7 @@ def _checked_report(package, manifest, records, raw):
 
 
 def run_strategy_prefixes(
-    package: ValidationPackage, *, root: Path, run_sha256: str
+    package: CandidateDatasetInput, *, root: Path, run_sha256: str
 ) -> StrategyPrefixRunReport:
     with _owned_run(package, root, run_sha256) as (package, manifest, store, expected):
         parent = store.path.parent
@@ -267,7 +275,7 @@ def run_strategy_prefixes(
             store.reserve_replay()
         collection = _collection(package, manifest, records)
         parameters = {"quantity": manifest.quantity, "initial_balance": manifest.initial_balance}
-        report = StrategyPrefixRunReport(
+        report = run_report_model(package)(
             manifest=manifest,
             replay=replay_strategy_execution_tape(package, collection, **parameters),
             stress_replay=replay_strategy_execution_tape(
@@ -283,7 +291,7 @@ def run_strategy_prefixes(
 
 
 def recover_strategy_prefix_run(
-    package: ValidationPackage, *, root: Path, run_sha256: str, release_sha256: str
+    package: CandidateDatasetInput, *, root: Path, run_sha256: str, release_sha256: str
 ) -> StrategyRunPrefix:
     require_digest(release_sha256, prefix="")
     with _owned_run(package, root, run_sha256) as (package, manifest, store, expected):
@@ -326,7 +334,7 @@ def recover_strategy_prefix_run(
 
 
 def recover_strategy_prefix_run_report(
-    package: ValidationPackage, *, root: Path, run_sha256: str, report_sha256: str
+    package: CandidateDatasetInput, *, root: Path, run_sha256: str, report_sha256: str
 ) -> StrategyPrefixRunReport:
     require_digest(report_sha256, prefix="")
     with _owned_run(package, root, run_sha256) as (package, manifest, store, expected):

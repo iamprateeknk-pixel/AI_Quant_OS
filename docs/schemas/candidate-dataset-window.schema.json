@@ -1,0 +1,120 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "test_result_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Test Result Sha256",
+      "type": "string"
+    },
+    "dataset_ref": {
+      "pattern": "^research-data:[a-f0-9]{64}$",
+      "title": "Dataset Ref",
+      "type": "string"
+    },
+    "original_dataset_fingerprint": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Original Dataset Fingerprint",
+      "type": "string"
+    },
+    "window_fingerprint": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Window Fingerprint",
+      "type": "string"
+    },
+    "fold_index": {
+      "maximum": 2047,
+      "minimum": 0,
+      "title": "Fold Index",
+      "type": "integer"
+    },
+    "history_start": {
+      "maximum": 4092,
+      "minimum": 0,
+      "title": "History Start",
+      "type": "integer"
+    },
+    "validation_start": {
+      "maximum": 4094,
+      "minimum": 8,
+      "title": "Validation Start",
+      "type": "integer"
+    },
+    "validation_stop": {
+      "maximum": 4096,
+      "minimum": 9,
+      "title": "Validation Stop",
+      "type": "integer"
+    },
+    "complete_declared_window": {
+      "title": "Complete Declared Window",
+      "type": "boolean"
+    },
+    "resource_class": {
+      "const": "TRAINING",
+      "default": "TRAINING",
+      "title": "Resource Class",
+      "type": "string"
+    },
+    "purpose": {
+      "const": "RETROSPECTIVE_DEVELOPMENT_WALK_FORWARD",
+      "default": "RETROSPECTIVE_DEVELOPMENT_WALK_FORWARD",
+      "title": "Purpose",
+      "type": "string"
+    },
+    "selection_data_overlap": {
+      "const": true,
+      "default": true,
+      "title": "Selection Data Overlap",
+      "type": "boolean"
+    },
+    "statistical_independence": {
+      "const": "UNASSESSED",
+      "default": "UNASSESSED",
+      "title": "Statistical Independence",
+      "type": "string"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "package_ref",
+    "candidate_ref",
+    "test_result_sha256",
+    "dataset_ref",
+    "original_dataset_fingerprint",
+    "window_fingerprint",
+    "fold_index",
+    "history_start",
+    "validation_start",
+    "validation_stop",
+    "complete_declared_window"
+  ],
+  "title": "CandidateDatasetWindow",
+  "type": "object"
+}

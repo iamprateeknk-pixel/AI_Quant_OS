@@ -11,11 +11,11 @@ from ai_quant_os.strategy_execution_tape_contracts import (
 )
 from ai_quant_os.strategy_image_content import require_digest
 from ai_quant_os.strategy_prefix_execution_contracts import StrategyPrefixExecutionReceipt
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 
 def assemble_strategy_execution_tape(
-    package: ValidationPackage,
+    package: CandidateDatasetInput,
     receipts: tuple[StrategyPrefixExecutionReceipt, ...],
     *,
     image_id: str,
@@ -43,7 +43,7 @@ def assemble_strategy_execution_tape(
 
 
 def replay_strategy_execution_tape(
-    package: ValidationPackage,
+    package: CandidateDatasetInput,
     collection: StrategyExecutionTape,
     *,
     quantity: int = 1,
@@ -65,7 +65,7 @@ def replay_strategy_execution_tape(
 
 
 def verify_strategy_execution_replay(
-    package: ValidationPackage, report: StrategyExecutionReplayReport
+    package: CandidateDatasetInput, report: StrategyExecutionReplayReport
 ) -> None:
     checked = StrategyExecutionReplayReport.model_validate_json(report.model_dump_json())
     checked.collection.require_package(package)

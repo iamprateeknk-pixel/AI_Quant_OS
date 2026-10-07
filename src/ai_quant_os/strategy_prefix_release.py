@@ -27,7 +27,7 @@ from ai_quant_os.strategy_prefix_release_contracts import (
     StrategyPrefixReleaseBundle,
     StrategyPrefixReleaseResult,
 )
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 MAX_RELEASE = 2097152
 
@@ -97,7 +97,7 @@ def _removed(bundle, root):
 def prepare_strategy_prefix_release(
     plan: StrategyContainerPlan,
     job: PreparedPrefixJob,
-    package: ValidationPackage,
+    package: CandidateDatasetInput,
     *,
     receipt_sha256: str,
 ) -> StrategyPrefixReleaseBundle:
@@ -170,7 +170,7 @@ def _present_files(bundle, job, *, attempted):
 
 
 def release_strategy_prefix_inputs(
-    package: ValidationPackage,
+    package: CandidateDatasetInput,
     *,
     root: Path,
     job_name: str,

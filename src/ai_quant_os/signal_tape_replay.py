@@ -30,7 +30,8 @@ from ai_quant_os.signal_tape_contracts import (
     SignalReplayFill,
     SignalReplayReport,
 )
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
+from ai_quant_os.candidate_dataset_views import candidate_dataset_inputs
 
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -133,7 +134,7 @@ def _adds_risk(position: Decimal, target: Decimal) -> bool:
     return abs(target) > abs(position) or position * target < 0
 
 
-def _costs(package: ValidationPackage, scenario: str) -> SignalReplayCosts:
+def _costs(package: CandidateDatasetInput, scenario: str) -> SignalReplayCosts:
     if scenario not in ("BASE", "DECLARED_STRESS"):
         raise ValueError("Unknown declared cost scenario")
     plan = package.plan
@@ -213,7 +214,7 @@ def _quotes(dataset, instrument, precision, increment, costs):
 
 
 def replay_signal_tape(
-    package: ValidationPackage,
+    package: CandidateDatasetInput,
     tape: SignalTape,
     *,
     quantity: int = 1,
@@ -230,7 +231,7 @@ def replay_signal_tape(
         raise ValueError("Signal replay starting balance is invalid")
     if nautilus_trader.__version__ != "1.221.0":
         raise ValueError("Signal native engine version mismatch")
-    package = ValidationPackage.model_validate_json(package.model_dump_json())
+    package, _, _ = candidate_dataset_inputs(package)
     tape = SignalTape.model_validate_json(tape.model_dump_json())
     dataset = tape.require_package(package)
     with localcontext(Context(prec=28)):
@@ -313,9 +314,9 @@ def replay_signal_tape(
             engine.dispose()
 
 
-def verify_signal_replay(package: ValidationPackage, report: SignalReplayReport) -> None:
+def verify_signal_replay(package: CandidateDatasetInput, report: SignalReplayReport) -> None:
     """Reconstruct required native fills; does not attest who produced the target values."""
-    package = ValidationPackage.model_validate_json(package.model_dump_json())
+    package, _, _ = candidate_dataset_inputs(package)
     report = SignalReplayReport.model_validate_json(report.model_dump_json())
     dataset = report.tape.require_package(package)
     with localcontext(Context(prec=28)):

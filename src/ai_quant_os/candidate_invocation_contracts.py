@@ -9,7 +9,8 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 
 from ai_quant_os.market_data import Bar, BarDataset
 from ai_quant_os.strategy_candidate_contracts import ProposedFile
-from ai_quant_os.validation_package_contracts import SDKFile, SDK_PATHS, ValidationPackage
+from ai_quant_os.validation_package_contracts import SDKFile, SDK_PATHS
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 
 def _unique_keys(pairs):
@@ -112,7 +113,7 @@ class CandidateInvocation(BaseModel):
     def invocation_ref(self) -> str:
         return "candidate-invocation:" + sha256(self.model_dump_json().encode()).hexdigest()
 
-    def require_package(self, package: ValidationPackage) -> None:
+    def require_package(self, package: CandidateDatasetInput) -> None:
         from ai_quant_os.candidate_invocations import prepare_invocation
 
         checked = CandidateInvocation.model_validate_json(self.model_dump_json())

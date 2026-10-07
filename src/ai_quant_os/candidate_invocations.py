@@ -1,7 +1,8 @@
 """Prepare exact prefix-only JSON and bind numeric responses; never execute source."""
 
-import base64
 from decimal import Context, localcontext
+
+from ai_quant_os.candidate_dataset_views import candidate_dataset_inputs
 
 from ai_quant_os.candidate_invocation_contracts import (
     CandidateInvocation,
@@ -9,19 +10,17 @@ from ai_quant_os.candidate_invocation_contracts import (
     ClosedBar,
 )
 from ai_quant_os.market_data import BarDataset
-from ai_quant_os.research_data_parsing import parse_research_csv
 from ai_quant_os.signal_tape_contracts import SignalDecision, SignalTape
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 
-def _inputs(package: ValidationPackage):
-    package = ValidationPackage.model_validate_json(package.model_dump_json())
-    dataset = parse_research_csv(base64.b64decode(package.holdout.raw_base64, validate=True))
+def _inputs(package: CandidateDatasetInput):
+    package, _, dataset = candidate_dataset_inputs(package)
     return package, dataset
 
 
 def _invocation(
-    package: ValidationPackage,
+    package: CandidateDatasetInput,
     dataset: BarDataset,
     index: int,
     package_ref: str,
@@ -45,7 +44,7 @@ def _invocation(
     )
 
 
-def prepare_invocation(package: ValidationPackage, index: int) -> CandidateInvocation:
+def prepare_invocation(package: CandidateDatasetInput, index: int) -> CandidateInvocation:
     """Return one immutable inert envelope, not a whole-worker dataset or execution grant."""
     package, dataset = _inputs(package)
     return _invocation(
@@ -54,7 +53,7 @@ def prepare_invocation(package: ValidationPackage, index: int) -> CandidateInvoc
 
 
 def assemble_unattested_tape(
-    package: ValidationPackage,
+    package: CandidateDatasetInput,
     outputs: tuple[CandidateTargetOutput, ...] | list[CandidateTargetOutput],
 ) -> SignalTape:
     """Reconstruct exact coverage from untrusted targets; no origin or execution attestation."""
@@ -85,11 +84,13 @@ def assemble_unattested_tape(
         )
     if by_ref:
         raise ValueError("Unexplained target invocation")
+    with localcontext(Context(prec=28)):
+        fingerprint = dataset.fingerprint
     tape = SignalTape(
         package_ref=package_ref,
         candidate_ref=candidate_ref,
-        dataset_ref=package.holdout.receipt.dataset_ref,
-        dataset_fingerprint=package.holdout.receipt.dataset_fingerprint,
+        dataset_ref=candidate_dataset_inputs(package)[1].dataset_ref,
+        dataset_fingerprint=fingerprint,
         decisions=tuple(decisions),
     )
     tape.require_package(package)

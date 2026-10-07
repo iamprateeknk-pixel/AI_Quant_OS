@@ -1,6 +1,5 @@
 """Unattested target values and native replay evidence; never a candidate certificate."""
 
-import base64
 from decimal import Context, Decimal, localcontext
 from hashlib import sha256
 from typing import Literal
@@ -8,8 +7,8 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from ai_quant_os.market_data import BarDataset
-from ai_quant_os.research_data_parsing import parse_research_csv
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import candidate_dataset_inputs
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 
 class SignalDecision(BaseModel):
@@ -47,15 +46,17 @@ class SignalTape(BaseModel):
     def tape_ref(self) -> str:
         return "signal-tape:" + sha256(self.model_dump_json().encode()).hexdigest()
 
-    def require_package(self, package: ValidationPackage) -> BarDataset:
+    def require_package(self, package: CandidateDatasetInput) -> BarDataset:
+        package, receipt, dataset = candidate_dataset_inputs(package)
+        with localcontext(Context(prec=28)):
+            fingerprint = dataset.fingerprint
         if (self.package_ref, self.candidate_ref, self.dataset_ref, self.dataset_fingerprint) != (
             package.package_ref,
             package.candidate.candidate_ref,
-            package.holdout.receipt.dataset_ref,
-            package.holdout.receipt.dataset_fingerprint,
+            receipt.dataset_ref,
+            fingerprint,
         ):
             raise ValueError("Signal tape package/dataset binding mismatch")
-        dataset = parse_research_csv(base64.b64decode(package.holdout.raw_base64, validate=True))
         if len(self.decisions) != len(dataset.bars):
             raise ValueError("Signal tape must cover every holdout open")
         for index, (decision, bar) in enumerate(zip(self.decisions, dataset.bars, strict=True)):

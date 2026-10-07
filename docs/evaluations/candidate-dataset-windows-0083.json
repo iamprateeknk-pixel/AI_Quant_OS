@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-07",
+  "status": "RETROSPECTIVE_DEVELOPMENT_SOURCE_EXECUTION_OBSERVED",
+  "focused": {
+    "passed": 20,
+    "seconds": 38.66,
+    "real_linux_gate": true
+  },
+  "candidate_tests": {
+    "schema_version": "1.0",
+    "request_ref": "candidate-tests:a7c50e2b37201b766adcdb32f715b26c8aed8783e01c42bd252386a209df6a26",
+    "package_ref": "validation-package:742eb9e50e29a05d4b1231ce657a70baa80f9b1af96ccc2173e2547282c8a696",
+    "candidate_ref": "strategy-candidate:243a5ca14fc55a68c19ffa4e78d5efad74802b37ca15adeaf7471f66f5c4823f",
+    "python_version": "3.11.17",
+    "pytest_version": "8.4.2",
+    "compiled_files": 6,
+    "collected": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PROPOSED_TESTS_PASSED_UNATTESTED",
+    "isolation_verified": false,
+    "execution_authorized": false,
+    "promotion_allowed": false
+  },
+  "folds": [
+    {
+      "fold_index": 0,
+      "evidence_root": "data-local/candidate-dataset-runs-0083-final/test_actual_development_window0/development-fold-0",
+      "report_sha256": "65e6696ca8bf0df77b7dc4f55b715972d9c21c16754aca2b4fe628f92c71049d",
+      "window": {
+        "schema_version": "1.0",
+        "package_ref": "validation-package:742eb9e50e29a05d4b1231ce657a70baa80f9b1af96ccc2173e2547282c8a696",
+        "candidate_ref": "strategy-candidate:243a5ca14fc55a68c19ffa4e78d5efad74802b37ca15adeaf7471f66f5c4823f",
+        "test_result_sha256": "9def73d8ddda7a0c5620cf620b692984383aa1139fbbfc1bab2efc5a1c7c8d07",
+        "dataset_ref": "research-data:401e8a2f8de3a8d07ce14f80b7804f27c3307fbed32e78d74f6fe1f3cc785221",
+        "original_dataset_fingerprint": "6e0d9c96f49e4795f805e46213f0c7e60c5a1fb1f2458e9e4a15f3bdd4406881",
+        "window_fingerprint": "d75e65bceb61d13635bf70b211eb11d1ea0d501ab3550057069a7b2ed7e5adb0",
+        "fold_index": 0,
+        "history_start": 6,
+        "validation_start": 8,
+        "validation_stop": 10,
+        "complete_declared_window": true,
+        "resource_class": "TRAINING",
+        "purpose": "RETROSPECTIVE_DEVELOPMENT_WALK_FORWARD",
+        "selection_data_overlap": true,
+        "statistical_independence": "UNASSESSED",
+        "isolation_verified": false,
+        "promotion_allowed": false
+      },
+      "source_decisions": 2,
+      "container_ids": [
+        "71a3c4f15cd4637158cb076e9404283c2f78e4033a0ccfc643d437d9a92726ee",
+        "18d41568bd99debb7922f2c9a6ec691471799a8235940f1018d0de8e640d94ab"
+      ]
+    },
+    {
+      "fold_index": 1,
+      "evidence_root": "data-local/candidate-dataset-runs-0083-final/test_actual_development_window0/development-fold-1",
+      "report_sha256": "6fa7195af96a2d013a070083bc9e7cc3c794dde746fc59ad3eb5e441bb0e65b0",
+      "window": {
+        "schema_version": "1.0",
+        "package_ref": "validation-package:742eb9e50e29a05d4b1231ce657a70baa80f9b1af96ccc2173e2547282c8a696",
+        "candidate_ref": "strategy-candidate:243a5ca14fc55a68c19ffa4e78d5efad74802b37ca15adeaf7471f66f5c4823f",
+        "test_result_sha256": "9def73d8ddda7a0c5620cf620b692984383aa1139fbbfc1bab2efc5a1c7c8d07",
+        "dataset_ref": "research-data:401e8a2f8de3a8d07ce14f80b7804f27c3307fbed32e78d74f6fe1f3cc785221",
+        "original_dataset_fingerprint": "6e0d9c96f49e4795f805e46213f0c7e60c5a1fb1f2458e9e4a15f3bdd4406881",
+        "window_fingerprint": "cb8b4a05a0b8d1f9a27468c1cbc5bf8ce37657f79a8cf869299c22af5f74e491",
+        "fold_index": 1,
+        "history_start": 8,
+        "validation_start": 10,
+        "validation_stop": 12,
+        "complete_declared_window": true,
+        "resource_class": "TRAINING",
+        "purpose": "RETROSPECTIVE_DEVELOPMENT_WALK_FORWARD",
+        "selection_data_overlap": true,
+        "statistical_independence": "UNASSESSED",
+        "isolation_verified": false,
+        "promotion_allowed": false
+      },
+      "source_decisions": 2,
+      "container_ids": [
+        "becc83645b857a3cf60abd7e6f32e1b528a7ec63612d1aa3e7cf8f89a92cf158",
+        "f7a1b793343497d3dfe5dbf334cca8dd62a283ae4df0fa13ee9d955a2f975815"
+      ]
+    }
+  ],
+  "preservation": {
+    "prior_schemas_matching_models_and_HEAD": 19,
+    "unchanged_production_infrastructure_schemas": 277,
+    "intentional_changes": [
+      ".gitattributes",
+      "src/ai_quant_os/candidate_invocation_contracts.py",
+      "src/ai_quant_os/candidate_invocations.py",
+      "src/ai_quant_os/signal_tape_contracts.py",
+      "src/ai_quant_os/signal_tape_replay.py",
+      "src/ai_quant_os/strategy_container_journal.py",
+      "src/ai_quant_os/strategy_container_lifecycle.py",
+      "src/ai_quant_os/strategy_execution_tape.py",
+      "src/ai_quant_os/strategy_execution_tape_contracts.py",
+      "src/ai_quant_os/strategy_prefix_jobs.py",
+      "src/ai_quant_os/strategy_prefix_release.py",
+      "src/ai_quant_os/strategy_prefix_release_binding.py",
+      "src/ai_quant_os/strategy_prefix_run.py",
+      "src/ai_quant_os/strategy_prefix_run_cli.py",
+      "src/ai_quant_os/strategy_prefix_run_store.py"
+    ],
+    "authority_granted": false
+  },
+  "full_regression": {
+    "state": "PASSED",
+    "passed": 1949,
+    "skipped_optional": 15,
+    "seconds": 1042.19,
+    "exit_code": 0,
+    "log": "data-local/full-regression-0083.log",
+    "gates": [
+      "AI_QUANT_REQUIRE_LOCAL_WEB",
+      "AI_QUANT_STRATEGY_ENGINE_TEST",
+      "AI_QUANT_DEPENDENCY_ENGINE_TEST",
+      "AI_QUANT_CANDIDATE_TEST_ENGINE_TEST",
+      "AI_QUANT_ENFORCEMENT_ENGINE_TEST",
+      "AI_QUANT_DATASET_WINDOW_ENGINE_TEST"
+    ]
+  },
+  "statistical_independence": "UNASSESSED",
+  "isolation_verified": false,
+  "promotion_allowed": false,
+  "full_build_complete": false,
+  "cold_checkout": {
+    "passed": 20,
+    "seconds": 41.4,
+    "real_linux_gate": true,
+    "evidence_root": "data-local/candidate-dataset-runs-0083-cold",
+    "staged_source_tests_schemas_match": true,
+    "worker_archive_sha256": "d233bc9c8a2093d18c4392a913db5aaf18d3d27ae5838af58d339653e268f375"
+  },
+  "lint": {
+    "state": "PASSED",
+    "files": 380
+  },
+  "structure": {
+    "source_files": 243,
+    "test_files": 155,
+    "cycles": 0,
+    "unreferenced": 0,
+    "layer_review": "MANUAL_UNDECLARED_MACHINE_RULES"
+  },
+  "secret_scan": {
+    "state": "PASSED",
+    "scope": "STAGED_CHANGES"
+  }
+}

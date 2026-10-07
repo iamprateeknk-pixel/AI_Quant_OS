@@ -9,11 +9,11 @@ from ai_quant_os.strategy_image_runtime import StrategyImageHandoff
 from ai_quant_os.strategy_prefix_execution_contracts import strategy_start_request
 from ai_quant_os.strategy_prefix_jobs import PreparedPrefixJob
 from ai_quant_os.strategy_prefix_release_contracts import StrategyPrefixReleaseBundle
-from ai_quant_os.validation_package_contracts import ValidationPackage
+from ai_quant_os.candidate_dataset_views import CandidateDatasetInput
 
 
 def require_release_package(
-    bundle: StrategyPrefixReleaseBundle, package: ValidationPackage
+    bundle: StrategyPrefixReleaseBundle, package: CandidateDatasetInput
 ) -> PreparedPrefixJob:
     checked = StrategyPrefixReleaseBundle.model_validate_json(bundle.model_dump_json())
     invocation = prepare_invocation(package, checked.index)

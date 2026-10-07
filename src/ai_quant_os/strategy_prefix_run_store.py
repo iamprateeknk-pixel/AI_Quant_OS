@@ -8,12 +8,15 @@ import stat
 from ai_quant_os.audit_chain import AuditChain
 from ai_quant_os.strategy_image_content import parse_metadata, require_digest
 from ai_quant_os.strategy_prefix_run_contracts import StrategyPrefixRunManifest, StrategyRunPrefix
+from ai_quant_os.candidate_dataset_run_contracts import CandidateDatasetRunManifest
 
 
 class StrategyPrefixRunStore:
     def __init__(self, root: Path, manifest: StrategyPrefixRunManifest, *, create: bool = False):
         self.path = root / "strategy-run.sqlite3"
-        self.manifest = StrategyPrefixRunManifest.model_validate_json(manifest.model_dump_json())
+        if type(manifest) not in (StrategyPrefixRunManifest, CandidateDatasetRunManifest):
+            raise ValueError("Exact supported prefix run manifest required")
+        self.manifest = type(manifest).model_validate_json(manifest.model_dump_json())
         if create:
             with self.path.open("xb"):
                 pass
