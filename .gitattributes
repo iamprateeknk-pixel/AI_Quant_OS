@@ -80,3 +80,6 @@ tests/test_worker_enforcement_probe.py text eol=lf
 src/ai_quant_os/candidate_dataset*.py text eol=lf
 tests/test_candidate_dataset*.py text eol=lf
 docs/schemas/candidate-dataset*.schema.json text eol=lf
+src/ai_quant_os/candidate_validation*.py text eol=lf
+tests/test_candidate_validation.py text eol=lf
+docs/schemas/candidate-validation*.schema.json text eol=lf

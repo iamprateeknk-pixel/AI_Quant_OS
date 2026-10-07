@@ -76,6 +76,7 @@ def test_actual_development_windows_run_source_and_replay_with_pinned_identity(p
     test_root.mkdir()
     test_pin = prepare_candidate_tests(package, test_root)
     tested = run_candidate_tests(test_root, test_pin)
+    completed_windows = []
     for fold in (0, 1):
         view = development_window(package, fold, tested)
         root = tmp_path / ("development-fold-" + str(fold))
@@ -87,6 +88,7 @@ def test_actual_development_windows_run_source_and_replay_with_pinned_identity(p
         with pytest.raises(ValueError):
             run_strategy_prefixes(wrong, root=root, run_sha256=manifest.run_sha256)
         report = run_strategy_prefixes(view, root=root, run_sha256=manifest.run_sha256)
+        completed_windows.append(report)
         assert (
             report.manifest == manifest
             and report.status == "UNATTESTED_DEVELOPMENT_WINDOW_NATIVE_REPLAY"
@@ -124,3 +126,18 @@ def test_actual_development_windows_run_source_and_replay_with_pinned_identity(p
         )
         assert child.returncode == 0, child.stderr.decode()
         assert json.loads(child.stdout)["status"] == report.status
+    from ai_quant_os.candidate_validation import evaluate_candidate, verify_candidate_validation
+
+    holdout_root = tmp_path / "holdout"
+    holdout_root.mkdir()
+    manifest = prepare_strategy_prefix_run(package, root=holdout_root, **image_inputs())
+    holdout = run_strategy_prefixes(package, root=holdout_root, run_sha256=manifest.run_sha256)
+    scorecard = evaluate_candidate(package, tested, holdout, tuple(completed_windows))
+    verify_candidate_validation(package, tested, holdout, tuple(completed_windows), scorecard)
+    assert scorecard.promotion_allowed is False
+    assert scorecard.monte_carlo.state == "PENDING"
+    assert scorecard.monte_carlo.reason == "UNCLOSED_POSITION"
+    assert len(scorecard.gates) == 15
+    (tmp_path / "candidate-validation-scorecard.json").write_bytes(
+        scorecard.model_dump_json().encode()
+    )

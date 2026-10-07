@@ -54,7 +54,7 @@ def scripted(daemon, assembled, tmp_path, monkeypatch):
             source = argv[argv.index("--mount") + 1].split("source=", 1)[1].split(",target=", 1)[0]
             job = Path(source)
             ownership = StrategyContainerOwnership.model_validate_json(
-                (root / (job.name + ".container.json")).read_bytes()
+                (job.parent / (job.name + ".container.json")).read_bytes()
             )
             evidence = container(job)
             evidence["Id"] = cid

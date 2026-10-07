@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-07: Bind original candidate test, holdout and complete ordered development observations to immutable descriptive statistical scorecards. Retain every required gate, exact declared Monte Carlo seed/trials and missing-evidence reasons; do not infer independence, source attestation or promotion. Portable evidence binds immutable image content rather than original archive locations. See ADR 0084.
+
 - 2026-10-07: Keep original-source training folds in explicit retrospective dataset views with selection overlap and no independence claim. Bind each run to its exact window and passed source-only test observation; retain partial final intervals, reuse guarded custody and native BASE/stress replay, and preserve original holdout wire models. See ADR 0083.
 
 - 2026-10-05: Exercise actual fixed Linux enforcement with trusted metadata-selected privilege/noexec, memory, CPU, process, file-size and descriptor probes. Keep production worker/guard/controller/image/contract bytes unchanged, retain owned exact terminal/removal evidence, and preserve all false authority claims. See ADR 0082.

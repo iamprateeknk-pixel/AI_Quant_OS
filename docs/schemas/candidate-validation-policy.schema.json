@@ -1,0 +1,107 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "minimum_validation_windows": {
+      "default": 2,
+      "maximum": 2048,
+      "minimum": 2,
+      "title": "Minimum Validation Windows",
+      "type": "integer"
+    },
+    "minimum_orders_per_window": {
+      "default": 1,
+      "maximum": 4096,
+      "minimum": 1,
+      "title": "Minimum Orders Per Window",
+      "type": "integer"
+    },
+    "minimum_nonnegative_window_fraction": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0.75",
+      "title": "Minimum Nonnegative Window Fraction"
+    },
+    "minimum_closed_trades": {
+      "default": 20,
+      "maximum": 4096,
+      "minimum": 20,
+      "title": "Minimum Closed Trades",
+      "type": "integer"
+    },
+    "monte_carlo_block_size": {
+      "default": 4,
+      "maximum": 32,
+      "minimum": 1,
+      "title": "Monte Carlo Block Size",
+      "type": "integer"
+    },
+    "lower_tail_percent": {
+      "default": 5,
+      "maximum": 25,
+      "minimum": 1,
+      "title": "Lower Tail Percent",
+      "type": "integer"
+    },
+    "minimum_positive_fraction": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0.95",
+      "title": "Minimum Positive Fraction"
+    },
+    "drawdown_limit": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "100",
+      "title": "Drawdown Limit"
+    },
+    "risk_currency": {
+      "default": "USD",
+      "enum": [
+        "USD",
+        "JPY"
+      ],
+      "title": "Risk Currency",
+      "type": "string"
+    },
+    "basis": {
+      "const": "OPERATOR_DECLARED_DESCRIPTIVE_SCREENS",
+      "default": "OPERATOR_DECLARED_DESCRIPTIVE_SCREENS",
+      "title": "Basis",
+      "type": "string"
+    }
+  },
+  "title": "CandidateValidationPolicy",
+  "type": "object"
+}

@@ -1,0 +1,604 @@
+{
+  "$defs": {
+    "CandidateMonteCarloEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "requested_trials": {
+          "maximum": 100000,
+          "minimum": 100,
+          "title": "Requested Trials",
+          "type": "integer"
+        },
+        "requested_seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Requested Seed",
+          "type": "integer"
+        },
+        "closed_trade_count": {
+          "maximum": 4096,
+          "minimum": 0,
+          "title": "Closed Trade Count",
+          "type": "integer"
+        },
+        "open_position": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Open Position"
+        },
+        "sample_fingerprint": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sample Fingerprint",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PENDING"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MonteCarloResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "requested_trials",
+        "requested_seed",
+        "closed_trade_count",
+        "open_position",
+        "sample_fingerprint",
+        "state",
+        "reason",
+        "result"
+      ],
+      "title": "CandidateMonteCarloEvidence",
+      "type": "object"
+    },
+    "CandidateValidationGate": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PENDING"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "pattern": "^(strategy-prefix-run:|sha256:)[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "maxItems": 2050,
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "state",
+        "reason",
+        "evidence_refs"
+      ],
+      "title": "CandidateValidationGate",
+      "type": "object"
+    },
+    "CandidateValidationPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "minimum_validation_windows": {
+          "default": 2,
+          "maximum": 2048,
+          "minimum": 2,
+          "title": "Minimum Validation Windows",
+          "type": "integer"
+        },
+        "minimum_orders_per_window": {
+          "default": 1,
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "Minimum Orders Per Window",
+          "type": "integer"
+        },
+        "minimum_nonnegative_window_fraction": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.75",
+          "title": "Minimum Nonnegative Window Fraction"
+        },
+        "minimum_closed_trades": {
+          "default": 20,
+          "maximum": 4096,
+          "minimum": 20,
+          "title": "Minimum Closed Trades",
+          "type": "integer"
+        },
+        "monte_carlo_block_size": {
+          "default": 4,
+          "maximum": 32,
+          "minimum": 1,
+          "title": "Monte Carlo Block Size",
+          "type": "integer"
+        },
+        "lower_tail_percent": {
+          "default": 5,
+          "maximum": 25,
+          "minimum": 1,
+          "title": "Lower Tail Percent",
+          "type": "integer"
+        },
+        "minimum_positive_fraction": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.95",
+          "title": "Minimum Positive Fraction"
+        },
+        "drawdown_limit": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "100",
+          "title": "Drawdown Limit"
+        },
+        "risk_currency": {
+          "default": "USD",
+          "enum": [
+            "USD",
+            "JPY"
+          ],
+          "title": "Risk Currency",
+          "type": "string"
+        },
+        "basis": {
+          "const": "OPERATOR_DECLARED_DESCRIPTIVE_SCREENS",
+          "default": "OPERATOR_DECLARED_DESCRIPTIVE_SCREENS",
+          "title": "Basis",
+          "type": "string"
+        }
+      },
+      "title": "CandidateValidationPolicy",
+      "type": "object"
+    },
+    "MonteCarloResult": {
+      "properties": {
+        "spec": {
+          "$ref": "#/$defs/MonteCarloSpec"
+        },
+        "sample_fingerprint": {
+          "title": "Sample Fingerprint",
+          "type": "string"
+        },
+        "closed_trade_count": {
+          "title": "Closed Trade Count",
+          "type": "integer"
+        },
+        "open_position": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Open Position"
+        },
+        "state": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PENDING"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "lower_tail_pnl": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lower Tail Pnl"
+        },
+        "median_pnl": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Median Pnl"
+        },
+        "drawdown_p95": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Drawdown P95"
+        },
+        "positive_fraction": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Positive Fraction"
+        },
+        "simulation_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Simulation Sha256"
+        },
+        "drawdown_basis": {
+          "const": "TRADE_CLOSE_CASHFLOW",
+          "default": "TRADE_CLOSE_CASHFLOW",
+          "title": "Drawdown Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spec",
+        "sample_fingerprint",
+        "closed_trade_count",
+        "open_position",
+        "state",
+        "reason",
+        "lower_tail_pnl",
+        "median_pnl",
+        "drawdown_p95",
+        "positive_fraction",
+        "simulation_sha256"
+      ],
+      "title": "MonteCarloResult",
+      "type": "object"
+    },
+    "MonteCarloSpec": {
+      "properties": {
+        "seed": {
+          "default": 17,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "iterations": {
+          "default": 500,
+          "title": "Iterations",
+          "type": "integer"
+        },
+        "block_size": {
+          "default": 4,
+          "title": "Block Size",
+          "type": "integer"
+        },
+        "min_closed_trades": {
+          "default": 20,
+          "title": "Min Closed Trades",
+          "type": "integer"
+        },
+        "lower_tail_percent": {
+          "default": 5,
+          "title": "Lower Tail Percent",
+          "type": "integer"
+        },
+        "minimum_positive_fraction": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.95",
+          "title": "Minimum Positive Fraction"
+        },
+        "drawdown_limit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "100",
+          "title": "Drawdown Limit"
+        },
+        "risk_currency": {
+          "default": "USD",
+          "enum": [
+            "USD",
+            "JPY"
+          ],
+          "title": "Risk Currency",
+          "type": "string"
+        },
+        "method": {
+          "default": "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1",
+          "enum": [
+            "CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1",
+            "CIRCULAR_EQUAL_REVERSAL_HALF_FEE_BLOCKS_SHA256_V1"
+          ],
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "title": "MonteCarloSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "test_result_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Test Result Sha256",
+      "type": "string"
+    },
+    "holdout_report_ref": {
+      "pattern": "^strategy-prefix-run:[a-f0-9]{64}$",
+      "title": "Holdout Report Ref",
+      "type": "string"
+    },
+    "window_report_refs": {
+      "items": {
+        "pattern": "^strategy-prefix-run:[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "maxItems": 2048,
+      "minItems": 1,
+      "title": "Window Report Refs",
+      "type": "array"
+    },
+    "policy": {
+      "$ref": "#/$defs/CandidateValidationPolicy"
+    },
+    "holdout_net_pnl": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Holdout Net Pnl"
+    },
+    "development_net_pnl": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Development Net Pnl"
+    },
+    "nonnegative_window_fraction": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Nonnegative Window Fraction"
+    },
+    "pnl_currency": {
+      "enum": [
+        "USD",
+        "JPY"
+      ],
+      "title": "Pnl Currency",
+      "type": "string"
+    },
+    "monte_carlo": {
+      "$ref": "#/$defs/CandidateMonteCarloEvidence"
+    },
+    "gates": {
+      "items": {
+        "$ref": "#/$defs/CandidateValidationGate"
+      },
+      "maxItems": 15,
+      "minItems": 15,
+      "title": "Gates",
+      "type": "array"
+    },
+    "outcome": {
+      "enum": [
+        "REJECTED",
+        "VALIDATION_INCOMPLETE"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "reasons": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 15,
+      "minItems": 1,
+      "title": "Reasons",
+      "type": "array"
+    },
+    "evidence_basis": {
+      "const": "UNATTESTED_METADATA_AND_CHECKED_NATIVE_NUMERIC_LEDGERS",
+      "default": "UNATTESTED_METADATA_AND_CHECKED_NATIVE_NUMERIC_LEDGERS",
+      "title": "Evidence Basis",
+      "type": "string"
+    },
+    "selection_data_overlap": {
+      "const": true,
+      "default": true,
+      "title": "Selection Data Overlap",
+      "type": "boolean"
+    },
+    "statistical_independence": {
+      "const": "UNASSESSED",
+      "default": "UNASSESSED",
+      "title": "Statistical Independence",
+      "type": "string"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "package_ref",
+    "candidate_ref",
+    "test_result_sha256",
+    "holdout_report_ref",
+    "window_report_refs",
+    "policy",
+    "holdout_net_pnl",
+    "development_net_pnl",
+    "nonnegative_window_fraction",
+    "pnl_currency",
+    "monte_carlo",
+    "gates",
+    "outcome",
+    "reasons"
+  ],
+  "title": "CandidateValidationScorecard",
+  "type": "object"
+}

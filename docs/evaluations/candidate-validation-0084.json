@@ -1,0 +1,340 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-07",
+  "status": "LOCAL_ORIGINAL_SOURCE_DESCRIPTIVE_SCORECARD_OBSERVED",
+  "focused": {
+    "passed": 27,
+    "seconds": 122.51,
+    "real_linux_gate": true
+  },
+  "scorecard_sha256": "98a24a4f8fd35bbffc16c30f54f33f4c0e0866d82cd55c98c9d34cd97f1b3d84",
+  "scorecard": {
+    "schema_version": "1.0",
+    "package_ref": "validation-package:2e81850c1f61c7b649eb9fcb57c5fab7dcc2fc84e4df656684575cbe340913c5",
+    "candidate_ref": "strategy-candidate:51b74b555857378a6bd3fd5f7ec87727e1f89d55da1c0c2c3744daa0db673298",
+    "test_result_sha256": "31166c602f0a1804c1d8b5dd23585afc364a28982af48dedc70d01ada297446f",
+    "holdout_report_ref": "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+    "window_report_refs": [
+      "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+      "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+    ],
+    "policy": {
+      "schema_version": "1.0",
+      "minimum_validation_windows": 2,
+      "minimum_orders_per_window": 1,
+      "minimum_nonnegative_window_fraction": "0.75",
+      "minimum_closed_trades": 20,
+      "monte_carlo_block_size": 4,
+      "lower_tail_percent": 5,
+      "minimum_positive_fraction": "0.95",
+      "drawdown_limit": "100",
+      "risk_currency": "USD",
+      "basis": "OPERATOR_DECLARED_DESCRIPTIVE_SCREENS"
+    },
+    "holdout_net_pnl": "0.00067",
+    "development_net_pnl": "-0.00026",
+    "nonnegative_window_fraction": "0",
+    "pnl_currency": "USD",
+    "monte_carlo": {
+      "requested_trials": 1000,
+      "requested_seed": 27,
+      "closed_trade_count": 0,
+      "open_position": "1",
+      "sample_fingerprint": "d4c51235eb6b47d5dfa999a75bb2f497bbb3c63dc34efd52bc9084af49ccbafd",
+      "state": "PENDING",
+      "reason": "UNCLOSED_POSITION",
+      "result": {
+        "spec": {
+          "seed": 27,
+          "iterations": 1000,
+          "block_size": 4,
+          "min_closed_trades": 20,
+          "lower_tail_percent": 5,
+          "minimum_positive_fraction": "0.95",
+          "drawdown_limit": "100",
+          "risk_currency": "USD",
+          "method": "CIRCULAR_EQUAL_REVERSAL_HALF_FEE_BLOCKS_SHA256_V1"
+        },
+        "sample_fingerprint": "d4c51235eb6b47d5dfa999a75bb2f497bbb3c63dc34efd52bc9084af49ccbafd",
+        "closed_trade_count": 0,
+        "open_position": "1",
+        "state": "PENDING",
+        "reason": "UNCLOSED_POSITION",
+        "lower_tail_pnl": null,
+        "median_pnl": null,
+        "drawdown_p95": null,
+        "positive_fraction": null,
+        "simulation_sha256": null,
+        "drawdown_basis": "TRADE_CLOSE_CASHFLOW"
+      }
+    },
+    "gates": [
+      {
+        "name": "PROPOSED_TESTS",
+        "state": "PASS",
+        "reason": "UNATTESTED_PROPOSED_CASES_PASSED",
+        "evidence_refs": [
+          "sha256:31166c602f0a1804c1d8b5dd23585afc364a28982af48dedc70d01ada297446f"
+        ]
+      },
+      {
+        "name": "OUT_OF_SAMPLE",
+        "state": "PASS",
+        "reason": "DECLARED_HOLDOUT_PNL_SCREEN",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8"
+        ]
+      },
+      {
+        "name": "WALK_FORWARD",
+        "state": "FAIL",
+        "reason": "RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN",
+        "evidence_refs": [
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "STABILITY",
+        "state": "FAIL",
+        "reason": "DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN",
+        "evidence_refs": [
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "COST_STRESS",
+        "state": "FAIL",
+        "reason": "DECLARED_SYNTHETIC_STRESS_PNL_SCREEN",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "MINIMUM_ACTIVITY",
+        "state": "PASS",
+        "reason": "DECLARED_NATIVE_ORDER_ACTIVITY_SCREEN",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "MONTE_CARLO",
+        "state": "PENDING",
+        "reason": "UNCLOSED_POSITION",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8"
+        ]
+      },
+      {
+        "name": "INDEPENDENT_HOLDOUT",
+        "state": "PENDING",
+        "reason": "PHYSICAL_AND_STATISTICAL_ISOLATION_UNASSESSED",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "SOURCE_ATTESTATION",
+        "state": "PENDING",
+        "reason": "INDEPENDENT_SOURCE_DAEMON_ATTESTATION_MISSING",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "ADVERSARIAL",
+        "state": "PENDING",
+        "reason": "PROPOSED_SOURCE_ADVERSARIAL_VALIDATION_MISSING",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "REALITY_GAP",
+        "state": "PENDING",
+        "reason": "BROKER_MARKET_LIQUIDITY_REALITY_GAP_UNASSESSED",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "FINANCING",
+        "state": "PENDING",
+        "reason": "FINANCING_COSTS_UNAVAILABLE",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "ACCOUNT_CONVERSION",
+        "state": "PENDING",
+        "reason": "ACCOUNT_CURRENCY_CONVERSION_UNAVAILABLE",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "INDEPENDENT_REVIEW",
+        "state": "PENDING",
+        "reason": "INDEPENDENT_CRITICAL_REVIEW_MISSING",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      },
+      {
+        "name": "SHADOW",
+        "state": "PENDING",
+        "reason": "SHADOW_OBSERVATIONS_MISSING",
+        "evidence_refs": [
+          "strategy-prefix-run:c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+          "strategy-prefix-run:dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+          "strategy-prefix-run:991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6"
+        ]
+      }
+    ],
+    "outcome": "REJECTED",
+    "reasons": [
+      "WALK_FORWARD:RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN",
+      "STABILITY:DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN",
+      "COST_STRESS:DECLARED_SYNTHETIC_STRESS_PNL_SCREEN"
+    ],
+    "evidence_basis": "UNATTESTED_METADATA_AND_CHECKED_NATIVE_NUMERIC_LEDGERS",
+    "selection_data_overlap": true,
+    "statistical_independence": "UNASSESSED",
+    "isolation_verified": false,
+    "promotion_allowed": false
+  },
+  "reports": [
+    {
+      "evidence_root": "data-local/candidate-validation-0084-complete/test_actual_development_window0/development-fold-0",
+      "report_sha256": "dab06bb9f83071cd70bce7330e1599bb4d1f21008b78afe16f07219525156301",
+      "status": "UNATTESTED_DEVELOPMENT_WINDOW_NATIVE_REPLAY",
+      "source_decisions": 2,
+      "container_ids": [
+        "20c639f8f7207d747a237c99088d4496fd457b6778753ddc5d657b4ce90f5ae0",
+        "fe5ff9d232633f79a72f32a273124fd1018246b4b5ebd22f82e22750464789ea"
+      ]
+    },
+    {
+      "evidence_root": "data-local/candidate-validation-0084-complete/test_actual_development_window0/development-fold-1",
+      "report_sha256": "991cf44b022dcdcc5fb89c2ef6d70e4eac74401348ea48735e5c5e642a6da7c6",
+      "status": "UNATTESTED_DEVELOPMENT_WINDOW_NATIVE_REPLAY",
+      "source_decisions": 2,
+      "container_ids": [
+        "8dc5bad372b7f50aa6bf216432097ed160ff0b3110fde1f0bfd807d79a250388",
+        "e64a97a81c600b745d1284c85476b0a9f4bc5216df46645f06f3335d5e1229d8"
+      ]
+    },
+    {
+      "evidence_root": "data-local/candidate-validation-0084-complete/test_actual_development_window0/holdout",
+      "report_sha256": "c7a0c00a4597399a0300f07404a867fa5ec70eee5326c414cbd3f50e936ae2b8",
+      "status": "UNATTESTED_FULL_PREFIX_RUN_NATIVE_REPLAY",
+      "source_decisions": 10,
+      "container_ids": [
+        "2f81df834780fadfbaa319e72e4e106150526d784e5201fb8af057204fd61c91",
+        "fb5d65055de1bbf992de7a0e88671e8e0277e711cc279bd228e2eca52a800d0d",
+        "d63c7d4ed7f98eedff8c6162007f1745153f03560ede552e5fa3b685f4303e62",
+        "beb252f170108ff97f0fa80e88fe84018f1f7d40911da15a6ab55fa984f82079",
+        "2fb764b280bd689bbabc25aec9737b2ed541a803d42c3065f2c376d4592b2467",
+        "701ea26536d843ba2157d7bc5e075f8e654cc0f116da755508b17c328b61d9ff",
+        "34228a82ea511204eff21b6f9a219c4a1ad64b82c961078d4f07cd0e957fc998",
+        "02d377771bf21a516c4c27c48e5105a5e35d79118924456d7470297d81b49b1a",
+        "23a001ae7c58fbefbd8512fc68c4ac50dc3105212ca1fe4266893493af160b1e",
+        "5de76cb4c227ae420464c0fd0f940c657f073f2ef006ac136b66305a1ee1a423"
+      ]
+    }
+  ],
+  "prior_uncertain_create": {
+    "evidence_root": "data-local/candidate-validation-0084-final/test_actual_development_window0/development-fold-0",
+    "job_name": "strategy-job-7c4b476d2b364af3a0e24e1976d5fcd3",
+    "create_attempt": {
+      "create_sha256": "5d5b89f0e95795b8362946ef75139225d1ba026a9f786100d464439bec6aefc7",
+      "execution_verified": false,
+      "owner": "a1bcca1d270f4a16b23892842b3a9413",
+      "promotion_allowed": false,
+      "schema_version": "1.0",
+      "state": "CREATE_REQUEST_MAY_HAVE_BEEN_SENT"
+    },
+    "inspection_exit": 1,
+    "inspection_observation": "EXACT_UNIQUE_NAME_ABSENT",
+    "terminal_or_removal_acknowledged": false,
+    "inputs_retained": true,
+    "job_restarted": false
+  },
+  "preservation": {
+    "prior_schemas_matching_models_and_HEAD": 22,
+    "unchanged_production_infrastructure_schemas": 296,
+    "intentional_changes": [
+      ".gitattributes",
+      "tests/test_candidate_dataset_runs.py",
+      "tests/test_strategy_prefix_run.py"
+    ],
+    "authority_granted": false
+  },
+  "full_regression": {
+    "state": "PASSED",
+    "passed": 1956,
+    "skipped_optional": 15,
+    "seconds": 1246.54,
+    "exit_code": 0,
+    "log": "data-local/full-regression-0084.log",
+    "gates": [
+      "AI_QUANT_REQUIRE_LOCAL_WEB",
+      "AI_QUANT_STRATEGY_ENGINE_TEST",
+      "AI_QUANT_DEPENDENCY_ENGINE_TEST",
+      "AI_QUANT_CANDIDATE_TEST_ENGINE_TEST",
+      "AI_QUANT_ENFORCEMENT_ENGINE_TEST",
+      "AI_QUANT_DATASET_WINDOW_ENGINE_TEST"
+    ]
+  },
+  "isolation_verified": false,
+  "promotion_allowed": false,
+  "full_build_complete": false,
+  "cold_checkout": {
+    "passed": 27,
+    "seconds": 118.01,
+    "real_linux_gate": true,
+    "evidence_root": "data-local/candidate-validation-0084-cold",
+    "staged_source_tests_schemas_match": true,
+    "worker_archive_sha256": "d233bc9c8a2093d18c4392a913db5aaf18d3d27ae5838af58d339653e268f375"
+  },
+  "lint": {
+    "state": "PASSED",
+    "files": 385
+  },
+  "secret_scan": {
+    "state": "PASSED",
+    "scope": "STAGED_CHANGES"
+  },
+  "review": {
+    "state": "MANUAL_SELF_REVIEW",
+    "axes": [
+      "CORRECTNESS",
+      "READABILITY",
+      "ARCHITECTURE",
+      "SECURITY",
+      "PERFORMANCE"
+    ],
+    "independent_candidate_review": "PENDING"
+  }
+}
