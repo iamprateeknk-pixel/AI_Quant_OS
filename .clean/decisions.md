@@ -35,3 +35,4 @@
 - 2026-09-28: Add a local Mission Control monitoring UI and SQLite paper receipts, control state, and audit. External brokers, agents and distributed workflows remain incomplete.
 - 2026-09-28: Reserve a unique intent in SQLite before invoking the paper simulator, within one transaction. This is a local simulator safeguard, not a substitute for a live broker outbox and reconciliation.
 - 2026-09-28: Compute worst case EURUSD base units from the filled net position and pending buy/sell quantities. Bind each risk decision to the stored snapshot and recheck its fingerprint and fixed ceiling inside the order transaction. See ADR 0002.
+- 2026-10-07: Retain original-source compilation/proposed-test failures in a separate immutable contract without fabricated downstream metrics. Publish checked failures and recomputed scorecards through bounded, atomic SQLite audit binding; retain original package statuses and all false authority fields. See ADR 0085.

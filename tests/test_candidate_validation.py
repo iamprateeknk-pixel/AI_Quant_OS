@@ -149,6 +149,17 @@ def test_complete_scorecard_binds_native_reports_and_never_skips_missing_gates(
         common + ["evaluate", "--output", str(output)], capture_output=True, timeout=30
     )
     assert child.returncode != 0 and output.read_bytes() == score.model_dump_json().encode()
+    archive_path = tmp_path / "checked-candidate-results.sqlite3"
+    child = subprocess.run(
+        common + ["--record-archive", str(archive_path), "archive-evaluation"],
+        capture_output=True,
+        timeout=30,
+    )
+    assert child.returncode == 0, child.stderr.decode()
+    from ai_quant_os.candidate_validation_store import CandidateValidationStore
+
+    with CandidateValidationStore(archive_path) as archive:
+        assert archive.get(json.loads(child.stdout)["scorecard_ref"]) == score
 
 
 def test_closed_trade_monte_carlo_honors_declared_seed_trials_and_currency(package):

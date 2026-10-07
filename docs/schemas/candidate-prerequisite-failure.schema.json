@@ -1,0 +1,190 @@
+{
+  "$defs": {
+    "CandidateTestResult": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "request_ref": {
+          "pattern": "^candidate-tests:[a-f0-9]{64}$",
+          "title": "Request Ref",
+          "type": "string"
+        },
+        "package_ref": {
+          "pattern": "^validation-package:[a-f0-9]{64}$",
+          "title": "Package Ref",
+          "type": "string"
+        },
+        "candidate_ref": {
+          "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+          "title": "Candidate Ref",
+          "type": "string"
+        },
+        "python_version": {
+          "const": "3.11.17",
+          "title": "Python Version",
+          "type": "string"
+        },
+        "pytest_version": {
+          "const": "8.4.2",
+          "title": "Pytest Version",
+          "type": "string"
+        },
+        "compiled_files": {
+          "maximum": 6,
+          "minimum": 0,
+          "title": "Compiled Files",
+          "type": "integer"
+        },
+        "collected": {
+          "maximum": 1024,
+          "minimum": 0,
+          "title": "Collected",
+          "type": "integer"
+        },
+        "passed": {
+          "maximum": 1024,
+          "minimum": 0,
+          "title": "Passed",
+          "type": "integer"
+        },
+        "failed": {
+          "maximum": 3072,
+          "minimum": 0,
+          "title": "Failed",
+          "type": "integer"
+        },
+        "skipped": {
+          "maximum": 1024,
+          "minimum": 0,
+          "title": "Skipped",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "COMPILE_FAILED",
+            "PROPOSED_TESTS_PASSED_UNATTESTED",
+            "PROPOSED_TESTS_FAILED_UNATTESTED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "isolation_verified": {
+          "const": false,
+          "title": "Isolation Verified",
+          "type": "boolean"
+        },
+        "execution_authorized": {
+          "const": false,
+          "title": "Execution Authorized",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_ref",
+        "package_ref",
+        "candidate_ref",
+        "python_version",
+        "pytest_version",
+        "compiled_files",
+        "collected",
+        "passed",
+        "failed",
+        "skipped",
+        "status",
+        "isolation_verified",
+        "execution_authorized",
+        "promotion_allowed"
+      ],
+      "title": "CandidateTestResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "test_result_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Test Result Sha256",
+      "type": "string"
+    },
+    "test_result": {
+      "$ref": "#/$defs/CandidateTestResult"
+    },
+    "outcome": {
+      "const": "PREREQUISITE_FAILED",
+      "default": "PREREQUISITE_FAILED",
+      "title": "Outcome",
+      "type": "string"
+    },
+    "reason": {
+      "enum": [
+        "COMPILE_FAILED",
+        "PROPOSED_TESTS_FAILED_UNATTESTED"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "unexecuted_gates": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 14,
+      "minItems": 14,
+      "title": "Unexecuted Gates",
+      "type": "array"
+    },
+    "evidence_basis": {
+      "const": "UNATTESTED_SOURCE_ONLY_TEST_METADATA",
+      "default": "UNATTESTED_SOURCE_ONLY_TEST_METADATA",
+      "title": "Evidence Basis",
+      "type": "string"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "package_ref",
+    "candidate_ref",
+    "test_result_sha256",
+    "test_result",
+    "reason",
+    "unexecuted_gates"
+  ],
+  "title": "CandidatePrerequisiteFailure",
+  "type": "object"
+}

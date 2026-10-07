@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-07",
+  "status": "LOCAL_CHECKED_CANDIDATE_OBSERVATIONS_ARCHIVED",
+  "focused": {
+    "passed": 14,
+    "seconds": 49.25,
+    "before_additional_scorecard_archive_assertion": true
+  },
+  "cold_checkout": {
+    "passed": 14,
+    "seconds": 89.65,
+    "source_schema_tests_match_index": true,
+    "real_worker_executions": false
+  },
+  "full_regression": {
+    "passed": 1963,
+    "skipped": 15,
+    "seconds": 1298.06,
+    "exit_code": 0,
+    "gates": [
+      "LOCAL_WEB",
+      "STRATEGY_ENGINE",
+      "DEPENDENCY_ENGINE",
+      "CANDIDATE_TEST_ENGINE",
+      "ENFORCEMENT_ENGINE",
+      "DATASET_WINDOW_ENGINE"
+    ]
+  },
+  "preservation": {
+    "prior_schemas_matching_models_and_HEAD": 24,
+    "unchanged_production_infrastructure_schemas": 301,
+    "intentional_changes": [
+      "src/ai_quant_os/candidate_validation_cli.py",
+      "tests/test_candidate_validation.py"
+    ],
+    "authority_granted": false
+  },
+  "real_worker_result_archive": {
+    "scorecard_ref": "candidate-validation:1f3e7ce0fbad4e114ef9aef103d6a91516b74ba7580504177e18da173b3c9324",
+    "outcome": "REJECTED",
+    "original_package_ref": "validation-package:acecd763ffdc3ed6542bf1e852980f85ddf46813dee1523c57803d7deb8a91de",
+    "ordered_reports": [
+      "strategy-prefix-run:164d18071a4407932f9f2cdd5d0e3587e67b5f17fedb248dcdabee1b414fd69c",
+      "strategy-prefix-run:a28a552548fb39a3b298512a9a3b79e17d26e248233dda14a972c502cc4bf240",
+      "strategy-prefix-run:eb581f69a361e49b541b704e68262fe56ad351f1736a8b03b9b08ffa7e9bf703"
+    ],
+    "fresh_read_equal": true,
+    "archive": "D:\\AI_Quant_OS\\data-local\\validation-archive-0085-full-worker.sqlite3"
+  },
+  "failure_test_basis": "SCRIPTED_UNATTESTED_COMPILE_AND_PROPOSED_TEST_METADATA; NO_SYNTHETIC_TRADING_RESULTS",
+  "lint_and_format": {
+    "passed": true,
+    "files": 389
+  },
+  "structure": {
+    "source_files": 249,
+    "test_files": 158,
+    "cycles": 0,
+    "unreferenced": 0
+  },
+  "review": {
+    "kind": "MANUAL_SELF_REVIEW",
+    "axes": [
+      "correctness",
+      "readability",
+      "architecture",
+      "security",
+      "performance"
+    ],
+    "independent_candidate_review": "PENDING"
+  },
+  "remaining": [
+    "A10_MISSION_HEALTH_GRAPH_INTEGRATION",
+    "UNCERTAIN_WORKER_FAILURE_ARCHIVAL",
+    "LARGER_DECLARED_MONTE_CARLO_PLANS",
+    "PHYSICAL_STATISTICAL_HOLDOUT_ISOLATION",
+    "INDEPENDENT_ACCEPTANCE",
+    "FULL_EXECUTION_PACK_PRODUCTION_GATES"
+  ],
+  "isolation_verified": false,
+  "promotion_allowed": false,
+  "full_build_complete": false
+}

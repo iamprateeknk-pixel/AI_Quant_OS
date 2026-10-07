@@ -4,6 +4,35 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Checked candidate-validation archive increment
+
+- Added distinct original-source prerequisite-failure records with exact test bytes,
+  hashes and unexecuted downstream gates. Failed compilation/proposed tests retain
+  observations without invented trading statistics. Added byte-pinned failure
+  record/verify commands and separate audited SQLite failure/evaluation publication.
+  Scorecards are recomputed before publication; duplicate publication adds no audit
+  event. Changed records, missing audit metadata and capacity violations refuse
+  access. See CANDIDATE_VALIDATION_ARCHIVE_HANDOFF.md and ADR 0085.
+- Focused verification passed **14 checks in 49.25 seconds** before the additional
+  fresh-process scorecard archive assertion. The actual previously retained Linux
+  reports reproduced scorecard `98a24a4f8fd35bbffc16c30f54f33f4c0e0866d82cd55c98c9d34cd97f1b3d84`
+  through checked archival and a fresh archive reader. All **24 prior wire schemas**
+  match their models and HEAD; **301 unchanged production/infrastructure/schema
+  artifacts** match HEAD after newline normalization. Lint and formatting (389 files)
+  pass. The full regression with all six local web/Linux gates passed **1,963 tests**,
+  with **15 optional integrations skipped**, in **1298.06 seconds**. All **14 focused
+  checks** passed from a fresh staged checkout in **89.65 seconds**, including the
+  additional fresh-process scorecard archive assertion. Source, test and schema
+  bytes match that checkout and the staged index. The full run's actual Linux-worker
+  scorecard was recomputed, archived and checked through a fresh archive reader.
+  The staged secret scan found no leaks. See
+  `docs/evaluations/candidate-validation-archive-0085.json`.
+- This closes local checked result publication for compilation/proposed-test
+  failures and existing statistical scorecards. Early uncertain worker failures,
+  A10 mission/health/graph integration, larger declared computation plans,
+  physical/statistical holdout isolation, independent acceptance and every
+  production/live gate remain required. The full P00–P13 build remains incomplete.
+
 ## Original-source statistical scorecard increment
 
 - Added immutable policy/scorecard contracts, completed-trade Monte Carlo composition, complete source/test/holdout/development bindings and independently pinned file evaluate/verify commands. All fifteen gates retain measured states or pending reasons. Missing/duplicate/reordered/foreign intervals and substituted metrics are refused. Portable worker evidence binds immutable content rather than filesystem locations. Open positions are not invented into closed trades; declared trial counts are never lowered. See CANDIDATE_VALIDATION_HANDOFF.md and ADR 0084.
