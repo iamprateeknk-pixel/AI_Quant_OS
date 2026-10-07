@@ -141,3 +141,41 @@ def test_actual_development_windows_run_source_and_replay_with_pinned_identity(p
     (tmp_path / "candidate-validation-scorecard.json").write_bytes(
         scorecard.model_dump_json().encode()
     )
+    from datetime import datetime, timezone
+    from fastapi.testclient import TestClient
+    from ai_quant_os.api import create_app
+    from ai_quant_os.candidate_validation_store import CandidateValidationStore
+    from test_research_hypothesis_api import HEADERS
+
+    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
+        assert (
+            archive.put_evaluation(package, tested, holdout, tuple(completed_windows)) == scorecard
+        )
+    with TestClient(
+        create_app(
+            operator_token="fixture-hypothesis",
+            paper_db_path=tmp_path / "paper.sqlite3",
+            clock=lambda: datetime.now(timezone.utc),
+        )
+    ) as client:
+        context = client.post(
+            "/api/v1/sandbox/validation-scientist/context",
+            headers=HEADERS,
+            json={"task_id": "actual-validation", "artifact_ref": scorecard.scorecard_ref},
+        )
+        assert context.status_code == 200, context.text
+        response = client.post(
+            "/api/v1/sandbox/validation-scientist/execute",
+            headers=HEADERS,
+            json={"run_id": "actual-validation", "context_ref": context.json()["context_ref"]},
+        )
+        assert response.status_code == 200, response.text
+        receipt = response.json()["receipt"]
+        assert receipt["status"] == "COMPLETED", receipt
+        output = json.loads(receipt["output_json"])
+        assert output["summary"]["artifact_ref"] == scorecard.scorecard_ref
+        assert len(output["summary"]["gates"]) == 15
+        assert output["promotion_allowed"] is False
+        (tmp_path / "validation-scientist-receipt.json").write_text(
+            json.dumps(receipt, sort_keys=True), encoding="utf-8"
+        )

@@ -1,0 +1,271 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-08",
+  "status": "LOCAL_A10_CHECKED_ARCHIVE_ADVISORY_GRAPH_OBSERVED",
+  "focused": {
+    "passed": 34,
+    "seconds": 82.74,
+    "includes_native_boundary_and_supervisor": true
+  },
+  "cold_checkout": {
+    "passed": 34,
+    "seconds": 77.96,
+    "source_test_schema_match_index": true,
+    "real_worker_runs": false
+  },
+  "first_regression": {
+    "failed": 5,
+    "passed": 1973,
+    "skipped": 15,
+    "seconds": 1390.26,
+    "exit_code": 1,
+    "repairs": [
+      "OPTIONAL_NATIVE_DEPENDENCY_BOUNDARY",
+      "EXACT_REGISTRY_COUNTS_WITH_A10_DEFERRED_FROM_PAPER_SUPERVISION"
+    ]
+  },
+  "full_regression": {
+    "passed": 1978,
+    "skipped": 15,
+    "seconds": 1939.06,
+    "exit_code": 0,
+    "gates": [
+      "LOCAL_WEB",
+      "STRATEGY_ENGINE",
+      "DEPENDENCY_ENGINE",
+      "CANDIDATE_TEST_ENGINE",
+      "ENFORCEMENT_ENGINE",
+      "DATASET_WINDOW_ENGINE"
+    ]
+  },
+  "preservation": {
+    "prior_schemas_matching_models_and_HEAD": 25,
+    "unchanged_production_infrastructure_schemas": 302,
+    "intentional_changes": [
+      ".clean/decisions.md",
+      ".gitattributes",
+      "docs/BUILD_STATUS.md",
+      "docs/VALIDATION_SCIENTIST_HANDOFF.md",
+      "docs/adr/0086-validation-scientist-advisory-graphs.md",
+      "docs/evaluations/validation-scientist-0086.json",
+      "docs/schemas/validation-scientist-scorecard.schema.json",
+      "docs/schemas/validation-scientist-summary.schema.json",
+      "src/ai_quant_os/agent_registry.py",
+      "src/ai_quant_os/api.py",
+      "src/ai_quant_os/candidate_validation_store.py",
+      "src/ai_quant_os/validation_scientist_agent.py",
+      "src/ai_quant_os/validation_scientist_api.py",
+      "src/ai_quant_os/validation_scientist_contracts.py",
+      "src/ai_quant_os/validation_scientist_service.py",
+      "src/ai_quant_os/validation_scientist_sources.py",
+      "tests/test_agent_registry.py",
+      "tests/test_candidate_dataset_runs.py",
+      "tests/test_supervisor_api.py",
+      "tests/test_supervisor_sources.py",
+      "tests/test_validation_scientist_api.py",
+      "tests/test_validation_scientist_sources.py"
+    ],
+    "authority_granted": false
+  },
+  "actual_worker_to_agent": {
+    "artifact_ref": "candidate-validation:7bd1e77701646c00d869c7cd61920c4e08b417476d62a3f20defe0b649662c0c",
+    "receipt": {
+      "agent_id": "A10",
+      "agent_version": "0.2.0",
+      "context_ref": "agent-context:1a3fa9e26c5e4667c012ba74cd07a3e1c9a43a6f6a5e1760795f0ae413f68111",
+      "created_at": "2026-10-07T19:14:23.361615Z",
+      "graph_version": "0.1.0",
+      "input_refs": [
+        "context-evidence:7520b5319ae5c20ef86df604cf93afa63eebe84223bf60413a164fcae8b1b877",
+        "context-evidence:14228a9055eb6bb8a22aa533222de39d2d11c486fc81da6605ec12d528d76a05",
+        "context-evidence:c2e8aac3c2d3c63658d6b7ecf9ae6d25fa8b6359785c856bd0769bb23d0058de"
+      ],
+      "manifest_ref": "agent-manifest:70f4af2a3d6c3d4739967f128339117cbdd759cb2341278cc821c2f24ba4ed19",
+      "output_json": "{\"agent_id\":\"A10\",\"agent_version\":\"0.2.0\",\"confidence\":\"0\",\"contradictions\":[\"WALK_FORWARD:RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN\",\"STABILITY:DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN\",\"COST_STRESS:DECLARED_SYNTHETIC_STRESS_PNL_SCREEN\"],\"created_at\":\"2026-10-07T19:14:23.361615Z\",\"evidence_refs\":[\"context-evidence:7520b5319ae5c20ef86df604cf93afa63eebe84223bf60413a164fcae8b1b877\",\"context-evidence:14228a9055eb6bb8a22aa533222de39d2d11c486fc81da6605ec12d528d76a05\",\"context-evidence:c2e8aac3c2d3c63658d6b7ecf9ae6d25fa8b6359785c856bd0769bb23d0058de\"],\"input_refs\":[\"context-evidence:7520b5319ae5c20ef86df604cf93afa63eebe84223bf60413a164fcae8b1b877\",\"context-evidence:14228a9055eb6bb8a22aa533222de39d2d11c486fc81da6605ec12d528d76a05\",\"context-evidence:c2e8aac3c2d3c63658d6b7ecf9ae6d25fa8b6359785c856bd0769bb23d0058de\"],\"isolation_verified\":false,\"model_route\":\"DETERMINISTIC_ONLY\",\"output_type\":\"ValidationScorecard\",\"promotion_allowed\":false,\"requires_escalation\":true,\"schema_version\":\"2.0\",\"summary\":{\"artifact_ref\":\"candidate-validation:7bd1e77701646c00d869c7cd61920c4e08b417476d62a3f20defe0b649662c0c\",\"candidate_ref\":\"strategy-candidate:f088c419ead90c1d910a86bb8d2da0f93fa6b62bd839f212c07ef646ae4669fb\",\"evidence_basis\":\"ARCHIVED_UNATTESTED_DESCRIPTIVE_VALIDATION\",\"gates\":[{\"name\":\"PROPOSED_TESTS\",\"reason\":\"UNATTESTED_PROPOSED_CASES_PASSED\",\"state\":\"PASS\"},{\"name\":\"OUT_OF_SAMPLE\",\"reason\":\"DECLARED_HOLDOUT_PNL_SCREEN\",\"state\":\"PASS\"},{\"name\":\"WALK_FORWARD\",\"reason\":\"RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN\",\"state\":\"FAIL\"},{\"name\":\"STABILITY\",\"reason\":\"DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN\",\"state\":\"FAIL\"},{\"name\":\"COST_STRESS\",\"reason\":\"DECLARED_SYNTHETIC_STRESS_PNL_SCREEN\",\"state\":\"FAIL\"},{\"name\":\"MINIMUM_ACTIVITY\",\"reason\":\"DECLARED_NATIVE_ORDER_ACTIVITY_SCREEN\",\"state\":\"PASS\"},{\"name\":\"MONTE_CARLO\",\"reason\":\"UNCLOSED_POSITION\",\"state\":\"PENDING\"},{\"name\":\"INDEPENDENT_HOLDOUT\",\"reason\":\"PHYSICAL_AND_STATISTICAL_ISOLATION_UNASSESSED\",\"state\":\"PENDING\"},{\"name\":\"SOURCE_ATTESTATION\",\"reason\":\"INDEPENDENT_SOURCE_DAEMON_ATTESTATION_MISSING\",\"state\":\"PENDING\"},{\"name\":\"ADVERSARIAL\",\"reason\":\"PROPOSED_SOURCE_ADVERSARIAL_VALIDATION_MISSING\",\"state\":\"PENDING\"},{\"name\":\"REALITY_GAP\",\"reason\":\"BROKER_MARKET_LIQUIDITY_REALITY_GAP_UNASSESSED\",\"state\":\"PENDING\"},{\"name\":\"FINANCING\",\"reason\":\"FINANCING_COSTS_UNAVAILABLE\",\"state\":\"PENDING\"},{\"name\":\"ACCOUNT_CONVERSION\",\"reason\":\"ACCOUNT_CURRENCY_CONVERSION_UNAVAILABLE\",\"state\":\"PENDING\"},{\"name\":\"INDEPENDENT_REVIEW\",\"reason\":\"INDEPENDENT_CRITICAL_REVIEW_MISSING\",\"state\":\"PENDING\"},{\"name\":\"SHADOW\",\"reason\":\"SHADOW_OBSERVATIONS_MISSING\",\"state\":\"PENDING\"}],\"holdout_ref\":\"research-data:889a8009d33bf93e875d5c218c03b3f896882463dc9c2fa5f7fe6e9558a622ae\",\"outcome\":\"REJECTED\",\"package_ref\":\"validation-package:35db2490ae069b3984064dd4c06b5c8a946dd9ec3d379a224e1866aa3a651287\",\"reasons\":[\"WALK_FORWARD:RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN\",\"STABILITY:DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN\",\"COST_STRESS:DECLARED_SYNTHETIC_STRESS_PNL_SCREEN\"],\"statistics\":{\"closed_trade_count\":0,\"development_net_pnl\":\"-0.00026\",\"holdout_net_pnl\":\"0.00067\",\"nonnegative_window_fraction\":\"0\",\"pnl_currency\":\"USD\",\"requested_seed\":27,\"requested_trials\":1000},\"training_ref\":\"research-data:401e8a2f8de3a8d07ce14f80b7804f27c3307fbed32e78d74f6fe1f3cc785221\"},\"task_id\":\"actual-validation\",\"trace_id\":\"06e70f52-99a4-409b-bd9b-7cb6ea9464a6\",\"uncertainty\":\"1\",\"valid_until\":\"2026-10-07T19:14:28.342537Z\"}",
+      "output_type": "ValidationScorecard",
+      "requires_escalation": true,
+      "run_id": "actual-validation",
+      "schema_version": "1.0",
+      "status": "COMPLETED",
+      "task_id": "actual-validation",
+      "valid_until": "2026-10-07T19:14:28.342537Z"
+    },
+    "output": {
+      "schema_version": "2.0",
+      "agent_id": "A10",
+      "agent_version": "0.2.0",
+      "task_id": "actual-validation",
+      "input_refs": [
+        "context-evidence:7520b5319ae5c20ef86df604cf93afa63eebe84223bf60413a164fcae8b1b877",
+        "context-evidence:14228a9055eb6bb8a22aa533222de39d2d11c486fc81da6605ec12d528d76a05",
+        "context-evidence:c2e8aac3c2d3c63658d6b7ecf9ae6d25fa8b6359785c856bd0769bb23d0058de"
+      ],
+      "evidence_refs": [
+        "context-evidence:7520b5319ae5c20ef86df604cf93afa63eebe84223bf60413a164fcae8b1b877",
+        "context-evidence:14228a9055eb6bb8a22aa533222de39d2d11c486fc81da6605ec12d528d76a05",
+        "context-evidence:c2e8aac3c2d3c63658d6b7ecf9ae6d25fa8b6359785c856bd0769bb23d0058de"
+      ],
+      "confidence": "0",
+      "uncertainty": "1",
+      "created_at": "2026-10-07T19:14:23.361615Z",
+      "valid_until": "2026-10-07T19:14:28.342537Z",
+      "contradictions": [
+        "WALK_FORWARD:RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN",
+        "STABILITY:DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN",
+        "COST_STRESS:DECLARED_SYNTHETIC_STRESS_PNL_SCREEN"
+      ],
+      "trace_id": "06e70f52-99a4-409b-bd9b-7cb6ea9464a6",
+      "requires_escalation": true,
+      "output_type": "ValidationScorecard",
+      "model_route": "DETERMINISTIC_ONLY",
+      "summary": {
+        "artifact_ref": "candidate-validation:7bd1e77701646c00d869c7cd61920c4e08b417476d62a3f20defe0b649662c0c",
+        "package_ref": "validation-package:35db2490ae069b3984064dd4c06b5c8a946dd9ec3d379a224e1866aa3a651287",
+        "candidate_ref": "strategy-candidate:f088c419ead90c1d910a86bb8d2da0f93fa6b62bd839f212c07ef646ae4669fb",
+        "training_ref": "research-data:401e8a2f8de3a8d07ce14f80b7804f27c3307fbed32e78d74f6fe1f3cc785221",
+        "holdout_ref": "research-data:889a8009d33bf93e875d5c218c03b3f896882463dc9c2fa5f7fe6e9558a622ae",
+        "outcome": "REJECTED",
+        "gates": [
+          {
+            "name": "PROPOSED_TESTS",
+            "state": "PASS",
+            "reason": "UNATTESTED_PROPOSED_CASES_PASSED"
+          },
+          {
+            "name": "OUT_OF_SAMPLE",
+            "state": "PASS",
+            "reason": "DECLARED_HOLDOUT_PNL_SCREEN"
+          },
+          {
+            "name": "WALK_FORWARD",
+            "state": "FAIL",
+            "reason": "RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN"
+          },
+          {
+            "name": "STABILITY",
+            "state": "FAIL",
+            "reason": "DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN"
+          },
+          {
+            "name": "COST_STRESS",
+            "state": "FAIL",
+            "reason": "DECLARED_SYNTHETIC_STRESS_PNL_SCREEN"
+          },
+          {
+            "name": "MINIMUM_ACTIVITY",
+            "state": "PASS",
+            "reason": "DECLARED_NATIVE_ORDER_ACTIVITY_SCREEN"
+          },
+          {
+            "name": "MONTE_CARLO",
+            "state": "PENDING",
+            "reason": "UNCLOSED_POSITION"
+          },
+          {
+            "name": "INDEPENDENT_HOLDOUT",
+            "state": "PENDING",
+            "reason": "PHYSICAL_AND_STATISTICAL_ISOLATION_UNASSESSED"
+          },
+          {
+            "name": "SOURCE_ATTESTATION",
+            "state": "PENDING",
+            "reason": "INDEPENDENT_SOURCE_DAEMON_ATTESTATION_MISSING"
+          },
+          {
+            "name": "ADVERSARIAL",
+            "state": "PENDING",
+            "reason": "PROPOSED_SOURCE_ADVERSARIAL_VALIDATION_MISSING"
+          },
+          {
+            "name": "REALITY_GAP",
+            "state": "PENDING",
+            "reason": "BROKER_MARKET_LIQUIDITY_REALITY_GAP_UNASSESSED"
+          },
+          {
+            "name": "FINANCING",
+            "state": "PENDING",
+            "reason": "FINANCING_COSTS_UNAVAILABLE"
+          },
+          {
+            "name": "ACCOUNT_CONVERSION",
+            "state": "PENDING",
+            "reason": "ACCOUNT_CURRENCY_CONVERSION_UNAVAILABLE"
+          },
+          {
+            "name": "INDEPENDENT_REVIEW",
+            "state": "PENDING",
+            "reason": "INDEPENDENT_CRITICAL_REVIEW_MISSING"
+          },
+          {
+            "name": "SHADOW",
+            "state": "PENDING",
+            "reason": "SHADOW_OBSERVATIONS_MISSING"
+          }
+        ],
+        "reasons": [
+          "WALK_FORWARD:RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN",
+          "STABILITY:DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN",
+          "COST_STRESS:DECLARED_SYNTHETIC_STRESS_PNL_SCREEN"
+        ],
+        "statistics": {
+          "holdout_net_pnl": "0.00067",
+          "development_net_pnl": "-0.00026",
+          "nonnegative_window_fraction": "0",
+          "pnl_currency": "USD",
+          "requested_trials": 1000,
+          "requested_seed": 27,
+          "closed_trade_count": 0
+        },
+        "evidence_basis": "ARCHIVED_UNATTESTED_DESCRIPTIVE_VALIDATION"
+      },
+      "isolation_verified": false,
+      "promotion_allowed": false
+    },
+    "original_context_revalidated": true
+  },
+  "verified_behaviors": [
+    "COMPLETED_CANDIDATE_FAILURE_WITHOUT_TRADING_STATISTICS",
+    "EXACT_GATE_METRIC_BINDING",
+    "OUTCOME_REASON_COHERENCE",
+    "FUTURE_PACKAGE_REFUSAL",
+    "HOLDOUT_ALIAS_DENIAL_BEFORE_A08_A09_FETCH",
+    "TASK_SCOPE_VERSION_BINDING",
+    "EXPIRED_OUTPUT_WITHHELD",
+    "TAMPERED_ARCHIVE_INVALID",
+    "FAILED_TIMEOUT_HEALTH_QUARANTINE",
+    "CANDIDATE_FAILURE_NOT_AGENT_MALFUNCTION",
+    "DURABLE_RESTART_RESUME"
+  ],
+  "lint_and_format": {
+    "passed": true,
+    "files": 392
+  },
+  "structure": {
+    "source_files": 254,
+    "test_files": 160,
+    "cycles": 0,
+    "unreferenced": 0
+  },
+  "review": {
+    "kind": "MANUAL_SELF_REVIEW",
+    "axes": [
+      "correctness",
+      "readability",
+      "architecture",
+      "security",
+      "performance"
+    ],
+    "independent_candidate_review": "PENDING"
+  },
+  "remaining": [
+    "LONG_RUNNING_ORIGINAL_SOURCE_VALIDATION_ORCHESTRATION",
+    "UNCERTAIN_WORKER_FAILURE_ARCHIVAL",
+    "LARGER_DECLARED_MONTE_CARLO_PLANS",
+    "PHYSICAL_STATISTICAL_HOLDOUT_ISOLATION",
+    "INDEPENDENT_SOURCE_ADVERSARIAL_CHAMPION_ACCEPTANCE",
+    "FULL_EXECUTION_PACK_PRODUCTION_GATES"
+  ],
+  "isolation_verified": false,
+  "promotion_allowed": false,
+  "full_build_complete": false
+}

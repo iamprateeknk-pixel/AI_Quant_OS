@@ -4,6 +4,34 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Validation Scientist advisory graph increment
+
+- Added A10 0.2.0 as PARTIAL/SHADOW with protected sandbox context, execution,
+  resume and historical-result routes. The task-bound retrieval tool checks the
+  original package and archived result, retains all fifteen gates, and exposes
+  compact HOLDOUT metadata. Candidate failures contain no trading statistics.
+  Invalid evidence withholds output; actual agent errors and timeouts follow the
+  existing health/quarantine policy. See VALIDATION_SCIENTIST_HANDOFF.md and ADR 0086.
+- The first full run reported five failures: an optional-native dependency loaded
+  during base API import and four registry-count assertions. Numeric publication
+  now loads the native dependency only when requested; paper supervision still
+  calls exactly six supported agents and defers sandbox A10. All **34 repaired
+  focused checks** passed in **82.74 seconds** and again from a fresh staged
+  checkout in **77.96 seconds**. All **25 prior wire schemas** and **302 unchanged
+  production/infrastructure/schema artifacts** match HEAD. Lint/format (392 source
+  and test files), source structure review and staged secret scanning passed.
+  The repaired full regression with all six existing local gates passed **1,978
+  tests**, with **15 optional integrations skipped**, in **1939.06 seconds**.
+  Tested source, tests and schemas match the staged index and fresh checkout.
+  The actual Linux-worker scorecard produced a retained A10 COMPLETED receipt;
+  its output was revalidated against the original graph context. See
+  `docs/evaluations/validation-scientist-0086.json`.
+- This increment reads checked archival observations. Full original-source
+  validation orchestration, uncertain worker failure records, larger declared
+  Monte Carlo plans, physical/statistical holdout isolation, independent
+  source/adversarial/champion acceptance and production release gates remain
+  required. The complete P00–P13 build remains incomplete.
+
 ## Checked candidate-validation archive increment
 
 - Added distinct original-source prerequisite-failure records with exact test bytes,

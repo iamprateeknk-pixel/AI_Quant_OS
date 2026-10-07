@@ -87,3 +87,6 @@ src/ai_quant_os/candidate_prerequisite_failure.py text eol=lf
 tests/test_candidate_prerequisite_failure.py text eol=lf
 tests/test_candidate_validation_store.py text eol=lf
 docs/schemas/candidate-prerequisite-failure.schema.json text eol=lf
+src/ai_quant_os/validation_scientist*.py text eol=lf
+tests/test_validation_scientist*.py text eol=lf
+docs/schemas/validation-scientist*.schema.json text eol=lf

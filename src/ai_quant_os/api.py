@@ -102,6 +102,15 @@ from ai_quant_os.validation_package_service import ValidationPreparation
 from ai_quant_os.validation_package_store import ValidationPackageStore
 from ai_quant_os.strategy_builder_sources import builder_sources
 from ai_quant_os.strategy_builder_service import CandidateCreate
+from ai_quant_os.candidate_validation_store import CandidateValidationStore
+from ai_quant_os.validation_scientist_agent import validation_implementation
+from ai_quant_os.validation_scientist_sources import (
+    validation_sources,
+    summary_for_context,
+    validation_summary,
+)
+from ai_quant_os.validation_scientist_service import ValidationRun
+from ai_quant_os.validation_scientist_api import install_validation_scientist_routes
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
@@ -322,6 +331,11 @@ def create_app(
         else None
     )
     ingress_health = IngressHealth()
+    candidate_validation_store = CandidateValidationStore(
+        configured_path.with_name(configured_path.stem + ".candidate-validations.sqlite3")
+        if configured_path
+        else None
+    )
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
         [
@@ -403,11 +417,19 @@ def create_app(
                     ("A07", "0.2.0"): integrity_implementation(agent_registry),
                     ("A08", "0.2.0"): hypothesis_implementation(agent_registry),
                     ("A09", "0.2.0"): builder_implementation(agent_registry),
+                    ("A10", "0.2.0"): validation_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(
                     agent_registry,
                     {
+                        "VALIDATION_RUN": ValidationRun(
+                            candidate_validation_store,
+                            validation_package_store,
+                            agent_registry,
+                            context=archived_agent_context,
+                            clock=current_time,
+                        ),
                         "CANDIDATE_CREATE": CandidateCreate(
                             strategy_build_store,
                             agent_registry,
@@ -1246,6 +1268,56 @@ def create_app(
         )
         return context
 
+    async def compile_validation_context(task_id: str, artifact_ref: str) -> CompiledContext:
+        require_graph_runtime()
+        await supervisor_admission()
+        agent_registry.require_tool("A10", "0.2.0", "VALIDATION_RUN", scope="SANDBOX")
+
+        def capture():
+            artifact = candidate_validation_store.get(artifact_ref)
+            if artifact is None:
+                raise KeyError("Validation result not found")
+            package = validation_package_store.get(artifact.package_ref)
+            if package is None:
+                raise KeyError("Original validation package not found")
+            return package, artifact
+
+        package, artifact = await owned_research_call(capture)
+        context = await ContextCompiler(
+            agent_registry,
+            validation_sources(package, artifact, now=current_time()),
+            clock=current_time,
+            max_input_bytes=16384,
+            max_context_bytes=65536,
+        ).compile("A10", "0.2.0", task_id=task_id, scope="SANDBOX")
+        require_context_for_agent(
+            context,
+            registry=agent_registry,
+            agent_id="A10",
+            agent_version="0.2.0",
+            task_id=task_id,
+            scope="SANDBOX",
+            now=current_time(),
+        )
+        package, artifact = await owned_research_call(capture)
+        if summary_for_context(context) != validation_summary(package, artifact):
+            raise ValueError("Validation result changed during context capture")
+        state_store.record_context_checkpoint(
+            ContextCheckpoint(
+                schema_version="1.0", manifest=agent_registry.get("A10", "0.2.0"), context=context
+            )
+        )
+        require_context_for_agent(
+            context,
+            registry=agent_registry,
+            agent_id="A10",
+            agent_version="0.2.0",
+            task_id=task_id,
+            scope="SANDBOX",
+            now=current_time(),
+        )
+        return context
+
     def capture_incident_observation() -> dict:
         incidents = health_worker.store.incidents() if health_worker else None
         health = health_worker.status() if health_worker else None
@@ -1691,6 +1763,15 @@ def create_app(
         archive=validation_package_store,
         graph_record=checked_validation_graph,
         clock=current_time,
+    )
+    install_validation_scientist_routes(
+        app,
+        require_operator,
+        store=candidate_validation_store,
+        compile_context=compile_validation_context,
+        archived_context=archived_agent_context,
+        runtime=require_graph_runtime,
+        observe_receipt=observe_research_receipt,
     )
     install_builder_routes(
         app,

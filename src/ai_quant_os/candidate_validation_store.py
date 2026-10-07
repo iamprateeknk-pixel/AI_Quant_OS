@@ -12,7 +12,6 @@ from ai_quant_os.candidate_prerequisite_failure import (
     CandidatePrerequisiteFailure,
     record_prerequisite_failure,
 )
-from ai_quant_os.candidate_validation import evaluate_candidate
 from ai_quant_os.candidate_validation_contracts import CandidateValidationScorecard
 
 CandidateValidationArtifact = CandidateValidationScorecard | CandidatePrerequisiteFailure
@@ -152,6 +151,8 @@ class CandidateValidationStore:
             return artifact
 
     def put_evaluation(self, package, tested, holdout, windows, *, policy=None):
+        from ai_quant_os.candidate_validation import evaluate_candidate
+
         return self._retain(evaluate_candidate(package, tested, holdout, windows, policy=policy))
 
     def put_failure(self, package, tested) -> CandidatePrerequisiteFailure:

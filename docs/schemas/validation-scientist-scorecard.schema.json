@@ -1,0 +1,347 @@
+{
+  "$defs": {
+    "ValidationGateSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PENDING"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "state",
+        "reason"
+      ],
+      "title": "ValidationGateSummary",
+      "type": "object"
+    },
+    "ValidationStatistics": {
+      "additionalProperties": false,
+      "properties": {
+        "holdout_net_pnl": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Holdout Net Pnl"
+        },
+        "development_net_pnl": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Development Net Pnl"
+        },
+        "nonnegative_window_fraction": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Nonnegative Window Fraction"
+        },
+        "pnl_currency": {
+          "enum": [
+            "USD",
+            "JPY"
+          ],
+          "title": "Pnl Currency",
+          "type": "string"
+        },
+        "requested_trials": {
+          "maximum": 100000,
+          "minimum": 100,
+          "title": "Requested Trials",
+          "type": "integer"
+        },
+        "requested_seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Requested Seed",
+          "type": "integer"
+        },
+        "closed_trade_count": {
+          "maximum": 4096,
+          "minimum": 0,
+          "title": "Closed Trade Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "holdout_net_pnl",
+        "development_net_pnl",
+        "nonnegative_window_fraction",
+        "pnl_currency",
+        "requested_trials",
+        "requested_seed",
+        "closed_trade_count"
+      ],
+      "title": "ValidationStatistics",
+      "type": "object"
+    },
+    "ValidationSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_ref": {
+          "pattern": "^candidate-(validation|prerequisite-failure):[a-f0-9]{64}$",
+          "title": "Artifact Ref",
+          "type": "string"
+        },
+        "package_ref": {
+          "pattern": "^validation-package:[a-f0-9]{64}$",
+          "title": "Package Ref",
+          "type": "string"
+        },
+        "candidate_ref": {
+          "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+          "title": "Candidate Ref",
+          "type": "string"
+        },
+        "training_ref": {
+          "pattern": "^research-data:[a-f0-9]{64}$",
+          "title": "Training Ref",
+          "type": "string"
+        },
+        "holdout_ref": {
+          "pattern": "^research-data:[a-f0-9]{64}$",
+          "title": "Holdout Ref",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "PREREQUISITE_FAILED",
+            "REJECTED",
+            "VALIDATION_INCOMPLETE"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "gates": {
+          "items": {
+            "$ref": "#/$defs/ValidationGateSummary"
+          },
+          "maxItems": 15,
+          "minItems": 15,
+          "title": "Gates",
+          "type": "array"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 15,
+          "minItems": 1,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "statistics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ValidationStatistics"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_basis": {
+          "const": "ARCHIVED_UNATTESTED_DESCRIPTIVE_VALIDATION",
+          "default": "ARCHIVED_UNATTESTED_DESCRIPTIVE_VALIDATION",
+          "title": "Evidence Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_ref",
+        "package_ref",
+        "candidate_ref",
+        "training_ref",
+        "holdout_ref",
+        "outcome",
+        "gates",
+        "reasons",
+        "statistics"
+      ],
+      "title": "ValidationSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A10",
+      "default": "A10",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.2.0",
+      "default": "0.2.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "1",
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "output_type": {
+      "const": "ValidationScorecard",
+      "default": "ValidationScorecard",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "summary": {
+      "$ref": "#/$defs/ValidationSummary"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "summary"
+  ],
+  "title": "ValidationScorecard",
+  "type": "object"
+}
