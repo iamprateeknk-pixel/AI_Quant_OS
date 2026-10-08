@@ -1,0 +1,193 @@
+{
+  "$defs": {
+    "HealthIncidentSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "anyOf": [
+            {
+              "pattern": "^A(0[1-9]|1[0-8])$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Agent Id"
+        },
+        "agent_version": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Agent Version"
+        },
+        "code": {
+          "enum": [
+            "AUDIT_INVALID",
+            "GRAPH_INTEGRITY_FAILED",
+            "POSITION_MISMATCH",
+            "WATCHDOG_FAILURE",
+            "CLOCK_REGRESSION",
+            "BROKER_UNCONFIRMED",
+            "QUOTE_STALE",
+            "QUOTE_FUTURE",
+            "QUOTE_UNTRUSTED",
+            "AGENT_FAILED",
+            "AGENT_TIMEOUT",
+            "AGENT_INVALID",
+            "AGENT_UNCERTAIN"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "detected_at": {
+          "format": "date-time",
+          "title": "Detected At",
+          "type": "string"
+        },
+        "incident_id": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Incident Id",
+          "type": "string"
+        },
+        "manifest_ref": {
+          "anyOf": [
+            {
+              "pattern": "^agent-manifest:[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Manifest Ref"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        },
+        "quarantine": {
+          "title": "Quarantine",
+          "type": "boolean"
+        },
+        "safety_state": {
+          "enum": [
+            "HALT",
+            "NO_NEW_RISK"
+          ],
+          "title": "Safety State",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "const": "OPEN",
+          "title": "Status",
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "incident_id",
+        "code",
+        "subject",
+        "detected_at",
+        "agent_id",
+        "agent_version",
+        "manifest_ref",
+        "safety_state",
+        "quarantine",
+        "status",
+        "promotion_allowed"
+      ],
+      "title": "HealthIncidentSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "head_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Head Hash",
+      "type": "string"
+    },
+    "incidents": {
+      "items": {
+        "$ref": "#/$defs/HealthIncidentSummary"
+      },
+      "maxItems": 100,
+      "title": "Incidents",
+      "type": "array"
+    },
+    "limit": {
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "mode": {
+      "const": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "next_offset": {
+      "anyOf": [
+        {
+          "maximum": 1000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Next Offset"
+    },
+    "offset": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Offset",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "total": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "mode",
+    "head_hash",
+    "total",
+    "offset",
+    "limit",
+    "next_offset",
+    "incidents"
+  ],
+  "title": "HealthTimelinePage",
+  "type": "object"
+}

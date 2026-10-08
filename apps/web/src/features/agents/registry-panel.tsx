@@ -9,7 +9,7 @@ export async function AgentRegistryPanel() {
     {result.ok ? result.value.length ? <div className="table-scroll"><table className="agent-registry-table">
       <caption className="sr-only">Paper agent versions, lifecycle restrictions and declared capabilities</caption>
       <thead><tr><th scope="col">Agent / version</th><th scope="col">Squad</th><th scope="col">Development</th><th scope="col">Lifecycle</th><th scope="col">Mission and contract</th></tr></thead>
-      <tbody>{result.value.map((agent) => <tr key={`${agent.agent_id}@${agent.agent_version}`}>
+      <tbody>{result.value.map((agent) => <tr id={`${agent.agent_id}-${agent.agent_version}`} key={`${agent.agent_id}@${agent.agent_version}`}>
         <th scope="row">{agent.agent_id} · {agent.name}<br /><span className="mono">{agent.agent_version}</span></th>
         <td>{agent.squad}</td><td>{agent.implementation_status}</td><td>{agent.lifecycle}</td>
         <td><p>{agent.mission}</p><details className="agent-contract"><summary>View contract for {agent.agent_id} v{agent.agent_version}</summary><dl className="fact-list">

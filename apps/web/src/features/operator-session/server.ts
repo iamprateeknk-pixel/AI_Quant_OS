@@ -7,12 +7,12 @@ const COOKIE = "ai_quant_operator";
 const origin = () => process.env.AI_QUANT_WEB_ORIGIN ?? "http://127.0.0.1:3000";
 const json = (value: unknown, status = 200) => NextResponse.json(value, { status, headers: { "Cache-Control": "no-store" } });
 
-async function upstream(path: string, method: string, headers: Record<string, string>, body?: unknown) {
+async function upstream(path: string, method: string, headers: Record<string, string>, body?: unknown, maximum = 4096) {
   const base = backendOrigin(process.env.AI_QUANT_API_URL ?? "http://127.0.0.1:8000");
   const response = await fetch(base + path, { method, headers: { ...headers, "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body), redirect: "error", cache: "no-store", signal: AbortSignal.timeout(3000) });
   if (!response.ok) return { status: response.status, value: null };
-  const value = await readJson(new Request("http://local", { method: "POST", body: response.body, duplex: "half" } as RequestInit));
+  const value = await readJson(new Request("http://local", { method: "POST", body: response.body, duplex: "half" } as RequestInit), maximum);
   return { status: response.status, value };
 }
 
@@ -93,4 +93,20 @@ export async function controlReceipt(actionId: string) {
     const response = await upstream("/api/v1/operator/controls/" + actionId, "GET", { "X-Operator-Session": token });
     return response.value ? json(response.value) : failure(response.status);
   } catch { return failure(503); }
+}
+
+export type HealthRead = { ok: true; value: unknown } | { ok: false; reason: "SIGN_IN" | "CHANGED" | "UNAVAILABLE" | "INVALID_PAGE" };
+
+export async function readHealth(resource: "status" | "incidents", offset = 0, head?: string): Promise<HealthRead> {
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000 || (head !== undefined && !/^[a-f0-9]{64}$/.test(head)) || (offset > 0 && head === undefined)) return { ok: false, reason: "INVALID_PAGE" };
+  const path = resource === "status" ? "/api/v1/paper/health" :
+    `/api/v1/paper/health/incidents/page?limit=25&offset=${offset}${head ? `&head=${head}` : ""}`;
+  try {
+    const token = (await cookies()).get(COOKIE)?.value;
+    if (!token) return { ok: false, reason: "SIGN_IN" };
+    const response = await upstream(path, "GET", { "X-Operator-Session": token }, undefined, 131072);
+    if (response.status === 401) return { ok: false, reason: "SIGN_IN" };
+    if (response.status === 409) return { ok: false, reason: "CHANGED" };
+    return response.value ? { ok: true, value: response.value } : { ok: false, reason: "UNAVAILABLE" };
+  } catch { return { ok: false, reason: "UNAVAILABLE" }; }
 }

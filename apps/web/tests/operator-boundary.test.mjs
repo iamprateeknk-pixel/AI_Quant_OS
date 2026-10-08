@@ -43,3 +43,12 @@ test('public session projection removes backend nonce and fingerprints', () => {
   assert.deepEqual(boundary.publicSession(session), { mode: 'PAPER', session_id: session.session_id, created_at: session.created_at, expires_at: session.expires_at });
   assert.throws(() => boundary.publicSession({ ...session, mode: 'LIVE' }));
 });
+
+test('protected record reads can be bounded above the smaller credential body limit', async () => {
+  const body = JSON.stringify({ records: 'x'.repeat(5000) });
+  const request = () => new Request('http://local', { method: 'POST', body });
+  await assert.rejects(boundary.readJson(request()));
+  assert.equal((await boundary.readJson(request(), 8192)).records.length, 5000);
+  await assert.rejects(boundary.readJson(request(), 4999));
+  await assert.rejects(boundary.readJson(request(), 131073));
+});

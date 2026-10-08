@@ -14,7 +14,8 @@ export function backendOrigin(configured: string): string {
   return url.origin;
 }
 
-export async function readJson(request: Request): Promise<unknown> {
+export async function readJson(request: Request, maximum = 4096): Promise<unknown> {
+  if (!Number.isSafeInteger(maximum) || maximum < 1 || maximum > 131072) throw new Error("Invalid body bound");
   const reader = request.body?.getReader();
   if (!reader) throw new Error("Request body required");
   let size = 0;
@@ -24,7 +25,7 @@ export async function readJson(request: Request): Promise<unknown> {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 4096) throw new Error("Request body too large");
+      if (size > maximum) throw new Error("Request body too large");
       chunks.push(value);
     }
   } finally { await reader.cancel(); }

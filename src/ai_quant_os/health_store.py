@@ -6,9 +6,23 @@ from dataclasses import asdict, replace
 from datetime import datetime
 from hashlib import sha256
 from threading import Lock
+from dataclasses import dataclass
 
 from ai_quant_os.audit_chain import AuditChain
 from ai_quant_os.health_contracts import HealthIncident
+
+
+class HealthPageChanged(ValueError):
+    """The requested timeline belongs to an earlier journal head."""
+
+
+@dataclass(frozen=True)
+class HealthPage:
+    incidents: tuple[HealthIncident, ...]
+    total: int
+    head_hash: str
+    offset: int
+    next_offset: int | None
 
 
 def encode_incident(incident):
@@ -112,6 +126,38 @@ class HealthStore:
                 "SELECT incident_id FROM health_incidents ORDER BY incident_id"
             ).fetchall()
             return tuple(self._read(row[0]) for row in ids)
+
+    def incident_page(self, *, limit: int, offset: int, head: str | None) -> HealthPage:
+        if (
+            type(limit) is not int
+            or not 1 <= limit <= 100
+            or type(offset) is not int
+            or not 0 <= offset <= 1000
+        ):
+            raise ValueError("Invalid health page bounds")
+        with self._lock, self._db:
+            self._db.execute("BEGIN")
+            integrity = self._require_valid()
+            ids = self._db.execute("SELECT incident_id FROM health_incidents").fetchall()
+            # Verify the whole journal, including records outside the requested page.
+            incidents = tuple(self._read(row[0]) for row in ids)
+            if head is not None and head != integrity.head_hash:
+                raise HealthPageChanged("Health timeline changed")
+            if offset and head is None:
+                raise ValueError("Continued health page requires original head")
+            ordered = sorted(
+                incidents,
+                key=lambda incident: (incident.detected_at, incident.incident_id),
+                reverse=True,
+            )
+            next_offset = offset + limit if offset + limit < len(ordered) else None
+            return HealthPage(
+                tuple(ordered[offset : offset + limit]),
+                len(ordered),
+                integrity.head_hash,
+                offset,
+                next_offset,
+            )
 
     def integrity(self):
         self.incidents()

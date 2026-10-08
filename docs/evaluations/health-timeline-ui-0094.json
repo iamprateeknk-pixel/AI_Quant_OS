@@ -1,0 +1,133 @@
+{
+  "backend_regression": {
+    "full_repository_suite": false,
+    "passed": 85,
+    "fresh_checkout_seconds": 17.03,
+    "seconds": 15.38,
+    "failed": 0
+  },
+  "harness_failures_resolved": [
+    "Wrong test database variable caused actual DISABLED response; corrected to AI_QUANT_PAPER_DB",
+    "Reload raced first-page navigation; captured URL/state and waited for restored page data"
+  ],
+  "independent_acceptance": false,
+  "new_schema": "docs/schemas/health-timeline-page.schema.json",
+  "tested_sources": [
+    {
+      "sha256": "fdc976a4787c65c785abbd6440078941fb2d48b5bfc8e355e0702ad4dc1996dc",
+      "path": "apps/web/src/app/[section]/page.tsx"
+    },
+    {
+      "sha256": "07958ba4d1fa512a1cc3c13bc5463c15fdd2ca3deae41d4f01b9ab75cb1ae4c0",
+      "path": "apps/web/src/app/globals.css"
+    },
+    {
+      "sha256": "862592db43938fd75e1d2bca5d1fefd37d4edfd8a038fa3bacf6c0e36704d5a4",
+      "path": "apps/web/src/features/agents/registry-panel.tsx"
+    },
+    {
+      "sha256": "efffbbd4e2a9afa1ac5f1b852395fc5e340c8f9f1a3857e70e7160601c0fbecc",
+      "path": "apps/web/src/features/health/health-panel.tsx"
+    },
+    {
+      "sha256": "78d6900685b4fac8ba65dd230f6e446e624ac390e84a63d7e590656669e1e7c7",
+      "path": "apps/web/src/features/health/timeline.ts"
+    },
+    {
+      "sha256": "2397edc990869c06a739e3ec0773167133a6ff0301b1bb854865bf5f5f04a256",
+      "path": "apps/web/src/features/operator-session/boundary.ts"
+    },
+    {
+      "sha256": "3a40abd1f97998bcfbda0e28dcceed75bc51a3a75beb5f75bcbb19dab50e071c",
+      "path": "apps/web/src/features/operator-session/server.ts"
+    },
+    {
+      "sha256": "50cb7567f017b1bd945da1dedf68e29fb0158b8701d3cbf025ee9c749719bf34",
+      "path": "apps/web/src/lib/navigation.ts"
+    },
+    {
+      "sha256": "6708e965f9a0acccad674af14d71e5798da19dd3154cc63fb391132c3f8f7c66",
+      "path": "apps/web/tests/health-timeline-browser.mjs"
+    },
+    {
+      "sha256": "f714ac538e1a7baf9a7d1eab4218bbae4c8fe04d8d7a4a4b20c54c37be9c05f4",
+      "path": "apps/web/tests/health-timeline.test.mjs"
+    },
+    {
+      "sha256": "a11a4986ceba830b36a141ecbc99426ada38554a208878896f9e8c214c12b3e8",
+      "path": "apps/web/tests/operator-boundary.test.mjs"
+    },
+    {
+      "sha256": "85f0c2763fe371d7ed1f5b309169237c921b43649ce50091139908ce3c4830a0",
+      "path": "docs/schemas/health-timeline-page.schema.json"
+    },
+    {
+      "sha256": "88cca939a7bf698be551dbadeebb1c8d383cf38e8b8ef666393dc8fc0c264213",
+      "path": "src/ai_quant_os/health_api.py"
+    },
+    {
+      "sha256": "7add22752f655d95c81f509546ba72660f94a9889d64e0628aede3b129559e06",
+      "path": "src/ai_quant_os/health_store.py"
+    },
+    {
+      "sha256": "32d460b058a6511e8b409399ee1cd086f970d9bc1f8bc319430a445cfd23da30",
+      "path": "src/ai_quant_os/health_timeline_contracts.py"
+    },
+    {
+      "sha256": "7779ac4c5a5ffa0a66829ed88f8d423b7b4a060c3d3a7479d3f7cbabcfd5864d",
+      "path": "tests/test_health_timeline.py"
+    }
+  ],
+  "browser": {
+    "screenshots": [
+      "data-local/health-timeline-0094/final-desktop.png",
+      "data-local/health-timeline-0094/final-mobile.png"
+    ],
+    "keyboard_details": true,
+    "actual_backend": true,
+    "metadata_pages": [
+      25,
+      2
+    ],
+    "changed_head_withholds_rows": true,
+    "page_errors": 0,
+    "test_owned_services_stopped": true,
+    "synthetic_incidents": 27,
+    "document_overflow": false,
+    "raw_evidence_and_session_nonce_absent": true,
+    "engine": "installed Edge",
+    "logout_hides_records": true,
+    "mobile_width": 390,
+    "separate_disabled_database_checked": true
+  },
+  "frontend_lint": {
+    "exit_code": 0,
+    "fresh_staged_checkout": true
+  },
+  "prior_schemas_unchanged": 65,
+  "date": "2026-10-09",
+  "full_execution_pack_complete": false,
+  "production_build": {
+    "exit_code": 0,
+    "type_checked": true,
+    "next": "16.3.6"
+  },
+  "status": "LOCAL_PROTECTED_HEALTH_TIMELINE_VERIFIED",
+  "frontend_unit": {
+    "passed": 20,
+    "fresh_staged_checkout": true,
+    "failed": 0
+  },
+  "remaining": [
+    "Acknowledgement/resolution and original recovery custody",
+    "Owner/runbook/trace/log/metric correlation",
+    "Realtime delivery",
+    "Full P00-P13 requirements and release gates"
+  ],
+  "schema_version": "1.0",
+  "python_lint": {
+    "exit_code": 0,
+    "scope": "src tests",
+    "fresh_staged_checkout": true
+  }
+}
