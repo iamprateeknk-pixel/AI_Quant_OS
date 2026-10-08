@@ -101,6 +101,15 @@ def test_actual_six_proposed_tests_compile_and_run_once(package, tmp_path):
     assert (root / "removed.json").is_file()
     assert module.run_candidate_tests(root, pin) == result
     assert module.read_candidate_test_result(root, pin) == result
+    from ai_quant_os.candidate_test_checkpoint import (
+        capture_candidate_test_checkpoint,
+        verify_candidate_test_checkpoint,
+    )
+
+    checkpoint = capture_candidate_test_checkpoint(root, pin)
+    assert checkpoint.checkpoint == "RESULT_RETAINED"
+    assert checkpoint.test_status == result.status and checkpoint.cleanup_verified is False
+    verify_candidate_test_checkpoint(root, pin, checkpoint)
     assert len(list(root.glob("start-intent.json"))) == 1
     child = subprocess.run(
         [
@@ -140,6 +149,16 @@ def test_lost_start_ack_keeps_intent_and_prevents_repeat(package, tmp_path, monk
         module.run_candidate_tests(root, pin)
     assert (root / "start-intent.json").is_file() and (root / "removed.json").is_file()
     assert not (root / "result.json").exists()
+    from ai_quant_os.candidate_test_checkpoint import (
+        capture_candidate_test_checkpoint,
+        verify_candidate_test_checkpoint,
+    )
+
+    checkpoint = capture_candidate_test_checkpoint(root, pin)
+    assert checkpoint.checkpoint == "REMOVAL_ACK_RETAINED" and checkpoint.test_status is None
+    assert "start-intent.json" in {row.name for row in checkpoint.files}
+    assert "terminal-inspect.json" not in {row.name for row in checkpoint.files}
+    verify_candidate_test_checkpoint(root, pin, checkpoint)
     with pytest.raises(ValueError, match="intent"):
         module.run_candidate_tests(root, pin)
     assert (

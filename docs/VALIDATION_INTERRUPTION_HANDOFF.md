@@ -32,6 +32,10 @@ It does not assert that the job is currently interrupted. The job's existing
 
 ## Meaning and scope
 
+For source-test worker detail, use the independently pinned reader in
+`CANDIDATE_TEST_CHECKPOINT_HANDOFF.md`. It distinguishes retained create/start/
+terminal/removal/result checkpoints without changing this stage-level contract.
+
 Outcome is VALIDATION_INTERRUPTED. Recovery is required; cleanup, isolation and
 promotion verification are false. There are no trading statistics, candidate
 rejection claims, passed gates, exception messages, source bytes or filesystem

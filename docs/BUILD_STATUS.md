@@ -4,6 +4,36 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Original source-test worker checkpoint increment
+
+- Added an independently pinned read-only diagnostic report for source-test jobs.
+  It distinguishes retained create, admission, start, terminal exit, removal and
+  result checkpoints under the original custody lease. It checks original source,
+  owner, confinement, prerequisites and result bindings without Docker access.
+  Exclusive export stays outside protected custody. See
+  `CANDIDATE_TEST_CHECKPOINT_HANDOFF.md` and ADR 0089.
+- Historical verification requires unchanged original metadata bytes while
+  permitting additional valid records. Reports contain no paths, source, exception
+  messages, trading statistics or cleanup/acceptance authority. Missing metadata
+  cannot prove that an operation never occurred. Existing execution, wire models,
+  stage transitions and all uncertain jobs remain unchanged.
+- Focused verification passed 45 checks in 60.22 seconds, including actual
+  admitted Linux completion and lost-start-acknowledgement cases. The fresh staged
+  checkout passed 44 checks, with two opt-in real-worker cases skipped, in 32.22
+  seconds. All 200 surrounding candidate, dataset/window, validation archive,
+  A10, interruption and Temporal regression checks passed in 411.87 seconds with
+  the four relevant Linux/Temporal gates enabled. This was a scoped regression,
+  not a new full-repository run; the earlier 0088 full-run failures remain recorded.
+- The tested source, tests and new schema match the index and fresh checkout.
+  All 30 prior wire schemas and 322 unchanged production/infrastructure/schema
+  files match HEAD. Lint/format (407 files), structure review and staged secret
+  scanning passed. Both actual original worker checkpoint records were revalidated
+  without Docker actions. Evidence is retained in
+  `docs/evaluations/candidate-test-checkpoint-0089.json`.
+- Strategy-prefix checkpoints, independent physical failure attestation,
+  physical/statistical isolation, larger plans, independent acceptance, complete
+  missions and production gates remain open. The full P00–P13 build is incomplete.
+
 ## Checked validation interruption increment
 
 - Added canonical operator interruption reports bound to the original job,

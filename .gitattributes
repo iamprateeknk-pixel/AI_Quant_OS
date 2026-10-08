@@ -98,3 +98,6 @@ docs/schemas/validation-stage*.schema.json text eol=lf
 src/ai_quant_os/validation_interruption*.py text eol=lf
 tests/test_validation_interruption.py text eol=lf
 docs/schemas/validation-interruption.schema.json text eol=lf
+src/ai_quant_os/candidate_test_checkpoint*.py text eol=lf
+tests/test_candidate_test_checkpoint.py text eol=lf
+docs/schemas/candidate-test-checkpoint.schema.json text eol=lf

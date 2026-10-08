@@ -1,0 +1,164 @@
+{
+  "$defs": {
+    "CandidateTestCheckpointFile": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "create-intent.json",
+            "create-ack.json",
+            "created-inspect.json",
+            "start-intent.json",
+            "terminal-inspect.json",
+            "worker-result.json",
+            "remove-intent.json",
+            "removed.json",
+            "result.json"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sha256"
+      ],
+      "title": "CandidateTestCheckpointFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "request_ref": {
+      "pattern": "^candidate-tests:[a-f0-9]{64}$",
+      "title": "Request Ref",
+      "type": "string"
+    },
+    "manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "owner": {
+      "pattern": "^[a-f0-9]{32}$",
+      "title": "Owner",
+      "type": "string"
+    },
+    "container_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Container Id"
+    },
+    "checkpoint": {
+      "enum": [
+        "NO_CREATE_INTENT_RETAINED",
+        "CREATE_OUTCOME_UNCONFIRMED",
+        "CREATE_ACK_RETAINED",
+        "CREATED_ADMISSION_RETAINED",
+        "START_OUTCOME_UNCONFIRMED",
+        "TERMINAL_EXIT_RETAINED",
+        "WORKER_OUTPUT_RETAINED",
+        "REMOVAL_OUTCOME_UNCONFIRMED",
+        "REMOVAL_ACK_RETAINED",
+        "RESULT_RETAINED"
+      ],
+      "title": "Checkpoint",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/CandidateTestCheckpointFile"
+      },
+      "maxItems": 9,
+      "title": "Files",
+      "type": "array"
+    },
+    "test_status": {
+      "anyOf": [
+        {
+          "enum": [
+            "COMPILE_FAILED",
+            "PROPOSED_TESTS_PASSED_UNATTESTED",
+            "PROPOSED_TESTS_FAILED_UNATTESTED"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Test Status"
+    },
+    "evidence_basis": {
+      "const": "ORIGINAL_LOCAL_RETAINED_WORKER_CUSTODY",
+      "default": "ORIGINAL_LOCAL_RETAINED_WORKER_CUSTODY",
+      "title": "Evidence Basis",
+      "type": "string"
+    },
+    "worker_failure_confirmed": {
+      "const": false,
+      "default": false,
+      "title": "Worker Failure Confirmed",
+      "type": "boolean"
+    },
+    "cleanup_verified": {
+      "const": false,
+      "default": false,
+      "title": "Cleanup Verified",
+      "type": "boolean"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "package_ref",
+    "candidate_ref",
+    "request_ref",
+    "manifest_sha256",
+    "owner",
+    "checkpoint",
+    "files"
+  ],
+  "title": "CandidateTestCheckpoint",
+  "type": "object"
+}

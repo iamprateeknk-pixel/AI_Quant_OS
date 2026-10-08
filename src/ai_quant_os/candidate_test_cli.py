@@ -23,8 +23,14 @@ def main():
     prepare = commands.add_parser("prepare")
     prepare.add_argument("--validation-archive", type=Path, required=True)
     prepare.add_argument("--package-ref", required=True)
-    for name in ("run", "result", "cleanup"):
-        commands.add_parser(name).add_argument("--manifest-sha256", required=True)
+    for name in ("run", "result", "cleanup", "checkpoint", "verify-checkpoint"):
+        command = commands.add_parser(name)
+        command.add_argument("--manifest-sha256", required=True)
+        if name == "checkpoint":
+            command.add_argument("--output", type=Path, required=True)
+        elif name == "verify-checkpoint":
+            command.add_argument("--input", type=Path, required=True)
+            command.add_argument("--checkpoint-sha256", required=True)
     args = parser.parse_args()
     try:
         if args.command == "prepare":
@@ -46,6 +52,10 @@ def main():
                 "manifest_sha256": prepare_candidate_tests(package, args.root),
                 "promotion_allowed": False,
             }
+        elif args.command in ("checkpoint", "verify-checkpoint"):
+            from ai_quant_os.candidate_test_checkpoint_cli import checkpoint_command
+
+            result = checkpoint_command(args)
         elif args.command == "cleanup":
             result = {
                 "status": "CANDIDATE_TEST_CONTAINER_REMOVED",

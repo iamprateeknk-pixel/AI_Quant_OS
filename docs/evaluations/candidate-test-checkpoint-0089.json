@@ -1,0 +1,232 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-08",
+  "status": "LOCAL_ORIGINAL_SOURCE_TEST_CHECKPOINTS_OBSERVED",
+  "focused_actual_linux": {
+    "passed": 45,
+    "skipped": 0,
+    "seconds": 60.22,
+    "exit_code": 0
+  },
+  "cold_checkout": {
+    "passed": 44,
+    "skipped": 2,
+    "seconds": 32.22,
+    "exit_code": 0,
+    "source_test_schema_match_index": true,
+    "real_worker_gate_enabled": false
+  },
+  "surrounding_regression": {
+    "passed": 200,
+    "skipped": 0,
+    "seconds": 411.87,
+    "exit_code": 0,
+    "scope": "CANDIDATE_TESTS_DATASET_WINDOWS_VALIDATION_ARCHIVE_A10_INTERRUPTION_TEMPORAL",
+    "gates": [
+      "CANDIDATE_TEST_ENGINE",
+      "STRATEGY_ENGINE",
+      "DATASET_WINDOW_ENGINE",
+      "TEMPORAL"
+    ],
+    "full_repository_suite": false
+  },
+  "actual_original_jobs": {
+    "test_actual_six_proposed_tests0": {
+      "record": {
+        "schema_version": "1.0",
+        "package_ref": "validation-package:df97285df12511fcba953e1c99c03c1b8eefc13549cb2fde86b3c1217f916a35",
+        "candidate_ref": "strategy-candidate:b5d1709d3a07b1db2083ddf080a332a45aa1f55b08351fe88e3a9df0be019f25",
+        "request_ref": "candidate-tests:63aa5149489971e10d9bbd0a6f726481d29b019404964a49fb975a4bc5338da8",
+        "manifest_sha256": "22a8bddf60696e596f3e167fdfff7d1b4b73bc63fc4d58d40b88d02be07485eb",
+        "owner": "1e40ca711d5646b78a9f782dc40982c8",
+        "container_id": "4d1ea13fd15da91b5da93ccbd179760e0f2c9b22e9ea83aed0102cf02821c94a",
+        "checkpoint": "RESULT_RETAINED",
+        "files": [
+          {
+            "name": "create-ack.json",
+            "sha256": "3ddf2d09bac51221e1c41007b8117179c74131fda2cabc3140a15d33932656a2"
+          },
+          {
+            "name": "create-intent.json",
+            "sha256": "ee1bd96297c9757eeb1488d97ca6f7912c1f2ee0bf628e3289296a6c4f84e243"
+          },
+          {
+            "name": "created-inspect.json",
+            "sha256": "1d146764219442f75cf2da03aabe5ae582cdf8cb690d9a8a24a5c1ce0d2f4922"
+          },
+          {
+            "name": "remove-intent.json",
+            "sha256": "3ddf2d09bac51221e1c41007b8117179c74131fda2cabc3140a15d33932656a2"
+          },
+          {
+            "name": "removed.json",
+            "sha256": "a1f352e6377e5a8303c159ac48281ae85345a8ab3074d121d577beee9e371b82"
+          },
+          {
+            "name": "result.json",
+            "sha256": "8c36cd1ae41468c2ca60fe0e5f7746dbc5fbf66e8d5f00888ab37432762de3c0"
+          },
+          {
+            "name": "start-intent.json",
+            "sha256": "5a17d0205a0cb3e6831d0651b66dcd988fd1882d775a66ffeae4b1dffd8bb8f5"
+          },
+          {
+            "name": "terminal-inspect.json",
+            "sha256": "8c787ba1e101efd915c1b6af6df0b2c2cc9af049a0151674ae9f029a582ef91a"
+          },
+          {
+            "name": "worker-result.json",
+            "sha256": "8c36cd1ae41468c2ca60fe0e5f7746dbc5fbf66e8d5f00888ab37432762de3c0"
+          }
+        ],
+        "test_status": "PROPOSED_TESTS_PASSED_UNATTESTED",
+        "evidence_basis": "ORIGINAL_LOCAL_RETAINED_WORKER_CUSTODY",
+        "worker_failure_confirmed": false,
+        "cleanup_verified": false,
+        "isolation_verified": false,
+        "promotion_allowed": false
+      },
+      "checkpoint_ref": "candidate-test-checkpoint:7470f13275ef67ca64c3f3b3604d08bcdeedb8908051b84ae8aee93795fd036c",
+      "original_custody_revalidated": true,
+      "new_daemon_actions": false
+    },
+    "test_lost_start_ack_keeps_inte0": {
+      "record": {
+        "schema_version": "1.0",
+        "package_ref": "validation-package:804e4895c4583013b6c4c0689cbf6c365f7e0720d1b51e362424deed400ae603",
+        "candidate_ref": "strategy-candidate:8b063197d6f296f8105efb04f22c128216f73fb3e5aeb715424b954c7ed9aa3a",
+        "request_ref": "candidate-tests:2320f468d8dce136ba63dac3fb96fa9b28d216aa4c4f119c25dfb07c904555f5",
+        "manifest_sha256": "4ca543c56b4f84396872ede3cfb288a44033169a07332e61cb1d95bc6b2c32ff",
+        "owner": "eb5b220da3fe4c5f96442ba67d9968f0",
+        "container_id": "d3455f4cc3a80323f776d2c485cb8aaf62c97fe4db39c0e75ed005244dcc02c9",
+        "checkpoint": "REMOVAL_ACK_RETAINED",
+        "files": [
+          {
+            "name": "create-ack.json",
+            "sha256": "1200c51c3da63e4c009f5c2ba1b96199ed0c9221eed1d5a7d5879cc21338c9d5"
+          },
+          {
+            "name": "create-intent.json",
+            "sha256": "656a8b6ea42d6ffff8d33e8fd95b1a346ccc8b082e8caea893264bd6d14cefcf"
+          },
+          {
+            "name": "created-inspect.json",
+            "sha256": "5940a8a2772a5928696127d061b397d7523821aa72a49a9029d94231383f601d"
+          },
+          {
+            "name": "remove-intent.json",
+            "sha256": "1200c51c3da63e4c009f5c2ba1b96199ed0c9221eed1d5a7d5879cc21338c9d5"
+          },
+          {
+            "name": "removed.json",
+            "sha256": "00d6aed1f7737cd291ece9a1fb40816a23f6d750c8d7091adec791eda0b6558f"
+          },
+          {
+            "name": "start-intent.json",
+            "sha256": "62e0e50df6741d38ae30f342d9edd49c6726ee4a513f8e76b407994592ce30d8"
+          }
+        ],
+        "test_status": null,
+        "evidence_basis": "ORIGINAL_LOCAL_RETAINED_WORKER_CUSTODY",
+        "worker_failure_confirmed": false,
+        "cleanup_verified": false,
+        "isolation_verified": false,
+        "promotion_allowed": false
+      },
+      "checkpoint_ref": "candidate-test-checkpoint:7c672eda6ada1d869ea89e9e9b8955d11d5222f5b04662342686ed5118bbbbeb",
+      "original_custody_revalidated": true,
+      "new_daemon_actions": false
+    }
+  },
+  "preservation": {
+    "prior_schemas_matching_models_and_HEAD": 30,
+    "unchanged_production_infrastructure_schemas": 322,
+    "intentional_changes": [
+      ".clean/decisions.md",
+      ".gitattributes",
+      "docs/BUILD_STATUS.md",
+      "docs/CANDIDATE_TEST_CHECKPOINT_HANDOFF.md",
+      "docs/VALIDATION_INTERRUPTION_HANDOFF.md",
+      "docs/adr/0089-source-test-worker-checkpoints.md",
+      "docs/evaluations/candidate-test-checkpoint-0089.json",
+      "docs/schemas/candidate-test-checkpoint.schema.json",
+      "src/ai_quant_os/candidate_test_checkpoint.py",
+      "src/ai_quant_os/candidate_test_checkpoint_cli.py",
+      "src/ai_quant_os/candidate_test_checkpoint_contracts.py",
+      "src/ai_quant_os/candidate_test_cli.py",
+      "tests/test_candidate_test_checkpoint.py",
+      "tests/test_candidate_test_execution.py"
+    ],
+    "authority_granted": false
+  },
+  "red_tests": {
+    "failed": 22,
+    "seconds": 21.21,
+    "reason": "MISSING_READER_AND_CHECKPOINT_COMMANDS"
+  },
+  "export_custody_red_test": {
+    "failed": 1,
+    "seconds": 6.31,
+    "reason": "EXPORT_INSIDE_ORIGINAL_WORKER_ROOT_WAS_NOT_REFUSED"
+  },
+  "initial_green": {
+    "passed": 21,
+    "failed": 1,
+    "seconds": 52.15,
+    "reason": "WINDOWS_READONLY_TAMPER_FIXTURE_REQUIRED_CHMOD_BEFORE_UNLINK"
+  },
+  "verified_behaviors": [
+    "ALL_TEN_RETAINED_CHECKPOINTS",
+    "ORIGINAL_MANIFEST_SOURCE_OWNER_BINDING",
+    "CONFINEMENT_AND_TERMINAL_CHECKS",
+    "CHANGED_OR_MISSING_EVIDENCE_REFUSAL",
+    "ACKNOWLEDGED_CLEANUP_DOES_NOT_INVENT_START_OR_RESULT",
+    "HISTORICAL_VERIFICATION_AFTER_ADDITIONAL_ORIGINAL_RECORDS",
+    "ORIGINAL_METADATA_HASH_BINDING",
+    "NO_DAEMON_ACTIONS_OR_RETRY",
+    "NO_NATIVE_ENGINE_REQUIRED_BY_COMMANDS",
+    "EXCLUSIVE_CANONICAL_EXPORT_OUTSIDE_CUSTODY",
+    "INDEPENDENT_BYTE_PIN",
+    "NO_PATHS_SOURCE_STATS_RAW_EXCEPTIONS_OR_AUTHORITY"
+  ],
+  "lint_and_format": {
+    "passed": true,
+    "files": 407
+  },
+  "structure": {
+    "source_files": 265,
+    "test_files": 164,
+    "symbols": 1042,
+    "cycles": 0,
+    "unreferenced": 0
+  },
+  "secret_scan": {
+    "staged": "CLEAN"
+  },
+  "review": {
+    "kind": "MANUAL_SELF_REVIEW",
+    "axes": [
+      "correctness",
+      "readability",
+      "architecture",
+      "security",
+      "performance"
+    ],
+    "independent_candidate_acceptance": "PENDING"
+  },
+  "prior_uncertain_jobs_retried_or_removed": false,
+  "remaining": [
+    "STRATEGY_PREFIX_CHECKPOINT_REPORTING",
+    "INDEPENDENT_DAEMON_SOURCE_FAILURE_ATTESTATION",
+    "LARGER_DECLARED_COMPUTATION_PLANS",
+    "PHYSICAL_STATISTICAL_ISOLATION",
+    "INDEPENDENT_SOURCE_ADVERSARIAL_REALITY_GAP_CHAMPION_SHADOW_ACCEPTANCE",
+    "FULL_AGENT_MISSIONS",
+    "PRODUCTION_RELEASE_GATES"
+  ],
+  "worker_failure_confirmed": false,
+  "cleanup_verified": false,
+  "isolation_verified": false,
+  "promotion_allowed": false,
+  "full_build_complete": false
+}
