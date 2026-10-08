@@ -3,14 +3,15 @@
 from datetime import datetime, timedelta
 from hashlib import sha256
 import sqlite3
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Response
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 
 from ai_quant_os.operator_session_contracts import OperatorSession
 from ai_quant_os.risk import SafetyState
+from ai_quant_os.operator_rejection_contracts import OperatorControlRejection
 
 
 class OperatorControl(BaseModel):
@@ -65,12 +66,17 @@ class OperatorControlReceipt(BaseModel):
         return self
 
 
+ControlOutcome = Annotated[
+    OperatorControlReceipt | OperatorControlRejection, Field(discriminator="decision")
+]
+
+
 def install_operator_control_routes(app: FastAPI, authorization, store, risk, lock, clock):
     def retained(action_id):
         try:
             prior = store.operator_control_receipt("operator:" + str(action_id))
             if prior is not None:
-                OperatorControlReceipt.model_validate(prior)
+                TypeAdapter(ControlOutcome).validate_python(prior)
         except (ValueError, KeyError, TypeError, sqlite3.Error) as error:
             raise HTTPException(503, "Operator receipt could not be verified") from error
         return prior
@@ -78,7 +84,7 @@ def install_operator_control_routes(app: FastAPI, authorization, store, risk, lo
     @app.get(
         "/api/v1/operator/controls/{action_id}",
         dependencies=[Depends(authorization.require_session)],
-        response_model=OperatorControlReceipt,
+        response_model=ControlOutcome,
     )
     def receipt(action_id: UUID, response: Response):
         result = retained(action_id)
@@ -90,7 +96,7 @@ def install_operator_control_routes(app: FastAPI, authorization, store, risk, lo
     @app.post(
         "/api/v1/operator/controls",
         dependencies=[Depends(authorization.require_control)],
-        response_model=OperatorControlReceipt,
+        response_model=ControlOutcome,
     )
     def transition(
         command: OperatorControl,
@@ -110,8 +116,6 @@ def install_operator_control_routes(app: FastAPI, authorization, store, risk, lo
                     raise HTTPException(409, "Action identity reused with a different command")
                 response.headers["Cache-Control"] = "no-store"
                 return previous
-            if abs((now - command.client_timestamp).total_seconds()) > 60:
-                raise HTTPException(422, "Command timestamp is stale")
             identity = str(uuid4())
             result = {
                 "schema_version": "1.0",
@@ -134,6 +138,38 @@ def install_operator_control_routes(app: FastAPI, authorization, store, risk, lo
                 ],
             }
             state = SafetyState(command.requested_action)
+            current = store.safety_state()
+            rejection = None
+            if abs((now - command.client_timestamp).total_seconds()) > 60:
+                rejection = "STALE_COMMAND"
+            elif command.expected_current_state != current:
+                rejection = "STALE_STATE"
+            elif list(SafetyState).index(state) < list(SafetyState).index(current):
+                rejection = "SAFETY_RECOVERY_FORBIDDEN"
+            if rejection is not None:
+                result.update(
+                    decision="REJECTED",
+                    previous_state=current.value,
+                    authoritative_state=current.value,
+                    rejection_reason=rejection,
+                    policy_checks=["PAPER_ONLY", "VALID_SESSION", "FRESH_REAUTH", rejection],
+                )
+                result = OperatorControlRejection.model_validate(result).model_dump(mode="json")
+                try:
+                    store.record_operator_rejection(
+                        "operator:" + str(command.action_id), command.reason, result
+                    )
+                except ValueError as error:
+                    raise HTTPException(
+                        409, "Safety state changed before rejection publication"
+                    ) from error
+                except sqlite3.IntegrityError as error:
+                    previous = retained(command.action_id)
+                    if previous and previous.get("request_sha256") == fingerprint:
+                        return previous
+                    raise HTTPException(409, "Action identity already reserved") from error
+                response.headers["Cache-Control"] = "no-store"
+                return result
             try:
                 risk.set_safety_state(
                     state,

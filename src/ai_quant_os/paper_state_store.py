@@ -172,6 +172,24 @@ class PaperStateStore:
             )
             self._audit_chain.append(f"control:{key}", event)
 
+    def record_operator_rejection(self, key: str, reason: str, receipt: dict) -> None:
+        if receipt.get("decision") != "REJECTED":
+            raise ValueError("Terminal rejection receipt required")
+        raw = json.dumps(receipt, sort_keys=True)
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            self._audit_chain.require_valid()
+            current = self._connection.execute(
+                "SELECT safety_state FROM safety_current WHERE singleton=1"
+            ).fetchone()[0]
+            if receipt["previous_state"] != current or receipt["authoritative_state"] != current:
+                raise ValueError("Safety state changed before rejection publication")
+            self._connection.execute("INSERT INTO control_receipts VALUES (?,?,?,?)", (key, current, reason, raw))
+            self._audit_chain.append(f"control:{key}", {
+                "action": "OPERATOR_CONTROL_REJECTED", "intent_id": "", "reason": reason,
+                "trace_id": receipt["receipt_id"], "receipt_sha256": sha256(raw.encode()).hexdigest(),
+            })
+
     def recovery_receipt(self, key: str) -> tuple[str, dict[str, str]] | None:
         with self._lock:
             row = self._connection.execute(

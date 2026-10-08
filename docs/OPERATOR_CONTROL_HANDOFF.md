@@ -56,6 +56,21 @@ receipt schemas match the runtime models. Existing original-key controls retain
 their wire format and idempotency behavior. Session callers must re-authenticate
 for the legacy controls and paper recovery too. No NORMAL command is exposed.
 
+Authenticated, well-formed commands refused for a stale timestamp, stale expected
+state or forbidden safety recovery now return durable REJECTED receipts. They
+preserve the unchanged observed state and explicit rejection code. Identical
+retries and receipt lookup return that original rejection after restart. Malformed
+or unauthenticated requests return HTTP errors and do not gain receipt authority.
+
+The browser retains the exact non-secret command in tab-scoped session storage
+before sending it. Reload restores its identity, original timestamp and fields;
+it never automatically retries. Use Check receipt to recover an acknowledgement.
+Retry reuses the original command and requires the original session and fresh
+code. A new session may look up the retained receipt, but cannot rebind an original
+command to itself. No code or session nonce is persisted in this browser record.
+Unavailable/invalid storage disables commands; an unresolved record cannot be
+overwritten. A validated terminal receipt clears only its matching action record.
+
 ## Verification and remaining development
 
 See `evaluations/operator-controls-0090.json` for scoped verification, including
@@ -64,15 +79,22 @@ check drops a successful acknowledgement and recovers the durable receipt. It
 also checks failed re-authentication, origin rejection, all three controls,
 private cookies, mobile overflow and logout. No broker or paid provider is used.
 
+`evaluations/operator-control-recovery-0091.json` records the recovery/rejection
+extension: 104 scoped backend checks passed in the working tree and a fresh staged
+checkout; ten frontend boundary/checkpoint checks passed. The production Edge flow
+recovers a dropped acknowledgement after a page reload and displays a durable
+forbidden-recovery rejection. Build/type checking, frontend lint, Python lint,
+formatting and staged secret scanning passed. This is scoped verification, not a
+new full-repository run or independent acceptance.
+
 P12 and the full P00–P13 objective remain incomplete. Outstanding P12 work includes
-durable browser recovery across page reloads, typed/persisted rejected and pending
-decisions, recovery/incident workflow UI, denial audit/rate limits, complete
+backend PENDING reservations/receipts, recovery/incident workflow UI, denial
+audit/rate limits, complete
 session lifecycle/resource shutdown, realtime sequence-gap recovery, stale-data
 indication, all remaining service views, observability/cost governance, reference
-visual regression and independent accessibility/security review. An unconfirmed
-action is retained within the current component; record its displayed UUID before
-reload. A missing receipt does not prove that a request never executed. Rejected
-commands presently return HTTP errors rather than durable rejection receipts.
+visual regression and independent accessibility/security review. Tab closure can
+discard the browser checkpoint; retain the displayed action UUID for backend
+lookup. A missing receipt does not prove that a request never executed.
 
 Use one owned local API process per state directory. Concurrent manually launched
 APIs are not a distributed risk-kernel deployment. Hosted authentication, trusted

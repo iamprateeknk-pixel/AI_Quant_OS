@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-09",
+  "status": "LOCAL_CONTROL_RELOAD_RECOVERY_AND_TERMINAL_REJECTION_VERIFIED",
+  "backend_regression": {
+    "passed": 104,
+    "skipped": 0,
+    "seconds": 40.54,
+    "exit_code": 0,
+    "full_repository_suite": false
+  },
+  "fresh_staged_checkout": {
+    "passed": 104,
+    "skipped": 0,
+    "seconds": 42.23,
+    "exit_code": 0,
+    "prior_schema_files_unchanged": 63
+  },
+  "frontend_boundary_and_checkpoint": {
+    "passed": 10,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "frontend_build": {
+    "next": "16.3.6",
+    "react": "19.2.8",
+    "typescript_checked": true,
+    "exit_code": 0
+  },
+  "frontend_lint": {
+    "exit_code": 0
+  },
+  "browser": {
+    "engine": "installed Microsoft Edge via bundled Playwright",
+    "production_build": true,
+    "synthetic_paper_backend": true,
+    "exit_code": 0,
+    "observed": [
+      "login/private session cookie",
+      "cross-origin rejection",
+      "failed reauthentication",
+      "same-action retry",
+      "dropped accepted acknowledgement",
+      "pending command retained without credentials",
+      "page reload preserves original command",
+      "explicit receipt recovery after reload",
+      "NO_NEW_RISK",
+      "typed FLATTEN_ONLY/HALT",
+      "terminal forbidden-recovery rejection",
+      "matching terminal receipt clears browser checkpoint",
+      "390px mobile overflow check",
+      "logout"
+    ],
+    "screenshot_sha256": "b299bc086fb9b36717508c9c3109f48ebc96509de4a92f08097a9f726a871e39"
+  },
+  "verification": {
+    "python_lint": true,
+    "changed_operator_format": true,
+    "staged_whitespace": true,
+    "staged_secret_scan": true
+  },
+  "red_observations": [
+    "3 missing durable rejection outcomes",
+    "missing browser checkpoint module",
+    "unresolved checkpoint overwrite admitted",
+    "missing published rejection schema"
+  ],
+  "transaction_and_terminal_checks": [
+    "rejection publication rechecks current state and rolls back on mismatch",
+    "rejection survives restart and supports exact retries/lookup",
+    "changed requests cannot reuse original action identity",
+    "changed receipts fail checked lookup",
+    "later state changes cannot make an original rejected action executable",
+    "storage refusal prevents action sending",
+    "unresolved original commands cannot be replaced"
+  ],
+  "source_and_contract_hashes": [
+    {
+      "path": "apps/web/src/features/operator-session/operator-console.tsx",
+      "sha256": "44bb66427f8b1e1f818e1425c207cd8327a35cdc57d8b5c44a3eaf38414056b6"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/pending-action-store.ts",
+      "sha256": "cd7514aed7eb48acea078881177ec4915e5506d332384e11de4a8e8748558aa9"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/pending-action.ts",
+      "sha256": "bdb20513e97a881aee69cffa1bcb66d35e673c77e25d1b69a6a6ad7ca240ad6c"
+    },
+    {
+      "path": "apps/web/tests/operator-browser.mjs",
+      "sha256": "8280b4863ba322de4662722d20514c538f7bd1b3af034dc81fcba65db06e4f50"
+    },
+    {
+      "path": "apps/web/tests/pending-action.test.mjs",
+      "sha256": "55141cd5623400ecd04354038ff0fc81010f1701d332918c6e8cbf364cc38986"
+    },
+    {
+      "path": "docs/schemas/operator-control-rejection.schema.json",
+      "sha256": "b61504edfc37ac98321a2dc0a57fbc1af1bd2b9b27bec0caae2b61f4bd46028a"
+    },
+    {
+      "path": "src/ai_quant_os/operator_control_api.py",
+      "sha256": "8fddc8aeb9a3bc10df6ebe033e7d51a881cbf69690378191c79a2040c20eefa3"
+    },
+    {
+      "path": "src/ai_quant_os/operator_rejection_contracts.py",
+      "sha256": "84cb296acdb78f62de0c98e564190b07c03b96cf8529a97cf1567e3013a660d1"
+    },
+    {
+      "path": "src/ai_quant_os/paper_state_store.py",
+      "sha256": "128bda430760e3687d869306126dda85e81ed721e3c555d24abaceb95ce4ecd0"
+    },
+    {
+      "path": "tests/test_operator_controls.py",
+      "sha256": "c146f324fe83e3d23b9f18dc36986143eb0aa633a3f90f94e3802e956b118ab5"
+    },
+    {
+      "path": "tests/test_operator_rejections.py",
+      "sha256": "7e45690426285004e5f1307589c2aa9f672dbbadcdf8d387e65c8a9d3c21312b"
+    }
+  ],
+  "authority": {
+    "mode": "PAPER",
+    "broker_connected": false,
+    "live_capital": false,
+    "paid_provider_called": false,
+    "candidate_worker_invoked": false,
+    "P12_complete": false,
+    "P00_P13_complete": false,
+    "independent_acceptance": false
+  },
+  "remaining": [
+    "backend PENDING reservations/receipts",
+    "browser/tab closure recovery",
+    "recovery and incident UI",
+    "denial auditing and rate limits",
+    "session lifecycle shutdown",
+    "realtime gap/staleness handling",
+    "remaining service views",
+    "observability and cost governance",
+    "visual regression and independent review",
+    "all remaining execution-pack phases and restricted-live gates"
+  ]
+}

@@ -34,6 +34,11 @@ try {
     await route.abort('failed');
   }, { times: 1 });
   await page.getByRole('button', { name: 'Retry same action' }).click();
+  const retained = await page.evaluate(() => sessionStorage.getItem('ai_quant_pending_control_v1'));
+  assert(retained && !retained.includes(code) && !retained.includes('credential'));
+  await page.reload();
+  assert.equal(await page.evaluate(() => sessionStorage.getItem('ai_quant_pending_control_v1')), retained);
+  await page.getByRole('button', { name: 'Check receipt' }).waitFor();
   await page.getByRole('button', { name: 'Check receipt' }).click();
   await page.getByText('Backend accepted: NO_NEW_RISK', { exact: false }).waitFor();
   await page.getByText('Expected backend state: NO_NEW_RISK', { exact: false }).waitFor();
@@ -51,13 +56,20 @@ try {
   await page.getByLabel('Type HALT to confirm').fill('HALT');
   await page.getByRole('button', { name: 'Apply paper safety action' }).click();
   await page.getByText('Backend accepted: HALT', { exact: false }).waitFor();
+  await page.getByText('Expected backend state: HALT', { exact: false }).waitFor();
+  await page.getByLabel('Paper safety action').selectOption('NO_NEW_RISK');
+  await page.getByLabel('Reason for action').fill('Synthetic forbidden safety recovery');
+  await page.getByLabel('Re-enter access code').fill(code);
+  await page.getByRole('button', { name: 'Apply paper safety action' }).click();
+  await page.getByText('Backend rejected: SAFETY_RECOVERY_FORBIDDEN', { exact: false }).waitFor();
+  assert.equal(await page.evaluate(() => sessionStorage.getItem('ai_quant_pending_control_v1')), null);
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   await page.screenshot({ path: process.env.AI_QUANT_TEST_SCREENSHOT, fullPage: true });
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.getByLabel('Operator access code', { exact: true }).waitFor();
   assert.equal((await context.request.get(base + '/api/operator/session')).status(), 401);
-  console.log('PASS: login, private cookie, origin rejection, failed reauth, same-action retry, dropped acknowledgement recovery, NO_NEW_RISK, typed FLATTEN_ONLY/HALT, mobile overflow and logout');
+  console.log('PASS: login, private cookie, origin rejection, failed reauth, same-action retry, dropped acknowledgement and reload recovery, NO_NEW_RISK, typed FLATTEN_ONLY/HALT, durable recovery rejection, mobile overflow and logout');
 } catch (error) {
   console.log(await page.locator('.operator-console').innerText().catch(() => 'Operator panel unavailable'));
   await page.screenshot({ path: process.env.AI_QUANT_TEST_SCREENSHOT, fullPage: true });

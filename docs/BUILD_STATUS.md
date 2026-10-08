@@ -4,6 +4,27 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Durable browser control recovery and rejection increment
+
+- Browser checkpoints retain the exact non-secret original command before send,
+  survive same-tab reloads, refuse unresolved replacement and clear only against a
+  matching terminal receipt. Unavailable/invalid storage withholds sending; reload
+  restoration does not retry automatically.
+- Well-formed authenticated refusals now retain checked terminal rejection
+  receipts without changing safety state. Stale command/state and forbidden safety
+  recovery outcomes survive restart and support original-request retry/lookup.
+  Original command/accepted schemas remain unchanged. See ADR 0091 and
+  `OPERATOR_CONTROL_HANDOFF.md`.
+- Backend pending reservations, browser/tab closure recovery, denial audit/rate
+  limits, remaining P12 workflows/views, realtime/governance and independent
+  acceptance remain open. The full P00–P13 build is incomplete.
+- Verification passed 104 scoped backend checks in 40.54 seconds and again from
+  the fresh staged checkout in 42.23 seconds. Ten frontend checks, the production
+  Edge reload/rejection flow, build/type checking, lint and secret scanning passed.
+  All 63 prior schema files match HEAD. See
+  `evaluations/operator-control-recovery-0091.json`; no full-suite or independent
+  acceptance claim is made.
+
 ## Operator session and paper safety control increment
 
 - Added backend-owned fifteen-minute sessions with durable revocation, hashed
@@ -216,7 +237,7 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
 | P09 Shadow, paper attribution and counterfactual learning | In progress | Atomic persisted order/intent/fill snapshots, original strategy/version ownership, reconciled cumulative cash/fee/inventory/PnL contributions, shared portfolio liquidation marks, explicit missing evidence and a protected read API are implemented. Synthetic persisted paper evidence replays from its retained source snapshot. Newly reserved orders retain initial kernel-approved quotes atomically before dispatch; checksum/requirement-checked benchmark snapshots drive reconciled midpoint, spread, decision-to-fill and fee cash contributions with explicit legacy coverage gaps. Declared candidate counterfactuals reproduce the frozen native baseline before independent engine alternatives; source-retaining diagnostics, exact execution/cash reconciliation, owned immutable reservations and restart/failure handling are implemented. Local candidate shadow portfolios append strictly post-cutoff observations, retain cumulative native positions/PnL, reproduce historical fills, preserve sequential hash/head evidence, block interruptions/failures and refuse withdrawn candidates. Protected server-owned ledger/quote checkpoints and immutable UTC daily publication now retain opening inventory, day cash/fees, closing inventory and reconciled strategy PnL, with withheld missing/late boundary marks and historical-ledger checks. An opt-in application worker now captures UTC boundaries and publishes closed days with persistent activation, verified receipt chains, restart adoption, missed-boundary records, bounded catch-up, protected status and sanitized failure/backoff handling. Production scheduling/retention/recovery evidence, financing/restatements, daily execution/shadow aggregation, candidate-genome paper binding, production shadow ingress/scheduling/recovery, live/shadow comparison, fill-time/latency/agent/causal attribution, forward counterfactual integration, reality-gap alerts and demotion remain. |
 | P10 Recovery | In progress | Actual optional Temporal paper uncertainty runbook, owner-bound lifespan worker using the actual gateway/kernel/state/control lock, protected strict start/read/retry routes, immutable audited attempts, acknowledgement-only reconciliation, bounded retries and real restart evidence. Opt-in health monitoring now observes actual paper/quote/audit/graph sources, retains an independent bounded incident journal, restores exact-version/manifest quarantine even with monitoring disabled, scans verified graph records in bounded pages, immediately observes terminal API receipts, verifies journal integrity at operator admission, and blocks open incidents from manual normalization. Health/recovery stops hold kernel authority across their audit commits; critical failures enter HALT without automatic downgrade. Local taxonomy and incident runbooks are recorded. Local repair candidate construction now creates a real isolated Git branch/worktree, pins actual quarantined A02/A07 incidents, preserves the original baseline and capabilities, retains proposed new manifests/source hashes/regression plans, and verifies source/receipt/branch/worktree integrity on restart. Candidate code is not executed, registered or certified; all verification/shadow/canary/release gates remain pending. Full operator sessions, broader service/orphan coverage, retention/incident closure, independent behavioral verification and execution isolation, Temporal repair-stage coordination, shadow/canary gated recovery, rollback automation, cross-process leases, production service controls and independent review remain. |
 | P11 Evolution | In progress | Immutable source/config/manifest genomes for the two genome-enabled A02/A07 shadow agents, source ownership shared with repair proposals, predeclared objective metadata, capability/contract inheritance, strictly newer parent-bound challengers, transactional audited lineage and local seed/register/list/lineage/immutable-export CLI are implemented. A separate audited catalog now retains bounded prospective datasets/measurement plans, derives source-bound genome objectives from exact plan hashes and enforces current dataset-read capabilities and exact training/holdout input exclusion. Roots remain archival baselines and challengers unverified; no runtime implementation is installed. Full agent/source coverage, measured quality/reputation/weakness detection, executable protocol adapters, physical/statistical holdout isolation and independent comparison, DSPy/generation/Jev pre-screening, scheduler/monthly tournament, promotion policy, actual shadow/canary/rollback and independent review remain. |
-| P12 Mission Control and governance | In progress | Local monitoring, checked audit, expiring operator sessions and re-authenticated paper safety controls with durable accepted receipts; durable browser recovery, rejected/pending receipts, complete views, realtime contracts, observability, cost governance and independent acceptance remain. |
+| P12 Mission Control and governance | In progress | Local monitoring, checked audit, expiring operator sessions, re-authenticated paper controls, durable accepted/rejected receipts and same-tab reload recovery; backend pending receipts, complete views/workflows, realtime contracts, observability, cost governance and independent acceptance remain. |
 | P13 Restricted live rollout | Blocked by release gates | No broker or live credentials; every `99_RELEASE_GATES/GO_LIVE_GATE.md` item remains open. |
 
 ## Linux dependency runtime increment

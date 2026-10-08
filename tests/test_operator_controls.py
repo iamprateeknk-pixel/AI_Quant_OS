@@ -97,7 +97,13 @@ def test_unadmitted_control_never_changes_state(change):
     client = TestClient(create_app(operator_token=OPERATOR, clock=lambda: NOW))
     session = login(client)
     response = send(client, session, {**command(session), **change})
-    assert response.status_code in (403, 409, 422), response.text
+    if response.status_code == 200:
+        assert response.json()["decision"] == "REJECTED"
+        assert (
+            response.json()["previous_state"] == response.json()["authoritative_state"] == "NORMAL"
+        )
+    else:
+        assert response.status_code in (403, 409, 422), response.text
     assert client.get("/api/v1/system/status").json()["safety_state"] == "NORMAL"
 
 
