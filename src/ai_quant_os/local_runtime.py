@@ -86,6 +86,7 @@ class LocalSettings:
         frontend = {
             **base,
             "AI_QUANT_API_URL": f"http://127.0.0.1:{self.api_port}",
+            "AI_QUANT_WEB_ORIGIN": f"http://127.0.0.1:{self.web_port}",
             "NEXT_TELEMETRY_DISABLED": "1",
             "NODE_ENV": "production",
         }

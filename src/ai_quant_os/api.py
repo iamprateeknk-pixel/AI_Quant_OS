@@ -81,6 +81,9 @@ from ai_quant_os.world_state_store import WorldStateStore
 from ai_quant_os.decision_gateway import DecisionGateway, FastClassifier, require_current_decision
 from ai_quant_os.deep_review import DeepReviewer, DeepReviewDispatcher, require_current_review
 from ai_quant_os.paper_state_store import PaperStateStore
+from ai_quant_os.operator_session_store import OperatorSessionStore
+from ai_quant_os.operator_session_api import OperatorAuthorization
+from ai_quant_os.operator_control_api import install_operator_control_routes
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
@@ -553,11 +556,7 @@ def create_app(
             },
         )
 
-    def require_operator(x_operator_token: str | None = Header(default=None)) -> None:
-        if not configured_token:
-            raise HTTPException(status_code=503, detail="Operator commands are disabled")
-        if not x_operator_token or not hmac.compare_digest(x_operator_token, configured_token):
-            raise HTTPException(status_code=401, detail="Invalid operator token")
+    def operator_admission() -> None:
         if not state_store.audit_integrity().valid:
             raise HTTPException(status_code=503, detail="Audit integrity verification failed")
         if health_worker is not None:
@@ -565,6 +564,25 @@ def create_app(
                 health_worker.verify_admission()
             except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
                 raise HTTPException(503, "Health incident journal could not be verified") from error
+
+    try:
+        operator_sessions = OperatorSessionStore(
+            configured_path.with_name(configured_path.stem + ".operator-sessions.sqlite3")
+            if configured_path else None
+        )
+    except (ValueError, TypeError, KeyError, OSError, sqlite3.Error):
+        # Withhold session authority while preserving independently authenticated
+        # emergency controls when the paper audit and health journals are sound.
+        operator_sessions = None
+    operator_authorization = OperatorAuthorization(
+        configured_token, operator_sessions, current_time, operator_admission
+    )
+    operator_authorization.install(app)
+    require_operator = operator_authorization.require_operator
+    require_control_operator = operator_authorization.require_control
+    install_operator_control_routes(
+        app, operator_authorization, state_store, risk, control_lock, current_time
+    )
 
     def require_recovery(x_recovery_token: str | None = Header(default=None)) -> None:
         if not configured_recovery_token:
@@ -1696,25 +1714,25 @@ def create_app(
                 raise HTTPException(status_code=409, detail=str(error)) from error
             return receipt
 
-    @app.post("/api/v1/control/no-new-risk", dependencies=[Depends(require_operator)])
+    @app.post("/api/v1/control/no-new-risk", dependencies=[Depends(require_control_operator)])
     def no_new_risk(
         command: ControlInput, idempotency_key: str = Header(min_length=1)
     ) -> dict[str, str]:
         return transition(SafetyState.NO_NEW_RISK, command, idempotency_key)
 
-    @app.post("/api/v1/control/flatten-only", dependencies=[Depends(require_operator)])
+    @app.post("/api/v1/control/flatten-only", dependencies=[Depends(require_control_operator)])
     def flatten_only(
         command: ControlInput, idempotency_key: str = Header(min_length=1)
     ) -> dict[str, str]:
         return transition(SafetyState.FLATTEN_ONLY, command, idempotency_key)
 
-    @app.post("/api/v1/control/halt", dependencies=[Depends(require_operator)])
+    @app.post("/api/v1/control/halt", dependencies=[Depends(require_control_operator)])
     def halt(command: ControlInput, idempotency_key: str = Header(min_length=1)) -> dict[str, str]:
         return transition(SafetyState.HALT, command, idempotency_key)
 
     @app.post(
         "/api/v1/control/recover-paper",
-        dependencies=[Depends(require_operator), Depends(require_recovery)],
+        dependencies=[Depends(require_control_operator), Depends(require_recovery)],
     )
     def recover_paper(
         command: ControlInput, idempotency_key: str = Header(min_length=1)

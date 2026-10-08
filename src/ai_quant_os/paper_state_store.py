@@ -1,4 +1,5 @@
 import json
+from hashlib import sha256
 import sqlite3
 from pathlib import Path
 from threading import Lock
@@ -126,8 +127,26 @@ class PaperStateStore:
             ).fetchone()
             return (SafetyState(row[0]), row[1], json.loads(row[2])) if row else None
 
+    def operator_control_receipt(self, key: str) -> dict | None:
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN")
+            self._audit_chain.require_valid()
+            row = self._connection.execute(
+                "SELECT receipt_json FROM control_receipts WHERE idempotency_key=?", (key,)
+            ).fetchone()
+            if row:
+                self._audit_chain.require_valid()
+                event = self._connection.execute(
+                    "SELECT event_json FROM audit_events WHERE event_key=?", (f"control:{key}",)
+                ).fetchone()
+                if event is None or json.loads(event[0]).get("receipt_sha256") != sha256(row[0].encode()).hexdigest():
+                    raise ValueError("Operator receipt audit binding mismatch")
+                return json.loads(row[0])
+            return None
+
     def record_control(
-        self, key: str, state: SafetyState, reason: str, receipt: dict[str, str]
+        self, key: str, state: SafetyState, reason: str, receipt: dict[str, str],
+        *, expected_state: SafetyState | None = None,
     ) -> None:
         event = {
             "action": state.value,
@@ -137,6 +156,15 @@ class PaperStateStore:
         }
         with self._lock, self._connection:
             self._connection.execute("BEGIN IMMEDIATE")
+            if expected_state is not None:
+                current = SafetyState(self._connection.execute(
+                    "SELECT safety_state FROM safety_current WHERE singleton=1"
+                ).fetchone()[0])
+                if current != expected_state:
+                    raise ValueError("Expected safety state does not match current state")
+                if list(SafetyState).index(state) < list(SafetyState).index(current):
+                    raise ValueError("Safety state recovery requires a separate gated workflow")
+                event["receipt_sha256"] = sha256(json.dumps(receipt, sort_keys=True).encode()).hexdigest()
             self._escalate(state)
             self._connection.execute(
                 "INSERT INTO control_receipts VALUES (?, ?, ?, ?)",

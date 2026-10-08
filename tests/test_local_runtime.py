@@ -65,6 +65,11 @@ def test_child_environments_keep_operator_secret_only_on_backend(tmp_path):
     assert backend["AI_QUANT_PAPER_DB"] == str(tmp_path.resolve() / "paper.sqlite3")
 
 
+def test_custom_web_port_sets_the_exact_operator_origin(tmp_path):
+    _, frontend = runtime().LocalSettings(Path.cwd(), tmp_path, 28100, 28101).environments({})
+    assert frontend.get("AI_QUANT_WEB_ORIGIN") == "http://127.0.0.1:28101"
+
+
 def wait_file(path):
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:

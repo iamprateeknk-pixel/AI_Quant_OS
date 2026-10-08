@@ -3,6 +3,9 @@ import { getAudit, getBrokers, getFills, getOrders, getRisk, getSystemStatus } f
 import { sectionDetails, type SectionKey } from "@/lib/navigation";
 import { WorldStatePanel } from "@/features/world-state/world-state-panel";
 import { AuditIntegrityPanel } from "@/features/audit/audit-integrity-panel";
+import { OperatorConsole } from "@/features/operator-session/operator-console";
+import { sessionStatus } from "@/features/operator-session/server";
+import { publicSession } from "@/features/operator-session/boundary";
 import { InstrumentPositionsPanel } from "@/features/portfolio/instrument-positions-panel";
 import { CurrencyExposurePanel } from "@/features/portfolio/currency-exposure-panel";
 
@@ -16,6 +19,8 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
   const [title, description] = sectionDetails[section];
   const status = section === "risk" ? await getSystemStatus() : null;
   const risk = section === "risk" ? await getRisk() : null;
+  const operatorResponse = section === "risk" ? await sessionStatus() : null;
+  const operatorSession = operatorResponse?.ok ? publicSession(await operatorResponse.json()) : null;
   const orders = section === "orders" ? await getOrders() : null;
   const fills = section === "orders" ? await getFills() : null;
   const audit = section === "audit" ? await getAudit() : null;
@@ -23,6 +28,7 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
   return <div className="page-content">
     <div className="page-heading"><div><p className="eyebrow">Mission Control</p><h1>{title}</h1><p>{description}</p></div><span className="mode-tag">PAPER ENVIRONMENT</span></div>
     {section === "world-state" && <WorldStatePanel />}
+    {section === "risk" && <OperatorConsole initialSession={operatorSession} safetyState={risk?.ok ? risk.value.safety_state : null} />}
     {section === "risk" && <section className="panel content-panel"><div className="panel-heading"><h2>Risk state</h2><span>BACKEND AUTHORITY</span></div><dl className="fact-list"><div><dt>Safety state</dt><dd>{risk?.ok ? risk.value.safety_state : "Unavailable"}</dd></div><div><dt>Mode</dt><dd>{status?.ok ? status.value.mode : "Unavailable"}</dd></div><div><dt>Per order ceiling, base units</dt><dd>{risk?.ok ? risk.value.max_order_exposure : "Unavailable"}</dd></div><div><dt>EURUSD position ceiling, base units</dt><dd>{risk?.ok ? risk.value.max_portfolio_exposure : "Unavailable"}</dd></div><div><dt>EURUSD worst case quantity</dt><dd>{risk?.ok ? risk.value.worst_case_quantity : "Unavailable"}</dd></div><div><dt>EURUSD filled net quantity</dt><dd>{risk?.ok ? risk.value.filled_net_quantity : "Unavailable"}</dd></div><div><dt>EURUSD pending buy / sell</dt><dd>{risk?.ok ? `${risk.value.pending_buy_quantity} / ${risk.value.pending_sell_quantity}` : "Unavailable"}</dd></div><div><dt>Per currency ceiling, {risk?.ok ? risk.value.reporting_currency : "reporting currency"}</dt><dd>{risk?.ok ? risk.value.max_currency_exposure_reporting : "Unavailable"}</dd></div><div><dt>Gross currency ceiling, {risk?.ok ? risk.value.reporting_currency : "reporting currency"}</dt><dd>{risk?.ok ? risk.value.max_gross_currency_exposure_reporting : "Unavailable"}</dd></div><div><dt>New live orders</dt><dd>Disabled</dd></div></dl><p className="panel-muted">Each instrument has its own unit ceiling. The shared currency ceilings include filled balances and pending paper orders. Both currency legs count toward gross currency exposure. Risk ceilings and recovery are not editable in this interface.</p></section>}
     {section === "portfolio" && <InstrumentPositionsPanel />}
     {section === "portfolio" && <CurrencyExposurePanel />}

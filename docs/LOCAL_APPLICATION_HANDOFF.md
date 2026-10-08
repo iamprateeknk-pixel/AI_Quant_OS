@@ -39,8 +39,9 @@ the sockets; another service taking a port during startup causes refusal/exit.
 Only a narrow system environment is copied to children. A privately configured
 `AI_QUANT_OPERATOR_TOKEN` is passed to the backend alone; it is never generated,
 printed, stored by the launcher or sent to the browser. Without it, write commands
-return 503. The dashboard retains its existing monitoring interface and does not
-gain operator sessions or capital controls.
+return 503. Risk Center now supports expiring backend-owned operator sessions and
+re-authenticated paper safety actions. The launcher sets the exact dashboard
+origin automatically, including custom ports. See `OPERATOR_CONTROL_HANDOFF.md`.
 
 Jev/OpenAI keys, Python/Node injection options, proxy settings and arbitrary
 application settings are omitted. Jev/review, daily publication, Temporal recovery

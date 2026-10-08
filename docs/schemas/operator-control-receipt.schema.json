@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "SafetyState": {
+      "enum": [
+        "NORMAL",
+        "NO_NEW_RISK",
+        "FLATTEN_ONLY",
+        "HALT"
+      ],
+      "title": "SafetyState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "receipt_id": {
+      "format": "uuid",
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "action_id": {
+      "format": "uuid",
+      "title": "Action Id",
+      "type": "string"
+    },
+    "decision": {
+      "const": "ACCEPTED",
+      "title": "Decision",
+      "type": "string"
+    },
+    "previous_state": {
+      "$ref": "#/$defs/SafetyState"
+    },
+    "authoritative_state": {
+      "enum": [
+        "NO_NEW_RISK",
+        "FLATTEN_ONLY",
+        "HALT"
+      ],
+      "title": "Authoritative State",
+      "type": "string"
+    },
+    "operator_session_id": {
+      "format": "uuid",
+      "title": "Operator Session Id",
+      "type": "string"
+    },
+    "request_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Sha256",
+      "type": "string"
+    },
+    "server_timestamp": {
+      "format": "date-time",
+      "title": "Server Timestamp",
+      "type": "string"
+    },
+    "trace_id": {
+      "format": "uuid",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "policy_checks": {
+      "maxItems": 5,
+      "minItems": 5,
+      "prefixItems": [
+        {
+          "const": "PAPER_ONLY",
+          "type": "string"
+        },
+        {
+          "const": "VALID_SESSION",
+          "type": "string"
+        },
+        {
+          "const": "FRESH_REAUTH",
+          "type": "string"
+        },
+        {
+          "const": "EXPECTED_STATE",
+          "type": "string"
+        },
+        {
+          "const": "MONOTONIC_SAFETY",
+          "type": "string"
+        }
+      ],
+      "title": "Policy Checks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "mode",
+    "receipt_id",
+    "action_id",
+    "decision",
+    "previous_state",
+    "authoritative_state",
+    "operator_session_id",
+    "request_sha256",
+    "server_timestamp",
+    "trace_id",
+    "policy_checks"
+  ],
+  "title": "OperatorControlReceipt",
+  "type": "object"
+}

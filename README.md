@@ -48,7 +48,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000`. The frontend reads `AI_QUANT_API_URL` on the server and defaults to `http://127.0.0.1:8000`. It displays unavailable states for services not connected yet. It does not expose control commands until operator-session authentication is built.
+Open `http://127.0.0.1:3000`. The frontend reads `AI_QUANT_API_URL` on the server and defaults to `http://127.0.0.1:8000`. It displays unavailable states for services not connected yet. Risk Center supports expiring operator sessions and re-authenticated paper safety actions with durable accepted receipts. See [operator control handoff](docs/OPERATOR_CONTROL_HANDOFF.md).
 
 ## Native backtests
 

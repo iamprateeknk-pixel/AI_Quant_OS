@@ -1,0 +1,66 @@
+{
+  "$defs": {
+    "SafetyState": {
+      "enum": [
+        "NORMAL",
+        "NO_NEW_RISK",
+        "FLATTEN_ONLY",
+        "HALT"
+      ],
+      "title": "SafetyState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "format": "uuid",
+      "title": "Action Id",
+      "type": "string"
+    },
+    "requested_action": {
+      "enum": [
+        "NO_NEW_RISK",
+        "FLATTEN_ONLY",
+        "HALT"
+      ],
+      "title": "Requested Action",
+      "type": "string"
+    },
+    "reason": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "operator_session_id": {
+      "format": "uuid",
+      "title": "Operator Session Id",
+      "type": "string"
+    },
+    "client_timestamp": {
+      "format": "date-time",
+      "title": "Client Timestamp",
+      "type": "string"
+    },
+    "expected_current_state": {
+      "$ref": "#/$defs/SafetyState"
+    },
+    "confirmation": {
+      "default": "",
+      "maxLength": 32,
+      "title": "Confirmation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "action_id",
+    "requested_action",
+    "reason",
+    "operator_session_id",
+    "client_timestamp",
+    "expected_current_state"
+  ],
+  "title": "OperatorControl",
+  "type": "object"
+}

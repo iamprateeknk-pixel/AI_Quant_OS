@@ -1,0 +1,199 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-09",
+  "status": "LOCAL_OPERATOR_CONTROL_FLOW_VERIFIED_FULL_GOAL_INCOMPLETE",
+  "backend_regression": {
+    "passed": 113,
+    "skipped": 0,
+    "seconds": 55.42,
+    "exit_code": 0,
+    "full_repository_suite": false
+  },
+  "fresh_staged_checkout": {
+    "passed": 113,
+    "skipped": 0,
+    "seconds": 83.44,
+    "exit_code": 0,
+    "prior_schema_files_unchanged": 61
+  },
+  "frontend_boundary": {
+    "passed": 5,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "frontend_build": {
+    "next": "16.3.6",
+    "react": "19.2.8",
+    "typescript_checked": true,
+    "exit_code": 0
+  },
+  "frontend_lint": {
+    "exit_code": 0
+  },
+  "browser": {
+    "engine": "installed Microsoft Edge via bundled Playwright",
+    "production_build": true,
+    "synthetic_paper_backend": true,
+    "exit_code": 0,
+    "observed": [
+      "login",
+      "HttpOnly SameSite Strict cookie",
+      "nonce absent from public status and document.cookie",
+      "cross-origin rejection",
+      "failed reauthentication",
+      "same-action retry",
+      "dropped accepted acknowledgement",
+      "durable receipt lookup",
+      "NO_NEW_RISK",
+      "typed FLATTEN_ONLY",
+      "typed HALT",
+      "390px mobile overflow check",
+      "logout"
+    ],
+    "screenshot_sha256": "f444c8450368f317610c8a8e91298ee91d80923e7fe708561cc7b448ac418717"
+  },
+  "verification": {
+    "python_lint": true,
+    "new_operator_format": true,
+    "staged_whitespace": true,
+    "staged_secret_scan": true,
+    "browser_assets_credential_scan": "NO_MATCHES",
+    "source_files": 275,
+    "test_files": 168,
+    "top_level_symbols": 1072,
+    "cycles": 0,
+    "unreferenced_modules": 0
+  },
+  "red_observations": [
+    "10 absent session implementation/routes",
+    "9 absent control routes/transactional expected state",
+    "missing frontend boundary module",
+    "missing browser sign-in form",
+    "custom origin absent",
+    "legacy operator-prefixed idempotency regression",
+    "session expiry while waiting for mutation lock",
+    "corrupt journal blocked emergency API restart",
+    "2 missing published schema files"
+  ],
+  "corrected_verification_failures": [
+    "use Next Link for audit navigation",
+    "disable control submission while authoritative state refreshes",
+    "correct mobile form inset"
+  ],
+  "source_and_contract_hashes": [
+    {
+      "path": "apps/web/src/app/[section]/page.tsx",
+      "sha256": "aaaef12653d505967dc2453593957d135a73a5e06d8dfd252c83e09ac22f1531"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/controls/[action_id]/route.ts",
+      "sha256": "69cdf8076d4bca0bc28ce8299cf02a8ef99f5a3908d6b3c913a8dbcc202adf78"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/controls/route.ts",
+      "sha256": "79787fd6dbfcd9125e12054eef6ccb546dceda8d2730f10929595560edc28f18"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/session/route.ts",
+      "sha256": "6cb1376473e3aae24e9681c1b1ea390411cb11b45417635ab45a22c36f6f936a"
+    },
+    {
+      "path": "apps/web/src/app/globals.css",
+      "sha256": "09e78e3b52416db460420d87bf74a6b1adb8045d24c9e7896b0f982e95eee095"
+    },
+    {
+      "path": "apps/web/src/app/page.tsx",
+      "sha256": "8273988423dc9519fa8ec77a2f2e087dd4a0f0102c132ab6adc3dafadf44d44b"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/boundary.ts",
+      "sha256": "901bb2c3f746197c9dc62ea9b42cb122a90d5bf97db875998339780a4dcd8463"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/operator-console.tsx",
+      "sha256": "fffec08825af51ec08caf02bf243697690df60eedee9d06e6670c67cdc992cfc"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/server.ts",
+      "sha256": "8c30215a0553c22607c9ff8e051cc968951c3bba2ed5a8fa96474abdf1800177"
+    },
+    {
+      "path": "apps/web/tests/operator-boundary.test.mjs",
+      "sha256": "beb66dafd786109889f1aeb2be7acd61fd8a6e9deb7fcbe549b81dc203dc7c3f"
+    },
+    {
+      "path": "apps/web/tests/operator-browser.mjs",
+      "sha256": "4f3e6b298958682f5a307af343e01e47bdd968bfcdd7a04c0f5aa7816c96a42f"
+    },
+    {
+      "path": "docs/schemas/operator-control-receipt.schema.json",
+      "sha256": "4bc907cc3f918f49e892e411380ea79fb59c8ee1e5f7df12f865f5ed50d9865a"
+    },
+    {
+      "path": "docs/schemas/operator-control.schema.json",
+      "sha256": "afeaa5ef974557f3693b37f4d89023b5242be6ea1c8dc4206f4c904f18a1e0e3"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "5f8f4d27a4e0d103fc2642404fb92c07d2a846a734f0d6fcbaae1a90e2d8cd9d"
+    },
+    {
+      "path": "src/ai_quant_os/local_runtime.py",
+      "sha256": "57fbcd9eefbb91dbf94e59457aeaeaa12caa387f22b831e02d53dde95cd70840"
+    },
+    {
+      "path": "src/ai_quant_os/operator_control_api.py",
+      "sha256": "fc24cdd581d74d0f10157985986f782c74ed9f75f8d32ae0beb22f4d35b60150"
+    },
+    {
+      "path": "src/ai_quant_os/operator_session_api.py",
+      "sha256": "8a34b45f36665e1183036dd10c4698f46314b8fb30ba698eef0c8fcd3c107214"
+    },
+    {
+      "path": "src/ai_quant_os/operator_session_contracts.py",
+      "sha256": "67602696dd75c90fbf0ce4900cec6b779c45d573de7bebd666cb98fdc8d25c01"
+    },
+    {
+      "path": "src/ai_quant_os/operator_session_store.py",
+      "sha256": "bd585d27955e6fe8c2d8ef1b868b4f54eecfee32bd00d9ac8ef594b018275b5c"
+    },
+    {
+      "path": "src/ai_quant_os/paper_state_store.py",
+      "sha256": "800e98444900aa814659564c2375b421bd1f5021096ff02d81c368456972501d"
+    },
+    {
+      "path": "tests/test_local_runtime.py",
+      "sha256": "aa9f47b95235e42e707d4041ca95a74a3bf18c4bca3050742209355a166fbaab"
+    },
+    {
+      "path": "tests/test_operator_controls.py",
+      "sha256": "74664405292649c89801344227b1f50d6127e76ba2957febe2832346fe7fff0a"
+    },
+    {
+      "path": "tests/test_operator_sessions.py",
+      "sha256": "fff7e46c0e893de32efd07cb9e3abdad53a52964124334774083c16213113831"
+    }
+  ],
+  "authority": {
+    "mode": "PAPER",
+    "broker_connected": false,
+    "live_capital": false,
+    "paid_provider_called": false,
+    "candidate_worker_invoked": false,
+    "P12_complete": false,
+    "P00_P13_complete": false,
+    "independent_acceptance": false
+  },
+  "remaining": [
+    "durable browser action recovery across reload",
+    "typed persisted rejected/pending decisions",
+    "recovery and incident UI",
+    "denial auditing and rate limits",
+    "session lifecycle shutdown",
+    "realtime gap/staleness handling",
+    "remaining service views",
+    "observability and cost governance",
+    "visual regression and independent review",
+    "all remaining execution-pack phases and restricted-live gates"
+  ]
+}
