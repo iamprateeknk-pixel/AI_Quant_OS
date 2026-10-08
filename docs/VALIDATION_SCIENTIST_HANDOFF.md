@@ -57,7 +57,8 @@ produce FAILED/TIMEOUT receipts. Enabled health observation records those incide
 quarantines the exact agent version and follows the existing deterministic safety
 policy. Neither this agent nor its tool can change that policy or recover trading.
 
-Long-running validation orchestration, uncertain worker failure records,
+Local original-source Temporal orchestration is described in
+VALIDATION_JOB_HANDOFF.md. Early worker failure classifications,
 larger Monte Carlo plans, independent source/adversarial acceptance, physical and
 statistical isolation, champion/shadow acceptance and production release gates
 remain required for the full execution pack.

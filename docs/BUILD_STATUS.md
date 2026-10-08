@@ -4,6 +4,38 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Durable original-source validation job increment
+
+- Added independently pinned original-source jobs, audited stage reservations and
+  acknowledgements, original worker-result reconciliation and checked archive
+  publication. All declared holdout/development intervals remain bound to the
+  original package. Failed proposed tests publish prerequisite failures without
+  numeric execution. See VALIDATION_JOB_HANDOFF.md and ADR 0087.
+- Added optional local Temporal dispatch with maximum activity attempts one,
+  retained server history, duplicate-start refusal and exact reply/stage checks.
+  Cancellation drains the owning thread to a safe prefix cleanup boundary before
+  releasing the root. Sixteen cooperative pauses are permitted across the job;
+  uncertain outcomes require independent pins before further dispatch.
+- The initial real Linux/Temporal focused run passed **42 checks in 269.45
+  seconds**. Final focused verification passed **42 checks**, with **one opt-in
+  worker integration skipped**, in **262.95 seconds**, and again from a fresh
+  staged checkout in **247.57 seconds**. The full regression, enabling all six
+  local web/Linux gates and required Temporal checks, passed **2,003 tests**, with
+  **15 optional integrations skipped**, in **2194.09 seconds**. It includes the
+  actual original-source Linux/Temporal job, lost-test-acknowledgement recovery
+  without test restart, holdout, both declared folds and checked publication.
+- All **27 prior wire schemas** and **311 unchanged production/infrastructure/
+  schema artifacts** match HEAD. Lint/format (399 files), structure review and
+  staged secret scanning passed. Tested source, tests and schemas match the index
+  and fresh checkout. The full run's original job, final stage and checked archive
+  were revalidated. Evidence is retained in
+  `docs/evaluations/validation-job-0087.json`.
+- This adds local original-source orchestration. Early worker failure
+  classification, larger declared computation plans, physical/statistical
+  isolation, independent source/adversarial/reality-gap/champion/shadow acceptance,
+  full agent missions and production gates remain required. The complete P00–P13
+  build remains incomplete.
+
 ## Validation Scientist advisory graph increment
 
 - Added A10 0.2.0 as PARTIAL/SHADOW with protected sandbox context, execution,

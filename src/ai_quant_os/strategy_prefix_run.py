@@ -6,6 +6,7 @@ from hashlib import sha256
 import os
 from pathlib import Path
 from uuid import uuid4
+from typing import Callable
 
 from ai_quant_os.candidate_invocations import _inputs, _invocation
 from ai_quant_os.candidate_dataset_views import CandidateDatasetView
@@ -206,7 +207,11 @@ def _checked_report(package, manifest, records, raw):
 
 
 def run_strategy_prefixes(
-    package: CandidateDatasetInput, *, root: Path, run_sha256: str
+    package: CandidateDatasetInput,
+    *,
+    root: Path,
+    run_sha256: str,
+    checkpoint: Callable[[], None] | None = None,
 ) -> StrategyPrefixRunReport:
     with _owned_run(package, root, run_sha256) as (package, manifest, store, expected):
         parent = store.path.parent
@@ -234,6 +239,8 @@ def run_strategy_prefixes(
                 manifest, inspect_strategy_worker_image(**manifest.image_inputs.arguments())
             )
         for index in range(len(records) + 2, manifest.row_count):
+            if checkpoint is not None:
+                checkpoint()
             record = StrategyRunPrefix(
                 index=index,
                 job_name="strategy-job-" + uuid4().hex,
@@ -272,6 +279,8 @@ def run_strategy_prefixes(
                 package, root=parent, job_name=job.path.name, release_sha256=bundle.release_sha256
             )
         if final is None:
+            if checkpoint is not None:
+                checkpoint()
             store.reserve_replay()
         collection = _collection(package, manifest, records)
         parameters = {"quantity": manifest.quantity, "initial_balance": manifest.initial_balance}

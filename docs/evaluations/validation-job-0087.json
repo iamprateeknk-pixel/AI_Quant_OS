@@ -1,0 +1,363 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-08",
+  "status": "LOCAL_TEMPORAL_ORIGINAL_SOURCE_VALIDATION_OBSERVED",
+  "initial_real_focus": {
+    "passed": 42,
+    "skipped": 0,
+    "seconds": 269.45,
+    "exit_code": 0
+  },
+  "focused": {
+    "passed": 42,
+    "skipped": 1,
+    "seconds": 262.95,
+    "exit_code": 0
+  },
+  "cold_checkout": {
+    "passed": 42,
+    "skipped": 1,
+    "seconds": 247.57,
+    "exit_code": 0,
+    "source_test_schema_match_index": true,
+    "real_worker_runs": false
+  },
+  "full_regression": {
+    "passed": 2003,
+    "skipped": 15,
+    "seconds": 2194.09,
+    "exit_code": 0,
+    "gates": [
+      "LOCAL_WEB",
+      "STRATEGY_ENGINE",
+      "DEPENDENCY_ENGINE",
+      "CANDIDATE_TEST_ENGINE",
+      "ENFORCEMENT_ENGINE",
+      "DATASET_WINDOW_ENGINE",
+      "TEMPORAL"
+    ]
+  },
+  "preservation": {
+    "prior_schemas_matching_models_and_HEAD": 27,
+    "unchanged_production_infrastructure_schemas": 311,
+    "intentional_changes": [
+      ".clean/decisions.md",
+      ".gitattributes",
+      "docs/BUILD_STATUS.md",
+      "docs/VALIDATION_JOB_HANDOFF.md",
+      "docs/VALIDATION_SCIENTIST_HANDOFF.md",
+      "docs/adr/0087-durable-original-source-validation-jobs.md",
+      "docs/evaluations/validation-job-0087.json",
+      "docs/schemas/validation-job-manifest.schema.json",
+      "docs/schemas/validation-stage-record.schema.json",
+      "src/ai_quant_os/candidate_validation_job.py",
+      "src/ai_quant_os/candidate_validation_job_cli.py",
+      "src/ai_quant_os/candidate_validation_job_contracts.py",
+      "src/ai_quant_os/candidate_validation_job_store.py",
+      "src/ai_quant_os/strategy_prefix_run.py",
+      "src/ai_quant_os/temporal_validation.py",
+      "tests/test_candidate_validation_job.py",
+      "tests/test_temporal_validation.py"
+    ],
+    "authority_granted": false
+  },
+  "actual_linux_temporal_job": {
+    "job_sha256": "4d989bb234dd02d527ca883333d890097de6f8ae4587a44b5875bea9d0273abd",
+    "development_folds": 2,
+    "final_stage": {
+      "index": 4,
+      "stage": "PUBLICATION",
+      "phase": "COMPLETED",
+      "attempt": 0,
+      "manifest_sha256": "4d989bb234dd02d527ca883333d890097de6f8ae4587a44b5875bea9d0273abd",
+      "result_sha256": "c757c1545a26a3a262b3537f4dc043ac83f9f89187fdbdba2248d8ea060b222f",
+      "test_status": null,
+      "artifact_ref": "candidate-validation:c757c1545a26a3a262b3537f4dc043ac83f9f89187fdbdba2248d8ea060b222f",
+      "reason": null,
+      "promotion_allowed": false
+    },
+    "workflow": {
+      "workflow_id": "candidate-validation:4d989bb234dd02d527ca883333d890097de6f8ae4587a44b5875bea9d0273abd:actual-linux",
+      "result": {
+        "artifact_ref": "candidate-validation:c757c1545a26a3a262b3537f4dc043ac83f9f89187fdbdba2248d8ea060b222f",
+        "promotion_allowed": false,
+        "state": "ADVISORY_RESULT_RETAINED"
+      },
+      "scheduled_activities": 4,
+      "maximum_activity_attempts": 1
+    },
+    "scorecard": {
+      "schema_version": "1.0",
+      "package_ref": "validation-package:adbe7df650430f9b01108c67f481bda6c7da5bbe9197e5b77170ad6c2151cad3",
+      "candidate_ref": "strategy-candidate:c41e66f336c5791605a9f640f4794915983ae924f1de5a740586290160c4ab3d",
+      "test_result_sha256": "f8f87e919a1863aa4e6a895d107d4d95112c0d65f3a117e9cc0b34154cdff28f",
+      "holdout_report_ref": "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+      "window_report_refs": [
+        "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+        "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+      ],
+      "policy": {
+        "schema_version": "1.0",
+        "minimum_validation_windows": 2,
+        "minimum_orders_per_window": 1,
+        "minimum_nonnegative_window_fraction": "0.75",
+        "minimum_closed_trades": 20,
+        "monte_carlo_block_size": 4,
+        "lower_tail_percent": 5,
+        "minimum_positive_fraction": "0.95",
+        "drawdown_limit": "100",
+        "risk_currency": "USD",
+        "basis": "OPERATOR_DECLARED_DESCRIPTIVE_SCREENS"
+      },
+      "holdout_net_pnl": "0.00067",
+      "development_net_pnl": "-0.00026",
+      "nonnegative_window_fraction": "0",
+      "pnl_currency": "USD",
+      "monte_carlo": {
+        "requested_trials": 1000,
+        "requested_seed": 27,
+        "closed_trade_count": 0,
+        "open_position": "1",
+        "sample_fingerprint": "d4c51235eb6b47d5dfa999a75bb2f497bbb3c63dc34efd52bc9084af49ccbafd",
+        "state": "PENDING",
+        "reason": "UNCLOSED_POSITION",
+        "result": {
+          "spec": {
+            "seed": 27,
+            "iterations": 1000,
+            "block_size": 4,
+            "min_closed_trades": 20,
+            "lower_tail_percent": 5,
+            "minimum_positive_fraction": "0.95",
+            "drawdown_limit": "100",
+            "risk_currency": "USD",
+            "method": "CIRCULAR_EQUAL_REVERSAL_HALF_FEE_BLOCKS_SHA256_V1"
+          },
+          "sample_fingerprint": "d4c51235eb6b47d5dfa999a75bb2f497bbb3c63dc34efd52bc9084af49ccbafd",
+          "closed_trade_count": 0,
+          "open_position": "1",
+          "state": "PENDING",
+          "reason": "UNCLOSED_POSITION",
+          "lower_tail_pnl": null,
+          "median_pnl": null,
+          "drawdown_p95": null,
+          "positive_fraction": null,
+          "simulation_sha256": null,
+          "drawdown_basis": "TRADE_CLOSE_CASHFLOW"
+        }
+      },
+      "gates": [
+        {
+          "name": "PROPOSED_TESTS",
+          "state": "PASS",
+          "reason": "UNATTESTED_PROPOSED_CASES_PASSED",
+          "evidence_refs": [
+            "sha256:f8f87e919a1863aa4e6a895d107d4d95112c0d65f3a117e9cc0b34154cdff28f"
+          ]
+        },
+        {
+          "name": "OUT_OF_SAMPLE",
+          "state": "PASS",
+          "reason": "DECLARED_HOLDOUT_PNL_SCREEN",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361"
+          ]
+        },
+        {
+          "name": "WALK_FORWARD",
+          "state": "FAIL",
+          "reason": "RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN",
+          "evidence_refs": [
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "STABILITY",
+          "state": "FAIL",
+          "reason": "DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN",
+          "evidence_refs": [
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "COST_STRESS",
+          "state": "FAIL",
+          "reason": "DECLARED_SYNTHETIC_STRESS_PNL_SCREEN",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "MINIMUM_ACTIVITY",
+          "state": "PASS",
+          "reason": "DECLARED_NATIVE_ORDER_ACTIVITY_SCREEN",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "MONTE_CARLO",
+          "state": "PENDING",
+          "reason": "UNCLOSED_POSITION",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361"
+          ]
+        },
+        {
+          "name": "INDEPENDENT_HOLDOUT",
+          "state": "PENDING",
+          "reason": "PHYSICAL_AND_STATISTICAL_ISOLATION_UNASSESSED",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "SOURCE_ATTESTATION",
+          "state": "PENDING",
+          "reason": "INDEPENDENT_SOURCE_DAEMON_ATTESTATION_MISSING",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "ADVERSARIAL",
+          "state": "PENDING",
+          "reason": "PROPOSED_SOURCE_ADVERSARIAL_VALIDATION_MISSING",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "REALITY_GAP",
+          "state": "PENDING",
+          "reason": "BROKER_MARKET_LIQUIDITY_REALITY_GAP_UNASSESSED",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "FINANCING",
+          "state": "PENDING",
+          "reason": "FINANCING_COSTS_UNAVAILABLE",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "ACCOUNT_CONVERSION",
+          "state": "PENDING",
+          "reason": "ACCOUNT_CURRENCY_CONVERSION_UNAVAILABLE",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "INDEPENDENT_REVIEW",
+          "state": "PENDING",
+          "reason": "INDEPENDENT_CRITICAL_REVIEW_MISSING",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        },
+        {
+          "name": "SHADOW",
+          "state": "PENDING",
+          "reason": "SHADOW_OBSERVATIONS_MISSING",
+          "evidence_refs": [
+            "strategy-prefix-run:3914f2a1eec2c257f668f0a320d3d6ef033e993329cb9d10a22e755cbe046361",
+            "strategy-prefix-run:2f1cfe6b068acf19e72e1eba74ee352b7e5de81be1c45e6abf8688362f8fc480",
+            "strategy-prefix-run:91e17cfe6683a3333c939c6db25f95b97b15eba04f034394c8b94f17d73fca59"
+          ]
+        }
+      ],
+      "outcome": "REJECTED",
+      "reasons": [
+        "WALK_FORWARD:RETROSPECTIVE_DEVELOPMENT_PNL_SCREEN",
+        "STABILITY:DECLARED_NONNEGATIVE_WINDOW_FRACTION_SCREEN",
+        "COST_STRESS:DECLARED_SYNTHETIC_STRESS_PNL_SCREEN"
+      ],
+      "evidence_basis": "UNATTESTED_METADATA_AND_CHECKED_NATIVE_NUMERIC_LEDGERS",
+      "selection_data_overlap": true,
+      "statistical_independence": "UNASSESSED",
+      "isolation_verified": false,
+      "promotion_allowed": false
+    },
+    "lost_test_ack_reconciled_without_test_restart": true,
+    "checked_archive_and_original_job_revalidated": true
+  },
+  "verified_behaviors": [
+    "ORDERED_ORIGINAL_TEST_HOLDOUT_ALL_WINDOWS_PUBLICATION",
+    "FAILED_TEST_PUBLICATION_WITHOUT_NUMERIC_STAGES",
+    "UNKNOWN_CALL_NO_AUTOMATIC_RETRY",
+    "INDEPENDENT_RESULT_PIN_RECOVERY",
+    "CHANGED_JOURNAL_ROOT_PACKAGE_PIN_REFUSAL",
+    "FAILED_PUBLICATION_RECOVERY_WITHOUT_NATIVE_ENGINE",
+    "SAFE_CANCELLATION_DRAINS_ROOT",
+    "REPEATED_PAUSE_AUDIT",
+    "GLOBAL_SIXTEEN_PAUSE_BUDGET",
+    "QUEUED_WORKFLOW_SERVER_RESTART",
+    "DUPLICATE_START_REFUSAL",
+    "MALFORMED_REPLY_STOPS_ONCE",
+    "UNCERTAIN_PREFLIGHT_REFUSAL",
+    "LITERAL_LOOPBACK_CLI_BOUNDARY",
+    "FRESH_PROCESS_WORKFLOW_CLI"
+  ],
+  "regressions_reproduced_before_fix": [
+    "MALFORMED_NONE_REPLY_WORKFLOW_TASK_RETRY",
+    "UNCERTAIN_JOB_DISPATCH",
+    "SEVENTEENTH_PAUSE_ACCOUNTING",
+    "WRONG_PUBLICATION_STAGE_IDENTITY"
+  ],
+  "lint_and_format": {
+    "passed": true,
+    "files": 399
+  },
+  "structure": {
+    "source_files": 259,
+    "test_files": 162,
+    "cycles": 0,
+    "unreferenced": 0
+  },
+  "review": {
+    "kind": "MANUAL_SELF_REVIEW",
+    "axes": [
+      "correctness",
+      "readability",
+      "architecture",
+      "security",
+      "performance"
+    ],
+    "independent_candidate_review": "PENDING"
+  },
+  "remaining": [
+    "EARLY_WORKER_FAILURE_CLASSIFICATION",
+    "LARGER_DECLARED_COMPUTATION_PLANS",
+    "PHYSICAL_STATISTICAL_HOLDOUT_ISOLATION",
+    "INDEPENDENT_SOURCE_ADVERSARIAL_REALITY_GAP_CHAMPION_SHADOW_ACCEPTANCE",
+    "FULL_AGENT_MISSIONS",
+    "PRODUCTION_RELEASE_GATES"
+  ],
+  "isolation_verified": false,
+  "promotion_allowed": false,
+  "full_build_complete": false
+}

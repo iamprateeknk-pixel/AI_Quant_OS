@@ -1,0 +1,286 @@
+{
+  "$defs": {
+    "CandidateValidationPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "minimum_validation_windows": {
+          "default": 2,
+          "maximum": 2048,
+          "minimum": 2,
+          "title": "Minimum Validation Windows",
+          "type": "integer"
+        },
+        "minimum_orders_per_window": {
+          "default": 1,
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "Minimum Orders Per Window",
+          "type": "integer"
+        },
+        "minimum_nonnegative_window_fraction": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.75",
+          "title": "Minimum Nonnegative Window Fraction"
+        },
+        "minimum_closed_trades": {
+          "default": 20,
+          "maximum": 4096,
+          "minimum": 20,
+          "title": "Minimum Closed Trades",
+          "type": "integer"
+        },
+        "monte_carlo_block_size": {
+          "default": 4,
+          "maximum": 32,
+          "minimum": 1,
+          "title": "Monte Carlo Block Size",
+          "type": "integer"
+        },
+        "lower_tail_percent": {
+          "default": 5,
+          "maximum": 25,
+          "minimum": 1,
+          "title": "Lower Tail Percent",
+          "type": "integer"
+        },
+        "minimum_positive_fraction": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.95",
+          "title": "Minimum Positive Fraction"
+        },
+        "drawdown_limit": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "100",
+          "title": "Drawdown Limit"
+        },
+        "risk_currency": {
+          "default": "USD",
+          "enum": [
+            "USD",
+            "JPY"
+          ],
+          "title": "Risk Currency",
+          "type": "string"
+        },
+        "basis": {
+          "const": "OPERATOR_DECLARED_DESCRIPTIVE_SCREENS",
+          "default": "OPERATOR_DECLARED_DESCRIPTIVE_SCREENS",
+          "title": "Basis",
+          "type": "string"
+        }
+      },
+      "title": "CandidateValidationPolicy",
+      "type": "object"
+    },
+    "PrefixReleaseDirectory": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "identity": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "minimum": 0,
+              "type": "integer"
+            }
+          ],
+          "title": "Identity",
+          "type": "array"
+        }
+      },
+      "required": [
+        "path",
+        "identity"
+      ],
+      "title": "PrefixReleaseDirectory",
+      "type": "object"
+    },
+    "StrategyRunImageInputs": {
+      "additionalProperties": false,
+      "properties": {
+        "archive": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Archive",
+          "type": "string"
+        },
+        "base_metadata": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Base Metadata",
+          "type": "string"
+        },
+        "base_manifest_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Base Manifest Digest",
+          "type": "string"
+        },
+        "worker_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Worker Sha256",
+          "type": "string"
+        },
+        "archive_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Archive Sha256",
+          "type": "string"
+        },
+        "manifest_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Manifest Digest",
+          "type": "string"
+        },
+        "config_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Config Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "archive",
+        "base_metadata",
+        "base_manifest_digest",
+        "worker_sha256",
+        "archive_sha256",
+        "manifest_digest",
+        "config_digest"
+      ],
+      "title": "StrategyRunImageInputs",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "parents": {
+      "items": {
+        "$ref": "#/$defs/PrefixReleaseDirectory"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Parents",
+      "type": "array"
+    },
+    "candidate_test_manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Test Manifest Sha256",
+      "type": "string"
+    },
+    "image_inputs": {
+      "$ref": "#/$defs/StrategyRunImageInputs"
+    },
+    "development_folds": {
+      "maximum": 2048,
+      "minimum": 1,
+      "title": "Development Folds",
+      "type": "integer"
+    },
+    "maximum_cooperative_pauses": {
+      "const": 16,
+      "default": 16,
+      "title": "Maximum Cooperative Pauses",
+      "type": "integer"
+    },
+    "quantity": {
+      "default": 1,
+      "maximum": 500000,
+      "minimum": 1,
+      "title": "Quantity",
+      "type": "integer"
+    },
+    "initial_balance": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1000000000000.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "100000",
+      "title": "Initial Balance"
+    },
+    "policy": {
+      "$ref": "#/$defs/CandidateValidationPolicy"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "package_ref",
+    "candidate_ref",
+    "parents",
+    "candidate_test_manifest_sha256",
+    "image_inputs",
+    "development_folds"
+  ],
+  "title": "ValidationJobManifest",
+  "type": "object"
+}
