@@ -1,0 +1,136 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-09",
+  "status": "LOCAL_ORIGINAL_OPERATOR_PENDING_CUSTODY_VERIFIED",
+  "backend_regression": {
+    "passed": 109,
+    "skipped": 0,
+    "seconds": 45.71,
+    "exit_code": 0,
+    "full_repository_suite": false
+  },
+  "fresh_staged_checkout": {
+    "passed": 109,
+    "skipped": 0,
+    "seconds": 32.93,
+    "exit_code": 0,
+    "prior_schema_files_unchanged": 64
+  },
+  "frontend_checks": {
+    "passed": 12,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "frontend_build": {
+    "next": "16.3.6",
+    "typescript_checked": true,
+    "exit_code": 0
+  },
+  "frontend_lint": {
+    "exit_code": 0
+  },
+  "backend_pending_observations": [
+    "original command waiting before mutation exposes checked PENDING",
+    "readable reservation survives application restart",
+    "terminal receipt preserves original receipt/trace identity",
+    "synthetic interruption retains custody without automatic execution",
+    "explicit exact original retry completes",
+    "changed original request conflicts",
+    "altered or missing pending projection returns unavailable and withholds execution"
+  ],
+  "browser": {
+    "engine": "installed Microsoft Edge via bundled Playwright",
+    "production_build": true,
+    "synthetic_paper_backend": true,
+    "exit_code": 0,
+    "pending_response": "SIMULATED_HISTORICAL_PENDING_REPLY_IN_REAL_BROWSER",
+    "observed": [
+      "login/private cookie",
+      "origin rejection",
+      "fresh reauthentication",
+      "same-action retry",
+      "dropped acknowledgement and reload recovery",
+      "validated pending reply preserves original checkpoint and prompts explicit lookup",
+      "real accepted receipt clears matching checkpoint",
+      "NO_NEW_RISK",
+      "typed FLATTEN_ONLY/HALT",
+      "durable forbidden-recovery rejection",
+      "mobile overflow check",
+      "logout"
+    ],
+    "screenshot_sha256": "99c8439562af41b55283bac5770b286fefa9a219425d6393a362f6e31e9d0186"
+  },
+  "red_observations": [
+    "missing pending receipt while mutation waits",
+    "missing frontend pending parser",
+    "damaged custody returned conflict rather than unavailable",
+    "missing published pending schema"
+  ],
+  "corrected_test_fixture": "Restrict test pause to mutation callback; do not pause unrelated startup restoration",
+  "verification": {
+    "python_lint": true,
+    "changed_operator_format": true,
+    "staged_whitespace": true,
+    "staged_secret_scan": true
+  },
+  "source_and_contract_hashes": [
+    {
+      "path": "apps/web/src/features/operator-session/control-outcome.ts",
+      "sha256": "e5b44ae5b5bd5cda1ad0f55a5e33560875c3bb77b01cea8875b5099ce39d60dd"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/operator-console.tsx",
+      "sha256": "63ff103203c48a4b3ed39912c836c02f49fe3e63469aa522f947c2a4045bb551"
+    },
+    {
+      "path": "apps/web/tests/control-outcome.test.mjs",
+      "sha256": "6816f58107dfbcfaf5b9d43ac2a721b66ef07d9efc45cc06411ca1844ca2842f"
+    },
+    {
+      "path": "apps/web/tests/operator-browser.mjs",
+      "sha256": "94b78b49d5942fa86fddac3b7a0a9ee1b68f50fd8946752e7498059b68ca9cc0"
+    },
+    {
+      "path": "docs/schemas/operator-control-pending.schema.json",
+      "sha256": "7d8ca5d1a6abf5fa4835f2729be3b7c640dd4550c3e30ad9b7ad59c0cb2f43e2"
+    },
+    {
+      "path": "src/ai_quant_os/operator_control_api.py",
+      "sha256": "ebbddcbdd107cce5eecb14d7ed1f3c1cf2b12eb624dbe7c77b2d12da0c279ffb"
+    },
+    {
+      "path": "src/ai_quant_os/operator_pending_contracts.py",
+      "sha256": "319b17afdfb581090e8c732e86689b825660584fac6e3542554242758032bfc3"
+    },
+    {
+      "path": "src/ai_quant_os/paper_state_store.py",
+      "sha256": "b6030784aa3731efed07f49510997b67083b300eea16ad4338d9b993fe7fcb07"
+    },
+    {
+      "path": "tests/test_operator_pending.py",
+      "sha256": "8f664bc43535a1585168d5e5c7b47ca1d86416be0bfe2271cd95b247d410b8da"
+    }
+  ],
+  "authority": {
+    "mode": "PAPER",
+    "broker_connected": false,
+    "live_capital": false,
+    "paid_provider_called": false,
+    "candidate_worker_invoked": false,
+    "P12_complete": false,
+    "P00_P13_complete": false,
+    "independent_acceptance": false
+  },
+  "remaining": [
+    "pending administrative cancellation/archival",
+    "expired original session resolution",
+    "recovery and incident UI",
+    "denial auditing and rate limits",
+    "session lifecycle shutdown",
+    "realtime gap/staleness handling",
+    "remaining service views",
+    "observability and cost governance",
+    "visual regression and independent review",
+    "all remaining execution-pack phases and restricted-live gates"
+  ]
+}

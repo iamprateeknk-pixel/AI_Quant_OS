@@ -12,6 +12,8 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 from ai_quant_os.operator_session_contracts import OperatorSession
 from ai_quant_os.risk import SafetyState
 from ai_quant_os.operator_rejection_contracts import OperatorControlRejection
+from ai_quant_os.operator_pending_contracts import OperatorControlPending
+from ai_quant_os.paper_state_store import OperatorReservationConflict
 
 
 class OperatorControl(BaseModel):
@@ -67,7 +69,8 @@ class OperatorControlReceipt(BaseModel):
 
 
 ControlOutcome = Annotated[
-    OperatorControlReceipt | OperatorControlRejection, Field(discriminator="decision")
+    OperatorControlReceipt | OperatorControlRejection | OperatorControlPending,
+    Field(discriminator="decision"),
 ]
 
 
@@ -89,7 +92,14 @@ def install_operator_control_routes(app: FastAPI, authorization, store, risk, lo
     def receipt(action_id: UUID, response: Response):
         result = retained(action_id)
         if result is None:
-            raise HTTPException(404, "Operator receipt not found")
+            try:
+                result = store.operator_pending("operator:" + str(action_id))
+                if result is not None:
+                    OperatorControlPending.model_validate(result)
+            except (ValueError, KeyError, TypeError, sqlite3.Error) as error:
+                raise HTTPException(503, "Operator reservation could not be verified") from error
+            if result is None:
+                raise HTTPException(404, "Operator receipt not found")
         response.headers["Cache-Control"] = "no-store"
         return result
 
@@ -106,6 +116,36 @@ def install_operator_control_routes(app: FastAPI, authorization, store, risk, lo
         if command.operator_session_id != session.session_id:
             raise HTTPException(403, "Command session identity does not match")
         fingerprint = sha256(command.model_dump_json().encode()).hexdigest()
+        reserved_at = clock()
+        if not session.created_at <= reserved_at < session.expires_at:
+            raise HTTPException(401, "Operator session expired before reservation")
+        identity = str(uuid4())
+        pending = OperatorControlPending(
+            schema_version="1.0",
+            mode="PAPER",
+            receipt_id=identity,
+            action_id=command.action_id,
+            decision="PENDING",
+            previous_state=command.expected_current_state,
+            authoritative_state=command.expected_current_state,
+            operator_session_id=session.session_id,
+            request_sha256=fingerprint,
+            server_timestamp=reserved_at,
+            trace_id=identity,
+            policy_checks=("PAPER_ONLY", "VALID_SESSION", "FRESH_REAUTH", "RESERVED_NOT_APPLIED"),
+        ).model_dump(mode="json")
+        try:
+            reservation = store.reserve_operator_control(
+                "operator:" + str(command.action_id), command.reason, pending
+            )
+            if reservation is not None:
+                pending = OperatorControlPending.model_validate(reservation).model_dump(mode="json")
+        except OperatorReservationConflict as error:
+            raise HTTPException(
+                409, "Original operator reservation could not be admitted"
+            ) from error
+        except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Original operator reservation unavailable") from error
         with lock:
             now = clock()
             if not session.created_at <= now < session.expires_at:
@@ -116,7 +156,7 @@ def install_operator_control_routes(app: FastAPI, authorization, store, risk, lo
                     raise HTTPException(409, "Action identity reused with a different command")
                 response.headers["Cache-Control"] = "no-store"
                 return previous
-            identity = str(uuid4())
+            identity = pending["receipt_id"]
             result = {
                 "schema_version": "1.0",
                 "mode": "PAPER",

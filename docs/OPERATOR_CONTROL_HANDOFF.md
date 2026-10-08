@@ -71,6 +71,16 @@ command to itself. No code or session nonce is persisted in this browser record.
 Unavailable/invalid storage disables commands; an unresolved record cannot be
 overwritten. A validated terminal receipt clears only its matching action record.
 
+The backend now reserves the original authenticated command before waiting for the
+paper control lock. A checked PENDING receipt is readable during that wait and after
+restart. Its state is the observation at reservation time, not confirmation of an
+applied change. The terminal receipt keeps the original receipt/trace identity and
+checks the reservation binding transactionally. Restart never retries automatically.
+The UI retains its checkpoint for PENDING and offers another explicit receipt check.
+At most 4,096 historical reservations are retained; no automatic deletion or rollover
+is provided. An expired original session cannot be replaced to execute its pending
+command; administrative cancellation/archival remains future work.
+
 ## Verification and remaining development
 
 See `evaluations/operator-controls-0090.json` for scoped verification, including
@@ -87,8 +97,16 @@ forbidden-recovery rejection. Build/type checking, frontend lint, Python lint,
 formatting and staged secret scanning passed. This is scoped verification, not a
 new full-repository run or independent acceptance.
 
+`evaluations/operator-pending-custody-0092.json` records 109 scoped backend checks
+passing in the working tree and fresh checkout, plus twelve frontend checks.
+Actual test-owned waiting/interruption cases prove durable original pending custody;
+the real production browser separately receives a simulated historical pending
+reply and retains its checkpoint before recovering the real terminal receipt.
+Build/type checking, lint and staged secret scanning passed. All 64 prior schemas
+remain unchanged. This is local development evidence, not independent acceptance.
+
 P12 and the full P00–P13 objective remain incomplete. Outstanding P12 work includes
-backend PENDING reservations/receipts, recovery/incident workflow UI, denial
+pending-action administrative cancellation/archival, recovery/incident workflow UI, denial
 audit/rate limits, complete
 session lifecycle/resource shutdown, realtime sequence-gap recovery, stale-data
 indication, all remaining service views, observability/cost governance, reference

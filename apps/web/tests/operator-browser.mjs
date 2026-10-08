@@ -39,6 +39,16 @@ try {
   await page.reload();
   assert.equal(await page.evaluate(() => sessionStorage.getItem('ai_quant_pending_control_v1')), retained);
   await page.getByRole('button', { name: 'Check receipt' }).waitFor();
+  await page.route('**/api/operator/controls/*', async (route) => {
+    const response = await route.fetch();
+    const terminal = await response.json();
+    await route.fulfill({ response, json: { ...terminal, decision: 'PENDING',
+      authoritative_state: terminal.previous_state,
+      policy_checks: ['PAPER_ONLY','VALID_SESSION','FRESH_REAUTH','RESERVED_NOT_APPLIED'] } });
+  }, { times: 1 });
+  await page.getByRole('button', { name: 'Check receipt' }).click();
+  await page.getByText('Backend pending: original command reserved.', { exact: false }).waitFor();
+  assert.equal(await page.evaluate(() => sessionStorage.getItem('ai_quant_pending_control_v1')), retained);
   await page.getByRole('button', { name: 'Check receipt' }).click();
   await page.getByText('Backend accepted: NO_NEW_RISK', { exact: false }).waitFor();
   await page.getByText('Expected backend state: NO_NEW_RISK', { exact: false }).waitFor();

@@ -6,20 +6,7 @@ import Link from "next/link";
 import { publicSession, record, type PublicSession } from "./boundary";
 import { type Action, type Command } from "./pending-action";
 import { usePendingAction, retainAction, resolveAction } from "./pending-action-store";
-
-type Receipt = { receipt_id: string; action_id: string; decision: "ACCEPTED" | "REJECTED"; rejection_reason?: string;
-  authoritative_state: string; trace_id: string; server_timestamp: string };
-
-function terminalReceipt(value: unknown, actionId: string): Receipt {
-  const input = record(value);
-  if (!["ACCEPTED", "REJECTED"].includes(String(input.decision)) || input.mode !== "PAPER" || input.action_id !== actionId ||
-      !["NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"].includes(String(input.authoritative_state)) ||
-      (input.decision === "REJECTED" && !["STALE_STATE", "STALE_COMMAND", "SAFETY_RECOVERY_FORBIDDEN"].includes(String(input.rejection_reason))) ||
-      typeof input.receipt_id !== "string" || input.trace_id !== input.receipt_id || typeof input.server_timestamp !== "string") {
-    throw new Error("Backend receipt could not be verified. Keep this action identity for checking.");
-  }
-  return input as Receipt;
-}
+import { parseOutcome, type Outcome } from "./control-outcome";
 
 async function call(path: string, method: string, body?: unknown): Promise<unknown> {
   const response = await fetch(path, { method, cache: "no-store", headers: { "Content-Type": "application/json" },
@@ -36,7 +23,7 @@ export function OperatorConsole({ initialSession, safetyState }: { initialSessio
   const [reason, setReason] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const { command: pending, issue: checkpointIssue } = usePendingAction();
-  const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [receipt, setReceipt] = useState<Outcome | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [refreshing, refresh] = useTransition();
@@ -61,7 +48,11 @@ export function OperatorConsole({ initialSession, safetyState }: { initialSessio
     finally { setBusy(false); }
   }
   function acknowledge(value: unknown, command: Command) {
-    const result = terminalReceipt(value, command.action_id);
+    const result = parseOutcome(record(value), command.action_id);
+    if (result.decision === "PENDING") {
+      setMessage("Backend pending: original command reserved. No applied safety change is confirmed. Check the receipt again.");
+      return;
+    }
     resolveAction(command.action_id);
     setReceipt(result); setReason(""); setConfirmation("");
     setMessage(""); refresh(() => router.refresh());
