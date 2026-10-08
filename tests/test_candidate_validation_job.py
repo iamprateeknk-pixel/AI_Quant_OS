@@ -309,6 +309,19 @@ def test_actual_linux_job_reconciles_test_ack_and_publishes_complete_scorecard(
             controller().step_validation_job(
                 package, root=root, job_sha256=manifest.job_sha256, archive=archive
             )
+        from ai_quant_os.validation_interruption import (
+            capture_validation_interruption,
+            verify_validation_interruption,
+        )
+
+        interruption = capture_validation_interruption(
+            package,
+            root=root,
+            job_sha256=manifest.job_sha256,
+        )
+        (tmp_path / "validation-job-interruption.json").write_bytes(
+            interruption.model_dump_json().encode()
+        )
         monkeypatch.setattr(
             controller(), "run_candidate_tests", lambda *a: pytest.fail("No test restart")
         )
@@ -321,6 +334,12 @@ def test_actual_linux_job_reconciles_test_ack_and_publishes_complete_scorecard(
             archive=archive,
         )
         assert recovered.test_status == "PROPOSED_TESTS_PASSED_UNATTESTED"
+        verify_validation_interruption(
+            package,
+            root=root,
+            job_sha256=manifest.job_sha256,
+            record=interruption,
+        )
     import asyncio
     from temporalio.testing import WorkflowEnvironment
     from temporalio.worker import Worker

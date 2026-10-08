@@ -1,0 +1,218 @@
+{
+  "$defs": {
+    "ValidationStageRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "maximum": 2050,
+          "minimum": 0,
+          "title": "Index",
+          "type": "integer"
+        },
+        "stage": {
+          "pattern": "^(TESTS|HOLDOUT|DEVELOPMENT:[0-9]{1,4}|PUBLICATION)$",
+          "title": "Stage",
+          "type": "string"
+        },
+        "phase": {
+          "enum": [
+            "RESERVED",
+            "PREPARED",
+            "COMPLETED",
+            "UNCERTAIN",
+            "PAUSED"
+          ],
+          "title": "Phase",
+          "type": "string"
+        },
+        "attempt": {
+          "default": 0,
+          "maximum": 16,
+          "minimum": 0,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "manifest_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manifest Sha256"
+        },
+        "result_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Sha256"
+        },
+        "test_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "COMPILE_FAILED",
+                "PROPOSED_TESTS_PASSED_UNATTESTED",
+                "PROPOSED_TESTS_FAILED_UNATTESTED"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Test Status"
+        },
+        "artifact_ref": {
+          "anyOf": [
+            {
+              "pattern": "^candidate-(validation|prerequisite-failure):[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Ref"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "STAGE_OUTCOME_UNCONFIRMED",
+                "COOPERATIVE_STOP_AFTER_OWNED_PREFIX"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "index",
+        "stage",
+        "phase"
+      ],
+      "title": "ValidationStageRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "package_ref": {
+      "pattern": "^validation-package:[a-f0-9]{64}$",
+      "title": "Package Ref",
+      "type": "string"
+    },
+    "candidate_ref": {
+      "pattern": "^strategy-candidate:[a-f0-9]{64}$",
+      "title": "Candidate Ref",
+      "type": "string"
+    },
+    "job_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Job Sha256",
+      "type": "string"
+    },
+    "stage": {
+      "$ref": "#/$defs/ValidationStageRecord"
+    },
+    "audit_head_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Audit Head Sha256",
+      "type": "string"
+    },
+    "audit_event_count": {
+      "maximum": 8236,
+      "minimum": 1,
+      "title": "Audit Event Count",
+      "type": "integer"
+    },
+    "boundary": {
+      "enum": [
+        "PROPOSED_TEST_EXECUTION",
+        "HOLDOUT_EXECUTION",
+        "DEVELOPMENT_EXECUTION",
+        "RESULT_PUBLICATION"
+      ],
+      "title": "Boundary",
+      "type": "string"
+    },
+    "outcome": {
+      "const": "VALIDATION_INTERRUPTED",
+      "default": "VALIDATION_INTERRUPTED",
+      "title": "Outcome",
+      "type": "string"
+    },
+    "evidence_basis": {
+      "const": "ORIGINAL_AUDITED_STAGE_OUTCOME_UNCONFIRMED",
+      "default": "ORIGINAL_AUDITED_STAGE_OUTCOME_UNCONFIRMED",
+      "title": "Evidence Basis",
+      "type": "string"
+    },
+    "recovery_required": {
+      "const": true,
+      "default": true,
+      "title": "Recovery Required",
+      "type": "boolean"
+    },
+    "cleanup_verified": {
+      "const": false,
+      "default": false,
+      "title": "Cleanup Verified",
+      "type": "boolean"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "package_ref",
+    "candidate_ref",
+    "job_sha256",
+    "stage",
+    "audit_head_sha256",
+    "audit_event_count",
+    "boundary"
+  ],
+  "title": "ValidationInterruption",
+  "type": "object"
+}

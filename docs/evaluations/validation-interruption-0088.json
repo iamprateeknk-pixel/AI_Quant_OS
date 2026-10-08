@@ -1,0 +1,180 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-08",
+  "status": "LOCAL_CHECKED_HISTORICAL_VALIDATION_INTERRUPTION_OBSERVED",
+  "initial_focused": {
+    "passed": 37,
+    "skipped": 0,
+    "seconds": 307.57,
+    "exit_code": 0
+  },
+  "final_boundary_checks": {
+    "passed": 16,
+    "skipped": 0,
+    "seconds": 76.24,
+    "exit_code": 0
+  },
+  "cold_checkout": {
+    "passed": 40,
+    "skipped": 1,
+    "seconds": 210.16,
+    "exit_code": 0,
+    "source_test_schema_match_index": true,
+    "real_worker_runs": false
+  },
+  "full_regression": {
+    "passed": 2016,
+    "failed": 3,
+    "skipped": 15,
+    "seconds": 5595.82,
+    "exit_code": 1,
+    "passed_as_one_run": false,
+    "gates": [
+      "LOCAL_WEB",
+      "STRATEGY_ENGINE",
+      "DEPENDENCY_ENGINE",
+      "CANDIDATE_TEST_ENGINE",
+      "ENFORCEMENT_ENGINE",
+      "DATASET_WINDOW_ENGINE",
+      "TEMPORAL"
+    ]
+  },
+  "failure_rechecks": {
+    "scorecard_fresh_root": {
+      "passed": 1,
+      "skipped": 0,
+      "seconds": 58.78,
+      "exit_code": 0
+    },
+    "engine_unavailable_attempt": {
+      "passed": 1,
+      "failed": 2,
+      "seconds": 57.75,
+      "exit_code": 1
+    },
+    "engine_restored_fresh_root": {
+      "passed": 2,
+      "skipped": 0,
+      "seconds": 80.86,
+      "exit_code": 0
+    },
+    "original_failures": [
+      "SCORECARD_CHILD_WALL_CLOCK_TIMEOUT_DURING_HOST_PAUSE",
+      "STRATEGY_CREATE_DEADLINE_OUTCOME_UNCONFIRMED",
+      "ENFORCEMENT_CREATE_DEADLINE_OUTCOME_UNCONFIRMED"
+    ],
+    "full_run_failures_preserved": true,
+    "timeouts_or_assertions_weakened": false,
+    "engine_startup_repair": "PRESERVED_STOPPED_ENGINE_RUNTIME_SOCKET_DIRECTORY_AND_CREATED_FRESH_DIRECTORY",
+    "uncertain_jobs_retried_or_removed": false,
+    "full_green_run_claimed": false
+  },
+  "preservation": {
+    "prior_schemas_matching_models_and_HEAD": 29,
+    "unchanged_production_infrastructure_schemas": 317,
+    "intentional_changes": [
+      ".clean/decisions.md",
+      ".gitattributes",
+      "docs/BUILD_STATUS.md",
+      "docs/VALIDATION_INTERRUPTION_HANDOFF.md",
+      "docs/VALIDATION_JOB_HANDOFF.md",
+      "docs/adr/0088-checked-validation-interruption-reports.md",
+      "docs/evaluations/validation-interruption-0088.json",
+      "docs/schemas/validation-interruption.schema.json",
+      "src/ai_quant_os/candidate_validation_job_cli.py",
+      "src/ai_quant_os/candidate_validation_job_store.py",
+      "src/ai_quant_os/validation_interruption.py",
+      "src/ai_quant_os/validation_interruption_cli.py",
+      "src/ai_quant_os/validation_interruption_contracts.py",
+      "tests/test_candidate_validation_job.py",
+      "tests/test_validation_interruption.py"
+    ],
+    "authority_granted": false
+  },
+  "actual_linux_temporal_job": {
+    "interruption_ref": "validation-interruption:7382a37d187bdcbf826b4ba02ba90a80fb8f88bbb018c1eade2ce405c616c329",
+    "record": {
+      "schema_version": "1.0",
+      "package_ref": "validation-package:5a517995478cc8b941c275f61af8ddb8fac3cbf8b3ba55ac75e6350e5aad97fe",
+      "candidate_ref": "strategy-candidate:edf91c5099c59b63d4c6850f719c9465449f47ca06abf0f97fc43a7bca1bbec5",
+      "job_sha256": "e4dbfb9a236f836f16a324dcce05ddc5e5c05a93aa3b50d127964728a4a40619",
+      "stage": {
+        "index": 0,
+        "stage": "TESTS",
+        "phase": "UNCERTAIN",
+        "attempt": 0,
+        "manifest_sha256": "023bc0795ed0f40abfe75e158dd48bd988363730d0fc0b067a5a2c9b5dc3685b",
+        "result_sha256": null,
+        "test_status": null,
+        "artifact_ref": null,
+        "reason": "STAGE_OUTCOME_UNCONFIRMED",
+        "promotion_allowed": false
+      },
+      "audit_head_sha256": "ac4f15ddee137902ac6940c6c1ab5ac63e86d47e8613e44236be30a9e843412e",
+      "audit_event_count": 3,
+      "boundary": "PROPOSED_TEST_EXECUTION",
+      "outcome": "VALIDATION_INTERRUPTED",
+      "evidence_basis": "ORIGINAL_AUDITED_STAGE_OUTCOME_UNCONFIRMED",
+      "recovery_required": true,
+      "cleanup_verified": false,
+      "isolation_verified": false,
+      "promotion_allowed": false
+    },
+    "job_sha256": "e4dbfb9a236f836f16a324dcce05ddc5e5c05a93aa3b50d127964728a4a40619",
+    "historical_checkpoint_revalidated_after_final_publication": true,
+    "recovered_without_test_restart": true,
+    "final_scorecard_ref": "candidate-validation:6e26e73d11d18fd6dbf3a73260ff80ea8589c5e53f1b7ce426d79d17999fd413"
+  },
+  "verified_behaviors": [
+    "ORIGINAL_UNACKNOWLEDGED_STAGE_AUDIT_BINDING",
+    "ALL_FOUR_DECLARED_BOUNDARIES",
+    "HISTORICAL_VERIFICATION_AFTER_PINNED_RECOVERY",
+    "NO_AUTOMATIC_RETRY",
+    "OPERATOR_LOSS_PREPARED_STAGE",
+    "NEW_OR_COMPLETED_STAGE_NOT_INTERRUPTED",
+    "CHANGED_STAGE_HEAD_COUNT_JOB_BOUNDARY_REFUSAL",
+    "ORIGINAL_AUDIT_TAMPER_REFUSAL",
+    "NO_STATISTICS_OR_ACCEPTANCE_CLAIMS",
+    "EXCLUSIVE_EXPORT",
+    "INDEPENDENT_ORIGINAL_BYTE_PIN",
+    "FRESH_PROCESS_WITHOUT_NATIVE_ENGINE"
+  ],
+  "red_tests": {
+    "failed": 9,
+    "seconds": 13.94,
+    "reason": "MISSING_INTERRUPTION_READER_AND_OPERATOR_COMMANDS"
+  },
+  "lint_and_format": {
+    "passed": true,
+    "files": 403
+  },
+  "structure": {
+    "source_files": 262,
+    "test_files": 163,
+    "cycles": 0,
+    "unreferenced": 0
+  },
+  "review": {
+    "kind": "MANUAL_SELF_REVIEW",
+    "axes": [
+      "correctness",
+      "readability",
+      "architecture",
+      "security",
+      "performance"
+    ],
+    "independent_candidate_review": "PENDING"
+  },
+  "remaining": [
+    "GRANULAR_PHYSICAL_WORKER_FAILURE_CLASSIFICATION",
+    "LARGER_DECLARED_COMPUTATION_PLANS",
+    "PHYSICAL_STATISTICAL_ISOLATION",
+    "INDEPENDENT_SOURCE_ADVERSARIAL_REALITY_GAP_CHAMPION_SHADOW_ACCEPTANCE",
+    "FULL_AGENT_MISSIONS",
+    "PRODUCTION_RELEASE_GATES"
+  ],
+  "cleanup_verified": false,
+  "isolation_verified": false,
+  "promotion_allowed": false,
+  "full_build_complete": false
+}

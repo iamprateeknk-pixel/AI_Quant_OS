@@ -91,10 +91,10 @@ def main() -> int:
     prepare.add_argument("--quantity", type=int, default=1)
     prepare.add_argument("--initial-balance", type=Decimal, default=Decimal("100000"))
     prepare.add_argument("--policy", nargs=2, metavar=("JSON", "SHA256"))
-    for name in ("status", "step", "recover", "workflow"):
+    for name in ("status", "step", "recover", "workflow", "interruption", "verify-interruption"):
         command = commands.add_parser(name)
         command.add_argument("--job-sha256", required=True)
-        if name != "status":
+        if name in ("step", "recover", "workflow"):
             command.add_argument("--record-archive", type=Path, required=True)
         if name == "recover":
             command.add_argument("--result-sha256", required=True)
@@ -104,6 +104,11 @@ def main() -> int:
             command.add_argument(
                 "--temporal-endpoint", type=_loopback_endpoint, default="127.0.0.1:7233"
             )
+        elif name == "interruption":
+            command.add_argument("--output", type=Path, required=True)
+        elif name == "verify-interruption":
+            command.add_argument("--input", type=Path, required=True)
+            command.add_argument("--interruption-sha256", required=True)
     args = parser.parse_args()
     try:
         observed = args.validation_archive.lstat()
@@ -149,6 +154,10 @@ def main() -> int:
             }
         elif args.command == "workflow":
             result = asyncio.run(_workflow(package, args))
+        elif args.command in ("interruption", "verify-interruption"):
+            from ai_quant_os.validation_interruption_cli import interruption_command
+
+            result = interruption_command(package, args)
         else:
             row = validation_job_status(package, root=args.root, job_sha256=args.job_sha256)
             if args.command != "status":

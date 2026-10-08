@@ -163,3 +163,21 @@ class ValidationJobStore:
             )
         self.snapshot()
         return record
+
+    def audit_checkpoint(self):
+        rows = self.snapshot()
+        return rows, self._audit.require_valid()
+
+    def require_audit_checkpoint(self, record, count, digest):
+        self.snapshot()
+        retained = self._db.execute(
+            "SELECT c.event_hash,e.event_json FROM audit_chain c JOIN audit_events e "
+            "ON c.event_key=e.event_key WHERE c.sequence=?",
+            (count,),
+        ).fetchone()
+        if (
+            retained is None
+            or retained[0] != digest
+            or json.loads(retained[1]) != record.model_dump(mode="json")
+        ):
+            raise ValueError("Interruption differs from its original historical audit checkpoint")

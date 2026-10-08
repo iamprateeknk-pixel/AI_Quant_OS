@@ -95,3 +95,6 @@ tests/test_temporal_validation.py text eol=lf
 tests/test_candidate_validation_job.py text eol=lf
 docs/schemas/validation-job*.schema.json text eol=lf
 docs/schemas/validation-stage*.schema.json text eol=lf
+src/ai_quant_os/validation_interruption*.py text eol=lf
+tests/test_validation_interruption.py text eol=lf
+docs/schemas/validation-interruption.schema.json text eol=lf

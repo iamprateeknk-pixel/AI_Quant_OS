@@ -49,6 +49,9 @@ manifest and ownership pins, then supply that complete report's independent hash
 to this job's `recover` command. The outer journal cannot turn an unfinished child
 prefix into a completed report. An unresolved outcome remains retained uncertainty.
 
+The `interruption` and `verify-interruption` commands retain and check metadata-only
+historical observations without resolving the job. See VALIDATION_INTERRUPTION_HANDOFF.md.
+
 Cancellation requests a cooperative stop. The owning thread retains the kernel
 root lease until the current owned prefix reaches completion and cleanup. Safe
 checkpoints occur before another prefix or native replay is reserved. A typed

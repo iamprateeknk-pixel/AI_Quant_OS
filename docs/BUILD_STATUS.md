@@ -4,6 +4,43 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Checked validation interruption increment
+
+- Added canonical operator interruption reports bound to the original job,
+  candidate, declared stage and historical audit checkpoint. Unacknowledged
+  outcomes remain distinct from confirmed source-test failures and numeric
+  scorecards. Reports contain no raw exception text, trading statistics or
+  cleanup/acceptance claims. See VALIDATION_INTERRUPTION_HANDOFF.md and ADR 0088.
+- Added exclusive report export and independently pinned historical verification
+  commands. Verification remains possible after original pinned recovery; capture
+  and verification do not invoke workers, cleanup, replay or recovery. The original
+  stage transitions, wire models, worker policy and A10 archival role are preserved.
+- Initial focused verification passed 37 checks in 307.57 seconds, including the
+  actual Linux/Temporal job and historical interruption verification after test
+  recovery. All 16 completed boundary/tamper/command checks passed in 76.24 seconds.
+  Fresh staged-checkout verification passed 40 checks, with one opt-in worker
+  integration skipped, in 210.16 seconds. Tested source, tests and schemas match
+  the index and fresh checkout.
+- Full regression enabled all seven local web/Linux/Temporal gates: **2,016
+  passed, 15 skipped and 3 failed** in 5595.82 seconds. The failures were a
+  scorecard child-process timeout during a long host pause and two Docker create
+  deadlines. The scorecard passed independently in 58.78 seconds and again in
+  the three-case recheck. Both container cases passed in a fresh root in 80.86
+  seconds after restoring Docker's stopped runtime socket directory. No source,
+  timeout or assertion was changed. The original full run remains failed; its
+  results are not relabeled as a green full run.
+- The actual Linux/Temporal job passed within that full run. Its original
+  interruption checkpoint and final checked publication were revalidated after
+  completion. All 29 prior wire schemas and 317 unchanged production,
+  infrastructure and schema artifacts match HEAD. Lint/format (403 files),
+  structure checks and staged secret scanning passed. Evidence is retained in
+  `docs/evaluations/validation-interruption-0088.json`.
+- Unacknowledged create intents from the failed full run remain retained without
+  retry or removal. See the handoff for exact reconciliation identities.
+- Granular physical worker failure classification, larger computation plans,
+  physical/statistical isolation, independent acceptance, full missions and
+  production gates remain open. The full P00–P13 build remains incomplete.
+
 ## Durable original-source validation job increment
 
 - Added independently pinned original-source jobs, audited stage reservations and
