@@ -1,0 +1,81 @@
+{
+  "backend_registry_regression": {
+    "passed": 100,
+    "seconds": 1.33,
+    "failed": 0,
+    "fresh_checkout_seconds": 3.03,
+    "full_repository_suite": false
+  },
+  "frontend_lint": {
+    "exit_code": 0,
+    "fresh_staged_checkout": true
+  },
+  "full_execution_pack_complete": false,
+  "remaining": [
+    "Agent health/tasks/history and evaluations",
+    "Controlled diagnostics/quarantine/restart",
+    "Realtime reconciliation",
+    "Full P00-P13 requirements and release gates"
+  ],
+  "date": "2026-10-09",
+  "production_build": {
+    "type_checked": true,
+    "exit_code": 0,
+    "next": "16.3.6"
+  },
+  "browser": {
+    "api_stopped_unavailable_withholds_rows": true,
+    "mobile_width": 390,
+    "page_errors": 0,
+    "screenshot": "data-local/agent-registry-0093/desktop.png",
+    "real_backend_versions": 29,
+    "document_overflow": false,
+    "engine": "installed Edge",
+    "real_backend_roles": 18,
+    "keyboard_contract_expansion": true,
+    "test_owned_services_stopped": true
+  },
+  "tested_sources": [
+    {
+      "path": "apps/web/src/app/[section]/page.tsx",
+      "sha256": "9499da8c9271b9232350f803cf6a8d9d038662b6908a46205616d13cb0b748d9"
+    },
+    {
+      "path": "apps/web/src/app/globals.css",
+      "sha256": "9a28d059d1111a27918d3207e506527f05823e0b53b6e359d6b53a0013c66e71"
+    },
+    {
+      "path": "apps/web/src/features/agents/registry-panel.tsx",
+      "sha256": "dd7f3f752d411e719d03e9966380c53b280d0a6bd800ba54a0bbae109ba0617a"
+    },
+    {
+      "path": "apps/web/src/features/agents/registry.ts",
+      "sha256": "03b7cfaa1edce70ee9d93077c920eee2f01846d16a348e6bd2fd622a9ecb32fa"
+    },
+    {
+      "path": "apps/web/src/lib/control-api.ts",
+      "sha256": "db4f47e56816363a50dc555ed4a0f378229f926b6918d40b7c0dd8483345b59b"
+    },
+    {
+      "path": "apps/web/src/lib/navigation.ts",
+      "sha256": "15e285290aa3b1adf8016d583989097aeb9ce923ef2e2ace321fe9db5f9b3bcf"
+    },
+    {
+      "path": "apps/web/tests/agent-registry-browser.mjs",
+      "sha256": "77c23663ce793829322937052af560ed0357e8e7f4cf04f68d0c1eb22f698876"
+    },
+    {
+      "path": "apps/web/tests/agent-registry.test.mjs",
+      "sha256": "4ef199efe0abea9745d4bafd738141abdc11d0e6af387bd4aa70467eff79aa8d"
+    }
+  ],
+  "independent_acceptance": false,
+  "frontend_unit": {
+    "passed": 15,
+    "fresh_staged_checkout": true,
+    "failed": 0
+  },
+  "schema_version": "1.0",
+  "status": "LOCAL_PAPER_AGENT_REGISTRY_VIEW_VERIFIED",
+  "prior_schemas_unchanged": 65
+}

@@ -20,7 +20,7 @@ function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === "string";
 }
 
-async function read<T>(path: string, parse: (value: unknown) => T | null): Promise<ReadResult<T>> {
+export async function read<T>(path: string, parse: (value: unknown) => T | null): Promise<ReadResult<T>> {
   const base = process.env.AI_QUANT_API_URL ?? "http://127.0.0.1:8000";
   try {
     const response = await fetch(`${base}${path}`, { cache: "no-store", signal: AbortSignal.timeout(3000) });
