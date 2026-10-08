@@ -95,9 +95,9 @@ export async function controlReceipt(actionId: string) {
   } catch { return failure(503); }
 }
 
-export type HealthRead = { ok: true; value: unknown } | { ok: false; reason: "SIGN_IN" | "CHANGED" | "UNAVAILABLE" | "INVALID_PAGE" };
+export type ProtectedRead = { ok: true; value: unknown } | { ok: false; reason: "SIGN_IN" | "CHANGED" | "UNAVAILABLE" | "INVALID_PAGE" };
 
-export async function readHealth(resource: "status" | "incidents", offset = 0, head?: string): Promise<HealthRead> {
+export async function readHealth(resource: "status" | "incidents", offset = 0, head?: string): Promise<ProtectedRead> {
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000 || (head !== undefined && !/^[a-f0-9]{64}$/.test(head)) || (offset > 0 && head === undefined)) return { ok: false, reason: "INVALID_PAGE" };
   const path = resource === "status" ? "/api/v1/paper/health" :
     `/api/v1/paper/health/incidents/page?limit=25&offset=${offset}${head ? `&head=${head}` : ""}`;
@@ -109,4 +109,16 @@ export async function readHealth(resource: "status" | "incidents", offset = 0, h
     if (response.status === 409) return { ok: false, reason: "CHANGED" };
     return response.value ? { ok: true, value: response.value } : { ok: false, reason: "UNAVAILABLE" };
   } catch { return { ok: false, reason: "UNAVAILABLE" }; }
+}
+
+export async function readDossiers(offset = 0, head?: string): Promise<ProtectedRead> {
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000 || (head !== undefined && !/^[a-f0-9]{64}$/.test(head)) || (offset > 0 && head === undefined)) return { ok:false, reason:"INVALID_PAGE" };
+  try {
+    const token=(await cookies()).get(COOKIE)?.value;
+    if (!token) return {ok:false,reason:"SIGN_IN"};
+    const response=await upstream(`/api/v1/research/candidates/page?limit=2&offset=${offset}${head ? `&head=${head}` : ""}`,"GET",{"X-Operator-Session":token},undefined,131072);
+    if(response.status===401) return {ok:false,reason:"SIGN_IN"};
+    if(response.status===409) return {ok:false,reason:"CHANGED"};
+    return response.value ? {ok:true,value:response.value} : {ok:false,reason:"UNAVAILABLE"};
+  } catch { return {ok:false,reason:"UNAVAILABLE"}; }
 }

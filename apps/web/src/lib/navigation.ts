@@ -25,7 +25,7 @@ export const sectionDetails = {
   risk: ["Risk Center", "Deterministic safety state and paper order and portfolio ceilings are shown below."],
   portfolio: ["Paper Portfolio", "Paper positions by instrument and combined currency exposure from the backend. No account equity is inferred."],
   orders: ["Orders", "Paper order receipts, manual fills, and fills imported from the durable simulator. Uncertain orders require operator reconciliation."],
-  research: ["Research", "Experiments and validation dossiers will appear after the research pipeline is connected."],
+  research: ["Research", "Verified archived candidate outcomes, validation gates and provenance. Research evidence does not authorize promotion."],
   evolution: ["Evolution", "Champion and challenger promotions require offline, replay, shadow, and canary evidence."],
   incidents: ["Incidents", "Verified paper health incidents, monitoring observations and retained quarantine restrictions. Recovery remains a separately gated workflow."],
   costs: ["Costs", "Model, compute, and data costs are not being collected yet."],

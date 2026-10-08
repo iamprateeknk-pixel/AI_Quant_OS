@@ -1,0 +1,51 @@
+/** Existing synthetic archive fixtures only; no candidate code is executed. */
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const require=createRequire(import.meta.url);
+const {chromium}=require(process.env.AI_QUANT_PLAYWRIGHT_MODULE);
+const browser=await chromium.launch({headless:true,channel:'msedge'});
+const context=await browser.newContext({viewport:{width:1360,height:900}});
+const page=await context.newPage(); const base=process.env.AI_QUANT_TEST_WEB_ORIGIN;
+const errors=[];page.on('pageerror',(error)=>errors.push(error.message));
+try {
+  await page.goto(base+'/research');
+  await page.getByText('Sign in to view protected research dossiers.',{exact:true}).waitFor();
+  await page.getByRole('link',{name:'Sign in at Risk Center'}).click();
+  await page.getByLabel('Operator access code',{exact:true}).fill('synthetic-research-browser-code-0095');
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await page.getByText('Signed in until',{exact:false}).waitFor();
+  const nonce=(await context.cookies()).find((cookie)=>cookie.name==='ai_quant_operator').value;
+  await page.goto(base+'/research');
+  await page.getByText('3 RETAINED',{exact:true}).waitFor();
+  assert.equal(await page.locator('.research-dossier').count(),2);
+  const challenger=page.locator('.research-dossier').filter({hasText:'CHALLENGER'}).first();
+  await challenger.locator('summary').focus(); await page.keyboard.press('Enter');
+  assert.equal(await challenger.getByRole('rowheader',{name:'SANDBOX',exact:true}).isVisible(),true);
+  assert.equal(await challenger.getByText('Not authorized',{exact:true}).count(),1);
+  assert(!(await page.content()).includes(nonce));
+  assert(!(await page.content()).includes('from nautilus_trader'));
+  await page.screenshot({path:process.env.AI_QUANT_TEST_SCREENSHOT,fullPage:false});
+  await page.getByRole('link',{name:'Next dossiers',exact:true}).click();
+  await page.waitForURL(/offset=2/);
+  assert.equal(await page.locator('.research-dossier').count(),1);
+  await page.getByRole('link',{name:'Previous dossiers',exact:true}).click();
+  await page.waitForURL(/offset=0/);
+  assert.equal(await page.locator('.research-dossier').count(),2);
+  await page.goto(base+'/research?offset=2&head='+'0'.repeat(64));
+  await page.getByText('The candidate journal changed. Refresh the first page.',{exact:true}).waitFor();
+  assert.equal(await page.locator('.research-dossier').count(),0);
+  await page.getByRole('link',{name:'Refresh first page',exact:true}).click();
+  await page.waitForURL(base+'/research');
+  await page.setViewportSize({width:390,height:844});await page.reload();
+  await page.getByText('3 RETAINED',{exact:true}).waitFor();
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  await page.locator('.research-details summary').first().click();
+  assert.equal(await page.locator('.research-provenance').first().isVisible(),true);
+  await page.screenshot({path:process.env.AI_QUANT_TEST_SCREENSHOT.replace('desktop','mobile'),fullPage:false});
+  await page.goto(base+'/risk');await page.getByRole('button',{name:'Sign out',exact:true}).click();
+  await page.getByRole('button',{name:'Sign in',exact:true}).waitFor();await page.goto(base+'/research');
+  await page.getByText('Sign in to view protected research dossiers.',{exact:true}).waitFor();
+  assert.equal(await page.locator('.research-dossier').count(),0);assert.deepEqual(errors,[]);
+  console.log(JSON.stringify({status:'passed',synthetic_dossiers:3,pages:[2,1],keyboard_gate_inspection:true,changed_head_withholds_records:true,mobile_width:390,nonce_and_source_absent:true,logout_hides_records:true}));
+} catch(error) { console.error(JSON.stringify({url:page.url(),visible:(await page.locator('.page-content').innerText()).slice(0,1500)}));throw error; }
+finally {await context.close();await browser.close();}

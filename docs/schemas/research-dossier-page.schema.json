@@ -1,0 +1,236 @@
+{
+  "$defs": {
+    "DossierPreview": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_count": {
+          "maximum": 128,
+          "minimum": 0,
+          "title": "Attempt Count",
+          "type": "integer"
+        },
+        "candidate_id": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "details_truncated": {
+          "title": "Details Truncated",
+          "type": "boolean"
+        },
+        "experiment_id": {
+          "maxLength": 64,
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "fold_count": {
+          "minimum": 0,
+          "title": "Fold Count",
+          "type": "integer"
+        },
+        "gates": {
+          "items": {
+            "$ref": "#/$defs/GatePreview"
+          },
+          "maxItems": 16,
+          "title": "Gates",
+          "type": "array"
+        },
+        "hypothesis": {
+          "maxLength": 1024,
+          "title": "Hypothesis",
+          "type": "string"
+        },
+        "hypothesis_id": {
+          "maxLength": 64,
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "last_event_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Last Event Sha256",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "FAILED",
+            "REJECTED",
+            "VALIDATION_INCOMPLETE"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "plan_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Plan Sha256",
+          "type": "string"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        },
+        "reasons": {
+          "items": {
+            "maxLength": 256,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "report_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Report Sha256",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "CHALLENGER",
+            "FAILED",
+            "REJECTED",
+            "WITHDRAWN"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "strategy_ref": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Strategy Ref"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "experiment_id",
+        "hypothesis_id",
+        "hypothesis",
+        "state",
+        "outcome",
+        "revision",
+        "report_sha256",
+        "plan_sha256",
+        "last_event_sha256",
+        "strategy_ref",
+        "fold_count",
+        "attempt_count",
+        "gates",
+        "reasons",
+        "details_truncated"
+      ],
+      "title": "DossierPreview",
+      "type": "object"
+    },
+    "GatePreview": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 64,
+          "title": "Name",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 256,
+          "title": "Reason",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PENDING"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "state",
+        "reason"
+      ],
+      "title": "GatePreview",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/DossierPreview"
+      },
+      "maxItems": 2,
+      "title": "Candidates",
+      "type": "array"
+    },
+    "head_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Head Hash",
+      "type": "string"
+    },
+    "limit": {
+      "maximum": 2,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "next_offset": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Next Offset"
+    },
+    "offset": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Offset",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "total": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "head_hash",
+    "total",
+    "offset",
+    "limit",
+    "next_offset",
+    "candidates"
+  ],
+  "title": "ResearchDossierPage",
+  "type": "object"
+}

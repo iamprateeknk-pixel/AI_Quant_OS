@@ -17,6 +17,10 @@ from ai_quant_os.research_store import encode_research
 ZERO = "0" * 64
 
 
+class DossierPageChanged(ValueError):
+    """The continued page belongs to a different candidate journal head."""
+
+
 @dataclass(frozen=True)
 class CandidateView:
     manifest: CandidateManifest
@@ -130,7 +134,7 @@ class CandidateStore:
                     identifier not in views
                     or views[identifier].state != "CHALLENGER"
                     or not isinstance(event["reason"], str)
-                    or not 1 <= len(event["reason"].strip()) <= 512
+                    or not 1 <= len(event["reason"].strip()) <= 212
                 ):
                     raise ValueError("Candidate withdrawal journal mismatch")
                 views[identifier] = CandidateView(
@@ -245,6 +249,33 @@ class CandidateStore:
                 return None
             return views[identifier], _decode(row[0], row[1], CandidateBundle)
 
+    def dossier_page(self, *, limit: int, offset: int, head: str | None):
+        if (
+            type(limit) is not int
+            or not 1 <= limit <= 2
+            or type(offset) is not int
+            or not 0 <= offset <= 1000
+            or (offset and head is None)
+        ):
+            raise ValueError("Invalid dossier page bounds")
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN")
+            views, _ = self._verified(db)
+            current_head = db.execute(
+                "SELECT sha256 FROM candidate_head WHERE singleton=1"
+            ).fetchone()[0]
+            if head is not None and head != current_head:
+                raise DossierPageChanged("Candidate journal changed")
+            identifiers = sorted(views)
+            dossiers = []
+            for identifier in identifiers[offset : offset + limit]:
+                row = db.execute(
+                    "SELECT bundle,bundle_sha256 FROM research_candidates WHERE candidate_id=?",
+                    (identifier,),
+                ).fetchone()
+                dossiers.append((views[identifier], _decode(row[0], row[1], CandidateBundle)))
+            return current_head, len(identifiers), tuple(dossiers)
+
     def withdraw(
         self, identifier: str, *, expected_revision: int, command_id: str, reason: str
     ) -> CandidateView:
@@ -253,7 +284,7 @@ class CandidateStore:
             type(expected_revision) is not int
             or expected_revision < 1
             or not isinstance(reason, str)
-            or not 1 <= len(reason.strip()) <= 512
+            or not 1 <= len(reason.strip()) <= 212
         ):
             raise ValueError("Bounded reason and expected revision required")
         reason = reason.strip()

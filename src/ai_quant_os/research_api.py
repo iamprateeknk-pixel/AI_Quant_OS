@@ -2,9 +2,11 @@
 
 from pathlib import Path
 import sqlite3
+from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
+from ai_quant_os.research_dossier_views import ResearchDossierPage, dossier_preview
 
 
 class CandidateRegistrationInput(BaseModel):
@@ -16,7 +18,7 @@ class CandidateWithdrawalInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_revision: int = Field(strict=True, ge=1, le=100000)
     command_id: str = Field(pattern=r"^[a-zA-Z][a-zA-Z0-9_-]{0,63}$")
-    reason: str = Field(min_length=1, max_length=512)
+    reason: str = Field(min_length=1, max_length=212)
 
 
 def install_research_routes(app: FastAPI, workspace: Path | None, require_operator):
@@ -42,6 +44,32 @@ def install_research_routes(app: FastAPI, workspace: Path | None, require_operat
             raise HTTPException(
                 status_code=503, detail="Research registry verification failed"
             ) from error
+
+    @app.get("/api/v1/research/candidates/page", dependencies=[Depends(require_operator)])
+    def dossier_page(
+        limit: Annotated[int, Query(ge=1, le=2)] = 2,
+        offset: Annotated[int, Query(ge=0, le=1000)] = 0,
+        head: Annotated[str | None, Query(pattern=r"^[a-f0-9]{64}$")] = None,
+    ) -> ResearchDossierPage:
+        if offset and head is None:
+            raise HTTPException(422, "Continued page requires the original journal head")
+        registry = store()
+        from ai_quant_os.research_candidate_store import DossierPageChanged
+
+        try:
+            digest, total, dossiers = registry.dossier_page(limit=limit, offset=offset, head=head)
+            return ResearchDossierPage(
+                head_hash=digest,
+                total=total,
+                offset=offset,
+                limit=limit,
+                next_offset=offset + limit if offset + limit < total else None,
+                candidates=tuple(dossier_preview(view, bundle) for view, bundle in dossiers),
+            )
+        except DossierPageChanged as error:
+            raise HTTPException(409, "Candidate journal changed; refresh the first page") from error
+        except (ValueError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Research dossier verification failed") from error
 
     @app.get(
         "/api/v1/research/candidates/{candidate_id}/bundle",

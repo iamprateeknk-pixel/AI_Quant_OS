@@ -1,0 +1,120 @@
+{
+  "date": "2026-10-09",
+  "status": "LOCAL_ARCHIVED_RESEARCH_DOSSIER_VIEW_VERIFIED",
+  "new_schema": "docs/schemas/research-dossier-page.schema.json",
+  "production_build": {
+    "exit_code": 0,
+    "type_checked": true,
+    "next": "16.3.6"
+  },
+  "failures_resolved": [
+    "Worst-case preview test caught mismatched reason field bound; corrected without weakening assertion",
+    "Browser SANDBOX selector also matched reason list; targeted the actual gate rowheader"
+  ],
+  "tested_sources": [
+    {
+      "path": "apps/web/src/app/[section]/page.tsx",
+      "sha256": "0633a6ab8a6ce9dbea77dfbb1a7ec73ea1bc4b3a636f6f371fd073a1b20ebc43"
+    },
+    {
+      "path": "apps/web/src/app/globals.css",
+      "sha256": "931bec3e7383f4286eda96799f53ac3c80f155ce8daf72e5bfd83b8cf37cbd11"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/server.ts",
+      "sha256": "9ff64afa7e68df27e40b20c38e241c8e93323f547f1dd481b2d18064b0a1eddf"
+    },
+    {
+      "path": "apps/web/src/features/research/dossier-panel.tsx",
+      "sha256": "69e72e8849a0f561fc83884d6c35b625685b1c5b3116fef7e8a5e33ee9c1e4c3"
+    },
+    {
+      "path": "apps/web/src/features/research/dossiers.ts",
+      "sha256": "8714b9d6de50dc2af1f7e119f6d849a8ca22939a7901d4950f5bb05bd9f683f9"
+    },
+    {
+      "path": "apps/web/src/lib/navigation.ts",
+      "sha256": "40325dddc5f6f7ded94153fddebdb458bf1be6d0375f64fa4b889ca02b8788a7"
+    },
+    {
+      "path": "apps/web/tests/research-dossiers-browser.mjs",
+      "sha256": "60d5ba244862de8cf8c738d2afcb35c33d65f8459396bbcf698642e0a3a46626"
+    },
+    {
+      "path": "apps/web/tests/research-dossiers.test.mjs",
+      "sha256": "947b0fd857c79e57fcd623fe5d4e91e7c71fe18c412c163cbd8eb69d7fcfd5eb"
+    },
+    {
+      "path": "docs/schemas/research-dossier-page.schema.json",
+      "sha256": "4ca2515eeae9030b93165e235e5200e866a06cc1b3ed4ba1b643e83643b92abe"
+    },
+    {
+      "path": "src/ai_quant_os/research_api.py",
+      "sha256": "7e192d0445876c49eddfefabf5fe649da6eee0da09c1f8c579426058a359a623"
+    },
+    {
+      "path": "src/ai_quant_os/research_candidate_store.py",
+      "sha256": "107c8a2090bca87f2f21cce97b8acb73fbbe17fb259444bb1661dab553aa4c91"
+    },
+    {
+      "path": "src/ai_quant_os/research_dossier_views.py",
+      "sha256": "4a436844179291a02ccce7acb7de1d814f47dfc2ddba938dc3951ccc963f595c"
+    },
+    {
+      "path": "tests/test_research_dossier_page.py",
+      "sha256": "87e2ae6de3e4834be740d0fe9b008b8c263316845bbee76ce41fc551b689a92f"
+    }
+  ],
+  "independent_acceptance": false,
+  "full_execution_pack_complete": false,
+  "remaining": [
+    "Hypothesis backlog and active experiment workflows",
+    "Detailed metrics plots and original dossier download UI",
+    "Cost and realtime integration",
+    "Full P00-P13 requirements and release gates"
+  ],
+  "frontend_lint": {
+    "exit_code": 0,
+    "fresh_staged_checkout": true
+  },
+  "backend_regression": {
+    "seconds": 22.68,
+    "full_repository_suite": false,
+    "failed": 0,
+    "fresh_checkout_seconds": 26.36,
+    "passed": 28
+  },
+  "python_lint": {
+    "exit_code": 0,
+    "scope": "src tests",
+    "fresh_staged_checkout": true
+  },
+  "prior_schemas_unchanged": 66,
+  "schema_version": "1.0",
+  "frontend_unit": {
+    "failed": 0,
+    "fresh_staged_checkout": true,
+    "passed": 23
+  },
+  "browser": {
+    "test_owned_services_stopped": true,
+    "page_errors": 0,
+    "logout_hides_records": true,
+    "pages": [
+      2,
+      1
+    ],
+    "engine": "installed Edge",
+    "synthetic_archived_dossiers": 3,
+    "screenshots": [
+      "data-local/research-dossiers-0095/desktop.png",
+      "data-local/research-dossiers-0095/mobile.png"
+    ],
+    "changed_head_withholds_records": true,
+    "mobile_width": 390,
+    "document_overflow": false,
+    "source_text_and_session_nonce_absent": true,
+    "actual_backend": true,
+    "keyboard_gate_inspection": true
+  }
+}
