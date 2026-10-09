@@ -1,0 +1,101 @@
+{
+  "increment": "0128",
+  "date": "2026-10-10",
+  "base_commit": "73ca103106a0ead55765447684f2cd4bee7e4e1d",
+  "feature": "Protected retained demo account, position and pending-order observation; no portfolio or execution authority",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0128",
+    "tests": 383,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "26.167",
+    "scope": [
+      "tests/test_mt5_portfolio_observation.py",
+      "tests/test_mt5_checkpoint_recovery.py",
+      "tests/test_mt5_money_comparison.py",
+      "tests/test_mt5_position_comparison.py",
+      "tests/test_mt5_sync_checkpoint.py",
+      "tests/test_mt5_sync_inspection.py",
+      "tests/test_mt5_window_reduction.py",
+      "tests/test_mt5_history_backfill.py",
+      "tests/test_mt5_clock_recovery.py",
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 97,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "3a104db64256db9d1094dff670803411414efbba63f565d1ed1068079d538f88"
+      },
+      {
+        "path": "docs/MT5_PORTFOLIO_OBSERVATION_HANDOFF.md",
+        "sha256": "6b74d35223f86f86fdcf6265b9b7d13f1ca1df8f74df2e84fcd7f44b4bd0e11f"
+      },
+      {
+        "path": "docs/adr/0128-protected-retained-demo-portfolio-observations.md",
+        "sha256": "063355c37a3560b345f5e565ff9debdd54c99e61358cd2c11bdebb8bae08d152"
+      },
+      {
+        "path": "docs/schemas/demo-portfolio-api.schema.json",
+        "sha256": "1434eef1a8bf426c7c3c4089f538152ce266dd050b3ac57c31789a9e995e3d6a"
+      },
+      {
+        "path": "docs/schemas/demo-portfolio-publication.schema.json",
+        "sha256": "848cfe2b349902b9cd7bb0fd84f8c2348deef87cf9a2c320812f991c4dd7dfee"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_portfolio_observation.py",
+        "sha256": "d2aea41bfd33fcf20fdbfd8b5a0d7927f0ae14282853f55017b30945a9fcad27"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_publication.py",
+        "sha256": "76c1b2bbcd7a72f40e2d298353731b1f2c4ff922dd6622697b7189fa46fbc34d"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_health_api.py",
+        "sha256": "85f23299a68d582d96eca70eaa8fca58b4b6a4dc920893838a11f22f7efaed37"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "2cfa382e1561a82f7ab5f3092f5e85a25ee04d971ffa83871578b80c1b7f9b70"
+      },
+      {
+        "path": "tests/test_mt5_portfolio_observation.py",
+        "sha256": "0282c9842ff9d10547f8a18c129b945037cf832bcdb1929a049bb27f54c4b75f"
+      }
+    ],
+    "junit_sha256": "7a28e6af568a5e6eeecd15ef2b93dcfc73cb47dd114283d1d3274ada1c5f5c99",
+    "tdd_red": "Nine initial missing-module/wiring checks failed; additive schema check failed before export; excessive source lease and three mixed-currency/duplicate identity cases failed before validators",
+    "baseline": "28 existing heartbeat/service/API checks passed before shared publication I/O extraction",
+    "review": "Local five-axis self-review: exact original source interval, verified retained projection, bounded unique JSON and finite existing account models, fixed server-owned file, owner guard before read including revoked sessions, no-store, atomic single-file replacement preserving prior bytes, service failure stops future ticks without inventing controller rollback; focused CLI and paper isolation checks; independent native/release acceptance pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "AVAILABLE describes local publication within the original source window, not native account freshness or trading eligibility",
+    "Original source quote expiry is at most three seconds and is never renewed by republishing; stale account data retains original times",
+    "Account, positions and pending orders reflect sequential native reads with unverified completeness; historical base units, FX, cash ledger and equity reconciliation remain pending",
+    "Publication excludes enrollment credentials, native personal comments, terminal path, raw quotes and historical deal payloads; financial data is private and owner protected",
+    "Only the fixed server-owned portfolio.json is read; client query parameters cannot select filesystem sources",
+    "A completed controller tick may already be committed before observation publication failure; service halts future ticks without rolling back or falsifying controller state",
+    "Single file publication uses flush, fsync and atomic replacement; heartbeat and portfolio are not an atomic pair, and directory power-loss/hostile filesystem integrity is not attested",
+    "All portfolio/execution authority is denied; authoritative paper portfolio, risk and order routing are unchanged",
+    "97 prior wire schemas and journal formats remain unchanged; two portfolio schemas are additive",
+    "Only trusted local fixture and disabled CLI observations exercised; no actual SDK, terminal, credentials, paid provider, remote promotion or live capital used",
+    "Frontend portfolio rendering, browser acceptance, native broker accounting/custody, capacity rollover, installed service deployment, independent review and P13 gates remain pending",
+    "Focused checks do not establish full-system acceptance; preserved uncertain candidate jobs were not touched or restarted"
+  ]
+}

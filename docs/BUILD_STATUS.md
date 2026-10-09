@@ -978,3 +978,16 @@ withheld; no native work, audit reset or automatic retry occurs. Original schema
 and journals remain unchanged. Native custody, capacity rollover, installed
 services, independent review and P13 acceptance remain pending. See
 MT5_CHECKPOINT_RECOVERY_HANDOFF.md and ADR 0127.
+
+## Protected retained demo portfolio observations — increment 0128
+
+The service now atomically publishes bounded latest account/position/order
+observations with original source expiry and receipt/scope/run identity. An owner-
+protected fixed-source portfolio endpoint reads available/stale/unavailable
+frames, refusing malformed/future/duplicate data and revoked sessions. Shared
+publication I/O preserves heartbeat behavior; publisher failure stops future ticks
+without resetting committed journals. The authoritative paper portfolio/risk/
+execution path remains unchanged and all external authority is denied. Original
+schemas/journals remain compatible. Frontend display, native completeness/cash,
+currency/risk integration, custody, deployment, independent review and P13 gates
+remain pending. See MT5_PORTFOLIO_OBSERVATION_HANDOFF.md and ADR 0128.

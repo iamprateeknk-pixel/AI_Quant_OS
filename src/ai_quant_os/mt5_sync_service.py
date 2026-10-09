@@ -6,7 +6,6 @@ import os
 import signal
 import sqlite3
 import sys
-import tempfile
 from contextlib import ExitStack, contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -31,9 +30,16 @@ from ai_quant_os.mt5_sync_projection import SyncProjectionStore
 from ai_quant_os.mt5_sync_inspection import inspect_sync
 from ai_quant_os.mt5_position_comparison import DeclaredOpeningPositions, compare_positions
 from ai_quant_os.mt5_money_comparison import DeclaredOpeningMoney, compare_money
+from ai_quant_os.mt5_portfolio_observation import PortfolioPublication, build_portfolio_publication
+from ai_quant_os.mt5_publication import (
+    PUBLICATION_BYTES,
+    read_publication,
+    write_publication,
+    unique_fields as _unique,
+)
 
 MAX_CONFIG_BYTES = 32768
-MAX_HEALTH_BYTES = 16384
+MAX_HEALTH_BYTES = PUBLICATION_BYTES
 PASSWORD_ENV = "AI_QUANT_MT5_PASSWORD"
 CHECKPOINT_MARKER = "checkpoint-pending.json"
 
@@ -49,15 +55,6 @@ class ServiceConfig(ObservationModel):
     schedule: SyncSchedule
     max_ticks: int = Field(default=10000, ge=1, le=10000, strict=True)
     timer_seconds: int = Field(default=1, ge=1, le=60, strict=True)
-
-
-def _unique(pairs):
-    result = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError("Duplicate configuration field")
-        result[key] = value
-    return result
 
 
 def load_config(path: Path, environment) -> ServiceConfig:
@@ -111,31 +108,16 @@ class ServiceHealthView(ObservationModel):
 
 
 def publish_health(path: Path, health: ServiceHealth):
-    payload = health.model_dump_json().encode()
-    if len(payload) > MAX_HEALTH_BYTES:
-        raise ValueError("Health publication bound exceeded")
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="wb", prefix="demo-health-", suffix=".tmp", dir=path.parent, delete=False
-        ) as stream:
-            temporary = Path(stream.name)
-            stream.write(payload)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path)
-    finally:
-        if temporary is not None and temporary.exists():
-            temporary.unlink()
+    write_publication(path, health)
+
+
+def publish_portfolio(path: Path, publication: PortfolioPublication):
+    write_publication(path, publication)
 
 
 def read_health(path: Path, *, clock=lambda: datetime.now(timezone.utc)) -> ServiceHealthView:
     try:
-        with path.open("rb") as stream:
-            raw = stream.read(MAX_HEALTH_BYTES + 1)
-        if len(raw) > MAX_HEALTH_BYTES:
-            raise ValueError("Health bound exceeded")
-        record = ServiceHealth.model_validate(json.loads(raw, object_pairs_hook=_unique))
+        record = read_publication(path, ServiceHealth)
         now = utc(clock())
         if now < record.published_at:
             raise ValueError("Future publication")
@@ -155,6 +137,7 @@ def run_service(
     timer_seconds=1,
     clock=lambda: datetime.now(timezone.utc),
     wait=None,
+    portfolio_path: Path | None = None,
 ) -> ServiceHealth:
     if (
         type(max_ticks) is not int
@@ -190,6 +173,14 @@ def run_service(
         except Exception:
             return publish("HALTED", "SERVICE_FAILURE")
         ticks += 1
+        if portfolio_path is not None:
+            try:
+                observation = build_portfolio_publication(controller, run_id, clock=clock)
+                publish_portfolio(portfolio_path, observation)
+                if observation.state == "WITHHELD":
+                    return publish("HALTED", "SERVICE_FAILURE")
+            except Exception:
+                return publish("HALTED", "SERVICE_FAILURE")
         if health.state in {"HALTED", "DISABLED"}:
             return publish(health.state)
         publish("RUNNING")
@@ -356,6 +347,7 @@ def main(argv=None) -> int:
                 stop,
                 max_ticks=config.max_ticks,
                 timer_seconds=config.timer_seconds,
+                portfolio_path=args.state_dir / "portfolio.json",
             )
         print(result.model_dump_json(), flush=True)
         return 2 if result.state == "HALTED" else 0

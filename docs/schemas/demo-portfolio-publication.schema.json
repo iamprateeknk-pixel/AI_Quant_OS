@@ -1,0 +1,570 @@
+{
+  "$defs": {
+    "AccountView": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        },
+        "balance": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Balance"
+        },
+        "credit": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Credit"
+        },
+        "equity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Equity"
+        },
+        "profit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Profit"
+        },
+        "margin": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Margin"
+        },
+        "margin_free": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Margin Free"
+        },
+        "margin_mode": {
+          "enum": [
+            "NETTING",
+            "EXCHANGE",
+            "HEDGING"
+          ],
+          "title": "Margin Mode",
+          "type": "string"
+        },
+        "leverage": {
+          "exclusiveMinimum": 0,
+          "title": "Leverage",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "currency",
+        "balance",
+        "credit",
+        "equity",
+        "profit",
+        "margin",
+        "margin_free",
+        "margin_mode",
+        "leverage"
+      ],
+      "title": "AccountView",
+      "type": "object"
+    },
+    "DemoPortfolioRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "broker_id": {
+          "const": "EXNESS_MT5_DEMO",
+          "default": "EXNESS_MT5_DEMO",
+          "title": "Broker Id",
+          "type": "string"
+        },
+        "mode": {
+          "const": "DEMO_OBSERVATION",
+          "default": "DEMO_OBSERVATION",
+          "title": "Mode",
+          "type": "string"
+        },
+        "source_attempt_id": {
+          "format": "uuid4",
+          "title": "Source Attempt Id",
+          "type": "string"
+        },
+        "source_receipt_ref": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Source Receipt Ref",
+          "type": "string"
+        },
+        "account_scope_ref": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Account Scope Ref",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "valid_until": {
+          "format": "date-time",
+          "title": "Valid Until",
+          "type": "string"
+        },
+        "history_start": {
+          "format": "date-time",
+          "title": "History Start",
+          "type": "string"
+        },
+        "history_through": {
+          "format": "date-time",
+          "title": "History Through",
+          "type": "string"
+        },
+        "account": {
+          "$ref": "#/$defs/AccountView"
+        },
+        "positions": {
+          "items": {
+            "$ref": "#/$defs/PositionView"
+          },
+          "maxItems": 8,
+          "title": "Positions",
+          "type": "array"
+        },
+        "orders": {
+          "items": {
+            "$ref": "#/$defs/OrderView"
+          },
+          "maxItems": 8,
+          "title": "Orders",
+          "type": "array"
+        },
+        "quantity_basis": {
+          "const": "CURRENT_SYMBOL_METADATA",
+          "default": "CURRENT_SYMBOL_METADATA",
+          "title": "Quantity Basis",
+          "type": "string"
+        },
+        "history_attestation": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "History Attestation",
+          "type": "string"
+        },
+        "account_freshness": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Account Freshness",
+          "type": "string"
+        },
+        "consistency": {
+          "const": "NON_ATOMIC_SEQUENTIAL_READ",
+          "default": "NON_ATOMIC_SEQUENTIAL_READ",
+          "title": "Consistency",
+          "type": "string"
+        },
+        "may_affect_portfolio": {
+          "const": false,
+          "default": false,
+          "title": "May Affect Portfolio",
+          "type": "boolean"
+        },
+        "may_submit_orders": {
+          "const": false,
+          "default": false,
+          "title": "May Submit Orders",
+          "type": "boolean"
+        },
+        "native_attestation": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Native Attestation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_attempt_id",
+        "source_receipt_ref",
+        "account_scope_ref",
+        "observed_at",
+        "valid_until",
+        "history_start",
+        "history_through",
+        "account",
+        "positions",
+        "orders"
+      ],
+      "title": "DemoPortfolioRecord",
+      "type": "object"
+    },
+    "OrderView": {
+      "additionalProperties": false,
+      "properties": {
+        "ticket": {
+          "exclusiveMinimum": 0,
+          "title": "Ticket",
+          "type": "integer"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "venue_symbol": {
+          "title": "Venue Symbol",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "initial_lots": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Initial Lots"
+        },
+        "remaining_lots": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Remaining Lots"
+        },
+        "price_open": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Price Open"
+        },
+        "stop_limit_price": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Stop Limit Price"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ticket",
+        "instrument_id",
+        "venue_symbol",
+        "kind",
+        "state",
+        "initial_lots",
+        "remaining_lots",
+        "price_open",
+        "stop_limit_price",
+        "created_at"
+      ],
+      "title": "OrderView",
+      "type": "object"
+    },
+    "PositionView": {
+      "additionalProperties": false,
+      "properties": {
+        "ticket": {
+          "exclusiveMinimum": 0,
+          "title": "Ticket",
+          "type": "integer"
+        },
+        "identifier": {
+          "exclusiveMinimum": 0,
+          "title": "Identifier",
+          "type": "integer"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "venue_symbol": {
+          "title": "Venue Symbol",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "volume_lots": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume Lots"
+        },
+        "quantity_units": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Quantity Units"
+        },
+        "quantity_basis": {
+          "const": "CURRENT_SYMBOL_METADATA",
+          "default": "CURRENT_SYMBOL_METADATA",
+          "title": "Quantity Basis",
+          "type": "string"
+        },
+        "price_open": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Price Open"
+        },
+        "price_current": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Price Current"
+        },
+        "profit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Profit"
+        },
+        "swap": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Swap"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ticket",
+        "identifier",
+        "instrument_id",
+        "venue_symbol",
+        "side",
+        "volume_lots",
+        "quantity_units",
+        "price_open",
+        "price_current",
+        "profit",
+        "swap",
+        "currency",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "PositionView",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "observation_kind": {
+      "const": "LOCAL_UNVERIFIED_DEMO_PORTFOLIO",
+      "default": "LOCAL_UNVERIFIED_DEMO_PORTFOLIO",
+      "title": "Observation Kind",
+      "type": "string"
+    },
+    "run_id": {
+      "format": "uuid4",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "OBSERVED",
+        "EMPTY",
+        "WITHHELD"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "code": {
+      "anyOf": [
+        {
+          "enum": [
+            "SOURCE_UNAVAILABLE",
+            "CLOCK"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Code"
+    },
+    "published_at": {
+      "format": "date-time",
+      "title": "Published At",
+      "type": "string"
+    },
+    "record": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DemoPortfolioRecord"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "may_affect_portfolio": {
+      "const": false,
+      "default": false,
+      "title": "May Affect Portfolio",
+      "type": "boolean"
+    },
+    "may_submit_orders": {
+      "const": false,
+      "default": false,
+      "title": "May Submit Orders",
+      "type": "boolean"
+    },
+    "native_attestation": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "Native Attestation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "state",
+    "published_at"
+  ],
+  "title": "PortfolioPublication",
+  "type": "object"
+}
