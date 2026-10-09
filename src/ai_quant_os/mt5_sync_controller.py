@@ -93,6 +93,35 @@ class SyncHealth(ObservationModel):
         return self
 
 
+class SyncRecoveryRequest(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    action: Literal["FINISH_PENDING_PROJECTION"] = "FINISH_PENDING_PROJECTION"
+    expected_revision: int = Field(ge=1, le=MAX_TRANSITIONS, strict=True)
+    pending_attempt_id: UUID4
+
+
+class SyncRecoveryResult(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    state: Literal["RECOVERED", "WITHHELD", "DISABLED"]
+    code: (
+        Literal[
+            "BUSY",
+            "STORAGE_UNAVAILABLE",
+            "STATE_CONFLICT",
+            "CLOCK_REGRESSION",
+            "CAPACITY",
+            "SOURCE_WITHHELD",
+            "PROJECTION_WITHHELD",
+        ]
+        | None
+    ) = None
+    request: SyncRecoveryRequest
+    health: SyncHealth | None = None
+    may_submit_orders: Literal[False] = False
+    may_affect_portfolio: Literal[False] = False
+    native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
+
+
 class DemoSyncController:
     """Call tick from a service timer; each call performs at most one fixed worker capture."""
 
@@ -181,7 +210,10 @@ class DemoSyncController:
             "SELECT e.event_key,e.event_json FROM audit_chain c JOIN audit_events e ON e.event_key=c.event_key ORDER BY c.sequence"
         ):
             event = json.loads(raw)
-            if set(event) != {"policy_ref", "state"} or event["policy_ref"] != self._policy:
+            if (
+                set(event) not in ({"policy_ref", "state"}, {"policy_ref", "state", "recovery"})
+                or event["policy_ref"] != self._policy
+            ):
                 raise ValueError("Controller event mismatch")
             state = SyncHealth.model_validate(event["state"])
             if key != str(state.revision) or state.revision != (prior.revision + 1 if prior else 0):
@@ -197,12 +229,29 @@ class DemoSyncController:
                 )
             ):
                 raise ValueError("Controller progress regression")
+            if "recovery" in event:
+                recovery = SyncRecoveryRequest.model_validate(event["recovery"])
+                if (
+                    prior is None
+                    or prior.state != "HALTED"
+                    or prior.revision != recovery.expected_revision
+                    or prior.pending_attempt_id != recovery.pending_attempt_id
+                    or state.state != "HEALTHY"
+                    or state.code is not None
+                    or state.pending_attempt_id is not None
+                    or state.last_history_end != prior.pending_history_end
+                    or state.last_success_at != state.observed_at
+                    or state.consecutive_failures != 0
+                    or state.next_due_at
+                    != state.observed_at + timedelta(seconds=self.schedule.interval_seconds)
+                ):
+                    raise ValueError("Invalid recovery transition")
             prior = state
         if prior is None or canonical(prior.model_dump(mode="json")) != row[0][3]:
             raise ValueError("Controller differs from audit history")
         return prior
 
-    def _save(self, old, **changes):
+    def _save(self, old, *, recovery=None, **changes):
         if old.revision >= MAX_TRANSITIONS:
             raise ValueError("Controller transition capacity")
         state = SyncHealth.model_validate(
@@ -214,7 +263,11 @@ class DemoSyncController:
         )
         AuditChain(self._db).append(
             str(state.revision),
-            {"policy_ref": self._policy, "state": state.model_dump(mode="json")},
+            {
+                "policy_ref": self._policy,
+                "state": state.model_dump(mode="json"),
+                **({"recovery": recovery.model_dump(mode="json")} if recovery else {}),
+            },
         )
         return state
 
@@ -222,6 +275,74 @@ class DemoSyncController:
         return SyncHealth(
             state="HALTED", code="STORAGE_UNAVAILABLE", observed_at=now, next_due_at=now
         )
+
+    def recover_pending(self, request: SyncRecoveryRequest) -> SyncRecoveryResult:
+        """Finish only an explicitly selected halted receipt; never dispatch a worker."""
+        request = SyncRecoveryRequest.model_validate(request.model_dump())
+        now = utc(self.clock())
+
+        def reply(code=None, health=None, state="WITHHELD"):
+            return SyncRecoveryResult(state=state, code=code, request=request, health=health)
+
+        if not self.schedule.enabled or not self.connection.enabled:
+            return reply(state="DISABLED")
+        if not self._dispatch_lock.acquire(blocking=False):
+            return reply("BUSY")
+        try:
+            with self._lock:
+                try:
+                    if self._db is None:
+                        raise ValueError("Controller unavailable")
+                    self._db.execute("BEGIN IMMEDIATE")
+                    current = self._read()
+                    if (
+                        current.state != "HALTED"
+                        or current.revision != request.expected_revision
+                        or current.pending_attempt_id != request.pending_attempt_id
+                    ):
+                        return reply("STATE_CONFLICT", current)
+                    if now < current.observed_at:
+                        return reply("CLOCK_REGRESSION", current)
+                    if current.revision >= MAX_TRANSITIONS - 2:
+                        return reply("CAPACITY", current)
+                    capture = DemoSyncRequest(
+                        connection=self.connection,
+                        history_start=current.pending_history_start,
+                        history_end=current.pending_history_end,
+                    )
+                    projected = self.projection.apply(
+                        self.gateway, capture, request.pending_attempt_id
+                    )
+                    if projected.state not in {"APPLIED", "ALREADY_APPLIED"}:
+                        return reply(
+                            "SOURCE_WITHHELD"
+                            if projected.code == "SOURCE_WITHHELD"
+                            else "PROJECTION_WITHHELD",
+                            current,
+                        )
+                    recovered = self._save(
+                        current,
+                        recovery=request,
+                        state="HEALTHY",
+                        code=None,
+                        observed_at=now,
+                        next_due_at=now + timedelta(seconds=self.schedule.interval_seconds),
+                        last_history_end=current.pending_history_end,
+                        last_success_at=now,
+                        consecutive_failures=0,
+                        pending_attempt_id=None,
+                        pending_history_start=None,
+                        pending_history_end=None,
+                    )
+                    self._db.commit()
+                    return reply(health=recovered, state="RECOVERED")
+                except Exception:
+                    return reply("STORAGE_UNAVAILABLE")
+                finally:
+                    if self._db is not None:
+                        self._db.rollback()
+        finally:
+            self._dispatch_lock.release()
 
     def tick(self) -> SyncHealth:
         now = utc(self.clock())

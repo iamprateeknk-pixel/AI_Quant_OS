@@ -1,0 +1,75 @@
+{
+  "increment": "0119",
+  "date": "2026-10-09",
+  "base_commit": "3eb36ce9fc64b454d89fb0584902d4bea0434da2",
+  "feature": "Explicit audited completion of a halted pending demo projection from existing verified receipts",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0119",
+    "tests": 221,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "9.066",
+    "scope": [
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 85,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "deffcf1206ced07eb00144187855c2ec814fcb747b18064a1a8d26ef964affee"
+      },
+      {
+        "path": "docs/MT5_SYNC_RECOVERY_HANDOFF.md",
+        "sha256": "6c3fb633735bee6cafe691cf8d604e5eb1330455e74dae75a8488e176b238d4c"
+      },
+      {
+        "path": "docs/adr/0119-explicit-pending-demo-projection-recovery.md",
+        "sha256": "4054763353896ab3282638f40ea3f6d1b26fac0cb1d5294d0308d7c8b5f610f1"
+      },
+      {
+        "path": "docs/schemas/demo-sync-recovery.schema.json",
+        "sha256": "ca93cf2f5e564a7a5b1f2f28d3c2fc9104569873aebf5f0164e32bcf5c5b935e"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_controller.py",
+        "sha256": "cc15f9ec4cd23991e1a103ec9d5daf5eaf64041a62b73e1ef19ca76e2c3e84d1"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "edd1c5ef3fe2b7ec38d68192d77f177da0408512c4767028bc38e29232c4f097"
+      },
+      {
+        "path": "tests/test_mt5_sync_recovery.py",
+        "sha256": "6a6fe4fb23bdcf9a22cf1590658d446c50f3b58b9d2bd2170e1cd50e72a3f1da"
+      }
+    ],
+    "junit_sha256": "3cd289d11873a24cc50d13e8aefff31485d601a24467084f7b866900a0b7a828",
+    "tdd_red": "Seven initial recovery checks failed on missing recovery interface; CLI and schema checks failed before those surfaces were added",
+    "review": "Local five-axis self-review: exact revision/UUID matching under audited write transaction, original window, no capture/reservation path, retained pending intent, bounded capacity, sanitized failures, existing ownership/enrollment gates, replay-validated recovery metadata; independent acceptance remains pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "Only FINISH_PENDING_PROJECTION is implemented; clock-only halt recovery, native orphan custody resolution, historical backfill and archive/checkpoint migration remain pending",
+    "Recovery imports a still-valid existing receipt or matches an already imported immutable commitment; expired unprojected facts and uncertain/missing/withheld receipts remain withheld",
+    "Projection/controller commits are separate; failed controller completion is recoverable through the retained original intent and ALREADY_APPLIED",
+    "One-shot CLI requires existing journals and does not run the timer or update the previous service heartbeat",
+    "Existing public schemas/tables are unchanged, but successful recovery audit metadata is rejected by older readers; preserve journals and stop launches on rollback",
+    "Fixture native observations, local journals, CLI composition and existing disabled service subprocess only; no native SDK, terminal, actual credentials or external broker",
+    "No order/portfolio/native attestation authority; P04 native/service deployment/independent acceptance and P13 live release remain incomplete",
+    "Focused checks do not establish full-system acceptance"
+  ]
+}

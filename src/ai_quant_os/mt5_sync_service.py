@@ -18,7 +18,12 @@ from pydantic import UUID4, Field, model_validator
 
 from ai_quant_os.mt5_demo_gateway import DemoObservationGateway, utc
 from ai_quant_os.mt5_demo_observation import DemoCaptureRequest, ObservationModel
-from ai_quant_os.mt5_sync_controller import DemoSyncController, SyncHealth, SyncSchedule
+from ai_quant_os.mt5_sync_controller import (
+    DemoSyncController,
+    SyncHealth,
+    SyncSchedule,
+    SyncRecoveryRequest,
+)
 from ai_quant_os.mt5_sync_projection import SyncProjectionStore
 
 MAX_CONFIG_BYTES = 32768
@@ -216,16 +221,32 @@ def main(argv=None) -> int:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--enable-demo-service", action="store_true")
+    parser.add_argument("--recover-pending-attempt")
+    parser.add_argument("--expected-revision", type=int)
     args = parser.parse_args(argv)
     stop = Event()
     handlers = {}
     try:
+        recovery = None
+        if args.recover_pending_attempt is not None or args.expected_revision is not None:
+            try:
+                recovery = SyncRecoveryRequest(
+                    pending_attempt_id=args.recover_pending_attempt,
+                    expected_revision=args.expected_revision,
+                )
+            except Exception:
+                raise ServiceRejected("RECOVERY_INVALID") from None
         config = load_config(args.config, os.environ)
         if config.schedule.enabled and config.connection.enabled:
             if not args.enable_demo_service:
                 raise ServiceRejected("ENABLE_REQUIRED")
             if sys.platform != "win32":
                 raise ServiceRejected("WINDOWS_REQUIRED")
+        if recovery is not None and not all(
+            (args.state_dir / name).is_file()
+            for name in ("gateway.sqlite", "projection.sqlite", "controller.sqlite")
+        ):
+            raise ServiceRejected("RECOVERY_STATE_REQUIRED")
         args.state_dir.mkdir(parents=True, exist_ok=True)
         for signum in (signal.SIGINT, signal.SIGTERM):
             handlers[signum] = signal.signal(signum, lambda signum, frame: stop.set())
@@ -243,6 +264,10 @@ def main(argv=None) -> int:
                 projection,
             )
             stack.callback(controller.close)
+            if recovery is not None:
+                result = controller.recover_pending(recovery)
+                print(result.model_dump_json(), flush=True)
+                return 0 if result.state == "RECOVERED" else 2
             result = run_service(
                 controller,
                 args.state_dir / "health.json",

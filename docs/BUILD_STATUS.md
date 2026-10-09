@@ -866,3 +866,16 @@ retained, and only the owned connection is released on exit. Real local process
 contention and disabled launches are checked. This does not establish terminal
 custody or native acceptance. P04 service deployment/operator recovery and P13
 release acceptance remain incomplete.
+
+
+### Increment 0119 — explicit halted projection completion
+
+The controller and service CLI now support one audited recovery action bound to
+an exact halted revision and pending UUID. It finishes only a verified existing
+projection receipt, preserves the original window, and dispatches no worker.
+The one-shot CLI requires existing journals and exclusive local ownership.
+Unknown custody, wrong accounts, missing/expired unprojected receipts, history
+gaps and corrupted audit state remain withheld. Clock-only recovery, native
+custody resolution, historical backfill, service deployment and independent
+acceptance remain pending. Existing public schemas are unchanged; the new
+recovery schema and audit metadata are documented with rollback limitations.
