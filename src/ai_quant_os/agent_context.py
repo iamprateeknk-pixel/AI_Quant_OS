@@ -10,7 +10,7 @@ from typing import Awaitable, Callable, Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from ai_quant_os.agent_permissions import READ_TOOLS
-from ai_quant_os.agent_registry import AgentRegistry
+from ai_quant_os.agent_registry import AgentRegistry, CallBudget, ToolInvocation
 from ai_quant_os.contracts import _require_aware
 
 ResourceClass = Literal["GENERAL", "TRAINING", "HOLDOUT"]
@@ -214,6 +214,7 @@ class ContextCompiler:
         max_concurrency: int = 4,
         max_input_bytes: int = 8192,
         max_context_bytes: int = 32768,
+        call_budget: CallBudget | None = None,
     ) -> None:
         if (
             not 0 < timeout_seconds <= 30
@@ -228,6 +229,7 @@ class ContextCompiler:
         self._timeout, self._overall = timeout_seconds, overall_timeout_seconds
         self._concurrency = max_concurrency
         self._input_bytes, self._context_bytes = max_input_bytes, max_context_bytes
+        self._call_budget = call_budget
 
     def _authorize(self, agent: str, version: str, binding: SourceBinding, scope: str) -> None:
         self._registry.require_tool(agent, version, binding.tool, scope=scope)
@@ -255,6 +257,21 @@ class ContextCompiler:
             try:
                 async with semaphore:
                     self._authorize(agent_id, version, binding, scope)
+                    if self._call_budget is not None:
+                        invocation = ToolInvocation(
+                            agent_id,
+                            version,
+                            binding.tool,
+                            scope,
+                            {
+                                "purpose": "CONTEXT_SOURCE_FETCH",
+                                "input_name": name,
+                                "resource_class": binding.resource_class,
+                            },
+                            task_id=task_id,
+                        )
+                        await asyncio.to_thread(self._call_budget.reserve, invocation)
+                        self._authorize(agent_id, version, binding, scope)
                     raw = await asyncio.wait_for(binding.fetch(), timeout=self._timeout)
                 record = EvidenceRecord.model_validate_json(raw.model_dump_json())
             except PermissionError:

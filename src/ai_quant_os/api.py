@@ -1109,6 +1109,7 @@ def create_app(
                 agent_registry,
                 sources,
                 clock=current_time,
+                call_budget=call_budget,
                 max_input_bytes=STRENGTH_INPUT_BYTES
                 if strength_mission
                 else LIQUIDITY_INPUT_BYTES
@@ -1223,6 +1224,7 @@ def create_app(
             agent_registry,
             sources,
             clock=current_time,
+            call_budget=call_budget,
             max_input_bytes=HYPOTHESIS_INPUT_BYTES,
             max_context_bytes=HYPOTHESIS_CONTEXT_BYTES,
         ).compile("A08", "0.2.0", task_id=task_id, scope="SANDBOX")
@@ -1281,6 +1283,7 @@ def create_app(
             agent_registry,
             sources,
             clock=current_time,
+            call_budget=call_budget,
             max_input_bytes=65536,
             max_context_bytes=100000,
         ).compile("A09", "0.2.0", task_id=task_id, scope="SANDBOX")
@@ -1322,9 +1325,12 @@ def create_app(
             agent_registry,
             validation_sources(package, artifact, now=current_time()),
             clock=current_time,
+            call_budget=call_budget,
             max_input_bytes=16384,
             max_context_bytes=65536,
         ).compile("A10", "0.2.0", task_id=task_id, scope="SANDBOX")
+        if any(row.status == "DENIED" for row in context.inputs):
+            raise PermissionError("Validation evidence fetch admission denied")
         require_context_for_agent(
             context,
             registry=agent_registry,

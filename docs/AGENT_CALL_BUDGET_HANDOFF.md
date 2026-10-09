@@ -71,8 +71,11 @@ and payload rejection before charging, real graph denial/restart, non-blocking
 cancellation, protected API configuration/status and emergency paper controls.
 Evidence and source fingerprints are in `evaluations/agent-call-budgets-0098.json`.
 
-This accounts for calls through `AgentToolBoundary`. Context-source compilation,
-direct library work and the legacy Jev/OpenAI adapters are outside that boundary.
+This accounts for calls through `AgentToolBoundary` and, since ADR 0100, declared
+context fetches wired to the same quota in the API composition root. Snapshot
+preparation before compilation, direct library work and the legacy Jev/OpenAI
+adapters remain outside that boundary. Standalone compilers require explicit
+budget injection; fixed development evaluators retain their previous behavior.
 Provider token admission/settlement, monetary pricing/accounting, protected recovery
 spend authorization, fleet deployment/retention, adaptive routing, operator budget
 workflows and independent acceptance remain pending. Recovery spending and provider

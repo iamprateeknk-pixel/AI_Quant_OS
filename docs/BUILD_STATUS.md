@@ -4,6 +4,19 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Context fetch call admission increment
+
+- Connected all four API context compiler paths and supervisor children to the
+  same durable role quota as graph tools. Permission checks precede charging and
+  are repeated after asynchronous admission. Failed/interrupted admitted fetches
+  remain charged; denied/missing inputs consume no calls.
+- Concurrent input reads preserve recovery reserves. Cancellation and overall
+  deadlines withhold fetches. A10 quota denial now returns admission denied rather
+  than implying corrupt original validation evidence. Paper safety is independent.
+- Snapshot preparation before compilation, standalone callers, legacy provider
+  dispatch, token/monetary accounting and full cost governance remain pending.
+  See `CONTEXT_CALL_BUDGET_HANDOFF.md` and ADR 0100. P00-P13 remains incomplete.
+
 ## Agent call capacity view increment
 
 - Connected Costs to protected durable daily/monthly call observations for all

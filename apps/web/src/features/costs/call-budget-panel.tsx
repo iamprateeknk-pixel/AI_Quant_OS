@@ -7,7 +7,7 @@ export function CallBudgetPanel({ result }: { result: { ok: true; value: unknown
   const signIn = !result.ok && result.reason === "SIGN_IN";
   return <section className="panel content-panel">
     <div className="panel-heading"><h2>Agent call capacity</h2><span>{budget?.state ?? "UNAVAILABLE"}</span></div>
-    <p className="panel-muted">Counts are reserved routine graph tool attempts, shared across each role&apos;s versions. Failed or interrupted attempts remain counted. Token usage, model charges, compute and data costs are not collected.</p>
+    <p className="panel-muted">Counts are reserved routine graph tool and context fetch attempts, shared across each role&apos;s versions. Failed or interrupted attempts remain counted. Token usage, model charges, compute and data costs are not collected.</p>
     {enforced ? <>
       <dl className="fact-list"><div><dt>Daily period (UTC)</dt><dd>{budget.day}</dd></div><div><dt>Monthly period (UTC)</dt><dd>{budget.month}</dd></div><div><dt>Recovery spending</dt><dd>Disabled; reserved capacity is protected</dd></div></dl>
       <div className="table-scroll"><table>

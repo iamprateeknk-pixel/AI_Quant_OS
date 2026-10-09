@@ -10,9 +10,9 @@ reserved routine attempts, remaining routine capacity and protected recovery
 reserves. Exhausted routine capacity is labeled explicitly. Policy and audit head
 fingerprints are available in a disclosure. The view grants no write authority.
 
-Counts describe reservations before graph tool effects. Failed and interrupted
+Counts describe reservations before graph tool effects and declared context fetches. Failed and interrupted
 attempts remain counted. Versions of one role share capacity. Recovery spending
-is disabled; legacy providers and context-source reads are outside this quota.
+is disabled; legacy providers and earlier snapshot preparation remain outside this quota.
 Token usage, monetary charges, compute and data costs are not measured here.
 
 The frontend rejects incomplete or duplicate roles, invalid counters, unsupported

@@ -1,0 +1,99 @@
+{
+  "increment": "0100",
+  "feature": "Shared durable call admission for declared context fetches",
+  "base_commit": "c9e26c09f771921342ae433e993e5c292235dfc2",
+  "verification": {
+    "tested_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0100",
+    "scoped_backend_passed": 240,
+    "scoped_backend_seconds": 82.29,
+    "new_feature_cases": 15,
+    "frontend_tests_passed": 35,
+    "frontend_production_build": "passed",
+    "frontend_types": "passed by production build",
+    "frontend_eslint": "passed",
+    "ruff_src_tests": "passed",
+    "prior_schemas_unchanged": 70,
+    "initial_red_cases": 2,
+    "validation_api_denial_mapping": "Observed 503 integrity failure under exhausted quota; now verified 403 admission denied",
+    "browser_acceptance_claimed": false,
+    "full_suite_claimed": false
+  },
+  "test_files": [
+    "tests/test_context_call_budgets.py",
+    "tests/test_agent_call_budgets.py",
+    "tests/test_agent_context.py",
+    "tests/test_context_checkpoints.py",
+    "tests/test_graph_runtime.py",
+    "tests/test_agent_registry.py",
+    "tests/test_supervisor_dispatch.py",
+    "tests/test_supervisor_api.py",
+    "tests/test_research_hypothesis_api.py",
+    "tests/test_strategy_builder_api.py",
+    "tests/test_validation_scientist_api.py",
+    "tests/test_validation_scientist_sources.py",
+    "tests/test_health_api.py",
+    "tests/test_operator_sessions.py"
+  ],
+  "scope": {
+    "api_compiler_paths": 4,
+    "supervisor_children_use_paper_compiler": true,
+    "shared_graph_and_context_role_quota": true,
+    "before_declared_fetch": true,
+    "permission_rechecked_after_admission": true,
+    "failed_or_interrupted_admission_refunded": false,
+    "protected_recovery_reserve_spend": false,
+    "all_physical_reads_covered": false,
+    "provider_token_or_monetary_admission": false,
+    "full_P00_P13_complete": false
+  },
+  "pending": [
+    "Snapshot preparation before compilation",
+    "Standalone unconfigured callers",
+    "Legacy provider dispatch and token/monetary governance",
+    "Recovery spending and storage retention/migration",
+    "Browser acceptance after prior policy-rejected preview launch",
+    "Remaining P00-P13 development and independent release gates"
+  ],
+  "tested_staged_files": [
+    {
+      "path": ".clean/decisions.md",
+      "sha256": "dd89cd7d44d6fba1d2a45f12a4f792d0541c648da8ae73ae3d64027a62353d9f"
+    },
+    {
+      "path": "apps/web/src/features/costs/call-budget-panel.tsx",
+      "sha256": "bc4617cd272901195644d27d5c69a0717f623bbade0e22f69e91827175b8a03a"
+    },
+    {
+      "path": "docs/AGENT_CALL_BUDGET_HANDOFF.md",
+      "sha256": "d73674249d957abc7e7de827b58b8193be2cb20176c3ab1b04367102edad5ca2"
+    },
+    {
+      "path": "docs/AGENT_CALL_CAPACITY_UI_HANDOFF.md",
+      "sha256": "f94066c73184894185a432a423b8644a7bdbd9af9d703e2c062f3cfc5ab476d9"
+    },
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "94204d730a6ccd4cabe8d139ef0453702fb987f6d337fe8298603ead48f3f678"
+    },
+    {
+      "path": "docs/CONTEXT_CALL_BUDGET_HANDOFF.md",
+      "sha256": "973a664de634f16e36874ee5fd9fd2beeaa1cc667ac77d13db17842ef3cad8ca"
+    },
+    {
+      "path": "docs/adr/0100-shared-context-fetch-call-admission.md",
+      "sha256": "bead93433a3d5fecf74148a3d77ad1e409a404926853321c9eb10f2f74e960db"
+    },
+    {
+      "path": "src/ai_quant_os/agent_context.py",
+      "sha256": "255877e8df266d575b04c5804ab9b68c56b0c30588595c514020f76f31e4ef0e"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "8c60ddb54e63715dcb1d8ad3cc4246ef81f1fe2be02966ac14b9acf2d630b6b4"
+    },
+    {
+      "path": "tests/test_context_call_budgets.py",
+      "sha256": "4755661263b4add4dffdab9067bec03c927286e77b1a41ca25663de0a27063c1"
+    }
+  ]
+}
