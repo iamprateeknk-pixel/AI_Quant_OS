@@ -100,3 +100,12 @@ Older service versions lack the incomplete-checkpoint guard: stop launchers befo
 rollback and never launch a partial destination. Native custody/completeness,
 capacity rollover, installed service deployment, independent broker review,
 browser acceptance and all P13 release gates remain open.
+
+## Explicit interrupted completion — increment 0127
+
+New restores now bind their pending marker to original archive/policy, prepared
+journal hashes, publication UUID and destination identity. The explicit
+finish-restore command takes separate archive and marker hashes, preserves exact
+matching prefixes and publishes only missing journals before releasing the guard.
+Legacy unbound markers remain refused. See MT5_CHECKPOINT_RECOVERY_HANDOFF.md and
+ADR 0127; no automatic retry or native custody resolution is introduced.

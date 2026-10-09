@@ -1,0 +1,94 @@
+{
+  "increment": "0127",
+  "date": "2026-10-10",
+  "base_commit": "aa209fb80e09a8939a0d03c22e894192009b76ce",
+  "feature": "Explicit independently pinned completion of an originally bound interrupted checkpoint publication",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0127",
+    "tests": 367,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "22.511",
+    "scope": [
+      "tests/test_mt5_checkpoint_recovery.py",
+      "tests/test_mt5_money_comparison.py",
+      "tests/test_mt5_position_comparison.py",
+      "tests/test_mt5_sync_checkpoint.py",
+      "tests/test_mt5_sync_inspection.py",
+      "tests/test_mt5_window_reduction.py",
+      "tests/test_mt5_history_backfill.py",
+      "tests/test_mt5_clock_recovery.py",
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 95,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "3331cc9e22b6bc64d1aa0e9a6419609412293ae30552cab183d6b5839565f33c"
+      },
+      {
+        "path": "docs/MT5_CHECKPOINT_RECOVERY_HANDOFF.md",
+        "sha256": "704e71a2c7fd57759b80a04b1b3a0a848f09fec11e089e594e2a51eb15208373"
+      },
+      {
+        "path": "docs/MT5_SYNC_CHECKPOINT_HANDOFF.md",
+        "sha256": "8b1963c1a4f68078d76e488a6c2d70b640f0f9857bf3bd280fc48eb24d739e2b"
+      },
+      {
+        "path": "docs/adr/0127-pinned-interrupted-checkpoint-publication-completion.md",
+        "sha256": "70d6defe775900f172ef4b6e3dd2b825dafbb48e6b1f527be240df790585c1e8"
+      },
+      {
+        "path": "docs/schemas/demo-checkpoint-finish.schema.json",
+        "sha256": "75b585e05aa13c83585144ab073f330944cebc9c93dbe3c4f5486a6d8e76014e"
+      },
+      {
+        "path": "docs/schemas/demo-checkpoint-publication.schema.json",
+        "sha256": "df6613714ff2f4c167b72716780d5a678e453c4b22f661ce9f785d07c53270b2"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_checkpoint.py",
+        "sha256": "778b8f2896ab4c65e9166c5064b79c24d21cdce778f28c9c9eb437fc821755d9"
+      },
+      {
+        "path": "tests/test_mt5_checkpoint_recovery.py",
+        "sha256": "1698545eb24863a83c2f00448c4ed24bf17743a02342677bbc342c08a6c622d6"
+      }
+    ],
+    "junit_sha256": "111737825791c3d2139c5155b211cc4e32a68172a0629cfd3455af56eb7a3fea",
+    "tdd_red": "Twelve initial checks failed before finish_restore; two additive schema checks failed before exported artifacts",
+    "debugging": "A real held ownership transaction creates a 512-byte service-lock.sqlite-journal; the layout gate admits that owned SQLite sidecar while continuing to refuse all account journal sidecars and unknown files",
+    "review": "Local five-axis self-review: original UUID/archive/policy/prepared-byte/destination identity binding, independent dual pins, exclusive CLI ownership, full archive/audit revalidation, exact existing/final single-link journal custody, missing-file-only publication, final unchanged-marker check, retained failures/legacy refusal, no automatic/native dispatch; independent native/release acceptance pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "Completion concerns checkpoint file publication, not native worker/terminal custody, complete broker history, trading eligibility or live-capital authority",
+    "Original source and destination launchers remain stopped during migration; no cross-directory fencing or direct-library-writer isolation is attested",
+    "Marker binds resolved directory path and observed filesystem identity; moved/replaced destinations are not adopted, while hostile namespace replacement and power-loss directory durability remain outside attestation",
+    "Existing partial journals must match exact prepared bytes/sizes and have one link; unknown files, symlinks, shared journals and account WAL/SHM/rollback sidecars are preserved and refused",
+    "The held ownership connection manages only its own service-lock.sqlite rollback sidecar; no unknown process, terminal or native owner is adopted",
+    "Only missing journals are linked exclusively; owned staging names are removed before final single-link/hash checks, and matching existing files remain byte-identical",
+    "A second interruption or failed marker removal retains the original intent and prefix; another attempt needs a new explicit command with the original independent bindings, without automatic retry",
+    "Legacy bare markers and failure before a durable intent are not invented into a bound publication; preserve their directories and evidence",
+    "Original independent archive and publication hashes, configuration/policy and prepared journal inventories all remain required; runtime preparation byte changes are withheld without semantic relaxation",
+    "Real offline finish subprocess succeeded without password/native launch, then original service inspection succeeded; no heartbeat or native dispatch is created",
+    "Existing 95 wire schemas and journal formats remain unchanged; two schemas are additive and successful prior export/restore behavior remains compatible",
+    "Trusted SQLite/ZIP/filesystem fixtures only; no actual SDK, terminal, credentials, broker, portfolio mutation or live capital used",
+    "Native accounting/custody, portfolio integration, capacity rollover, installed services, independent review, browser acceptance and P13 gates remain pending",
+    "Focused checks do not establish full-system acceptance; preserved uncertain candidate jobs were not touched or restarted"
+  ]
+}

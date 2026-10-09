@@ -966,3 +966,15 @@ denied portfolio/trading authority are explicit. Original scheduling, audit
 formats and prior schemas remain unchanged. Native cash settlement/correction,
 financing/equity, portfolio integration, custody, deployment, independent review
 and P13 acceptance remain pending. See MT5_MONEY_COMPARISON_HANDOFF.md and ADR 0126.
+
+## Pinned interrupted checkpoint completion — increment 0127
+
+New restore markers bind original archive/policy, prepared journal bytes, UUID
+and resolved destination identity. Explicit finish-restore requires independent
+archive/marker pins and the CLI ownership gate, retains exact matching prefixes,
+publishes only missing journals and rechecks complete bytes/intent before clearing
+the startup block. Changed, shared, moved, legacy or unknown state remains
+withheld; no native work, audit reset or automatic retry occurs. Original schemas
+and journals remain unchanged. Native custody, capacity rollover, installed
+services, independent review and P13 acceptance remain pending. See
+MT5_CHECKPOINT_RECOVERY_HANDOFF.md and ADR 0127.

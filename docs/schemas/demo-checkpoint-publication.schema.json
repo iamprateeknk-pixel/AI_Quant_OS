@@ -1,0 +1,113 @@
+{
+  "$defs": {
+    "JournalCommitment": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "gateway.sqlite",
+            "projection.sqlite",
+            "controller.sqlite"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 100663296,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "bytes",
+        "sha256"
+      ],
+      "title": "JournalCommitment",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "const": "RESTORING",
+      "default": "RESTORING",
+      "title": "State",
+      "type": "string"
+    },
+    "publication_id": {
+      "format": "uuid4",
+      "title": "Publication Id",
+      "type": "string"
+    },
+    "archive_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Archive Sha256",
+      "type": "string"
+    },
+    "policy_ref": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Policy Ref",
+      "type": "string"
+    },
+    "destination_ref": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Destination Ref",
+      "type": "string"
+    },
+    "journals": {
+      "items": {
+        "$ref": "#/$defs/JournalCommitment"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Journals",
+      "type": "array"
+    },
+    "may_capture": {
+      "const": false,
+      "default": false,
+      "title": "May Capture",
+      "type": "boolean"
+    },
+    "may_submit_orders": {
+      "const": false,
+      "default": false,
+      "title": "May Submit Orders",
+      "type": "boolean"
+    },
+    "may_affect_portfolio": {
+      "const": false,
+      "default": false,
+      "title": "May Affect Portfolio",
+      "type": "boolean"
+    },
+    "native_attestation": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "Native Attestation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "publication_id",
+    "archive_sha256",
+    "policy_ref",
+    "destination_ref",
+    "journals"
+  ],
+  "title": "CheckpointPublication",
+  "type": "object"
+}

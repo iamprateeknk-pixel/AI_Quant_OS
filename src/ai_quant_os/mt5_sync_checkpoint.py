@@ -11,8 +11,9 @@ import zipfile
 from contextlib import ExitStack, closing, contextmanager
 from pathlib import Path
 from typing import Literal
+from uuid import uuid4
 
-from pydantic import Field, model_validator
+from pydantic import UUID4, Field, model_validator
 
 from ai_quant_os.mt5_demo_gateway import DemoObservationGateway, canonical, request_identity
 from ai_quant_os.mt5_demo_observation import ObservationModel
@@ -77,6 +78,39 @@ class CheckpointResult(ObservationModel):
     native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
 
 
+class CheckpointPublication(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    state: Literal["RESTORING"] = "RESTORING"
+    publication_id: UUID4
+    archive_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    policy_ref: str = Field(pattern=r"^[a-f0-9]{64}$")
+    destination_ref: str = Field(pattern=r"^[a-f0-9]{64}$")
+    journals: tuple[JournalCommitment, ...] = Field(min_length=3, max_length=3)
+    may_capture: Literal[False] = False
+    may_submit_orders: Literal[False] = False
+    may_affect_portfolio: Literal[False] = False
+    native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
+
+    @model_validator(mode="after")
+    def complete_inventory(self):
+        if tuple(j.name for j in self.journals) != JOURNALS:
+            raise ValueError("Invalid publication inventory")
+        return self
+
+
+class RestoreCompletion(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    state: Literal["RESTORE_FINISHED"] = "RESTORE_FINISHED"
+    archive_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    publication_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    publication_id: UUID4
+    inspection: SyncInspection
+    may_capture: Literal[False] = False
+    may_submit_orders: Literal[False] = False
+    may_affect_portfolio: Literal[False] = False
+    native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
+
+
 def _policy(config):
     return hashlib.sha256(
         canonical(
@@ -94,6 +128,24 @@ def _digest(stream, limit):
             raise CheckpointRejected("CAPACITY")
         digest.update(block)
     return digest.hexdigest(), count
+
+
+def _commitments(path):
+    inventory = []
+    for name in JOURNALS:
+        with (path / name).open("rb") as stream:
+            digest, count = _digest(stream, MAX_JOURNAL_BYTES)
+        inventory.append(JournalCommitment(name=name, bytes=count, sha256=digest))
+    return tuple(inventory)
+
+
+def _destination_ref(path):
+    identity = path.stat()
+    return hashlib.sha256(
+        canonical(
+            [os.path.normcase(str(path.resolve())), identity.st_dev, identity.st_ino]
+        ).encode()
+    ).hexdigest()
 
 
 @contextmanager
@@ -183,13 +235,8 @@ def export_checkpoint(state_dir: Path, config: ServiceConfig, archive: Path) -> 
                 _inspect(state_dir, config)
             ):
                 raise CheckpointRejected("STATE_CHANGED")
-            inventory = []
-            for name in JOURNALS:
-                with (stage / name).open("rb") as stream:
-                    digest, count = _digest(stream, MAX_JOURNAL_BYTES)
-                inventory.append(JournalCommitment(name=name, bytes=count, sha256=digest))
             manifest = SyncCheckpoint(
-                policy_ref=_policy(config), journals=tuple(inventory), inspection=inspection
+                policy_ref=_policy(config), journals=_commitments(stage), inspection=inspection
             )
             raw = manifest.model_dump_json().encode("utf-8")
             if len(raw) > MAX_MANIFEST_BYTES:
@@ -276,8 +323,15 @@ def restore_checkpoint(
                 raise CheckpointRejected("DESTINATION_EXISTS") from None
             # The newly reserved directory remains unavailable to cooperating launchers until complete.
             with service_ownership(destination / "service-lock.sqlite"):
+                intent = CheckpointPublication(
+                    publication_id=uuid4(),
+                    archive_sha256=digest,
+                    policy_ref=_policy(config),
+                    destination_ref=_destination_ref(destination),
+                    journals=_commitments(stage),
+                )
                 with (destination / CHECKPOINT_MARKER).open("xb") as marker:
-                    marker.write(b'{"state":"RESTORING"}\n')
+                    marker.write(intent.model_dump_json().encode("utf-8"))
                     marker.flush()
                     os.fsync(marker.fileno())
                 for name in JOURNALS:
@@ -293,6 +347,106 @@ def restore_checkpoint(
         raise CheckpointRejected("STORAGE_UNAVAILABLE") from None
 
 
+def _read_publication(destination, publication_sha256):
+    marker = destination / CHECKPOINT_MARKER
+    try:
+        if marker.is_symlink() or not marker.is_file():
+            raise CheckpointRejected("PUBLICATION_INVALID")
+        with marker.open("rb") as stream:
+            raw = stream.read(MAX_MANIFEST_BYTES + 1)
+        if len(raw) > MAX_MANIFEST_BYTES:
+            raise CheckpointRejected("PUBLICATION_INVALID")
+        if hashlib.sha256(raw).hexdigest() != publication_sha256:
+            raise CheckpointRejected("PUBLICATION_MISMATCH")
+        return CheckpointPublication.model_validate(json.loads(raw, object_pairs_hook=_unique))
+    except CheckpointRejected:
+        raise
+    except Exception:
+        raise CheckpointRejected("PUBLICATION_INVALID") from None
+
+
+def _partial_matches(destination, intent, *, complete=False):
+    # The held SQLite ownership connection creates its own rollback sidecar.
+    allowed = {*JOURNALS, CHECKPOINT_MARKER, "service-lock.sqlite", "service-lock.sqlite-journal"}
+    if any(
+        p.name not in allowed or p.is_symlink() or not p.is_file() for p in destination.iterdir()
+    ):
+        raise CheckpointRejected("DESTINATION_LAYOUT")
+    for journal in intent.journals:
+        path = destination / journal.name
+        if not path.exists():
+            if complete:
+                raise CheckpointRejected("PARTIAL_JOURNAL_MISMATCH")
+            continue
+        if path.stat().st_nlink != 1:
+            raise CheckpointRejected("DESTINATION_LAYOUT")
+        with path.open("rb") as stream:
+            digest, count = _digest(stream, MAX_JOURNAL_BYTES)
+        if digest != journal.sha256 or count != journal.bytes:
+            raise CheckpointRejected("PARTIAL_JOURNAL_MISMATCH")
+
+
+def finish_restore(
+    archive: Path,
+    archive_sha256: str,
+    config: ServiceConfig,
+    destination: Path,
+    publication_sha256: str,
+) -> RestoreCompletion:
+    archive, destination = archive.absolute(), destination.absolute()
+    if not destination.is_dir() or not (destination / CHECKPOINT_MARKER).exists():
+        raise CheckpointRejected("PUBLICATION_REQUIRED")
+    try:
+        with (
+            service_ownership(destination / "service-lock.sqlite"),
+            archive.open("rb") as stream,
+            _staging(destination.parent) as stage,
+        ):
+            intent = _read_publication(destination, publication_sha256)
+            if (
+                intent.archive_sha256 != archive_sha256
+                or intent.policy_ref != _policy(config)
+                or intent.destination_ref != _destination_ref(destination)
+            ):
+                raise CheckpointRejected("PUBLICATION_MISMATCH")
+            if _digest(stream, MAX_ARCHIVE_BYTES)[0] != archive_sha256:
+                raise CheckpointRejected("ARCHIVE_MISMATCH")
+            stream.seek(0)
+            inspection = _unpack(stream, stage, config)
+            if _digest(stream, MAX_ARCHIVE_BYTES)[0] != archive_sha256:
+                raise CheckpointRejected("ARCHIVE_MISMATCH")
+            if _commitments(stage) != intent.journals:
+                raise CheckpointRejected("PUBLICATION_MISMATCH")
+            _partial_matches(destination, intent)
+            for name in JOURNALS:
+                target = destination / name
+                if not target.exists():
+                    try:
+                        # Remove the owned staging name before admitting single-link custody.
+                        os.link(stage / name, target)
+                    except FileExistsError:
+                        raise CheckpointRejected("PARTIAL_JOURNAL_MISMATCH") from None
+                    (stage / name).unlink()
+            _partial_matches(destination, intent, complete=True)
+            if _read_publication(destination, publication_sha256) != intent:
+                raise CheckpointRejected("PUBLICATION_MISMATCH")
+            (destination / CHECKPOINT_MARKER).unlink()
+            return RestoreCompletion(
+                archive_sha256=archive_sha256,
+                publication_sha256=publication_sha256,
+                publication_id=intent.publication_id,
+                inspection=inspection,
+            )
+    except CheckpointRejected:
+        raise
+    except ServiceRejected as exc:
+        raise CheckpointRejected(exc.code) from None
+    except (zipfile.BadZipFile, ValueError, KeyError):
+        raise CheckpointRejected("ARCHIVE_INVALID") from None
+    except Exception:
+        raise CheckpointRejected("STORAGE_UNAVAILABLE") from None
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Offline demo sync journal checkpoint")
     parser.add_argument("--config", type=Path, required=True)
@@ -304,14 +458,22 @@ def main(argv=None):
     restore.add_argument("--archive", type=Path, required=True)
     restore.add_argument("--archive-sha256", required=True)
     restore.add_argument("--destination", type=Path, required=True)
+    finish = sub.add_parser("finish-restore")
+    finish.add_argument("--archive", type=Path, required=True)
+    finish.add_argument("--archive-sha256", required=True)
+    finish.add_argument("--destination", type=Path, required=True)
+    finish.add_argument("--publication-sha256", required=True)
     args = parser.parse_args(argv)
     try:
         config = load_config(args.config, {PASSWORD_ENV: "CHECKPOINT_ONLY"})
-        result = (
-            export_checkpoint(args.state_dir, config, args.archive)
-            if args.action == "export"
-            else restore_checkpoint(args.archive, args.archive_sha256, config, args.destination)
-        )
+        if args.action == "export":
+            result = export_checkpoint(args.state_dir, config, args.archive)
+        elif args.action == "restore":
+            result = restore_checkpoint(args.archive, args.archive_sha256, config, args.destination)
+        else:
+            result = finish_restore(
+                args.archive, args.archive_sha256, config, args.destination, args.publication_sha256
+            )
         print(result.model_dump_json(), flush=True)
         return 0
     except (CheckpointRejected, ServiceRejected) as exc:
