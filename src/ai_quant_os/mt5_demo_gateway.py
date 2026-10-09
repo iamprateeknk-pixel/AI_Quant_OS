@@ -465,6 +465,25 @@ class DemoObservationGateway:
                     state="WITHHELD", code="STORAGE_UNAVAILABLE", attempt_id=attempt_id
                 )
 
+    def custody_status(self) -> Literal["ALL_FINISHED", "CUSTODY_UNCERTAIN", "STORAGE_UNAVAILABLE"]:
+        """Inspect retained worker receipts without reserving, launching or reconciling."""
+        with self._lock:
+            try:
+                if self._connection is None:
+                    return "STORAGE_UNAVAILABLE"
+                self._connection.execute("BEGIN")
+                rows = self._verify()
+                return (
+                    "ALL_FINISHED"
+                    if all(row.state == "FINISHED" for row in rows.values())
+                    else "CUSTODY_UNCERTAIN"
+                )
+            except (sqlite3.Error, ValueError):
+                return "STORAGE_UNAVAILABLE"
+            finally:
+                if self._connection is not None:
+                    self._connection.rollback()
+
     def replay_existing(
         self, request: DemoCaptureRequest | DemoSyncRequest, attempt_id: UUID
     ) -> GatewayReply:

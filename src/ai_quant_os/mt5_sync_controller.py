@@ -122,6 +122,35 @@ class SyncRecoveryResult(ObservationModel):
     native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
 
 
+class SyncClockRecoveryRequest(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    action: Literal["RESUME_CLOCK_HALT"] = "RESUME_CLOCK_HALT"
+    expected_revision: int = Field(ge=1, le=MAX_TRANSITIONS, strict=True)
+
+
+class SyncClockRecoveryResult(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    state: Literal["RESUMED", "WITHHELD", "DISABLED"]
+    code: (
+        Literal[
+            "BUSY",
+            "STORAGE_UNAVAILABLE",
+            "STATE_CONFLICT",
+            "CLOCK_REGRESSION",
+            "CAPACITY",
+            "HISTORY_GAP",
+            "CUSTODY_UNCERTAIN",
+            "PROJECTION_WITHHELD",
+        ]
+        | None
+    ) = None
+    request: SyncClockRecoveryRequest
+    health: SyncHealth | None = None
+    may_submit_orders: Literal[False] = False
+    may_affect_portfolio: Literal[False] = False
+    native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
+
+
 class DemoSyncController:
     """Call tick from a service timer; each call performs at most one fixed worker capture."""
 
@@ -211,7 +240,12 @@ class DemoSyncController:
         ):
             event = json.loads(raw)
             if (
-                set(event) not in ({"policy_ref", "state"}, {"policy_ref", "state", "recovery"})
+                set(event)
+                not in (
+                    {"policy_ref", "state"},
+                    {"policy_ref", "state", "recovery"},
+                    {"policy_ref", "state", "clock_recovery"},
+                )
                 or event["policy_ref"] != self._policy
             ):
                 raise ValueError("Controller event mismatch")
@@ -246,12 +280,29 @@ class DemoSyncController:
                     != state.observed_at + timedelta(seconds=self.schedule.interval_seconds)
                 ):
                     raise ValueError("Invalid recovery transition")
+            if "clock_recovery" in event:
+                recovery = SyncClockRecoveryRequest.model_validate(event["clock_recovery"])
+                if (
+                    prior is None
+                    or prior.state != "HALTED"
+                    or prior.code != "CLOCK_REGRESSION"
+                    or prior.pending_attempt_id is not None
+                    or prior.revision != recovery.expected_revision
+                    or state.state != "STARTING"
+                    or state.code is not None
+                    or state.pending_attempt_id is not None
+                    or state.last_history_end != prior.last_history_end
+                    or state.last_success_at != prior.last_success_at
+                    or state.consecutive_failures != prior.consecutive_failures
+                    or state.next_due_at != max(state.observed_at, prior.next_due_at)
+                ):
+                    raise ValueError("Invalid clock recovery transition")
             prior = state
         if prior is None or canonical(prior.model_dump(mode="json")) != row[0][3]:
             raise ValueError("Controller differs from audit history")
         return prior
 
-    def _save(self, old, *, recovery=None, **changes):
+    def _save(self, old, *, recovery=None, clock_recovery=None, **changes):
         if old.revision >= MAX_TRANSITIONS:
             raise ValueError("Controller transition capacity")
         state = SyncHealth.model_validate(
@@ -267,6 +318,11 @@ class DemoSyncController:
                 "policy_ref": self._policy,
                 "state": state.model_dump(mode="json"),
                 **({"recovery": recovery.model_dump(mode="json")} if recovery else {}),
+                **(
+                    {"clock_recovery": clock_recovery.model_dump(mode="json")}
+                    if clock_recovery
+                    else {}
+                ),
             },
         )
         return state
@@ -336,6 +392,74 @@ class DemoSyncController:
                     )
                     self._db.commit()
                     return reply(health=recovered, state="RECOVERED")
+                except Exception:
+                    return reply("STORAGE_UNAVAILABLE")
+                finally:
+                    if self._db is not None:
+                        self._db.rollback()
+        finally:
+            self._dispatch_lock.release()
+
+    def recover_clock(self, request: SyncClockRecoveryRequest) -> SyncClockRecoveryResult:
+        """Resume a clock-only halt without capturing or changing observed history."""
+        request = SyncClockRecoveryRequest.model_validate(request.model_dump())
+        now = utc(self.clock())
+
+        def reply(code=None, health=None, state="WITHHELD"):
+            return SyncClockRecoveryResult(state=state, code=code, request=request, health=health)
+
+        if not self.schedule.enabled or not self.connection.enabled:
+            return reply(state="DISABLED")
+        if not self._dispatch_lock.acquire(blocking=False):
+            return reply("BUSY")
+        try:
+            with self._lock:
+                try:
+                    if self._db is None:
+                        raise ValueError("Controller unavailable")
+                    self._db.execute("BEGIN IMMEDIATE")
+                    current = self._read()
+                    if (
+                        current.state != "HALTED"
+                        or current.code != "CLOCK_REGRESSION"
+                        or current.pending_attempt_id is not None
+                        or current.revision != request.expected_revision
+                    ):
+                        return reply("STATE_CONFLICT", current)
+                    if now < current.observed_at:
+                        return reply("CLOCK_REGRESSION", current)
+                    if current.revision >= MAX_TRANSITIONS - 2:
+                        return reply("CAPACITY", current)
+                    start = self.schedule.initial_history_start
+                    if current.last_history_end is not None:
+                        start = max(
+                            start,
+                            current.last_history_end
+                            - timedelta(seconds=self.schedule.overlap_seconds),
+                        )
+                    if not timedelta(0) < now - start <= timedelta(days=1):
+                        return reply("HISTORY_GAP", current)
+                    custody = self.gateway.custody_status()
+                    if custody != "ALL_FINISHED":
+                        return reply(custody, current)
+                    try:
+                        view = self.projection.view(self.connection)
+                        if (view is None) != (current.last_history_end is None) or (
+                            view is not None and view.batch.history_end != current.last_history_end
+                        ):
+                            return reply("PROJECTION_WITHHELD", current)
+                    except Exception:
+                        return reply("PROJECTION_WITHHELD", current)
+                    resumed = self._save(
+                        current,
+                        clock_recovery=request,
+                        state="STARTING",
+                        code=None,
+                        observed_at=now,
+                        next_due_at=max(now, current.next_due_at),
+                    )
+                    self._db.commit()
+                    return reply(health=resumed, state="RESUMED")
                 except Exception:
                     return reply("STORAGE_UNAVAILABLE")
                 finally:

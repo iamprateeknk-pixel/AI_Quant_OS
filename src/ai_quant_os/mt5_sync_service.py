@@ -23,6 +23,7 @@ from ai_quant_os.mt5_sync_controller import (
     SyncHealth,
     SyncSchedule,
     SyncRecoveryRequest,
+    SyncClockRecoveryRequest,
 )
 from ai_quant_os.mt5_sync_projection import SyncProjectionStore
 
@@ -221,19 +222,28 @@ def main(argv=None) -> int:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--enable-demo-service", action="store_true")
-    parser.add_argument("--recover-pending-attempt")
+    actions = parser.add_mutually_exclusive_group()
+    actions.add_argument("--recover-pending-attempt")
+    actions.add_argument("--resume-clock-halt", action="store_true")
     parser.add_argument("--expected-revision", type=int)
     args = parser.parse_args(argv)
     stop = Event()
     handlers = {}
     try:
         recovery = None
-        if args.recover_pending_attempt is not None or args.expected_revision is not None:
+        if (
+            args.recover_pending_attempt is not None
+            or args.expected_revision is not None
+            or args.resume_clock_halt
+        ):
             try:
-                recovery = SyncRecoveryRequest(
-                    pending_attempt_id=args.recover_pending_attempt,
-                    expected_revision=args.expected_revision,
-                )
+                if args.resume_clock_halt:
+                    recovery = SyncClockRecoveryRequest(expected_revision=args.expected_revision)
+                else:
+                    recovery = SyncRecoveryRequest(
+                        pending_attempt_id=args.recover_pending_attempt,
+                        expected_revision=args.expected_revision,
+                    )
             except Exception:
                 raise ServiceRejected("RECOVERY_INVALID") from None
         config = load_config(args.config, os.environ)
@@ -265,9 +275,13 @@ def main(argv=None) -> int:
             )
             stack.callback(controller.close)
             if recovery is not None:
-                result = controller.recover_pending(recovery)
+                result = (
+                    controller.recover_clock(recovery)
+                    if isinstance(recovery, SyncClockRecoveryRequest)
+                    else controller.recover_pending(recovery)
+                )
                 print(result.model_dump_json(), flush=True)
-                return 0 if result.state == "RECOVERED" else 2
+                return 0 if result.state in {"RECOVERED", "RESUMED"} else 2
             result = run_service(
                 controller,
                 args.state_dir / "health.json",

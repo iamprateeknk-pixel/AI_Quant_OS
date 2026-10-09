@@ -1,0 +1,80 @@
+{
+  "increment": "0120",
+  "date": "2026-10-10",
+  "base_commit": "415b73386303be7ef6152be7ba268c613b6d7035",
+  "feature": "Explicit audited resume of a clock-only demo sync halt while preserving observed history and backoff",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0120",
+    "tests": 244,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "25.522",
+    "scope": [
+      "tests/test_mt5_clock_recovery.py",
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 86,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "a804f0d5ab5fa4246fb9bd28f31c3fd5d275cd043c5edc7cffc4d7931fa2629e"
+      },
+      {
+        "path": "docs/MT5_CLOCK_RECOVERY_HANDOFF.md",
+        "sha256": "db48cf516c41b7db6a640c9643ffa760931c95d85779c255ce1fd27c3b6954da"
+      },
+      {
+        "path": "docs/adr/0120-explicit-clock-only-demo-sync-recovery.md",
+        "sha256": "01b6754ec944e1b86f8fdf9b3ad1e3beb01c8ee1c16cbe8c97b02710a71da27d"
+      },
+      {
+        "path": "docs/schemas/demo-sync-clock-recovery.schema.json",
+        "sha256": "dc5846fdc0c194373d379e96b64728476c2092f56642d2ed5408df9bf6fea1d3"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_gateway.py",
+        "sha256": "c47c350f0262c8b5765f07ed7a5aae5c68258264c4afe725c4e44da1fb929dc4"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_controller.py",
+        "sha256": "76aca342aa8384716cf4a188ac6fcbb38a4c1e2ec922a37ec89fb24830ad6614"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "e253cac96b60e420c09868a0b1c47a509881a063eca7dacd409d75055376598b"
+      },
+      {
+        "path": "tests/test_mt5_clock_recovery.py",
+        "sha256": "a1842bdaca3c06a812e94b486329f8050dc2d792774ee06ccd538b79eb45b690"
+      }
+    ],
+    "junit_sha256": "d0c2d991d196dd63e5db9070dd3688f2b9d89471667cd1320805b994dc6372db",
+    "tdd_red": "Eight initial clock checks failed on missing recovery interface; one-shot CLI and wire schema checks failed before those additions",
+    "review": "Local five-axis self-review: exact halted revision/reason/no-pending admission, caught-up clock, retained original window and deadlines, bounded transition capacity, read-only verified gateway custody/projection checks, STARTING rather than capture-success claim, replay-validated audited recovery request, sanitized failures; independent acceptance remains pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "The action resumes only a CLOCK_REGRESSION halt with no pending attempt; original cursor, last success, failure count and remaining due/backoff deadline are preserved",
+    "Gateway custody and projection checks are local journal snapshots, not a distributed lease or native/terminal custody attestation",
+    "Recovery performs no capture, projection import, new attempt reservation, PID adoption, lease expiry or reset",
+    "One-shot CLI uses existing state/enrollment/ownership gates and exits without starting a timer or replacing the previous service heartbeat",
+    "All 86 prior public schemas and existing tables are unchanged; successful clock_recovery audit metadata is rejected by older readers, so rollback stops launchers and retains journals",
+    "Native fixtures, local journal checks and CLI composition only; no actual SDK, terminal, credentials or external broker",
+    "History backfill, native orphan/terminal custody, checkpoint migration, Windows service deployment, independent broker review and P13 live acceptance remain open",
+    "Focused verification does not establish full-system acceptance"
+  ]
+}

@@ -879,3 +879,17 @@ gaps and corrupted audit state remain withheld. Clock-only recovery, native
 custody resolution, historical backfill, service deployment and independent
 acceptance remain pending. Existing public schemas are unchanged; the new
 recovery schema and audit metadata are documented with rollback limitations.
+
+
+### Increment 0120 - explicit clock-only scheduling recovery
+
+The controller and one-shot service CLI now support RESUME_CLOCK_HALT bound to
+the observed revision. It requires caught-up time, no pending capture, retained
+original coverage, transition capacity, a verified gateway with no unfinished
+attempts, and projection/cursor agreement. Resume is audited and returns STARTING
+while preserving last success, history cursor, failure count and remaining
+backoff. It performs no worker capture or projection import. Existing public
+schemas are unchanged; the separate clock recovery schema and older-reader
+rollback limit are documented. Historical backfill, native/orphan custody,
+checkpoint migration, service deployment, independent review and P13 acceptance
+remain pending.
