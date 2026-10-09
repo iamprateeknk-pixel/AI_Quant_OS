@@ -28,6 +28,7 @@ from ai_quant_os.mt5_sync_controller import (
     SyncWindowReductionRequest,
 )
 from ai_quant_os.mt5_sync_projection import SyncProjectionStore
+from ai_quant_os.mt5_sync_inspection import inspect_sync
 
 MAX_CONFIG_BYTES = 32768
 MAX_HEALTH_BYTES = 16384
@@ -229,6 +230,7 @@ def main(argv=None) -> int:
     actions.add_argument("--resume-clock-halt", action="store_true")
     actions.add_argument("--backfill-history-attempt")
     actions.add_argument("--reduce-history-attempt")
+    actions.add_argument("--inspect-state", action="store_true")
     parser.add_argument("--prior-failed-attempt")
     parser.add_argument("--history-window-seconds", type=int)
     parser.add_argument("--expected-revision", type=int)
@@ -270,17 +272,20 @@ def main(argv=None) -> int:
                     )
             except Exception:
                 raise ServiceRejected("RECOVERY_INVALID") from None
-        config = load_config(args.config, os.environ)
-        if config.schedule.enabled and config.connection.enabled:
+        environment = {PASSWORD_ENV: "INSPECTION_ONLY"} if args.inspect_state else os.environ
+        config = load_config(args.config, environment)
+        if config.schedule.enabled and config.connection.enabled and not args.inspect_state:
             if not args.enable_demo_service:
                 raise ServiceRejected("ENABLE_REQUIRED")
             if sys.platform != "win32":
                 raise ServiceRejected("WINDOWS_REQUIRED")
-        if recovery is not None and not all(
+        if (recovery is not None or args.inspect_state) and not all(
             (args.state_dir / name).is_file()
             for name in ("gateway.sqlite", "projection.sqlite", "controller.sqlite")
         ):
-            raise ServiceRejected("RECOVERY_STATE_REQUIRED")
+            raise ServiceRejected(
+                "INSPECTION_STATE_REQUIRED" if args.inspect_state else "RECOVERY_STATE_REQUIRED"
+            )
         args.state_dir.mkdir(parents=True, exist_ok=True)
         for signum in (signal.SIGINT, signal.SIGTERM):
             handlers[signum] = signal.signal(signum, lambda signum, frame: stop.set())
@@ -298,6 +303,10 @@ def main(argv=None) -> int:
                 projection,
             )
             stack.callback(controller.close)
+            if args.inspect_state:
+                result = inspect_sync(controller)
+                print(result.model_dump_json(), flush=True)
+                return 0 if result.state == "READABLE" else 2
             if recovery is not None:
                 if isinstance(recovery, SyncWindowReductionRequest):
                     result = controller.reduce_failed_window(recovery)

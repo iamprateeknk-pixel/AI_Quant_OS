@@ -919,3 +919,14 @@ Unknown custody and non-capacity failures remain refused. Existing schemas and
 tables are unchanged; new audit metadata/contract and rollback limits are
 documented. Native completeness, custody, migration, deployment, independent
 review and P13 acceptance remain pending.
+
+
+### Increment 0123 - current local journal inspection
+
+The service CLI can now inspect current audited controller revision/pending
+identity, gateway custody, bounded projection coverage/counts and receipt codes
+without capture or heartbeat replacement. Missing/corrupt stores are withheld;
+no revision is invented. Inspection needs no native password or launch flag,
+while actual command admission remains unchanged. Existing schemas/events are
+unchanged. Native, custody, migration, deployment, independent, browser and P13
+acceptance remain pending.

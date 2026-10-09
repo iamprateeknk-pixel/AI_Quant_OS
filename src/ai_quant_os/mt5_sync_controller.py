@@ -472,6 +472,20 @@ class DemoSyncController:
         )
         return state
 
+    def inspect_health(self) -> SyncHealth | None:
+        """Read verified durable state without scheduling or inventing a revision."""
+        with self._lock:
+            try:
+                if self._db is None:
+                    return None
+                self._db.execute("BEGIN")
+                return self._read()
+            except Exception:
+                return None
+            finally:
+                if self._db is not None:
+                    self._db.rollback()
+
     def _history_start(self, state):
         start = self.schedule.initial_history_start
         if state.last_history_end is not None:

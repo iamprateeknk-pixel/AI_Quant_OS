@@ -1,0 +1,84 @@
+{
+  "increment": "0123",
+  "date": "2026-10-10",
+  "base_commit": "f1554f626e6ddd92d5dbf4be9aa357a1ca97f4f5",
+  "feature": "Offline current demo-sync journal inspection without native dispatch or heartbeat publication",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0123",
+    "tests": 290,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "14.337",
+    "scope": [
+      "tests/test_mt5_sync_inspection.py",
+      "tests/test_mt5_window_reduction.py",
+      "tests/test_mt5_history_backfill.py",
+      "tests/test_mt5_clock_recovery.py",
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 89,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "5473f401c0b9f28d3de402c96dfeaea5b31df5132a135b6cb3e1678e1267c9ee"
+      },
+      {
+        "path": "docs/MT5_SYNC_INSPECTION_HANDOFF.md",
+        "sha256": "c885712a9b146c49d25c86477a8e40f212afb27d10e1b4bf4eb08b3d5d83fdd6"
+      },
+      {
+        "path": "docs/adr/0123-offline-demo-sync-journal-inspection.md",
+        "sha256": "e19090b49b80dff7e26c94ecffe6a02d700cf0ddc2425c13954e9da56c59503c"
+      },
+      {
+        "path": "docs/schemas/demo-sync-inspection.schema.json",
+        "sha256": "3977ed9f766af70dda8fe67e462458b900f00f4ddd5753bce6602c17e3f81107"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_controller.py",
+        "sha256": "15a399a23143b87ec464a437bea7dcd98fd97a2f66a57a9566d8eacd053b5e81"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_inspection.py",
+        "sha256": "8c0da7eae733e2920f87e105746d78f211992afcc295f1513833ed20a3ff7d39"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "fbc04cd975fb15a04af3f98f2904ef64fa7c7437375b135db129d329d2dfcd45"
+      },
+      {
+        "path": "tests/test_mt5_sync_inspection.py",
+        "sha256": "99fb63372198a7da4164bd3ae624b2ad61941df8e37e5b884d318e898aaf90fe"
+      }
+    ],
+    "junit_sha256": "60e49948f6746bf2a6c22100fa954c44d068e250344a6289a79681d33c0e1805",
+    "tdd_red": "Five initial checks failed before the inspection module and CLI mode; schema check failed before the additive exported schema",
+    "review": "Local five-axis self-review: actual audited revision, bounded public projection, fixed denied authorities, no native dispatch/reservation/reconciliation or heartbeat write, missing/corrupt state withheld, exclusive CLI ownership, enabled capture retains original password/platform/launch gates; independent native/release review pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "READABLE describes journal readability, including halted state, mismatches or uncertain custody reported explicitly; it does not establish native readiness or recovery admission",
+    "Inspection uses a noncredential placeholder only to construct existing password-independent policy identity; actual capture and recovery still require their original credentials and launch gates",
+    "Reads are component snapshots rather than an atomic multi-store snapshot; direct library writers are outside the CLI ownership gate",
+    "Store constructors may manage SQLite sidecars; application audits, capture reservations, cursor, pending identity and heartbeat are unchanged, without promising filesystem byte immutability",
+    "Retained FINISHED receipt commitment may outlive usable report facts; expired reports remain withheld",
+    "Existing 89 wire schemas and journal event formats are unchanged; additive inspection schema creates no new replay metadata",
+    "Trusted fixtures and a real disabled-journal inspection CLI only; no actual SDK, terminal, real credentials or external broker used",
+    "Native completeness/corrections, custody resolution, checkpoint migration, installed services, independent broker review, browser acceptance and P13 live release remain pending",
+    "Focused checks do not establish full-system acceptance"
+  ]
+}
