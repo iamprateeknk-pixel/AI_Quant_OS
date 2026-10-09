@@ -125,7 +125,7 @@ def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
     client = TestClient(create_app(operator_token="fixture-token"))
     body = client.get("/api/v1/agents/registry").json()
     assert body["mode"] == "PAPER"
-    assert len(body["agents"]) == 29
+    assert len(body["agents"]) == 30
     assert {(item["agent_id"], item["agent_version"]) for item in body["agents"]} == (
         {(f"A{index:02}", "0.1.0") for index in range(1, 19)}
         | {
@@ -139,6 +139,7 @@ def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
             ("A08", "0.2.0"),
             ("A09", "0.2.0"),
             ("A10", "0.2.0"),
+            ("A14", "0.2.0"),
             ("A18", "0.2.0"),
         }
     )

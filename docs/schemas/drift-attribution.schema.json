@@ -1,0 +1,476 @@
+{
+  "$defs": {
+    "ExecutionCostWindow": {
+      "properties": {
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "benchmark_fill_count": {
+          "title": "Benchmark Fill Count",
+          "type": "integer"
+        },
+        "initial_mid_gross_notional_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Initial Mid Gross Notional Quote"
+        },
+        "spread_cost_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Cost Bps"
+        },
+        "slippage_cost_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Slippage Cost Bps"
+        },
+        "fee_cost_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fee Cost Bps"
+        },
+        "cost_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cost Bps"
+        }
+      },
+      "required": [
+        "fill_count",
+        "benchmark_fill_count",
+        "initial_mid_gross_notional_quote",
+        "spread_cost_bps",
+        "slippage_cost_bps",
+        "fee_cost_bps",
+        "cost_bps"
+      ],
+      "title": "ExecutionCostWindow",
+      "type": "object"
+    },
+    "ExecutionDriftAssessment": {
+      "properties": {
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "baseline": {
+          "$ref": "#/$defs/ExecutionCostWindow"
+        },
+        "current": {
+          "$ref": "#/$defs/ExecutionCostWindow"
+        },
+        "spread_delta_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Delta Bps"
+        },
+        "slippage_delta_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Slippage Delta Bps"
+        },
+        "fee_delta_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fee Delta Bps"
+        },
+        "cost_delta_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cost Delta Bps"
+        },
+        "state": {
+          "enum": [
+            "COST_INCREASE",
+            "NO_COST_INCREASE",
+            "UNASSESSED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "recommendation": {
+          "enum": [
+            "HUMAN_REVIEW_ONLY",
+            "NO_AUTOMATIC_ACTION"
+          ],
+          "title": "Recommendation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "quote_currency",
+        "baseline",
+        "current",
+        "spread_delta_bps",
+        "slippage_delta_bps",
+        "fee_delta_bps",
+        "cost_delta_bps",
+        "state",
+        "reasons",
+        "recommendation"
+      ],
+      "title": "ExecutionDriftAssessment",
+      "type": "object"
+    },
+    "ExecutionDriftReport": {
+      "properties": {
+        "as_of": {
+          "format": "date-time",
+          "title": "As Of",
+          "type": "string"
+        },
+        "ledger_sha256": {
+          "title": "Ledger Sha256",
+          "type": "string"
+        },
+        "benchmarks_sha256": {
+          "title": "Benchmarks Sha256",
+          "type": "string"
+        },
+        "policy_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Policy Ref"
+        },
+        "baseline_start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline Start"
+        },
+        "current_start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Start"
+        },
+        "state": {
+          "enum": [
+            "DECLARED_COMPARISON",
+            "POLICY_UNCONFIGURED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "assessments": {
+          "items": {
+            "$ref": "#/$defs/ExecutionDriftAssessment"
+          },
+          "title": "Assessments",
+          "type": "array"
+        },
+        "method": {
+          "const": "INITIAL_MID_NOTIONAL_WEIGHTED_COST_BPS_6DP_V1",
+          "default": "INITIAL_MID_NOTIONAL_WEIGHTED_COST_BPS_6DP_V1",
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "as_of",
+        "ledger_sha256",
+        "benchmarks_sha256",
+        "policy_ref",
+        "baseline_start",
+        "current_start",
+        "state",
+        "assessments"
+      ],
+      "title": "ExecutionDriftReport",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A14",
+      "default": "A14",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.2.0",
+      "default": "0.2.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "output_type": {
+      "const": "DriftAttribution",
+      "default": "DriftAttribution",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "observation_scope": {
+      "const": "LOCAL_PAPER_EXECUTION",
+      "default": "LOCAL_PAPER_EXECUTION",
+      "title": "Observation Scope",
+      "type": "string"
+    },
+    "calibration_status": {
+      "const": "UNAVAILABLE",
+      "default": "UNAVAILABLE",
+      "title": "Calibration Status",
+      "type": "string"
+    },
+    "causal_attribution_established": {
+      "const": false,
+      "default": false,
+      "title": "Causal Attribution Established",
+      "type": "boolean"
+    },
+    "demotion_recommendation": {
+      "const": "UNASSESSED",
+      "default": "UNASSESSED",
+      "title": "Demotion Recommendation",
+      "type": "string"
+    },
+    "may_add_risk": {
+      "const": false,
+      "default": false,
+      "title": "May Add Risk",
+      "type": "boolean"
+    },
+    "report": {
+      "$ref": "#/$defs/ExecutionDriftReport"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "confidence",
+    "uncertainty",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "report"
+  ],
+  "title": "DriftAttribution",
+  "type": "object"
+}

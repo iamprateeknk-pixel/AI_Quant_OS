@@ -1,0 +1,139 @@
+{
+  "increment": "0101",
+  "feature": "A14 source-bound declared paper execution-cost drift mission",
+  "base_commit": "87c343ee9aaead1fd0a425a3acbc0e7a2cb2cd2e",
+  "verification": {
+    "tested_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0101",
+    "scoped_backend_passed": 251,
+    "scoped_backend_seconds": 46.28,
+    "feature_cases_passed": 22,
+    "initial_missing_math_cases_failed": 3,
+    "initial_missing_runtime_cases_failed": 2,
+    "initial_missing_schema_snapshot_cases_failed": 2,
+    "registry_count_change": "Exact original/new identities retained; supervisor defers new A14 version as unsupported",
+    "ruff_src_tests": "passed",
+    "prior_schemas_unchanged": 70,
+    "documentation_updated_after_checks": [
+      "docs/BUILD_STATUS.md current P07/P09/P12 rows"
+    ],
+    "frontend_or_browser_acceptance_claimed": false,
+    "full_suite_claimed": false
+  },
+  "test_files": [
+    "tests/test_execution_drift.py",
+    "tests/test_drift_agent.py",
+    "tests/test_execution_attribution.py",
+    "tests/test_paper_attribution.py",
+    "tests/test_agent_registry.py",
+    "tests/test_supervisor_api.py",
+    "tests/test_supervisor_sources.py",
+    "tests/test_supervisor_agent.py",
+    "tests/test_supervisor_dispatch.py",
+    "tests/test_graph_runtime.py",
+    "tests/test_health_api.py",
+    "tests/test_context_call_budgets.py",
+    "tests/test_agent_call_budgets.py",
+    "tests/test_operator_sessions.py"
+  ],
+  "scope": {
+    "agent_id": "A14",
+    "agent_version": "0.2.0",
+    "implementation_status": "PARTIAL",
+    "lifecycle": "SHADOW",
+    "observation_scope": "LOCAL_PAPER_EXECUTION",
+    "confidence": "0",
+    "uncertainty": "1",
+    "declared_adjacent_UTC_windows": true,
+    "exact_strategy_version_instrument_grouping": true,
+    "normalized_spread_slippage_fee_components": true,
+    "basis_point_precision": 6,
+    "rounding": "HALF_EVEN",
+    "output_source_recomputed": true,
+    "live_shadow_predictions_connected": false,
+    "causal_attribution_established": false,
+    "automatic_demotion_or_orders": false,
+    "A01_dispatch_enabled": false,
+    "calibration_status": "UNAVAILABLE",
+    "promotion_approved": false,
+    "full_P00_P13_complete": false
+  },
+  "pending": [
+    "Live/shadow/prediction evidence adapters",
+    "Causal signal/regime/sizing/data attribution",
+    "Statistical/held-out detection and calibration",
+    "Approved policy baselines and scheduled monitoring",
+    "A01 integration and demotion workflows",
+    "Independent review and all promotion/live release gates",
+    "Remaining P00-P13 development"
+  ],
+  "verified_staged_files": [
+    {
+      "path": ".clean/decisions.md",
+      "sha256": "34050f17d72bc110408d181ac170911fba809aae93d68b6c98cda9baf18c349a"
+    },
+    {
+      "path": ".env.example",
+      "sha256": "f05f242d92359efe90ba8646efaf904d31f31d071b93a0ffb1818ae39e8b7e28"
+    },
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "bd69dd5482e8ffd7b6a818d705cbd6e595beebe8da04b707da49d25786b7e6f2"
+    },
+    {
+      "path": "docs/DRIFT_AGENT_HANDOFF.md",
+      "sha256": "9d8cbbf973bb2a0e942e2d39e3a5a28d539f66637ef3a50b23f8cba7d045327a"
+    },
+    {
+      "path": "docs/adr/0101-paper-execution-drift-mission.md",
+      "sha256": "35f4d267aa1300ce015781c46becd67b32e167544d07a3965e43bef000a55bfc"
+    },
+    {
+      "path": "docs/evaluations/drift-development-baseline.json",
+      "sha256": "7fb80b69f7bfd6dfaf8096c34534664e9fcb006e37506465f8b3e6cc75f61b80"
+    },
+    {
+      "path": "docs/schemas/drift-attribution.schema.json",
+      "sha256": "38ea023e3811e853c6437fa03f6e7e74873e3875be4cf42b217ec2b7479e0fe7"
+    },
+    {
+      "path": "src/ai_quant_os/agent_registry.py",
+      "sha256": "ea3b96b6945628a044827c6eae1814ad3d82386871a4b710ab9b0b4c10e07e45"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "4192e56051e866dcf6ea3e495232a48acee6cdbf8dca4184a2e3386fada7526c"
+    },
+    {
+      "path": "src/ai_quant_os/drift_agent.py",
+      "sha256": "1c662c60c6bd0a89f75e201eb6535a4385d052eeccba26fcf9cf4bd8285cbfc4"
+    },
+    {
+      "path": "src/ai_quant_os/drift_sources.py",
+      "sha256": "7c7c204489038b63c29e4de33f5be58351fb6f7a073055082912ffd15d48124e"
+    },
+    {
+      "path": "src/ai_quant_os/execution_drift.py",
+      "sha256": "8b4c68865abb4732d7d19dec0b39c1b0f2f630f819e9a3c07cc7f877748d8f8e"
+    },
+    {
+      "path": "tests/test_agent_registry.py",
+      "sha256": "42335d1186480e479ce13cfbe4286a2ee392aee0f40afbfc8a6fd3de2cf6a8ac"
+    },
+    {
+      "path": "tests/test_drift_agent.py",
+      "sha256": "73f2f8bfd3d9985548c33b1b6ca71ba1f59277d98b64c28b1841d6ba5e8b4573"
+    },
+    {
+      "path": "tests/test_execution_drift.py",
+      "sha256": "34eb2b28950237e224038f16aa8313d0d4b041fb1dca783dffe821729e3bba1f"
+    },
+    {
+      "path": "tests/test_supervisor_api.py",
+      "sha256": "c91568ff7182c2d76f4b5f2f93286d4c26ced5930c5fd0da64190c4d8a048db0"
+    },
+    {
+      "path": "tests/test_supervisor_sources.py",
+      "sha256": "7d0e6a65b7e479789ba29b4e26d3aef521188e786be320eb7a693957d1e42913"
+    }
+  ]
+}

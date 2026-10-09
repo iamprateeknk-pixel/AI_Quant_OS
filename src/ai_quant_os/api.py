@@ -90,6 +90,9 @@ from ai_quant_os.research_api import install_research_routes
 from ai_quant_os.agent_call_policy import AgentCallPolicy
 from ai_quant_os.agent_call_api import call_budget_configuration, install_agent_call_routes
 from ai_quant_os.agent_call_budgets import AgentCallBudget
+from ai_quant_os.execution_drift import DriftPolicy
+from ai_quant_os.drift_sources import drift_configuration, drift_sources
+from ai_quant_os.drift_agent import drift_implementation
 from ai_quant_os.evolution_api import install_evolution_routes
 from ai_quant_os.research_data_api import install_research_data_routes
 from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog
@@ -250,6 +253,7 @@ def create_app(
     research_workspace: Path | None = None,
     evolution_workspace: Path | None = None,
     agent_call_policy: AgentCallPolicy | None = None,
+    drift_policy: DriftPolicy | None = None,
     daily_evidence_enabled: bool | None = None,
     temporal_recovery_enabled: bool | None = None,
     temporal_recovery_target: str | None = None,
@@ -293,6 +297,7 @@ def create_app(
     configured_call_policy = call_budget_configuration(
         agent_call_policy, configured_path, configured_token
     )
+    configured_drift_policy = drift_configuration(drift_policy)
     call_budget = AgentCallBudget(
         configured_path.with_name(configured_path.stem + ".agent-calls.sqlite3")
         if configured_path
@@ -437,6 +442,7 @@ def create_app(
                     ("A08", "0.2.0"): hypothesis_implementation(agent_registry),
                     ("A09", "0.2.0"): builder_implementation(agent_registry),
                     ("A10", "0.2.0"): validation_implementation(agent_registry),
+                    ("A14", "0.2.0"): drift_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(
@@ -1025,16 +1031,23 @@ def create_app(
         supervisor_mission = (payload.agent_id, payload.agent_version) == ("A01", "0.2.0")
         event_mission = (payload.agent_id, payload.agent_version) == ("A06", "0.2.0")
         macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
+        drift_mission = (payload.agent_id, payload.agent_version) == ("A14", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
             None
-            if event_mission or macro_mission or supervisor_mission or incident_mission
+            if event_mission or macro_mission or supervisor_mission or incident_mission or drift_mission
             else world_state.snapshot(context_quotes, now=current_time())
         )
         try:
             strength_mission = (payload.agent_id, payload.agent_version) == ("A04", "0.2.0")
             liquidity_mission = (payload.agent_id, payload.agent_version) == ("A05", "0.2.0")
-            if incident_mission:
+            if drift_mission:
+                try:
+                    ledger = await asyncio.to_thread(lambda: execution.execution_evidence_ledger)
+                    sources = drift_sources(*ledger, now=current_time(), policy=configured_drift_policy)
+                except (ValueError, TypeError, OSError, ArithmeticError, sqlite3.Error) as error:
+                    raise HTTPException(503, "Drift execution evidence unavailable") from error
+            elif incident_mission:
                 try:
                     observed = await asyncio.to_thread(capture_incident_observation)
                 except (ValueError, TypeError, OSError, sqlite3.Error) as error:
@@ -1110,7 +1123,9 @@ def create_app(
                 sources,
                 clock=current_time,
                 call_budget=call_budget,
-                max_input_bytes=STRENGTH_INPUT_BYTES
+                max_input_bytes=65536
+                if drift_mission
+                else STRENGTH_INPUT_BYTES
                 if strength_mission
                 else LIQUIDITY_INPUT_BYTES
                 if liquidity_mission
@@ -1123,7 +1138,9 @@ def create_app(
                 else INCIDENT_INPUT_BYTES
                 if incident_mission
                 else 8192,
-                max_context_bytes=STRENGTH_CONTEXT_BYTES
+                max_context_bytes=100000
+                if drift_mission
+                else STRENGTH_CONTEXT_BYTES
                 if strength_mission
                 else LIQUIDITY_CONTEXT_BYTES
                 if liquidity_mission
