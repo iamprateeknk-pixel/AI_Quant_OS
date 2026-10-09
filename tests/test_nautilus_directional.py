@@ -180,7 +180,7 @@ def test_saved_directional_native_evidence_replays(tmp_path):
 
     payload = json.loads(
         (
-            Path(__file__).parents[1] / "docs/evaluations/nautilus-directional-baseline.json"
+            Path(__file__).parents[1] / "docs/evaluations/nautilus-directional-baseline-0131.json"
         ).read_text()
     )
     run = TypeAdapter(RegisteredBacktest).validate_python(payload["run"])
@@ -378,7 +378,7 @@ def test_saved_directional_research_reproduces_canonical_archive(tmp_path):
     from ai_quant_os.research_store import encode_research
 
     raw = (
-        Path(__file__).parents[1] / "docs/evaluations/research-directional-baseline.json"
+        Path(__file__).parents[1] / "docs/evaluations/research-directional-baseline-0131.json"
     ).read_bytes()
     saved = TypeAdapter(ResearchReport).validate_json(raw)
     report, _, _, _ = directional_research(tmp_path)

@@ -9,13 +9,15 @@ import pytest
 pytest.importorskip("nautilus_trader")
 
 
-def archived_workspace(tmp_path, failed=False):
+def archived_workspace(
+    tmp_path, failed=False, *, fixture_name="research-adversarial-baseline.json"
+):
     from pydantic import TypeAdapter
     from ai_quant_os.research_results import ResearchReport
     from ai_quant_os.research_store import ResearchStore
     from ai_quant_os.strategy_registry import StrategyRegistry
 
-    fixture = Path(__file__).parents[1] / "docs/evaluations/research-adversarial-baseline.json"
+    fixture = Path(__file__).parents[1] / "docs/evaluations" / fixture_name
     report = TypeAdapter(ResearchReport).validate_python(json.loads(fixture.read_text())["report"])
     if failed:
         report = replace(

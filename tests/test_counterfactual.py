@@ -15,7 +15,9 @@ def setup_replay(tmp_path):
     from ai_quant_os.counterfactual_results import ReplayInputs
     from ai_quant_os.backtest import BacktestCosts
 
-    report, research, strategies = archived_workspace(tmp_path)
+    report, research, strategies = archived_workspace(
+        tmp_path, fixture_name="research-adversarial-baseline-0131.json"
+    )
     candidate = build_candidate_bundle(research, strategies, report.plan.experiment_id)
     genome = candidate.manifest.selected_genome
     plan = CounterfactualPlan(

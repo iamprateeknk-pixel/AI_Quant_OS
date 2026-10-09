@@ -87,6 +87,7 @@ class _ReplayStrategy(NativeStrategy):
         self.targets = targets
         self.history: list[Bar | Tick] = []
         self.fills: list[NativeFill] = []
+        self.closed_realized: list[tuple[int, Decimal]] = []
         self.position = Decimal(0)
         self.failure: str | None = None
 
@@ -144,6 +145,18 @@ class _ReplayStrategy(NativeStrategy):
 
     def on_order_rejected(self, event):
         self.failure = "Native backtest rejected an order"
+
+    def on_position_closed(self, event):
+        amount = event.realized_pnl
+        if (
+            event.instrument_id != self.instrument.id
+            or amount.currency != self.instrument.quote_currency
+            or not amount.as_decimal().is_finite()
+            or (self.closed_realized and event.ts_closed <= self.closed_realized[-1][0])
+        ):
+            self.failure = "Native closed-position observation mismatch"
+            return
+        self.closed_realized.append((event.ts_closed, amount.as_decimal()))
 
 
 def run_nautilus_backtest(
@@ -403,6 +416,25 @@ def _execute_native_replay(
         )
         if native_position != bridge.position:
             raise ValueError("Native position/fill ledger mismatch")
+        closed_times, previous_position = [], Decimal(0)
+        for fill in bridge.fills:
+            position = previous_position + (fill.quantity if fill.side == "BUY" else -fill.quantity)
+            if previous_position and (not position or position * previous_position < 0):
+                closed_times.append(_nanoseconds(fill.observed_at))
+            previous_position = position
+        if closed_times != [stamp for stamp, _ in bridge.closed_realized]:
+            raise ValueError("Native closed-position event inventory mismatch")
+        realized = sum((amount for _, amount in bridge.closed_realized), Decimal(0)) + sum(
+            (
+                position.realized_pnl.as_decimal()
+                for position in engine.cache.positions_open()
+                if position.realized_pnl is not None
+            ),
+            Decimal(0),
+        )
+        balance = engine.cache.accounts()[0].balance_total(quote_currency).as_decimal()
+        if initial_balance + realized != balance:
+            raise ValueError("Native realized PnL/account balance mismatch")
         cash = sum(
             (-fill.price * fill.quantity if fill.side == "BUY" else fill.price * fill.quantity)
             - fill.fee
@@ -426,14 +458,7 @@ def _execute_native_replay(
             "EXACT_FILL_CASHFLOWS_PLUS_FINAL_CLOSE_MARK"
             if replay_model in ("BAR_OPEN_CLOSE_QUOTES_V1", "BAR_OPEN_CLOSE_LONG_SHORT_V1")
             else "EXACT_FILL_CASHFLOWS_PLUS_FINAL_QUOTE_MIDPOINT",
-            sum(
-                (
-                    position.realized_pnl.as_decimal()
-                    for position in engine.cache.positions()
-                    if position.realized_pnl is not None
-                ),
-                Decimal(0),
-            ),
+            realized,
         )
     finally:
         engine.dispose()

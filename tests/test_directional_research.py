@@ -317,7 +317,7 @@ def test_saved_directional_statistical_report_reproduces_and_keeps_hash(tmp_path
     payload = json.loads(
         (
             Path(__file__).parents[1]
-            / "docs/evaluations/research-directional-statistics-baseline.json"
+            / "docs/evaluations/research-directional-statistics-baseline-0131.json"
         ).read_text()
     )
     saved = TypeAdapter(ResearchReport).validate_python(payload["report"])

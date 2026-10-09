@@ -1,0 +1,132 @@
+{
+  "increment": "0131",
+  "date": "2026-10-10",
+  "base_commit": "f8149ce0d9035944e3dcd0df74b23b75897859fb",
+  "feature": "Complete native realized-position history with closed-event inventory and observed account-balance conservation",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0131",
+    "tests": 179,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "80.823",
+    "scope": [
+      "tests/test_native_realized_history.py",
+      "tests/test_native_tick_evidence.py",
+      "tests/test_nautilus_ticks.py",
+      "tests/test_nautilus_runtime.py",
+      "tests/test_nautilus_directional.py",
+      "tests/test_native_portfolio.py",
+      "tests/test_tick_data.py",
+      "tests/test_tick_archive.py",
+      "tests/test_strategy_registry.py",
+      "tests/test_directional_research.py",
+      "tests/test_counterfactual.py",
+      "tests/test_daily_evidence.py",
+      "tests/test_shadow_portfolio.py",
+      "tests/test_research_adversarial.py",
+      "tests/test_research_candidates.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 99,
+    "original_artifacts_preserved": [
+      {
+        "path": "docs/evaluations/nautilus-directional-baseline.json",
+        "sha256": "4148c1bfeed323198e11139e8f02831674a5b0afdff239adac1b55b96e8504f2",
+        "git_blob_sha256": "895a77ecd59e0ea7b22b92cf3e06bac6d88d9bd5d21b679ddba2ee9127636343"
+      },
+      {
+        "path": "docs/evaluations/research-directional-baseline.json",
+        "sha256": "021cff67183b711ccf0a7b38d142130eb2fd6edf43a652a4286caffb225c2668",
+        "git_blob_sha256": "021cff67183b711ccf0a7b38d142130eb2fd6edf43a652a4286caffb225c2668"
+      },
+      {
+        "path": "docs/evaluations/research-directional-statistics-baseline.json",
+        "sha256": "67c2aa4dad3b76d28a66ab7d491c27e2055ae4e0c121298b9c42f8342a8d0cb7",
+        "git_blob_sha256": "618455b9200ff8259f3a0094ae343e5614495c07f6ff98821ec26e86d7320890"
+      },
+      {
+        "path": "docs/evaluations/research-adversarial-baseline.json",
+        "sha256": "f96ee678401333958cb51e96d67140bf69a7267577b572c2210e0d3e44863e29",
+        "git_blob_sha256": "7fc75755010d2bae01f0596bf097d4ed263a5fb2fd41d426eb5027466ce16e2c"
+      }
+    ],
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "110ef8d1a294dde7e743643ca1bbc76e6d4041d452d647d86829f81f5ce76e7f"
+      },
+      {
+        "path": "docs/NATIVE_REALIZED_HISTORY_HANDOFF.md",
+        "sha256": "a8a0294f0b7b8681281df750a1c44548b1f69dbea0c40737b95b80e7a8a8a29a"
+      },
+      {
+        "path": "docs/NATIVE_TICK_EVIDENCE_HANDOFF.md",
+        "sha256": "43f8f68408db830856501d8dd50504be14717ab6b8cb1babc10011a1110eef50"
+      },
+      {
+        "path": "docs/adr/0131-complete-native-realized-position-history.md",
+        "sha256": "4c6d52642d9ffb4c5119e5d2a89ba1b4c9285ffaef7d1138581ed98e1e8d7d65"
+      },
+      {
+        "path": "docs/evaluations/nautilus-directional-baseline-0131.json",
+        "sha256": "6593cac45917866991216aff11da6fb72c1edfd40de9632ae559fdefd71b1290"
+      },
+      {
+        "path": "docs/evaluations/research-adversarial-baseline-0131.json",
+        "sha256": "77730a8ff19bb8ce23f4164ea5b46c7bc79510a9036673f555daa5c8729d7fd6"
+      },
+      {
+        "path": "docs/evaluations/research-directional-baseline-0131.json",
+        "sha256": "9b7b486577973442e9106bc069a9b79ae4b9b4168170624ab18f863e03aa3802"
+      },
+      {
+        "path": "docs/evaluations/research-directional-statistics-baseline-0131.json",
+        "sha256": "1ade7071769244d5fbe4f4d49a4061ceefe29d1f9a0eda2f958c82bad9083ef6"
+      },
+      {
+        "path": "src/ai_quant_os/nautilus_runtime.py",
+        "sha256": "09c38f3b5c67c31051abdd2066ace9d36fb5d3b84c904165162fb2fd37de98f3"
+      },
+      {
+        "path": "tests/test_counterfactual.py",
+        "sha256": "6d0a8ff5efe3e16842a3537330d28a63f9f2c14308771862d559893d52a0c72c"
+      },
+      {
+        "path": "tests/test_directional_research.py",
+        "sha256": "e3c10828a4a97b84dcb3e633aef4f92d0a50d27f49ed9defff026c0b4e696a9a"
+      },
+      {
+        "path": "tests/test_native_realized_history.py",
+        "sha256": "5dda6ebe8f2f729c746ca5698f9b7a828a250b89b9d2f099aa25c643f665dbb0"
+      },
+      {
+        "path": "tests/test_nautilus_directional.py",
+        "sha256": "6dda8f9fe2328474206d1129ae1db539b8aca5d587b7e06b7d71f4175e3dd1e6"
+      },
+      {
+        "path": "tests/test_research_candidates.py",
+        "sha256": "ba2bfc69772c02b570c0524b7dbdb760b65de28be8ddb5a65ae968f2ce309ac6"
+      }
+    ],
+    "junit_sha256": "8da67bb02192a92919282c89fcd300ff7c69109d1b1fce9f77cb50a114b7ece4",
+    "tdd_red": "Three actual flat/open/repeated-cycle cases failed before retained closed history; a missing native closed event returned a result before the inventory/account gate",
+    "debugging": "Pinned native closed-position cache reuse resets prior lifecycle observations. Retained closed cycles plus only currently open cache amounts avoid lost history and final closed-cycle double counting. Seven archive/current-counterfactual regressions reflected corrected observations; separate current baselines restore positive replay while an original parent still fails reproducibility. Original Windows archive bytes and Git-normalized blobs are independently preserved",
+    "review": "Local five-axis self-review: one retained observation per closure, instrument/currency/finite/time gates, exact fill-derived closure inventory, observed native account balance conservation, all bar/tick runners use shared correction, original wire/source/cash models and archive bytes preserved, original parent not auto adopted; independent native/release acceptance pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "Native realized total is currency-rounded native observation; independently reconstructed net PnL remains exact fill cash plus final mark and differs for open positions or rounding",
+    "Closed-event and account agreement does not independently reconstruct native floating-point rounding, source/process custody or strategy decisions",
+    "Correction affects all single-instrument bar/directional/tick runners; current open cache amounts supplement retained closed cycles and closed cache entries are not counted again",
+    "Corrected observations change current report bytes/hashes under unchanged schemas and fill/source/cash models; archived cache-only parents are not silently normalized or migrated",
+    "All four original physical and Git-native/research baselines remain byte-identical; four separate corrected trusted baselines are additive and current positive fixtures select them explicitly",
+    "Operational reevaluation requires new output/experiment identity and applicable admitted execution; proposed candidate source still cannot run on host and uncertain worker custody must be preserved",
+    "99 existing schemas and pinned native version remain unchanged; old archive decoding/canonical retention remains supported without certifying replay identity",
+    "Actual pinned Nautilus 1.221.0 trusted fixtures, native event faults, observed account balances, CLI/archive and diagnostic research/counterfactual regressions exercised",
+    "No broker SDK, terminal, real credentials, paid provider, promotion or live capital exercised; uncertain candidate jobs and user skill files remain untouched",
+    "Async tick portfolios, margin/liquidation, native/source accounting attestation, isolated candidate/full native acceptance, independent review and P03/P13/full-system gates remain pending",
+    "Focused regressions do not establish full-suite or phase completion"
+  ]
+}
