@@ -1,0 +1,248 @@
+"""Foreground demo observation service and bounded public health publication."""
+
+import argparse
+import json
+import os
+import signal
+import sys
+import tempfile
+from contextlib import ExitStack
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from threading import Event
+from typing import Literal
+from uuid import uuid4
+
+from pydantic import UUID4, Field, model_validator
+
+from ai_quant_os.mt5_demo_gateway import DemoObservationGateway, utc
+from ai_quant_os.mt5_demo_observation import DemoCaptureRequest, ObservationModel
+from ai_quant_os.mt5_sync_controller import DemoSyncController, SyncHealth, SyncSchedule
+from ai_quant_os.mt5_sync_projection import SyncProjectionStore
+
+MAX_CONFIG_BYTES = 32768
+MAX_HEALTH_BYTES = 16384
+PASSWORD_ENV = "AI_QUANT_MT5_PASSWORD"
+
+
+class ServiceRejected(ValueError):
+    def __init__(self, code):
+        self.code = code
+        super().__init__(code)
+
+
+class ServiceConfig(ObservationModel):
+    connection: DemoCaptureRequest
+    schedule: SyncSchedule
+    max_ticks: int = Field(default=10000, ge=1, le=10000, strict=True)
+    timer_seconds: int = Field(default=1, ge=1, le=60, strict=True)
+
+
+def _unique(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate configuration field")
+        result[key] = value
+    return result
+
+
+def load_config(path: Path, environment) -> ServiceConfig:
+    try:
+        with path.open("rb") as stream:
+            raw = stream.read(MAX_CONFIG_BYTES + 1)
+        if len(raw) > MAX_CONFIG_BYTES:
+            raise ValueError("Configuration bound exceeded")
+        values = json.loads(raw, object_pairs_hook=_unique)
+        connection = values["connection"]
+        if "password" in connection:
+            raise ValueError("Password must come from fixed environment")
+        password = environment.get(PASSWORD_ENV)
+        if connection.get("enabled") is True and not password:
+            raise ValueError("Enabled connection requires a password")
+        connection["password"] = password or "DISABLED"
+        return ServiceConfig.model_validate(values)
+    except Exception:
+        raise ServiceRejected("CONFIG_INVALID") from None
+
+
+class ServiceHealth(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    observation_kind: Literal["DEMO_SYNC_SERVICE"] = "DEMO_SYNC_SERVICE"
+    entry_point: Literal["DEMO_SYNC_SERVICE"] = "DEMO_SYNC_SERVICE"
+    run_id: UUID4
+    state: Literal["RUNNING", "STOPPED", "HALTED", "DISABLED"]
+    code: Literal["TICK_LIMIT", "SERVICE_FAILURE"] | None = None
+    ticks: int = Field(ge=0, le=10000, strict=True)
+    published_at: datetime
+    valid_until: datetime
+    health: SyncHealth | None = None
+    may_submit_orders: Literal[False] = False
+    may_affect_portfolio: Literal[False] = False
+    native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
+
+    @model_validator(mode="after")
+    def publication_window(self):
+        utc(self.published_at)
+        utc(self.valid_until)
+        if self.valid_until - self.published_at != timedelta(seconds=30):
+            raise ValueError("Invalid publication window")
+        return self
+
+
+class ServiceHealthView(ObservationModel):
+    state: Literal["AVAILABLE", "STALE", "UNAVAILABLE"]
+    record: ServiceHealth | None = None
+    may_submit_orders: Literal[False] = False
+    may_affect_portfolio: Literal[False] = False
+
+
+def publish_health(path: Path, health: ServiceHealth):
+    payload = health.model_dump_json().encode()
+    if len(payload) > MAX_HEALTH_BYTES:
+        raise ValueError("Health publication bound exceeded")
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", prefix="demo-health-", suffix=".tmp", dir=path.parent, delete=False
+        ) as stream:
+            temporary = Path(stream.name)
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
+
+
+def read_health(path: Path, *, clock=lambda: datetime.now(timezone.utc)) -> ServiceHealthView:
+    try:
+        with path.open("rb") as stream:
+            raw = stream.read(MAX_HEALTH_BYTES + 1)
+        if len(raw) > MAX_HEALTH_BYTES:
+            raise ValueError("Health bound exceeded")
+        record = ServiceHealth.model_validate(json.loads(raw, object_pairs_hook=_unique))
+        now = utc(clock())
+        if now < record.published_at:
+            raise ValueError("Future publication")
+        return ServiceHealthView(
+            state="AVAILABLE" if now < record.valid_until else "STALE", record=record
+        )
+    except Exception:
+        return ServiceHealthView(state="UNAVAILABLE")
+
+
+def run_service(
+    controller: DemoSyncController,
+    health_path: Path,
+    stop: Event,
+    *,
+    max_ticks=10000,
+    timer_seconds=1,
+    clock=lambda: datetime.now(timezone.utc),
+    wait=None,
+) -> ServiceHealth:
+    if (
+        type(max_ticks) is not int
+        or not 1 <= max_ticks <= 10000
+        or type(timer_seconds) is not int
+        or not 1 <= timer_seconds <= 60
+    ):
+        raise ServiceRejected("CONFIG_INVALID")
+    wait = wait or stop.wait
+    run_id, ticks, health = uuid4(), 0, None
+
+    def publish(state, code=None):
+        now = utc(clock())
+        record = ServiceHealth(
+            run_id=run_id,
+            state=state,
+            code=code,
+            ticks=ticks,
+            published_at=now,
+            valid_until=now + timedelta(seconds=30),
+            health=health,
+        )
+        try:
+            publish_health(health_path, record)
+        except Exception:
+            raise ServiceRejected("HEALTH_UNAVAILABLE") from None
+        return record
+
+    publish("RUNNING")
+    while not stop.is_set() and ticks < max_ticks:
+        try:
+            health = controller.tick()
+        except Exception:
+            return publish("HALTED", "SERVICE_FAILURE")
+        ticks += 1
+        if health.state in {"HALTED", "DISABLED"}:
+            return publish(health.state)
+        publish("RUNNING")
+        if ticks < max_ticks and wait(timer_seconds):
+            break
+    return publish("STOPPED", "TICK_LIMIT" if ticks >= max_ticks else None)
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Run explicitly enrolled demo account observations"
+    )
+    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--state-dir", type=Path, required=True)
+    parser.add_argument("--enable-demo-service", action="store_true")
+    args = parser.parse_args(argv)
+    stop = Event()
+    handlers = {}
+    try:
+        config = load_config(args.config, os.environ)
+        if config.schedule.enabled and config.connection.enabled:
+            if not args.enable_demo_service:
+                raise ServiceRejected("ENABLE_REQUIRED")
+            if sys.platform != "win32":
+                raise ServiceRejected("WINDOWS_REQUIRED")
+        args.state_dir.mkdir(parents=True, exist_ok=True)
+        for signum in (signal.SIGINT, signal.SIGTERM):
+            handlers[signum] = signal.signal(signum, lambda signum, frame: stop.set())
+        with ExitStack() as stack:
+            gateway = DemoObservationGateway(args.state_dir / "gateway.sqlite")
+            stack.callback(gateway.close)
+            projection = SyncProjectionStore(args.state_dir / "projection.sqlite")
+            stack.callback(projection.close)
+            controller = DemoSyncController(
+                args.state_dir / "controller.sqlite",
+                config.connection,
+                config.schedule,
+                gateway,
+                projection,
+            )
+            stack.callback(controller.close)
+            result = run_service(
+                controller,
+                args.state_dir / "health.json",
+                stop,
+                max_ticks=config.max_ticks,
+                timer_seconds=config.timer_seconds,
+            )
+        print(result.model_dump_json(), flush=True)
+        return 2 if result.state == "HALTED" else 0
+    except ServiceRejected as exc:
+        print(
+            json.dumps({"state": "HALTED", "code": exc.code, "may_submit_orders": False}),
+            flush=True,
+        )
+        return 2
+    except Exception:
+        print(
+            json.dumps({"state": "HALTED", "code": "SERVICE_FAILURE", "may_submit_orders": False}),
+            flush=True,
+        )
+        return 2
+    finally:
+        for signum, previous in handlers.items():
+            signal.signal(signum, previous)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

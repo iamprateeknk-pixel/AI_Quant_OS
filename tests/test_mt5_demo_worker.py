@@ -228,3 +228,18 @@ def test_oversize_request_is_withheld_before_launch(monkeypatch):
     monkeypatch.setattr(subprocess, "Popen", lambda *a, **k: pytest.fail("Oversize request"))
     result = module.supervise_demo(large, clock=lambda: NOW)
     assert result.code == "INVALID_REQUEST" and result.worker_custody == "NOT_STARTED"
+
+
+def test_service_password_environment_is_not_inherited_by_worker(monkeypatch):
+    module = implementation()
+    monkeypatch.setenv("AI_QUANT_MT5_PASSWORD", "fixture-service-password")
+    observed = []
+
+    def launch(*args, **kwargs):
+        observed.append(kwargs.get("env"))
+        raise OSError("fixture unavailable worker")
+
+    monkeypatch.setattr(subprocess, "Popen", launch)
+    module.supervise_demo(request())
+    assert observed and observed[0] is not None
+    assert "AI_QUANT_MT5_PASSWORD" not in observed[0]

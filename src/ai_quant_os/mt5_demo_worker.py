@@ -411,6 +411,11 @@ def _run_supervised(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             bufsize=0,
+            env={
+                key: value
+                for key, value in os.environ.items()
+                if key.upper() != "AI_QUANT_MT5_PASSWORD"
+            },
             creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
     except OSError:

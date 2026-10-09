@@ -1,0 +1,72 @@
+{
+  "increment": "0114",
+  "date": "2026-10-09",
+  "base_commit": "1c0aa7599e28c8273970fbbe7679c0a8491e2f16",
+  "feature": "Compose the demo sync controller as an explicitly enabled foreground service with bounded timer ticks and atomic public health publication",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0114",
+    "scope": [
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_broker_router.py"
+    ],
+    "tests": 164,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "5.507",
+    "tdd_red": "Ten initial service checks failed before implementation; password environment inheritance and missing public schema reproduced before their fixes",
+    "ruff": "passed",
+    "prior_schemas_unchanged": 82,
+    "source_hashes": [
+      {
+        "path": "docs/MT5_SYNC_SERVICE_HANDOFF.md",
+        "sha256": "aa7906f835ad46f740f45f569cba029c06a896b2c1ad0224a0cfbd425d1264a4"
+      },
+      {
+        "path": "docs/adr/0114-foreground-demo-sync-service.md",
+        "sha256": "7aba19ffbb5faf7800b7e9b954a3e6e193366f0265fbf04602743973cfadea4e"
+      },
+      {
+        "path": "docs/schemas/demo-sync-service-health.schema.json",
+        "sha256": "c85ddc32e87101f079c280f87623d0a4a71f92e4c4665ac044099a6d399e367c"
+      },
+      {
+        "path": "pyproject.toml",
+        "sha256": "8a857e88b968b447c3c6a4a718d5fd9d322e67cfb28d2b1bda61a553ed0d220b"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_worker.py",
+        "sha256": "3aa9dce408c1bfcb46c4b357427b8517e1549edeb71cf0203788920dc70af409"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "0652128558e68085ed1673452eb6aeca1f64ea94a603c7db7b2138fa2e70de2a"
+      },
+      {
+        "path": "tests/test_mt5_demo_worker.py",
+        "sha256": "743db653d72ea1784532e53328c695f14b15e841c70979969a43cd1e5efac22b"
+      },
+      {
+        "path": "tests/test_mt5_sync_service.py",
+        "sha256": "0a7313a2b84e1106478701f8df123365eb8fb86134d868d440be1efb9bdf8ebe"
+      }
+    ],
+    "junit_sha256": "d7eb8592824bf23c5aad431dd6a7d5033003c95a9123efc363abe472cf8d49be",
+    "secrets_scan": "passed",
+    "review": "Local five-axis self-review; independent broker/release review remains pending"
+  },
+  "limits": [
+    "Fixture SDK and real disabled service CLI only; no terminal, real credentials or external broker used",
+    "Foreground service composes the controller and fixed worker/gateway/projection; no Windows service installation, API route or broker routing integration",
+    "Completed receipt replay and unfinished reservation blocking survive restart; orphan child and terminal custody remain unverified",
+    "No order submission, portfolio mutation, native attestation or live authorization",
+    "Native P04 acceptance, operational enrollment/service manager deployment, health API/UI composition, explicit halted recovery, correction attestation, lifecycle reconciliation, orphan custody and external order idempotency remain open",
+    "Focused increment verification does not establish full-system or P13 acceptance"
+  ]
+}
