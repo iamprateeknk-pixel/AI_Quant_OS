@@ -4,6 +4,16 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Broker capability registry view
+
+- Connected the protected five-profile registry to Brokers with separate simulator,
+  demo-observation and unsupported native execution states and friendly interfaces.
+- Validated complete profile/operation vocabulary, denied native authority and
+  policy consistency; frontend fixture is checked against the actual backend API.
+- Browser interaction acceptance and native broker/eligibility/release acceptance
+  remain pending. See `BROKER_CAPABILITY_UI_HANDOFF.md` and ADR 0117.
+  All P00–P13 remain incomplete.
+
 ## Broker capability and eligibility increment
 
 - Added five declared implementation profiles, strict local-simulation eligibility,

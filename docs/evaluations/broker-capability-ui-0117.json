@@ -1,0 +1,92 @@
+{
+  "increment": "0117",
+  "date": "2026-10-09",
+  "base_commit": "d8e6098bafc4ef46da98a4b6f532dae2668099e0",
+  "feature": "Connect the protected declared broker registry to Mission Control with validated simulator/demo/skeleton and eligibility metadata",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0117-final",
+    "backend_scope": [
+      "tests/test_broker_capability_api.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_api.py::test_broker_read_model_reports_only_simulated_paper_route"
+    ],
+    "backend_tests": 11,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "4.327",
+    "frontend": {
+      "scope": "apps/web/tests/*.test.mjs",
+      "tests": 62,
+      "failures": 0,
+      "next_production_build": "passed",
+      "scoped_eslint": "passed",
+      "identity": "working tree matches staged source hashes",
+      "browser_acceptance": "pending; prior launch blocked by policy, no alternate launch attempted"
+    },
+    "ruff": "passed",
+    "tdd_red": "Absent capability parser/server reader/panel reproduced before implementation; missing paper mappings label reproduced before correction",
+    "fixture_contract": "Exact JSON value agreement with the actual default protected capability API response",
+    "prior_schemas_unchanged": 85,
+    "source_hashes": [
+      {
+        "path": "apps/web/src/app/[section]/page.tsx",
+        "sha256": "968a815bda9a377d528610704b8e9eccb4d8707b47f3a5a328b6d3b058b7d5da"
+      },
+      {
+        "path": "apps/web/src/features/brokers/capabilities.ts",
+        "sha256": "ed121c9b9bb28f2846825320b1ea2d311835795f2d135f2452460e387d83d120"
+      },
+      {
+        "path": "apps/web/src/features/brokers/capability-panel.tsx",
+        "sha256": "b92bf8bc922dd5cdcf88d7ef816b0c73c4c8faa8033462dc5cb4ce1de8534dbd"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/server.ts",
+        "sha256": "0198f577270d98d9f66876968743f9e4531ec620f04c6db1ef01f3255c695f8b"
+      },
+      {
+        "path": "apps/web/tests/broker-capabilities.test.mjs",
+        "sha256": "b735a67f376944386dd0226cc91820ae9c0971f94ff0593c473150a18a08c7c0"
+      },
+      {
+        "path": "apps/web/tests/broker-capability-panel.test.mjs",
+        "sha256": "d1bcca575a54e7574cf82e4a33537869f5baedec5df44f4e519bf8897a833f95"
+      },
+      {
+        "path": "apps/web/tests/broker-capability-server.test.mjs",
+        "sha256": "e9f96b98d40ae6c38c29ecd76e7452f8a51c39fe823f2f3bc2d427d6ec142557"
+      },
+      {
+        "path": "apps/web/tests/fixtures/broker-capabilities.json",
+        "sha256": "131f1a0f23df5ed09f9ee42d5d6c4812c4288ccedc15f349b51fb334ac73d633"
+      },
+      {
+        "path": "docs/BROKER_CAPABILITY_UI_HANDOFF.md",
+        "sha256": "12a7f557a037b453d64cae478eb3568a451fda69c5ace1eedfe0d41fec7918c1"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "716d0506babd571766de6dfb9f0a384696b44b97129cfed1eb8249c1af48dcc3"
+      },
+      {
+        "path": "docs/adr/0117-broker-capability-registry-view.md",
+        "sha256": "6113fb8d1348d14888f3207c6d294b0672652d2d5c74f3faac8b994bd91c11e0"
+      },
+      {
+        "path": "tests/test_broker_capability_api.py",
+        "sha256": "cbc46cdade08951275d3280fcc8102c6c70556119f44fc753df7ce9d48cee302"
+      }
+    ],
+    "junit_sha256": "b1ae93e246ae185cc6c684bec7421a047292744f2f3d803203378263e066bc71",
+    "secrets_scan": "passed",
+    "review": "Local five-axis self-review; independent native broker/release review remains pending"
+  },
+  "limits": [
+    "Fetched declared-interface snapshot; no runtime native connectivity or legal compliance attestation",
+    "No credentials/enrollment/order controls or native SDK/terminal/broker calls introduced",
+    "Native execution remains unreleased and alternate execution adapters remain unsupported skeletons",
+    "Browser layout/focus/responsiveness, operational broker evidence and independent critical acceptance remain pending",
+    "Full native lifecycle/history reconciliation, order idempotency, explicit halted/orphan recovery and release gates remain unfinished",
+    "Focused API/UI verification does not establish full-system or P04/P12/P13 acceptance"
+  ]
+}

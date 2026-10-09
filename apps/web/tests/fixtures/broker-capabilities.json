@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "registry_kind": "DECLARED_LOCAL_IMPLEMENTATIONS",
+  "brokers": [
+    {
+      "broker_id": "PAPER",
+      "profile_version": "0.1.0",
+      "implementation": "PAPER_SIMULATOR",
+      "operations": [
+        "SIMULATED_ORDER_PLACE",
+        "SIMULATED_ORDER_LOOKUP",
+        "SIMULATED_FILLS_READ",
+        "SIMULATED_FILL_REPORT"
+      ],
+      "source_module": "ai_quant_os.broker",
+      "bound_to_execution_router": true,
+      "instruments": [
+        "EURJPY",
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY"
+      ],
+      "eligible": true,
+      "compliance_scope": "LOCAL_SIMULATION_ONLY",
+      "paper_admission_policy_allows": true,
+      "live_execution_released": false,
+      "native_acceptance": "NOT_APPLICABLE"
+    },
+    {
+      "broker_id": "EXNESS_MT5_DEMO",
+      "profile_version": "0.1.0",
+      "implementation": "DEMO_OBSERVATION_LIBRARY",
+      "operations": [
+        "QUOTE_READ",
+        "ACCOUNT_READ",
+        "POSITIONS_READ",
+        "ACTIVE_ORDERS_READ",
+        "DEALS_READ"
+      ],
+      "source_module": "ai_quant_os.mt5_sync_service",
+      "bound_to_execution_router": false,
+      "instruments": [],
+      "eligible": false,
+      "compliance_scope": "UNVERIFIED",
+      "paper_admission_policy_allows": false,
+      "live_execution_released": false,
+      "native_acceptance": "UNVERIFIED"
+    },
+    {
+      "broker_id": "EXNESS",
+      "profile_version": "0.1.0",
+      "implementation": "DISABLED_SKELETON",
+      "operations": [],
+      "source_module": "ai_quant_os.broker_skeletons",
+      "bound_to_execution_router": false,
+      "instruments": [],
+      "eligible": false,
+      "compliance_scope": "UNVERIFIED",
+      "paper_admission_policy_allows": false,
+      "live_execution_released": false,
+      "native_acceptance": "UNVERIFIED"
+    },
+    {
+      "broker_id": "IBKR",
+      "profile_version": "0.1.0",
+      "implementation": "DISABLED_SKELETON",
+      "operations": [],
+      "source_module": "ai_quant_os.broker_skeletons",
+      "bound_to_execution_router": false,
+      "instruments": [],
+      "eligible": false,
+      "compliance_scope": "UNVERIFIED",
+      "paper_admission_policy_allows": false,
+      "live_execution_released": false,
+      "native_acceptance": "UNVERIFIED"
+    },
+    {
+      "broker_id": "ZERODHA",
+      "profile_version": "0.1.0",
+      "implementation": "DISABLED_SKELETON",
+      "operations": [],
+      "source_module": "ai_quant_os.broker_skeletons",
+      "bound_to_execution_router": false,
+      "instruments": [],
+      "eligible": false,
+      "compliance_scope": "UNVERIFIED",
+      "paper_admission_policy_allows": false,
+      "live_execution_released": false,
+      "native_acceptance": "UNVERIFIED"
+    }
+  ],
+  "live_execution_released": false,
+  "may_affect_portfolio": false
+}

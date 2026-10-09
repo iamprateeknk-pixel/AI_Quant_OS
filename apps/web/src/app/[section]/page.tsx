@@ -4,11 +4,12 @@ import { sectionDetails, type SectionKey } from "@/lib/navigation";
 import { WorldStatePanel } from "@/features/world-state/world-state-panel";
 import { AuditIntegrityPanel } from "@/features/audit/audit-integrity-panel";
 import { OperatorConsole } from "@/features/operator-session/operator-console";
-import { readDemoSyncHealth, readSessions, readCallBudget, readDossiers, readGenomes, readHealth, readStrategies, sessionStatus } from "@/features/operator-session/server";
+import { readBrokerCapabilities, readDemoSyncHealth, readSessions, readCallBudget, readDossiers, readGenomes, readHealth, readStrategies, sessionStatus } from "@/features/operator-session/server";
 import { publicSession } from "@/features/operator-session/boundary";
 import { InstrumentPositionsPanel } from "@/features/portfolio/instrument-positions-panel";
 import { CurrencyExposurePanel } from "@/features/portfolio/currency-exposure-panel";
 import { AgentRegistryPanel } from "@/features/agents/registry-panel";
+import { BrokerCapabilityPanel } from "@/features/brokers/capability-panel";
 import { DemoSyncPanel } from "@/features/brokers/demo-sync-panel";
 import { HealthPanel } from "@/features/health/health-panel";
 import { GenomePanel } from "@/features/evolution/genome-panel";
@@ -32,7 +33,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
   const orders = section === "orders" ? await getOrders() : null;
   const fills = section === "orders" ? await getFills() : null;
   const audit = section === "audit" ? await getAudit() : null;
-  const brokerReads = section === "brokers" ? await Promise.all([getBrokers(), readDemoSyncHealth()]) : null;
+  const brokerReads = section === "brokers" ? await Promise.all([getBrokers(), readDemoSyncHealth(), readBrokerCapabilities()]) : null;
   const brokers = brokerReads?.[0] ?? null;
   const query = section === "incidents" || section === "research" || section === "evolution" || section === "strategies" ? await searchParams : {};
   const offset = query.offset === undefined ? 0 : typeof query.offset === "string" && /^\d{1,4}$/.test(query.offset) ? Number(query.offset) : -1;
@@ -47,6 +48,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
     <div className="page-heading"><div><p className="eyebrow">Mission Control</p><h1>{title}</h1><p>{description}</p></div><span className="mode-tag">PAPER ENVIRONMENT</span></div>
     {section === "world-state" && <WorldStatePanel />}
     {section === "agents" && <AgentRegistryPanel />}
+    {brokerReads && <BrokerCapabilityPanel result={brokerReads[2]} observedAt={new Date().toISOString()} />}
     {brokerReads && <DemoSyncPanel result={brokerReads[1]} observedAt={new Date().toISOString()} />}
     {health && <HealthPanel statusResult={health[0]} timelineResult={health[1]} observedAt={new Date().toISOString()} />}
     {genomes && <GenomePanel result={genomes} />}

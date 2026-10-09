@@ -65,3 +65,16 @@ def test_native_adapter_enablement_does_not_change_capability_release_policy():
     assert item.bound_to_execution_router is True
     assert item.eligible is False and item.paper_admission_policy_allows is False
     assert item.live_execution_released is False
+
+
+def test_frontend_fixture_matches_actual_default_api_contract():
+    fixture = json.loads(
+        (
+            Path(__file__).resolve().parents[1] / "apps/web/tests/fixtures/broker-capabilities.json"
+        ).read_text(encoding="utf-8")
+    )
+    with TestClient(create_app(operator_token="operator", clock=lambda: NOW)) as client:
+        actual = client.get(
+            "/api/v1/brokers/capabilities", headers={"X-Operator-Token": "operator"}
+        ).json()
+    assert fixture == actual
