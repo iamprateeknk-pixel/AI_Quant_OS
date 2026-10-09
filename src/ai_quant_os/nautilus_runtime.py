@@ -22,6 +22,7 @@ from ai_quant_os.market_data import Bar, BarDataset
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
 from ai_quant_os.tick_data import Tick, TickDataset
 from ai_quant_os.tick_strategy import TickStrategy
+from ai_quant_os.native_tick_evidence import canonical_tick_source, verify_native_tick_result
 
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -314,34 +315,13 @@ def run_nautilus_tick_backtest(
     initial_balance: Decimal = Decimal(100000),
 ) -> NautilusResult:
     with localcontext(Context(prec=28)):
-        if not 1 <= len(dataset.ticks) <= 1_000_000:
-            raise ValueError("Native replay requires 1..1000000 ticks")
-        identifiers = {tick.instrument_id for tick in dataset.ticks}
-        if len(identifiers) != 1:
-            raise ValueError("Native tick replay requires one instrument")
-        if len({tick.source_id for tick in dataset.ticks}) != 1:
-            raise ValueError("Native tick replay requires one source")
-        if costs.slippage_bps:
-            raise ValueError("Recorded tick replay requires zero synthetic slippage")
+        dataset, source_metadata = canonical_tick_source(dataset, quantity, costs)
         metadata, precision, increment, quote_currency, instrument = _prepare_instrument(
-            next(iter(identifiers)), costs, strategy_ref, quantity, initial_balance
+            source_metadata.instrument_id, costs, strategy_ref, quantity, initial_balance
         )
         ticks, phases = [], {}
-        previous = -1
         for row in dataset.ticks:
             timestamp = _nanoseconds(row.observed_at)
-            if timestamp <= previous:
-                raise ValueError("Recorded tick timestamps must be strictly increasing")
-            previous = timestamp
-            if any(price.quantize(increment) != price for price in (row.bid, row.ask)):
-                raise ValueError("Source price exceeds instrument precision")
-            if any(
-                size != size.to_integral_value() or size > 1_000_000
-                for size in (row.bid_size, row.ask_size)
-            ):
-                raise ValueError("Recorded size requires integer units up to 1000000")
-            if min(row.bid_size, row.ask_size) < 2 * quantity:
-                raise ValueError("Recorded liquidity cannot cover a complete target reversal")
             ticks.append(
                 QuoteTick(
                     instrument.id,
@@ -355,7 +335,7 @@ def run_nautilus_tick_backtest(
             )
             phases[timestamp] = ("TICK", row)
         final = dataset.ticks[-1]
-        return _execute_native_replay(
+        result = _execute_native_replay(
             instrument,
             metadata,
             quote_currency,
@@ -371,6 +351,8 @@ def run_nautilus_tick_backtest(
             "RECORDED_QUOTE_TICKS_V1",
             (-1, 0, 1),
         )
+        verify_native_tick_result(result, dataset, quantity, costs, strategy_ref=strategy_ref)
+        return result
 
 
 def _execute_native_replay(

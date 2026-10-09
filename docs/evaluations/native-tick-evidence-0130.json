@@ -1,0 +1,70 @@
+{
+  "increment": "0130",
+  "date": "2026-10-10",
+  "base_commit": "a84f971e152afecb2a43ee5959cc6f7ef179d917",
+  "feature": "Source-bound recorded-tick fill/cash verification before native backtest return or CLI export",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0130",
+    "tests": 98,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "22.259",
+    "scope": [
+      "tests/test_native_tick_evidence.py",
+      "tests/test_nautilus_ticks.py",
+      "tests/test_nautilus_runtime.py",
+      "tests/test_nautilus_directional.py",
+      "tests/test_native_portfolio.py",
+      "tests/test_tick_data.py",
+      "tests/test_tick_archive.py",
+      "tests/test_strategy_registry.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 99,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "01315587d4db8ec8d98b70e1a4dbc260e74fe8a0895c4bfb7e65ae009420beb2"
+      },
+      {
+        "path": "docs/NATIVE_TICK_EVIDENCE_HANDOFF.md",
+        "sha256": "a2325bba9422df0ac6d66e255a15253fd853fae5db017dfd5faeeda67406fce8"
+      },
+      {
+        "path": "docs/adr/0130-source-bound-native-tick-fill-verification.md",
+        "sha256": "b4a34cf4aa0b448bd2671ab364e104baf7b571d702301eef6c4950d4e6708cec"
+      },
+      {
+        "path": "src/ai_quant_os/native_tick_evidence.py",
+        "sha256": "dd96641861df25ce77ab1f24b23f63a04e2647ee97eb2cafa0b3dac5373eab07"
+      },
+      {
+        "path": "src/ai_quant_os/nautilus_runtime.py",
+        "sha256": "a113b05040b33f920ae03fb22bf459420eac442823a87ebe88542fc124b3b621"
+      },
+      {
+        "path": "tests/test_native_tick_evidence.py",
+        "sha256": "221c9a46cd3826365a66c4118aac3c81d002bfa52fa51210a69a44ca04556d73"
+      }
+    ],
+    "junit_sha256": "c1c120b75314a322d83bbb036aa00d80f894165c33d4dafad620b0cfea5fc5a3",
+    "tdd_red": "19 initial missing-verifier and real native price-alteration/duplicate-admission checks failed before implementation; sub-cent source-policy fee refusal reproduced before correction",
+    "review": "Local five-axis self-review: shared bounded source gate/snapshot before engine construction, no SDK or strategy execution in evidence module, exact original quote/time/currency/fee binding, full target and one-event fill rules, finite retained arithmetic/private decimal context, original model/pin/schema compatibility, actual native callback fault and CLI/archive regression evidence; independent native/release acceptance pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "Verifier proves retained fill/source/cash consistency, not strategy target correctness, absent-trade completeness, native custody or trading eligibility",
+    "Engine realized P&L is checked only for finite representation; independent realized accounting and strategy decisions require native replay evidence",
+    "Single-instrument recorded quotes, complete target fills, one decision per event, fixed quote-currency fees and zero synthetic slippage remain the model",
+    "Duplicate source rows are now refused instead of silently normalized; existing unique valid records remain compatible",
+    "Normal callback replacement of the caller dataset cannot change captured source binding; hostile in-process object tampering is not a confinement certificate",
+    "Exact Decimal28 reconstruction rejects inexact evidence instead of rounding it into agreement",
+    "99 existing wire schemas and existing result models/native pin remain unchanged",
+    "Actual pinned Nautilus 1.221.0 trusted fixtures, existing archive and CLI exercised; no proposed candidate code imported/compiled/executed on host",
+    "Multi-instrument asynchronous tick portfolios, margin/liquidation, source/runtime attestation, isolated candidate/full-native acceptance, independent review and all P13/full-system gates remain pending",
+    "No SDK, terminal, real credentials, paid provider, remote promotion or live capital used; preserved uncertain candidate jobs and user skill files remain untouched",
+    "Focused native regression evidence does not establish full-suite or P03/P13 completion"
+  ]
+}
