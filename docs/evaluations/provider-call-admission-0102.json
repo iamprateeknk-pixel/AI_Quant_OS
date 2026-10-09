@@ -1,0 +1,90 @@
+{
+  "increment": "0102",
+  "date": "2026-10-09",
+  "base_commit": "5688771",
+  "feature": "Server-declared legacy provider call admission",
+  "verification": {
+    "trusted_fresh_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0102",
+    "tests": [
+      {
+        "path": "tests/test_provider_call_admission.py"
+      },
+      {
+        "path": "tests/test_jev_adapter.py"
+      },
+      {
+        "path": "tests/test_openai_reviewer.py"
+      },
+      {
+        "path": "tests/test_decision_gateway.py"
+      },
+      {
+        "path": "tests/test_deep_review.py"
+      },
+      {
+        "path": "tests/test_agent_call_budgets.py"
+      },
+      {
+        "path": "tests/test_context_call_budgets.py"
+      },
+      {
+        "path": "tests/test_operator_sessions.py"
+      },
+      {
+        "path": "tests/test_health_api.py"
+      },
+      {
+        "path": "tests/test_agent_registry.py"
+      }
+    ],
+    "passed": 228,
+    "failed": 0,
+    "duration_seconds": 22.68,
+    "prior_schemas_unchanged": 71,
+    "new_feature_test_cases": 16,
+    "ruff": "root check passed",
+    "red_before_implementation": "Three missing-module failures; API unexpected classification_owner failure",
+    "documentation_overlay": "ADR was added to fresh checkout after tests; no tested source changed"
+  },
+  "source_fingerprints": [
+    {
+      "path": ".env.example",
+      "sha256": "d244f45d794989275fc7df9b5d87dccae72eed4c8008f03a814fd0df185e3cf9"
+    },
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "b0fb2dc69ce1e9742258750b735861c3f8cd85d4a33fd01e2c3e51f78334a757"
+    },
+    {
+      "path": "docs/PROVIDER_CALL_ADMISSION_HANDOFF.md",
+      "sha256": "31c50a83f241e0801c321b2cf044a3004edf0ddfdcb65c23e40cbc4aa0282ae4"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "08b57b1ab2e6023a78e7ce30334acd87b7454b509e1279578d7138da40225854"
+    },
+    {
+      "path": "src/ai_quant_os/provider_call_admission.py",
+      "sha256": "953a29468642bce2d7a024f3e779817024f83a60650ad776668d08223137a85e"
+    },
+    {
+      "path": "tests/test_provider_call_admission.py",
+      "sha256": "a6084fc46e7b4bcbe64ccf126157d6563bdf5103e7f5a0ece2cf2ee9ab36bef0"
+    },
+    {
+      "path": "docs/adr/0102-legacy-provider-call-admission.md",
+      "sha256": "66130e3773510b60426f7972a9a3b576b78d51ace8612a091885f7a7d9f7642f"
+    }
+  ],
+  "limits": {
+    "full_scope_complete": false,
+    "release_gates_complete": false,
+    "paid_or_live_calls": false,
+    "token_budget_enforced": false,
+    "monetary_budget_enforced": false,
+    "browser_acceptance": "pending; prior preview launch rejected",
+    "standalone_adapters_admitted": false,
+    "counter_basis": "RESERVED_ROUTINE_LOGICAL_PROVIDER_ATTEMPTS; not physical HTTP or billable usage",
+    "remaining": "All P00-P13 open; token/monetary settlement, recovery spending and full cost governance pending"
+  }
+}

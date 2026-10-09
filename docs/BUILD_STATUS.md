@@ -4,6 +4,19 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Legacy provider call admission increment
+
+- Connected both optional API classification and deep-review providers to the
+  durable role quota using explicit server ownership. Unowned enforced quotas,
+  quarantine and unavailable archives withhold dispatch; failed or cancelled
+  admitted attempts remain charged. Versions/routes share graph/context limits.
+- Bound source fingerprints and parent review decisions, repeated permission and
+  expiry checks, and retained quantitative fallback and paper emergency controls.
+  Public status explicitly reports no token or monetary enforcement.
+- Direct standalone adapters, token/monetary settlement, recovery spending and
+  full cost governance remain pending. See `PROVIDER_CALL_ADMISSION_HANDOFF.md`
+  and ADR 0102. All P00-P13 remain incomplete.
+
 ## A14 paper execution-drift mission increment
 
 - Added a new immutable A14 0.2.0 PARTIAL/SHADOW implementation through the real
@@ -29,7 +42,7 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
 - Concurrent input reads preserve recovery reserves. Cancellation and overall
   deadlines withhold fetches. A10 quota denial now returns admission denied rather
   than implying corrupt original validation evidence. Paper safety is independent.
-- Snapshot preparation before compilation, standalone callers, legacy provider
+- Snapshot preparation before compilation, standalone callers, direct standalone provider
   dispatch, token/monetary accounting and full cost governance remain pending.
   See `CONTEXT_CALL_BUDGET_HANDOFF.md` and ADR 0100. P00-P13 remains incomplete.
 

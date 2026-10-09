@@ -87,6 +87,13 @@ from ai_quant_os.operator_control_api import install_operator_control_routes
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
+from ai_quant_os.provider_call_admission import (
+    AdmittedClassifier,
+    AdmittedReviewer,
+    ProviderCallAdmission,
+    ProviderOwner,
+    provider_owner,
+)
 from ai_quant_os.agent_call_policy import AgentCallPolicy
 from ai_quant_os.agent_call_api import call_budget_configuration, install_agent_call_routes
 from ai_quant_os.agent_call_budgets import AgentCallBudget
@@ -253,6 +260,8 @@ def create_app(
     research_workspace: Path | None = None,
     evolution_workspace: Path | None = None,
     agent_call_policy: AgentCallPolicy | None = None,
+    classification_owner: ProviderOwner | None = None,
+    review_owner: ProviderOwner | None = None,
     drift_policy: DriftPolicy | None = None,
     daily_evidence_enabled: bool | None = None,
     temporal_recovery_enabled: bool | None = None,
@@ -283,11 +292,9 @@ def create_app(
     configured_classifier = (
         fast_classifier if fast_classifier is not None else jev_from_environment()
     )
-    decisions = DecisionGateway(primary=configured_classifier, clock=current_time)
     configured_reviewer = (
         deep_reviewer if deep_reviewer is not None else reviewer_from_environment()
     )
-    deep_reviews = DeepReviewDispatcher(reviewer=configured_reviewer, clock=current_time)
     world_state = WorldStateEngine(PAPER_INSTRUMENTS, max_quote_age_seconds=5)
     instrument_catalog = {item.instrument_id: item for item in PAPER_INSTRUMENTS}
     risk = RiskKernel(limits, currency_policy=currency_policy)
@@ -339,6 +346,30 @@ def create_app(
         else None
     )
     agent_registry = load_agent_catalog()
+    classification_admission = ProviderCallAdmission(
+        agent_registry,
+        call_budget,
+        provider_owner(classification_owner, "AI_QUANT_CLASSIFICATION_OWNER"),
+        clock=current_time,
+    )
+    review_admission = ProviderCallAdmission(
+        agent_registry,
+        call_budget,
+        provider_owner(review_owner, "AI_QUANT_REVIEW_OWNER"),
+        clock=current_time,
+    )
+    decisions = DecisionGateway(
+        primary=AdmittedClassifier(configured_classifier, classification_admission)
+        if configured_classifier is not None
+        else None,
+        clock=current_time,
+    )
+    deep_reviews = DeepReviewDispatcher(
+        reviewer=AdmittedReviewer(configured_reviewer, review_admission)
+        if configured_reviewer is not None
+        else None,
+        clock=current_time,
+    )
     research_data_catalog = ResearchEvidenceCatalog(
         configured_path.with_name(configured_path.stem + ".research-data.sqlite3")
         if configured_path
@@ -889,6 +920,8 @@ def create_app(
             "mode": "PAPER",
             "configured": configured_classifier is not None,
             "deep_review_configured": configured_reviewer is not None,
+            "classification_call_admission": classification_admission.status(),
+            "review_call_admission": review_admission.status(),
             "deep_review_provider_id": configured_reviewer.provider_id
             if configured_reviewer
             else None,
