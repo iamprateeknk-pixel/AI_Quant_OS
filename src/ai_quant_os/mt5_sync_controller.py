@@ -183,6 +183,55 @@ class SyncBackfillResult(ObservationModel):
     native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
 
 
+class SyncWindowReductionRequest(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    action: Literal["REDUCE_FAILED_HISTORY_WINDOW"] = "REDUCE_FAILED_HISTORY_WINDOW"
+    expected_revision: int = Field(ge=1, le=MAX_TRANSITIONS, strict=True)
+    prior_attempt_id: UUID4
+    attempt_id: UUID4
+    window_seconds: int = Field(ge=1, le=86400, strict=True)
+
+    @model_validator(mode="after")
+    def different_attempt(self):
+        if self.prior_attempt_id == self.attempt_id:
+            raise ValueError("Replacement intent must use a distinct identity")
+        return self
+
+
+class SyncWindowReductionEvidence(ObservationModel):
+    request: SyncWindowReductionRequest
+    prior_receipt_ref: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+class SyncWindowReductionResult(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    state: Literal["COMPLETED", "WITHHELD", "DISABLED"]
+    code: (
+        Literal[
+            "BUSY",
+            "STORAGE_UNAVAILABLE",
+            "STATE_CONFLICT",
+            "CLOCK_REGRESSION",
+            "CAPACITY",
+            "ATTEMPT_CONFLICT",
+            "CUSTODY_UNCERTAIN",
+            "SOURCE_FAILURE",
+            "PROJECTION_FAILURE",
+            "HISTORY_GAP",
+            "WINDOW_NOT_SMALLER",
+            "WINDOW_NO_PROGRESS",
+            "RECEIPT_INELIGIBLE",
+        ]
+        | None
+    ) = None
+    request: SyncWindowReductionRequest
+    prior_receipt_ref: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    health: SyncHealth | None = None
+    may_submit_orders: Literal[False] = False
+    may_affect_portfolio: Literal[False] = False
+    native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
+
+
 class DemoSyncController:
     """Call tick from a service timer; each call performs at most one fixed worker capture."""
 
@@ -278,6 +327,7 @@ class DemoSyncController:
                     {"policy_ref", "state", "recovery"},
                     {"policy_ref", "state", "clock_recovery"},
                     {"policy_ref", "state", "backfill"},
+                    {"policy_ref", "state", "window_reduction"},
                 )
                 or event["policy_ref"] != self._policy
             ):
@@ -351,12 +401,47 @@ class DemoSyncController:
                     or state.next_due_at != prior.next_due_at
                 ):
                     raise ValueError("Invalid backfill intent transition")
+            if "window_reduction" in event:
+                evidence = SyncWindowReductionEvidence.model_validate(event["window_reduction"])
+                reduction = evidence.request
+                if (
+                    prior is None
+                    or prior.state != "HALTED"
+                    or prior.code != "SOURCE_FAILURE"
+                    or prior.pending_attempt_id != reduction.prior_attempt_id
+                    or prior.revision != reduction.expected_revision
+                    or state.state != "ACTIVE"
+                    or state.code is not None
+                    or state.pending_attempt_id != reduction.attempt_id
+                    or state.pending_history_start != prior.pending_history_start
+                    or state.pending_history_end
+                    != prior.pending_history_start + timedelta(seconds=reduction.window_seconds)
+                    or state.pending_history_end >= prior.pending_history_end
+                    or (
+                        prior.last_history_end is not None
+                        and state.pending_history_end <= prior.last_history_end
+                    )
+                    or state.last_history_end != prior.last_history_end
+                    or state.last_success_at != prior.last_success_at
+                    or state.consecutive_failures != prior.consecutive_failures
+                    or state.next_due_at != prior.next_due_at
+                ):
+                    raise ValueError("Invalid reduced-window intent transition")
             prior = state
         if prior is None or canonical(prior.model_dump(mode="json")) != row[0][3]:
             raise ValueError("Controller differs from audit history")
         return prior
 
-    def _save(self, old, *, recovery=None, clock_recovery=None, backfill=None, **changes):
+    def _save(
+        self,
+        old,
+        *,
+        recovery=None,
+        clock_recovery=None,
+        backfill=None,
+        window_reduction=None,
+        **changes,
+    ):
         if old.revision >= MAX_TRANSITIONS:
             raise ValueError("Controller transition capacity")
         state = SyncHealth.model_validate(
@@ -373,6 +458,11 @@ class DemoSyncController:
                 "state": state.model_dump(mode="json"),
                 **({"recovery": recovery.model_dump(mode="json")} if recovery else {}),
                 **({"backfill": backfill.model_dump(mode="json")} if backfill else {}),
+                **(
+                    {"window_reduction": window_reduction.model_dump(mode="json")}
+                    if window_reduction
+                    else {}
+                ),
                 **(
                     {"clock_recovery": clock_recovery.model_dump(mode="json")}
                     if clock_recovery
@@ -580,6 +670,106 @@ class DemoSyncController:
                         observed_at=now,
                         pending_attempt_id=request.attempt_id,
                         pending_history_start=start,
+                        pending_history_end=end,
+                    )
+                    self._db.commit()
+                except Exception:
+                    return reply("STORAGE_UNAVAILABLE")
+                finally:
+                    if self._db is not None:
+                        self._db.rollback()
+            try:
+                outcome = self._capture_pending(pending)
+                return reply(
+                    code=outcome.code,
+                    health=outcome,
+                    state="COMPLETED" if outcome.state == "HEALTHY" else "WITHHELD",
+                )
+            except Exception:
+                return reply("STORAGE_UNAVAILABLE")
+        finally:
+            self._dispatch_lock.release()
+
+    def reduce_failed_window(
+        self, request: SyncWindowReductionRequest
+    ) -> SyncWindowReductionResult:
+        """Replace only a finished capacity failure with a smaller oldest window."""
+        request = SyncWindowReductionRequest.model_validate(request.model_dump())
+        now = utc(self.clock())
+        receipt_ref = None
+
+        def reply(code=None, health=None, state="WITHHELD"):
+            return SyncWindowReductionResult(
+                state=state,
+                code=code,
+                request=request,
+                health=health,
+                prior_receipt_ref=receipt_ref,
+            )
+
+        if not self.schedule.enabled or not self.connection.enabled:
+            return reply(state="DISABLED")
+        if not self._dispatch_lock.acquire(blocking=False):
+            return reply("BUSY")
+        try:
+            with self._lock:
+                try:
+                    if self._db is None:
+                        raise ValueError("Controller unavailable")
+                    self._db.execute("BEGIN IMMEDIATE")
+                    current = self._read()
+                    if (
+                        current.state != "HALTED"
+                        or current.code != "SOURCE_FAILURE"
+                        or current.pending_attempt_id != request.prior_attempt_id
+                        or current.revision != request.expected_revision
+                    ):
+                        return reply("STATE_CONFLICT", current)
+                    if now < current.observed_at:
+                        return reply("CLOCK_REGRESSION", current)
+                    if current.revision >= MAX_TRANSITIONS - 2:
+                        return reply("CAPACITY", current)
+                    end = current.pending_history_start + timedelta(seconds=request.window_seconds)
+                    if end >= current.pending_history_end:
+                        return reply("WINDOW_NOT_SMALLER", current)
+                    if current.last_history_end is not None and end <= current.last_history_end:
+                        return reply("WINDOW_NO_PROGRESS", current)
+                    custody = self.gateway.custody_status()
+                    if custody != "ALL_FINISHED":
+                        return reply(custody, current)
+                    identity = self.gateway.attempt_status(request.attempt_id)
+                    if identity != "ABSENT":
+                        return reply(
+                            "ATTEMPT_CONFLICT" if identity == "PRESENT" else identity, current
+                        )
+                    old_request = DemoSyncRequest(
+                        connection=self.connection,
+                        history_start=current.pending_history_start,
+                        history_end=current.pending_history_end,
+                    )
+                    old = self.gateway.replay_existing(old_request, request.prior_attempt_id)
+                    if (
+                        old.receipt_ref is None
+                        or old.result is None
+                        or old.result.worker_custody != "EXIT_CONFIRMED"
+                        or old.report is None
+                        or old.report.state != "WITHHELD"
+                        or old.report.code not in {"CAPACITY", "RESULT_LIMIT"}
+                    ):
+                        return reply("RECEIPT_INELIGIBLE", current)
+                    receipt_ref = old.receipt_ref
+                    if not self._projection_matches_cursor(current):
+                        return reply("PROJECTION_FAILURE", current)
+                    pending = self._save(
+                        current,
+                        window_reduction=SyncWindowReductionEvidence(
+                            request=request,
+                            prior_receipt_ref=receipt_ref,
+                        ),
+                        state="ACTIVE",
+                        code=None,
+                        observed_at=now,
+                        pending_attempt_id=request.attempt_id,
                         pending_history_end=end,
                     )
                     self._db.commit()

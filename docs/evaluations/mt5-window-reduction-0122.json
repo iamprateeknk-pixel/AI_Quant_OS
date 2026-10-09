@@ -1,0 +1,80 @@
+{
+  "increment": "0122",
+  "date": "2026-10-10",
+  "base_commit": "167c06c1e2d7caf58565802a94db905c2b745b4e",
+  "feature": "Explicit smaller oldest-window replacement of a retained confirmed-exit capacity/output-limit failure",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0122",
+    "tests": 277,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "20.083",
+    "scope": [
+      "tests/test_mt5_window_reduction.py",
+      "tests/test_mt5_history_backfill.py",
+      "tests/test_mt5_clock_recovery.py",
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 88,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "07fd55d0f63ea3fcc27c3c2fcdc72570678413b8b32a1b29a02be6bc264ef67f"
+      },
+      {
+        "path": "docs/MT5_WINDOW_REDUCTION_HANDOFF.md",
+        "sha256": "b638c580cf1024b265bb1eae348760a71e08f24385bfaa9044f874ad74c358f3"
+      },
+      {
+        "path": "docs/adr/0122-explicit-failed-history-window-reduction.md",
+        "sha256": "c04f7c46b97adf1b061c8545487212f07adec07f8838c38cebfced9bea49e696"
+      },
+      {
+        "path": "docs/schemas/demo-sync-window-reduction.schema.json",
+        "sha256": "0936cd4167b16e3961f628c02df915c4be272665af12a34439576c0a06b9c2d4"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_controller.py",
+        "sha256": "f6c1652dc170aeaa23d6cf3e7075f4cbf3f01fcba3a88a18d73a4e3bc06b9460"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "11a681343be2a433bf28ec3808f7f8d6bd3c994e858bf6335eaf8f1d168a64f6"
+      },
+      {
+        "path": "tests/test_mt5_window_reduction.py",
+        "sha256": "d7a6048f40067273e2fc6e155f7d9654a247307e76e9843b26cc4d778681de84"
+      }
+    ],
+    "junit_sha256": "5a22d7489511df016f1a5003014b2433cf2e1ac16561d46537211ab65d3ab87c",
+    "tdd_red": "Four initial checks failed before the reduction interface; CLI and wire checks failed before those surfaces. A real overlap fixture accepted a window ending before the cursor, then passed after WINDOW_NO_PROGRESS admission and replay refusal were added",
+    "review": "Local five-axis self-review: exact source-failure revision/prior UUID, distinct absent new UUID, smaller progressing same-start window, retained confirmed-exit CAPACITY/RESULT_LIMIT receipt commitment, audited replacement before one capture, original receipt retained, no automatic reduction or unknown adoption, rollback/replay validation and fixed sanitized outcomes; independent acceptance pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "Admission requires a retained eligible failure receipt with confirmed worker exit; missing/uncertain, account, SDK, clock, cleanup and invalid-data receipts are not overridden",
+    "CAPACITY or RESULT_LIMIT may have non-history causes, so a smaller window can still be withheld; there is no automatic subdivision loop or completeness claim",
+    "Original failed attempt remains in gateway and controller audit history; only a new explicit UUID/window is dispatched after durable replacement intent",
+    "Window must keep the oldest start, shorten the end and advance any existing cursor; overlap-only or regressing windows are refused",
+    "Gateway/projection inspections are local snapshots, not a distributed lease or native terminal custody attestation",
+    "One-shot CLI uses existing enrollment/original-store/ownership gates and updates no heartbeat or service timer",
+    "Existing 88 wire schemas and tables are unchanged; window_reduction audit metadata is refused by older readers, requiring journal preservation and stopped launchers on rollback",
+    "Normalized native fixtures only, including 17-deal capacity refusal and six-deal one-hour import; no actual SDK, terminal, real credentials or external broker used",
+    "Native completeness/corrections, custody resolution, checkpoint migration, installed services, independent broker review and P13 live acceptance remain pending",
+    "Focused checks do not establish full-system acceptance"
+  ]
+}

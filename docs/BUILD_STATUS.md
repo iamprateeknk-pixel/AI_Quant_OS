@@ -906,3 +906,16 @@ versions. Existing schemas are unchanged; the new backfill contract and
 older-reader audit limitation are documented. Native completeness, oversized-day
 subdivision, custody resolution, checkpoint migration, service deployment,
 independent review and P13 acceptance remain pending.
+
+
+### Increment 0122 - explicit reduction of a confirmed failed history window
+
+A halted, retained CAPACITY/RESULT_LIMIT receipt with confirmed worker exit can
+now be replaced by one explicitly requested smaller window from the same oldest
+start. The failed receipt stays retained; a distinct caller UUID and exact
+revision bind the replacement before dispatch. Windows must advance coverage
+beyond any existing cursor, preserving overlap and preventing regression.
+Unknown custody and non-capacity failures remain refused. Existing schemas and
+tables are unchanged; new audit metadata/contract and rollback limits are
+documented. Native completeness, custody, migration, deployment, independent
+review and P13 acceptance remain pending.

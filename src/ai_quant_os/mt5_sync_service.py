@@ -25,6 +25,7 @@ from ai_quant_os.mt5_sync_controller import (
     SyncRecoveryRequest,
     SyncClockRecoveryRequest,
     SyncBackfillRequest,
+    SyncWindowReductionRequest,
 )
 from ai_quant_os.mt5_sync_projection import SyncProjectionStore
 
@@ -227,20 +228,35 @@ def main(argv=None) -> int:
     actions.add_argument("--recover-pending-attempt")
     actions.add_argument("--resume-clock-halt", action="store_true")
     actions.add_argument("--backfill-history-attempt")
+    actions.add_argument("--reduce-history-attempt")
+    parser.add_argument("--prior-failed-attempt")
+    parser.add_argument("--history-window-seconds", type=int)
     parser.add_argument("--expected-revision", type=int)
     args = parser.parse_args(argv)
     stop = Event()
     handlers = {}
     try:
         recovery = None
+        if args.reduce_history_attempt is None and (
+            args.prior_failed_attempt is not None or args.history_window_seconds is not None
+        ):
+            raise ServiceRejected("RECOVERY_INVALID")
         if (
             args.recover_pending_attempt is not None
             or args.expected_revision is not None
             or args.resume_clock_halt
             or args.backfill_history_attempt is not None
+            or args.reduce_history_attempt is not None
         ):
             try:
-                if args.backfill_history_attempt is not None:
+                if args.reduce_history_attempt is not None:
+                    recovery = SyncWindowReductionRequest(
+                        expected_revision=args.expected_revision,
+                        prior_attempt_id=args.prior_failed_attempt,
+                        attempt_id=args.reduce_history_attempt,
+                        window_seconds=args.history_window_seconds,
+                    )
+                elif args.backfill_history_attempt is not None:
                     recovery = SyncBackfillRequest(
                         expected_revision=args.expected_revision,
                         attempt_id=args.backfill_history_attempt,
@@ -283,7 +299,9 @@ def main(argv=None) -> int:
             )
             stack.callback(controller.close)
             if recovery is not None:
-                if isinstance(recovery, SyncBackfillRequest):
+                if isinstance(recovery, SyncWindowReductionRequest):
+                    result = controller.reduce_failed_window(recovery)
+                elif isinstance(recovery, SyncBackfillRequest):
                     result = controller.backfill_history(recovery)
                 elif isinstance(recovery, SyncClockRecoveryRequest):
                     result = controller.recover_clock(recovery)

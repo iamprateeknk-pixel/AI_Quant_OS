@@ -1,0 +1,343 @@
+{
+  "$defs": {
+    "SyncHealth": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "observation_kind": {
+          "const": "DEMO_SYNC_HEALTH",
+          "default": "DEMO_SYNC_HEALTH",
+          "title": "Observation Kind",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "DISABLED",
+            "STARTING",
+            "ACTIVE",
+            "HEALTHY",
+            "DEGRADED",
+            "HALTED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "enum": [
+                "STORAGE_UNAVAILABLE",
+                "CLOCK_REGRESSION",
+                "HISTORY_GAP",
+                "CUSTODY_UNCERTAIN",
+                "SOURCE_FAILURE",
+                "PROJECTION_FAILURE",
+                "CAPACITY"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "revision": {
+          "default": 0,
+          "maximum": 3000,
+          "minimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "next_due_at": {
+          "format": "date-time",
+          "title": "Next Due At",
+          "type": "string"
+        },
+        "last_history_end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last History End"
+        },
+        "last_success_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Success At"
+        },
+        "consecutive_failures": {
+          "default": 0,
+          "maximum": 3000,
+          "minimum": 0,
+          "title": "Consecutive Failures",
+          "type": "integer"
+        },
+        "pending_attempt_id": {
+          "anyOf": [
+            {
+              "format": "uuid4",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pending Attempt Id"
+        },
+        "pending_history_start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pending History Start"
+        },
+        "pending_history_end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pending History End"
+        },
+        "may_submit_orders": {
+          "const": false,
+          "default": false,
+          "title": "May Submit Orders",
+          "type": "boolean"
+        },
+        "may_affect_portfolio": {
+          "const": false,
+          "default": false,
+          "title": "May Affect Portfolio",
+          "type": "boolean"
+        },
+        "native_attestation": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Native Attestation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "observed_at",
+        "next_due_at"
+      ],
+      "title": "SyncHealth",
+      "type": "object"
+    },
+    "SyncWindowReductionEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "request": {
+          "$ref": "#/$defs/SyncWindowReductionRequest"
+        },
+        "prior_receipt_ref": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Prior Receipt Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request",
+        "prior_receipt_ref"
+      ],
+      "title": "SyncWindowReductionEvidence",
+      "type": "object"
+    },
+    "SyncWindowReductionRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "action": {
+          "const": "REDUCE_FAILED_HISTORY_WINDOW",
+          "default": "REDUCE_FAILED_HISTORY_WINDOW",
+          "title": "Action",
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 3000,
+          "minimum": 1,
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "prior_attempt_id": {
+          "format": "uuid4",
+          "title": "Prior Attempt Id",
+          "type": "string"
+        },
+        "attempt_id": {
+          "format": "uuid4",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "window_seconds": {
+          "maximum": 86400,
+          "minimum": 1,
+          "title": "Window Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "expected_revision",
+        "prior_attempt_id",
+        "attempt_id",
+        "window_seconds"
+      ],
+      "title": "SyncWindowReductionRequest",
+      "type": "object"
+    },
+    "SyncWindowReductionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "COMPLETED",
+            "WITHHELD",
+            "DISABLED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "enum": [
+                "BUSY",
+                "STORAGE_UNAVAILABLE",
+                "STATE_CONFLICT",
+                "CLOCK_REGRESSION",
+                "CAPACITY",
+                "ATTEMPT_CONFLICT",
+                "CUSTODY_UNCERTAIN",
+                "SOURCE_FAILURE",
+                "PROJECTION_FAILURE",
+                "HISTORY_GAP",
+                "WINDOW_NOT_SMALLER",
+                "WINDOW_NO_PROGRESS",
+                "RECEIPT_INELIGIBLE"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "request": {
+          "$ref": "#/$defs/SyncWindowReductionRequest"
+        },
+        "prior_receipt_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prior Receipt Ref"
+        },
+        "health": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SyncHealth"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "may_submit_orders": {
+          "const": false,
+          "default": false,
+          "title": "May Submit Orders",
+          "type": "boolean"
+        },
+        "may_affect_portfolio": {
+          "const": false,
+          "default": false,
+          "title": "May Affect Portfolio",
+          "type": "boolean"
+        },
+        "native_attestation": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Native Attestation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "request"
+      ],
+      "title": "SyncWindowReductionResult",
+      "type": "object"
+    }
+  },
+  "anyOf": [
+    {
+      "$ref": "#/$defs/SyncWindowReductionRequest"
+    },
+    {
+      "$ref": "#/$defs/SyncWindowReductionResult"
+    },
+    {
+      "$ref": "#/$defs/SyncWindowReductionEvidence"
+    }
+  ]
+}
