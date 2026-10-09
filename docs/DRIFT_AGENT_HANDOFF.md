@@ -3,8 +3,9 @@
 A14 version 0.2.0 is now PARTIAL/SHADOW in the real context and graph runtime.
 Its original 0.1.0 manifest remains PLANNED. The existing protected paper agent
 context/execute/archive/resume routes serve it; execution creates no orders or
-demotion decisions. The A01 supervisor's six-specialist dispatch set is unchanged;
-A14 remains explicitly deferred as unsupported by that particular wake plan.
+demotion decisions. A01 0.2.0 preserves its six-specialist dispatch and defers A14. Increment 0103
+adds A01 0.3.0 with actual A14 child context/graph supervision; see
+SUPERVISOR_DRIFT_HANDOFF.md.
 
 ## Observations and comparison
 
@@ -70,6 +71,6 @@ health events. Evidence is recorded in `evaluations/drift-agent-0101.json`.
 Confidence is zero, uncertainty one and escalation mandatory. Actual live/shadow
 results and predictions are unconnected. Signal/regime/sizing/data causal analysis,
 statistical/held-out detection, calibration, approved baselines, scheduled monitoring,
-A01 integration, demotion recommendations/workflows, independent review and all
+Broader A01 task routing, demotion recommendations/workflows, independent review and all
 promotion/live gates remain pending. P00-P13 remains incomplete. No paid provider,
 live broker, candidate execution or automatic trading control was used.

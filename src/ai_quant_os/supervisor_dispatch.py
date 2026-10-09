@@ -7,12 +7,28 @@ import sqlite3
 from ai_quant_os.agent_context import CompiledContext
 from ai_quant_os.agent_registry import AgentRegistry, ToolInvocation
 from ai_quant_os.graph_runtime import GraphRuntime
+from ai_quant_os.graph_ledger import GraphReceipt
 from ai_quant_os.supervisor_agent import (
     SpecialistCall,
     child_run_id,
     read_supervisor_context,
     wake_plan,
 )
+
+
+def dispatch_contract(version: str):
+    if version == "0.3.0":
+        from ai_quant_os.supervisor_drift import (
+            read_context,
+            wake_plan as drift_wake_plan,
+            child_run_id as drift_child_id,
+            DriftSpecialistCall,
+        )
+
+        return read_context, drift_wake_plan, drift_child_id, DriftSpecialistCall
+    if version == "0.2.0":
+        return read_supervisor_context, wake_plan, child_run_id, SpecialistCall
+    raise PermissionError("Unsupported supervisor dispatch version")
 
 
 class SupervisorDispatch:
@@ -24,15 +40,17 @@ class SupervisorDispatch:
         context: Callable[[str], CompiledContext],
         compile_child: Callable[[str, str], Awaitable[CompiledContext]],
         admission: Callable[[], Awaitable[None]],
+        observe: Callable[[GraphReceipt], Awaitable[None]] | None = None,
     ):
         self._registry, self._runtime, self._context = registry, runtime, context
         self._compile_child, self._admission = compile_child, admission
+        self._observe = observe
         self._locks: dict[str, asyncio.Lock] = {}
 
     def _parent(self, invocation: ToolInvocation) -> CompiledContext:
-        if (invocation.agent_id, invocation.agent_version, invocation.scope, invocation.tool) != (
+        read_context, _, _, _ = dispatch_contract(invocation.agent_version)
+        if (invocation.agent_id, invocation.scope, invocation.tool) != (
             "A01",
-            "0.2.0",
             "PAPER",
             "TASK_ORCHESTRATE",
         ) or invocation.payload:
@@ -43,8 +61,12 @@ class SupervisorDispatch:
         if (parent.context_ref, parent.task_id) != (invocation.context_ref, invocation.task_id):
             raise PermissionError("Supervisor parent context binding mismatch")
         self._runtime().require_context(parent)
-        self._registry.require_tool("A01", "0.2.0", "TASK_ORCHESTRATE", scope="PAPER")
-        read_supervisor_context(parent)
+        if parent.agent_version != invocation.agent_version:
+            raise PermissionError("Supervisor parent version mismatch")
+        self._registry.require_tool(
+            "A01", invocation.agent_version, "TASK_ORCHESTRATE", scope="PAPER"
+        )
+        read_context(parent)
         return parent
 
     async def __call__(self, invocation: ToolInvocation) -> dict[str, object]:
@@ -55,12 +77,13 @@ class SupervisorDispatch:
             self._locks[parent.context_ref] = asyncio.Lock()
         async with self._locks[parent.context_ref]:
             self._parent(invocation)
-            selected, _ = wake_plan(read_supervisor_context(parent))
+            read_context, plan, child_id, call_type = dispatch_contract(parent.agent_version)
+            selected, _ = plan(read_context(parent))
             calls = []
             for target in selected:
                 await self._admission()
                 self._parent(invocation)
-                run_id = child_run_id(parent.context_ref, target.agent_id)
+                run_id = child_id(parent.context_ref, target.agent_id)
                 common = {**target.model_dump(), "run_id": run_id}
                 current = self._registry.get(target.agent_id, target.agent_version)
                 if (
@@ -68,7 +91,7 @@ class SupervisorDispatch:
                     or self._registry.lifecycle(target.agent_id, target.agent_version)
                     == "QUARANTINED"
                 ):
-                    calls.append(SpecialistCall(**common, status="NOT_STARTED_PERMISSION"))
+                    calls.append(call_type(**common, status="NOT_STARTED_PERMISSION"))
                     continue
                 runtime = self._runtime()
                 try:
@@ -88,10 +111,10 @@ class SupervisorDispatch:
                     try:
                         child = await self._compile_child(target.agent_id, parent.task_id)
                     except PermissionError:
-                        calls.append(SpecialistCall(**common, status="NOT_STARTED_PERMISSION"))
+                        calls.append(call_type(**common, status="NOT_STARTED_PERMISSION"))
                         continue
                     except (ValueError, OSError, sqlite3.Error):
-                        calls.append(SpecialistCall(**common, status="NOT_STARTED_SOURCE"))
+                        calls.append(call_type(**common, status="NOT_STARTED_SOURCE"))
                         continue
                     self._parent(invocation)
                     if (
@@ -109,5 +132,7 @@ class SupervisorDispatch:
                     ):
                         raise ValueError("Supervisor child context identity mismatch")
                     receipt = await runtime.run(run_id, child)
-                calls.append(SpecialistCall.from_receipt(receipt))
+                if self._observe is not None:
+                    await self._observe(receipt)
+                calls.append(call_type.from_receipt(receipt))
             return {"calls": [row.model_dump(mode="json") for row in calls]}

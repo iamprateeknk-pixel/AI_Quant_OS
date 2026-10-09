@@ -29,6 +29,7 @@ from ai_quant_os.incident_sources import (
 from ai_quant_os.incident_proposal_store import IncidentProposalStore
 from ai_quant_os.incident_proposal_api import IncidentPropose, install_incident_proposal_routes
 from ai_quant_os.supervisor_agent import supervisor_implementation
+from ai_quant_os.supervisor_drift import supervisor_drift_implementation
 from ai_quant_os.supervisor_dispatch import SupervisorDispatch
 from ai_quant_os.supervisor_sources import (
     SUPERVISOR_INPUT_BYTES,
@@ -464,6 +465,7 @@ def create_app(
                 registry=agent_registry,
                 implementations={
                     ("A01", "0.2.0"): supervisor_implementation(agent_registry),
+                    ("A01", "0.3.0"): supervisor_drift_implementation(agent_registry),
                     ("A02", "0.2.0"): regime_implementation(agent_registry),
                     ("A03", "0.2.0"): macro_implementation(agent_registry),
                     ("A04", "0.2.0"): currency_strength_implementation(agent_registry),
@@ -498,6 +500,7 @@ def create_app(
                             context=archived_agent_context,
                             compile_child=compile_supervisor_child,
                             admission=supervisor_admission,
+                            observe=observe_supervisor_child,
                         ),
                         "INCIDENT_PROPOSE": IncidentPropose(
                             incident_proposal_store,
@@ -1061,7 +1064,9 @@ def create_app(
     @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
         incident_mission = (payload.agent_id, payload.agent_version) == ("A18", "0.2.0")
-        supervisor_mission = (payload.agent_id, payload.agent_version) == ("A01", "0.2.0")
+        supervisor_mission = payload.agent_id == "A01" and payload.agent_version in (
+            "0.2.0", "0.3.0"
+        )
         event_mission = (payload.agent_id, payload.agent_version) == ("A06", "0.2.0")
         macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
         drift_mission = (payload.agent_id, payload.agent_version) == ("A14", "0.2.0")
@@ -1099,6 +1104,7 @@ def create_app(
                 sources = supervisor_sources(
                     snapshot,
                     agent_registry,
+                    version=payload.agent_version,
                     health_status="UNAVAILABLE"
                     if health is None
                     else "ERROR"
@@ -1435,6 +1441,10 @@ def create_app(
             raise ValueError("Supervisor audit admission failed")
         if health_worker is not None:
             await asyncio.to_thread(health_worker.verify_admission)
+
+    async def observe_supervisor_child(receipt) -> None:
+        if enabled_health:
+            await owned_research_call(health_worker.observe_receipt, receipt)
 
     async def compile_supervisor_child(agent_id: str, task_id: str) -> CompiledContext:
         try:

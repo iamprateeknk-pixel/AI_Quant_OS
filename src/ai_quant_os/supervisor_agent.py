@@ -175,10 +175,23 @@ async def coordinate_specialists(invocation: AgentInvocation) -> TaskPlan:
     context = invocation.context
     evidence = read_supervisor_context(context)
     selected, deferred = wake_plan(evidence)
+    return await coordinate_plan(invocation, evidence, selected, deferred)
+
+
+async def coordinate_plan(
+    invocation: AgentInvocation,
+    evidence: SupervisorEvidence,
+    selected: tuple[WakeTarget, ...],
+    deferred: tuple[DeferredTarget, ...],
+    *,
+    plan_type=TaskPlan,
+    call_type=SpecialistCall,
+) -> TaskPlan:
+    context = invocation.context
     result = await invocation.tools.call("TASK_ORCHESTRATE", {})
     if set(result) != {"calls"}:
         raise ValueError("Unexpected supervisor dispatch response")
-    calls = tuple(SpecialistCall.model_validate(row) for row in result["calls"])
+    calls = tuple(call_type.model_validate(row) for row in result["calls"])
     expiry = min(
         (context.valid_until, *(row.valid_until for row in calls if row.status == "COMPLETED"))
     )
@@ -190,7 +203,7 @@ async def coordinate_specialists(invocation: AgentInvocation) -> TaskPlan:
     contradictions.extend(
         f"{row.agent_id}_{row.status}" for row in calls if row.status != "COMPLETED"
     )
-    return TaskPlan(
+    return plan_type(
         task_id=context.task_id,
         input_refs=context.input_refs,
         evidence_refs=context.input_refs,

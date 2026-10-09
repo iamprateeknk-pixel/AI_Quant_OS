@@ -1,5 +1,9 @@
 # A01 paper specialist supervision
 
+A01 0.3.0 now adds A14 drift as a seventh child; see
+SUPERVISOR_DRIFT_HANDOFF.md. The six-child behavior described below is 0.2.0.
+Both supported versions now immediately report child receipts to enabled health monitoring.
+
 A01 0.2.0 now executes in the persistent LangGraph runtime. Its `TaskPlan`
 records the server-owned wake plan, exact specialist versions, deferred versions,
 actual child run/context identities, output hashes, typed statuses and mandatory
@@ -19,7 +23,7 @@ The default preview has commands disabled. Use the existing protected endpoints:
    child run IDs, which use that same protected archival endpoint.
 
 No new endpoint or client-controlled agent-call payload is introduced. The server
-installs one `TASK_ORCHESTRATE` handler. It accepts only A01 0.2.0 in PAPER,
+installs one `TASK_ORCHESTRATE` handler. It accepts A01 0.2.0 and 0.3.0 in PAPER,
 an empty payload and the runtime-bound parent context/task identity. Direct
 unbound calls, other versions/scopes and supplied task/agent overrides fail.
 The existing fixed role ceilings remain authoritative.

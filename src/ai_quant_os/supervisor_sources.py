@@ -106,19 +106,39 @@ class SupervisorEvidence(BaseModel):
 
 
 def supervisor_sources(
-    world: WorldState, registry: AgentRegistry, *, health_status="UNAVAILABLE", open_incidents=None
+    world: WorldState,
+    registry: AgentRegistry,
+    *,
+    health_status="UNAVAILABLE",
+    open_incidents=None,
+    version="0.2.0",
 ) -> dict[str, SourceBinding]:
+    if version == "0.3.0":
+        from ai_quant_os.supervisor_drift import (
+            DriftRegistryEvidence,
+            DriftSupervisorEvidence,
+            executable,
+        )
+
+        registry_type, evidence_type = DriftRegistryEvidence, DriftSupervisorEvidence
+    elif version == "0.2.0":
+        registry_type, evidence_type = RegistryEvidence, SupervisorEvidence
+
+        def executable(agent, version):
+            return agent in (*SPECIALISTS, "A01") and version == "0.2.0"
+    else:
+        raise ValueError("Unsupported supervisor source version")
     common = dict(as_of=world.as_of, world_state_version=world.world_state_version)
     entries = tuple(
         CatalogEntry(
             manifest=row,
             lifecycle=registry.lifecycle(row.agent_id, row.agent_version),
-            executable=row.agent_id in (*SPECIALISTS, "A01") and row.agent_version == "0.2.0",
+            executable=executable(row.agent_id, row.agent_version),
         )
         for row in registry.manifests()
     )
-    evidence = SupervisorEvidence(
-        agent_registry=RegistryEvidence(**common, entries=entries),
+    evidence = evidence_type(
+        agent_registry=registry_type(**common, entries=entries),
         world_state=MacroWorldEvidence(world=world),
         health=HealthEvidence(**common, status=health_status, open_incidents=open_incidents),
         permissions=PermissionsEvidence(

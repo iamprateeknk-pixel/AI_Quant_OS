@@ -1,0 +1,163 @@
+{
+  "increment": "0103",
+  "date": "2026-10-09",
+  "base_commit": "bab4cf3",
+  "feature": "A01 0.3.0 supervision of source-bound A14 paper drift",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0103",
+    "tests": [
+      {
+        "path": "tests/test_supervisor_drift.py"
+      },
+      {
+        "path": "tests/test_supervisor_sources.py"
+      },
+      {
+        "path": "tests/test_supervisor_agent.py"
+      },
+      {
+        "path": "tests/test_supervisor_dispatch.py"
+      },
+      {
+        "path": "tests/test_supervisor_api.py"
+      },
+      {
+        "path": "tests/test_supervisor_evaluation.py"
+      },
+      {
+        "path": "tests/test_execution_drift.py"
+      },
+      {
+        "path": "tests/test_drift_agent.py"
+      },
+      {
+        "path": "tests/test_agent_registry.py"
+      },
+      {
+        "path": "tests/test_graph_runtime.py"
+      },
+      {
+        "path": "tests/test_context_call_budgets.py"
+      },
+      {
+        "path": "tests/test_agent_call_budgets.py"
+      },
+      {
+        "path": "tests/test_provider_call_admission.py"
+      },
+      {
+        "path": "tests/test_health_api.py"
+      },
+      {
+        "path": "tests/test_operator_sessions.py"
+      }
+    ],
+    "passed": 255,
+    "failed": 0,
+    "duration_seconds": 140.63,
+    "new_feature_test_cases": 17,
+    "original_supervisor_baseline": "six declared development cases, actual API graphs/restart; preserved",
+    "prior_schemas_unchanged": 71,
+    "original_TaskPlan_schema_runtime_equal": true,
+    "new_TaskPlan_schema_runtime_equal": true,
+    "ruff": "root check passed",
+    "red_before_implementation": [
+      "Unknown A01 0.3.0 agent version",
+      "Missing versioned schema export",
+      "Failed child absent from immediate health incidents when background scan dormant"
+    ]
+  },
+  "source_fingerprints": [
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "7b5904b8c139680f0a1a8ff813e9ef97f4c0678b796b305df7af239e4683dfad"
+    },
+    {
+      "path": "docs/DRIFT_AGENT_HANDOFF.md",
+      "sha256": "a2d895a3efb74d90ec419cc2efdf1ff82837493aa59db1ba29d47fad04a1fd19"
+    },
+    {
+      "path": "docs/SUPERVISOR_DRIFT_HANDOFF.md",
+      "sha256": "eefc6ad8a9cedc08a4759a4b948d4f80d600d2d85a0d686bba14fb630286809c"
+    },
+    {
+      "path": "docs/SUPERVISOR_HANDOFF.md",
+      "sha256": "84e915e22a09377543b0531b98e88f3fbafc6c4e53df128eae43465b21f5222d"
+    },
+    {
+      "path": "docs/adr/0103-versioned-a01-drift-supervision.md",
+      "sha256": "76c87685df0bf526c62824968993354863fb0668fe1079e519d9733ba3be75e0"
+    },
+    {
+      "path": "docs/schemas/task-plan-0.3.0.schema.json",
+      "sha256": "2ac39af2cbd1a3b0df91ffd5f0307a97ee90cdaf157ce49eaa90bdbe4f4a8e26"
+    },
+    {
+      "path": "src/ai_quant_os/agent_registry.py",
+      "sha256": "e4e64e7253dfff41433f7627f59fce395b8d112d7174e52aac3551f4275f8171"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "4bcb6a3f3bc0b0aafbf7e68e38cc55d878c8385f357d92a0bfc8cd9e9663bc3c"
+    },
+    {
+      "path": "src/ai_quant_os/supervisor_agent.py",
+      "sha256": "c7758d92070cfbfe07daf80d43edea8b6c326afdf3ff9fea67898a55a113c64f"
+    },
+    {
+      "path": "src/ai_quant_os/supervisor_dispatch.py",
+      "sha256": "99c930ce903525166ac3af13e8fa6a9162e3ff2be0f780eb8fd7c8c86fe50747"
+    },
+    {
+      "path": "src/ai_quant_os/supervisor_drift.py",
+      "sha256": "0af195d521cc613f33d0f9fb669255e3044f71075106dd0d9919d33176df46ac"
+    },
+    {
+      "path": "src/ai_quant_os/supervisor_sources.py",
+      "sha256": "e24e1df5330c30b14fb437fbb4e6a23a5344f0446239a039f55f34a59b9d2ef6"
+    },
+    {
+      "path": "tests/test_agent_registry.py",
+      "sha256": "cee36bfddae9d75480bda779f4fbdab3cd1b4a208f69012640e861bfa9047508"
+    },
+    {
+      "path": "tests/test_supervisor_api.py",
+      "sha256": "0b667284bb6aa0d550e4551fdf4027798c23ad854b72a7a6254876a2d5268034"
+    },
+    {
+      "path": "tests/test_supervisor_drift.py",
+      "sha256": "7655c7645e754f9661d20ab9909a805f4ac72548efb117a31a0bb0fd8554371f"
+    },
+    {
+      "path": "tests/test_supervisor_sources.py",
+      "sha256": "9f2db50623af838712ea40865b4cf5c79c2cff76b661b2871e1f56af18299c01"
+    }
+  ],
+  "observed": {
+    "manifest_versions": 31,
+    "roles": 18,
+    "partial_versions": 13,
+    "partial_roles": 12,
+    "parent_maximum_children": 7,
+    "original_parent_maximum_children": 6,
+    "actual_retained_paper_fill": "one fill/one initial-price benchmark; comparison UNASSESSED for insufficient samples",
+    "source_corruption": "NOT_STARTED_SOURCE with no child output hash",
+    "zero_A14_quota": "WAIT_FOR_DATA with no mission invocation",
+    "before_after_quarantine": "deferred / NOT_STARTED_PERMISSION",
+    "child_failure": "FAILED/TIMEOUT, mandatory parent escalation; immediate enabled-health incident/quarantine verified for FAILED",
+    "deadline": "parent EXPIRED before A14 source capture",
+    "retry": "original child receipts reused without another A14 context charge"
+  },
+  "limits": {
+    "all_P00_P13_complete": false,
+    "live_release_gates_complete": false,
+    "paid_provider_or_external_broker_calls": false,
+    "candidate_or_proposed_source_execution": false,
+    "full_suite_release_acceptance": false,
+    "browser_acceptance": "pending from earlier rejected preview launch",
+    "calibration": "UNAVAILABLE",
+    "capital_authority": false,
+    "promotion_approved": false,
+    "remaining": "dynamic task routing, full specialist missions/reputation/calibration, causal live/shadow attribution, demotion workflows, full cost governance and independent acceptance"
+  }
+}
