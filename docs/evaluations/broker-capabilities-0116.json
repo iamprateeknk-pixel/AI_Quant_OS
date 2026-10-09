@@ -1,0 +1,86 @@
+{
+  "increment": "0116",
+  "date": "2026-10-09",
+  "base_commit": "2fa2e49c6b80c3a6a348e334efb8da267da46bb0",
+  "feature": "Declare broker capability profiles, disabled native skeletons and immutable local simulation eligibility; close external routing and duplicate identity gaps",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0116-final",
+    "scope": [
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py",
+      "tests/test_api.py",
+      "tests/test_trading_path.py",
+      "tests/test_paper_recovery.py",
+      "tests/test_execution_attribution.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py::test_child_environments_keep_operator_secret_only_on_backend",
+      "tests/test_local_runtime.py::test_custom_web_port_sets_the_exact_operator_origin"
+    ],
+    "tests": 144,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "12.004",
+    "tdd_red": "Enabled external routing and duplicate IDs failed expected rejection; absent eligibility/skeleton/registry contracts, non-boolean readiness and disabled direct simulator placement reproduced before fixes",
+    "ruff": "passed",
+    "prior_schemas_unchanged": 84,
+    "source_hashes": [
+      {
+        "path": "docs/BROKER_CAPABILITY_HANDOFF.md",
+        "sha256": "54cb6888e56fa8947503717f5197c508a62274947b5f3b06596444584e70a756"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "7ef20b6f185cbf3ea68df6eb2d0e09f322fdca134603e38425d2e017afca3215"
+      },
+      {
+        "path": "docs/adr/0116-declared-broker-capabilities-and-eligibility.md",
+        "sha256": "7c5b8345c7744bbce10a598028a5d1739b86215ca4d64acf33fbe28f468e4f21"
+      },
+      {
+        "path": "docs/schemas/broker-capability-registry.schema.json",
+        "sha256": "a8153e7e3d014fda2e9eedd3694c051e6216096a3d746b029f71d71f82f10aac"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "5bcef433ce7715b694b90e2d2e3b98af20bdd82f979815e48173b8c41126c1df"
+      },
+      {
+        "path": "src/ai_quant_os/broker.py",
+        "sha256": "19e22733493e9d1c5196c65f03c9c7b4a725ef5a25060a924349aabc43353be5"
+      },
+      {
+        "path": "src/ai_quant_os/broker_capabilities.py",
+        "sha256": "3e5fab13084dc10a1f4451ef832cc47be56f12e4582f33c5104eed221b7b4681"
+      },
+      {
+        "path": "src/ai_quant_os/broker_capability_api.py",
+        "sha256": "dbdf30e7388cdab5ed3747c3ef18e8b7222014f6022801d56e33a6a1b27bdfe5"
+      },
+      {
+        "path": "src/ai_quant_os/broker_skeletons.py",
+        "sha256": "c789342d53f3fd58953d0ed06fd84115142de771410d5be50b0d47243c07091f"
+      },
+      {
+        "path": "tests/test_broker_capabilities.py",
+        "sha256": "8b772d63be0a3a01f932c9481af8d199a5e99aebbfc384d6897f5b64a87f8778"
+      },
+      {
+        "path": "tests/test_broker_capability_api.py",
+        "sha256": "ba7950aa734410e6b172314eeaba80b60bcaa74ba02b984db087e50575ddbd0b"
+      }
+    ],
+    "junit_sha256": "b6d3520a18ce778186198c80e88ff7dd3159296026b7ba747cb6b6143810a2a7",
+    "secrets_scan": "passed",
+    "review": "Local five-axis self-review; independent critical broker/release review pending"
+  },
+  "limits": [
+    "Declared local interfaces do not attest vendor/native capability, account eligibility or legal compliance",
+    "Native skeleton methods are unsupported; no SDK, credentials, terminal or real broker used",
+    "Paper default values and existing serialized contracts are retained; all external execution remains unreleased",
+    "Registry dashboard integration, operational eligibility evidence, native lifecycle/idempotency and independent acceptance remain pending",
+    "Observation synchronization, explicit halted/orphan recovery and full native history reconciliation remain incomplete",
+    "Focused verification does not establish full-system or P04/P13 acceptance"
+  ]
+}

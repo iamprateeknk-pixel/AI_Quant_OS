@@ -1,0 +1,158 @@
+{
+  "$defs": {
+    "BrokerCapability": {
+      "additionalProperties": false,
+      "properties": {
+        "broker_id": {
+          "enum": [
+            "PAPER",
+            "EXNESS_MT5_DEMO",
+            "EXNESS",
+            "IBKR",
+            "ZERODHA"
+          ],
+          "title": "Broker Id",
+          "type": "string"
+        },
+        "profile_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Profile Version",
+          "type": "string"
+        },
+        "implementation": {
+          "enum": [
+            "PAPER_SIMULATOR",
+            "DEMO_OBSERVATION_LIBRARY",
+            "DISABLED_SKELETON"
+          ],
+          "title": "Implementation",
+          "type": "string"
+        },
+        "operations": {
+          "items": {
+            "enum": [
+              "SIMULATED_ORDER_PLACE",
+              "SIMULATED_ORDER_LOOKUP",
+              "SIMULATED_FILLS_READ",
+              "SIMULATED_FILL_REPORT",
+              "QUOTE_READ",
+              "ACCOUNT_READ",
+              "POSITIONS_READ",
+              "ACTIVE_ORDERS_READ",
+              "DEALS_READ"
+            ],
+            "type": "string"
+          },
+          "maxItems": 9,
+          "title": "Operations",
+          "type": "array"
+        },
+        "source_module": {
+          "maxLength": 96,
+          "pattern": "^ai_quant_os\\.[a-z0-9_]+$",
+          "title": "Source Module",
+          "type": "string"
+        },
+        "bound_to_execution_router": {
+          "title": "Bound To Execution Router",
+          "type": "boolean"
+        },
+        "instruments": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Instruments",
+          "type": "array"
+        },
+        "eligible": {
+          "title": "Eligible",
+          "type": "boolean"
+        },
+        "compliance_scope": {
+          "enum": [
+            "LOCAL_SIMULATION_ONLY",
+            "UNVERIFIED",
+            "DENIED"
+          ],
+          "title": "Compliance Scope",
+          "type": "string"
+        },
+        "paper_admission_policy_allows": {
+          "title": "Paper Admission Policy Allows",
+          "type": "boolean"
+        },
+        "live_execution_released": {
+          "const": false,
+          "default": false,
+          "title": "Live Execution Released",
+          "type": "boolean"
+        },
+        "native_acceptance": {
+          "enum": [
+            "NOT_APPLICABLE",
+            "UNVERIFIED"
+          ],
+          "title": "Native Acceptance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "broker_id",
+        "implementation",
+        "operations",
+        "source_module",
+        "bound_to_execution_router",
+        "instruments",
+        "eligible",
+        "compliance_scope",
+        "paper_admission_policy_allows",
+        "native_acceptance"
+      ],
+      "title": "BrokerCapability",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "registry_kind": {
+      "const": "DECLARED_LOCAL_IMPLEMENTATIONS",
+      "default": "DECLARED_LOCAL_IMPLEMENTATIONS",
+      "title": "Registry Kind",
+      "type": "string"
+    },
+    "brokers": {
+      "items": {
+        "$ref": "#/$defs/BrokerCapability"
+      },
+      "maxItems": 5,
+      "minItems": 5,
+      "title": "Brokers",
+      "type": "array"
+    },
+    "live_execution_released": {
+      "const": false,
+      "default": false,
+      "title": "Live Execution Released",
+      "type": "boolean"
+    },
+    "may_affect_portfolio": {
+      "const": false,
+      "default": false,
+      "title": "May Affect Portfolio",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "brokers"
+  ],
+  "title": "BrokerCapabilityRegistry",
+  "type": "object"
+}

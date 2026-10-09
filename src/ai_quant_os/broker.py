@@ -7,6 +7,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Protocol
 
+from ai_quant_os.broker_capabilities import BrokerEligibility, default_eligibility
 from ai_quant_os.contracts import OrderCommand, _require_aware
 from ai_quant_os.portfolio import PaperFill
 
@@ -244,6 +245,8 @@ class SimulatedBroker:
                     if self._connection is not None:
                         self._connection.commit()
                     return existing
+                if self.enabled is not True or self.connected is not True:
+                    raise BrokerUnavailable("Paper simulator is disabled or disconnected")
                 ack = BrokerAck(
                     self.broker_id,
                     f"{self.broker_id}:{command.order_id}",
@@ -271,15 +274,36 @@ class SimulatedBroker:
 
 
 class BrokerRouter:
-    def __init__(self, adapters: list[BrokerAdapter]) -> None:
+    def __init__(
+        self,
+        adapters: list[BrokerAdapter],
+        *,
+        eligibility: dict[str, BrokerEligibility] | None = None,
+    ) -> None:
+        if len({adapter.broker_id for adapter in adapters}) != len(adapters):
+            raise ValueError("Duplicate broker identity")
         self._adapters = {adapter.broker_id: adapter for adapter in adapters}
+        if eligibility is not None and (
+            set(eligibility) - set(self._adapters)
+            or any(not isinstance(value, BrokerEligibility) for value in eligibility.values())
+        ):
+            raise ValueError("Invalid broker eligibility binding")
+        self._eligibility = {
+            identity: default_eligibility(identity)
+            if eligibility is None
+            else eligibility.get(identity, BrokerEligibility())
+            for identity in self._adapters
+        }
+
+    def eligibility(self, broker_id: str) -> BrokerEligibility:
+        return self._eligibility.get(broker_id, BrokerEligibility())
 
     def snapshot(self) -> list[dict[str, str | bool | list[str]]]:
         return [
             {
                 "broker_id": adapter.broker_id,
-                "connection_state": "CONNECTED" if adapter.connected else "DISCONNECTED",
-                "enabled": adapter.enabled,
+                "connection_state": "CONNECTED" if adapter.connected is True else "DISCONNECTED",
+                "enabled": adapter.enabled is True,
                 "instruments": sorted(adapter.symbol_map),
             }
             for adapter in self._adapters.values()
@@ -288,9 +312,13 @@ class BrokerRouter:
     def route(self, command: OrderCommand, *, now: datetime) -> BrokerAck:
         _require_aware(now)
         adapter = self._adapters.get(command.broker_route)
-        if adapter is None or not adapter.enabled:
+        if adapter is None or adapter.enabled is not True:
             raise BrokerUnavailable("Broker route is disabled")
-        if not adapter.connected:
+        if command.broker_route != "PAPER":
+            raise BrokerUnavailable("External broker execution is not released")
+        if not self.eligibility(command.broker_route).allows_paper_orders():
+            raise BrokerUnavailable("Broker eligibility is not confirmed for local simulation")
+        if adapter.connected is not True:
             raise BrokerUnavailable("Broker is disconnected")
         if command.instrument_id not in adapter.symbol_map or command.order_type != "MARKET":
             raise BrokerUnavailable("Instrument or order type is unsupported")

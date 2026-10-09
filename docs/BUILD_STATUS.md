@@ -4,6 +4,16 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Broker capability and eligibility increment
+
+- Added five declared implementation profiles, strict local-simulation eligibility,
+  disabled Exness/IBKR/Zerodha execution skeletons and an owner-protected registry.
+- Closed enabled-external routing and duplicate broker identity gaps; native
+  execution remains unreleased regardless of adapter/local policy flags.
+- Native compliance/eligibility evidence, registry UI, actual broker lifecycle
+  acceptance and independent critical review remain pending. See
+  `BROKER_CAPABILITY_HANDOFF.md` and ADR 0116. All P00–P13 remain incomplete.
+
 ## Demo broker observation service and monitoring
 
 - Added explicit demo-only normalized account/position/order/deal observations
