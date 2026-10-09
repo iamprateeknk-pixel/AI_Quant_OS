@@ -1,0 +1,103 @@
+{
+  "increment": "0129",
+  "date": "2026-10-10",
+  "base_commit": "bfb7ba4a5bf451eb11a1e3a0e3250dba1b9b231e",
+  "feature": "Protected saved demo portfolio display with exact financial strings and original source expiry",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0129",
+    "backend_tests": 24,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "5.336",
+    "backend_scope": [
+      "tests/test_demo_portfolio_ui_contract.py",
+      "tests/test_mt5_portfolio_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_api.py::test_broker_read_model_reports_only_simulated_paper_route"
+    ],
+    "frontend": {
+      "scope": "apps/web/tests/*.test.mjs",
+      "tests": 72,
+      "failures": 0,
+      "next_production_build": "passed",
+      "scoped_eslint": "passed",
+      "identity": "Frontend working tree normalized bytes match staged and fresh-checkout source hashes",
+      "log_sha256": "89834c0b8f183a7d6bc7aca03ac08fd4fb09a7d134f7d37f4b7b58ff4aee567b",
+      "browser_acceptance": "pending; prior browser launch blocked by policy and no alternate launch attempted"
+    },
+    "ruff": "passed",
+    "format_check": "passed",
+    "fixture_contract": "Exact agreement with the actual protected API response except newly generated capture UUID and receipt commitment",
+    "prior_schemas_unchanged": 99,
+    "source_hashes": [
+      {
+        "path": "apps/web/src/app/[section]/page.tsx",
+        "sha256": "085bbec3c2b345060bb68e44f87e47b47a6cfa8b0f774dea3c9d3da72d6a4988"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/server.ts",
+        "sha256": "a3d7787319e9f78bb71993c990fb4f46fb4a6f3713bf56ca9ffb6aab4f8c4313"
+      },
+      {
+        "path": "apps/web/src/features/portfolio/demo-portfolio-panel.tsx",
+        "sha256": "60dfa3d6eb8efe9c78f45639faac4c7d2fd19804cdcca0a111fde7365a31a3a6"
+      },
+      {
+        "path": "apps/web/src/features/portfolio/demo-portfolio.ts",
+        "sha256": "d2fddcdafcbad3e297751a8c1e34eaaaa5181dd99f973c3fc25f84641177abe3"
+      },
+      {
+        "path": "apps/web/src/lib/navigation.ts",
+        "sha256": "c05797394731eb580e86d9cbaf0dd99de911d4e72eb82978caffa48acf226b79"
+      },
+      {
+        "path": "apps/web/tests/demo-portfolio-panel.test.mjs",
+        "sha256": "d4c8853f471423d0373ad8ed693a84cb5b9e7cc5d6274c1971cf697164ffc068"
+      },
+      {
+        "path": "apps/web/tests/demo-portfolio-server.test.mjs",
+        "sha256": "b84ff880a7946223b482d696435921b9a56118a68c72ce110ece40ae9de3ec15"
+      },
+      {
+        "path": "apps/web/tests/demo-portfolio.test.mjs",
+        "sha256": "16d7b3a27ccd307882c663a4774ff891850ed6f99219065838d7350fd4a37546"
+      },
+      {
+        "path": "apps/web/tests/fixtures/demo-portfolio.json",
+        "sha256": "02008840da9737a6812f8e8ef6a9b08c002b06cfe76e67fbe7556bd4fd2e58d1"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "4da360ad24f7fed35b77d22fd4b9444622e7739f26c575dc961dd30084181d68"
+      },
+      {
+        "path": "docs/DEMO_PORTFOLIO_UI_HANDOFF.md",
+        "sha256": "98ef8b3e9be483ac1dbd3ce962ef271d17c6f877b950b290b73827c7c486da2b"
+      },
+      {
+        "path": "docs/adr/0129-protected-demo-portfolio-snapshot-display.md",
+        "sha256": "6346a73812b2939ec6e0fa1d260339db7856d33fb198bb7dea87f7f63dee351d"
+      },
+      {
+        "path": "tests/test_demo_portfolio_ui_contract.py",
+        "sha256": "c443e9dd4bf3e8e043f1a640449376693eb57b0925074912663b9a770c5a0de7"
+      }
+    ],
+    "junit_sha256": "2fa9317982203039165d2b1605e4a7f2e0c4739b93655b453f01cfd70c3302cc",
+    "tdd_red": "Five missing parser/server checks and three missing rendered panel checks failed before implementation; negative-credit underflow reproduced before correction",
+    "review": "Local five-axis self-review: server-only HttpOnly owner session/fixed local source, bounded no-store request and no redirects, validated selected financial strings without rounding/arithmetic, safe native identities and duplicate/currency guards, microsecond original expiry, unavailable states without fabricated zeros, recorded values and explicit reload semantics, unchanged paper authority; independent native/release review pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "Saved local snapshot does not attest native broker connectivity, account freshness, history completeness, terminal ownership or trading eligibility",
+    "Amounts remain original validated strings; unsupported long/nonfinite/overflow/underflow decimals and unsafe JavaScript integer identities withhold the display",
+    "All account/position/order values are sequential saved observations; no cash reconciliation, FX conversion, historical unit inference, aggregate risk input or order controls are introduced",
+    "Authoritative paper portfolio/risk/OMS remains unchanged and all demo trading/capital authority is denied",
+    "Expiry is evaluated at server-render fetch time; the static page explicitly labels that time and provides a fresh document reload rather than implying continuous freshness",
+    "Credentials remain only in the existing server-side cookie/upstream header boundary; financial values require backend owner authorization, including revoked-session refusal",
+    "The actual API fixture uses trusted simulated native data; no SDK, terminal, real credentials, paid provider, remote promotion or live capital exercised",
+    "99 existing schemas and all journal formats remain unchanged",
+    "Browser layout/focus/overflow/responsiveness, native accounting/custody, installed service deployment, capacity rollover, independent review and P13/full-system acceptance remain pending",
+    "Frontend suite and focused backend checks do not establish full-system acceptance; preserved uncertain candidate jobs and user skill files were untouched"
+  ]
+}

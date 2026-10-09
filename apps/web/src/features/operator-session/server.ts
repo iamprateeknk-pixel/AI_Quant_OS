@@ -134,6 +134,10 @@ export async function readDemoSyncHealth(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/brokers/demo-sync/health");
 }
 
+export async function readDemoPortfolio(): Promise<ProtectedRead> {
+  return protectedRead("/api/v1/portfolio/demo-observation");
+}
+
 export async function readCallBudget(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/agents/call-budget");
 }

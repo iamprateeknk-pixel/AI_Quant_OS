@@ -23,7 +23,7 @@ export const sectionDetails = {
   strategies: ["Strategies", "Saved implementation versions and source fingerprints. Approval, operating lifecycle and allocation history remain pending."],
   agents: ["Agents", "Versioned roles, development coverage and lifecycle restrictions from the paper agent registry. No agent has capital authority."],
   risk: ["Risk Center", "Deterministic safety state and paper order and portfolio ceilings are shown below."],
-  portfolio: ["Paper Portfolio", "Paper positions by instrument and combined currency exposure from the backend. No account equity is inferred."],
+  portfolio: ["Portfolio", "Paper positions and currency exposure, followed by a protected saved demo account observation. Demo amounts carry no trading authority."],
   orders: ["Orders", "Paper order receipts, manual fills, and fills imported from the durable simulator. Uncertain orders require operator reconciliation."],
   research: ["Research", "Verified archived candidate outcomes, validation gates and provenance. Research evidence does not authorize promotion."],
   evolution: ["Evolution", "Saved agent genome lineage and evaluation objectives. Challengers remain unverified; promotion requires all release gates."],

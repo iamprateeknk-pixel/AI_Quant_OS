@@ -991,3 +991,7 @@ execution path remains unchanged and all external authority is denied. Original
 schemas/journals remain compatible. Frontend display, native completeness/cash,
 currency/risk integration, custody, deployment, independent review and P13 gates
 remain pending. See MT5_PORTFOLIO_OBSERVATION_HANDOFF.md and ADR 0128.
+
+## Increment 0129 — protected saved demo portfolio display
+
+Adds the read-only demo account snapshot to Portfolio with original decimal strings, source times, bounded positions/pending orders and explicit unavailable/sign-in/expired states. Owner session credentials stay server-side, all capital/order authority remains denied, and authoritative paper panels remain unchanged. Microsecond expiry uses the original lease; a document reload fetches a new protected observation. The backend fixture agrees with the actual API except changing capture UUID/receipt commitments. Native broker accounting, installed services, independent critical acceptance, browser verification and P13/full-system gates remain pending. See `DEMO_PORTFOLIO_UI_HANDOFF.md` and evaluation evidence 0129.

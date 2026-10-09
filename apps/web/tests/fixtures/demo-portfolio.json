@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "source_kind": "LOCAL_UNVERIFIED_DEMO_PORTFOLIO",
+  "configured": true,
+  "observation": {
+    "state": "AVAILABLE",
+    "publication": {
+      "schema_version": "1.0",
+      "observation_kind": "LOCAL_UNVERIFIED_DEMO_PORTFOLIO",
+      "run_id": "11111111-1111-4111-8111-111111111111",
+      "state": "OBSERVED",
+      "code": null,
+      "published_at": "2026-10-09T12:00:00Z",
+      "record": {
+        "broker_id": "EXNESS_MT5_DEMO",
+        "mode": "DEMO_OBSERVATION",
+        "source_attempt_id": "3a84b9a9-43c5-45d1-8a60-36fc74958690",
+        "source_receipt_ref": "abfddfb2b894a0f31f4371023ef343c534868d41c98aaa054d9487dfadea5f08",
+        "account_scope_ref": "126c3dc2e7dd44ad5e745c7848681a5ffeb850417ffbcf4fbe3d3c75afd86c3e",
+        "observed_at": "2026-10-09T12:00:00Z",
+        "valid_until": "2026-10-09T12:00:03Z",
+        "history_start": "2026-10-09T11:00:00Z",
+        "history_through": "2026-10-09T12:00:00Z",
+        "account": {
+          "currency": "USD",
+          "balance": "10000.0",
+          "credit": "0.0",
+          "equity": "10010.0",
+          "profit": "10.0",
+          "margin": "100.0",
+          "margin_free": "9910.0",
+          "margin_mode": "HEDGING",
+          "leverage": 100
+        },
+        "positions": [
+          {
+            "ticket": 101,
+            "identifier": 91,
+            "instrument_id": "EURUSD",
+            "venue_symbol": "EURUSDm",
+            "side": "BUY",
+            "volume_lots": "0.02",
+            "quantity_units": "2000.000",
+            "quantity_basis": "CURRENT_SYMBOL_METADATA",
+            "price_open": "1.1",
+            "price_current": "1.1001",
+            "profit": "10.0",
+            "swap": "-0.3",
+            "currency": "USD",
+            "created_at": "2026-10-09T11:58:20Z",
+            "updated_at": "2026-10-09T11:59:59Z"
+          }
+        ],
+        "orders": [
+          {
+            "ticket": 201,
+            "instrument_id": "EURUSD",
+            "venue_symbol": "EURUSDm",
+            "kind": "SELL_LIMIT",
+            "state": "PLACED",
+            "initial_lots": "0.03",
+            "remaining_lots": "0.02",
+            "price_open": "1.11",
+            "stop_limit_price": "0.0",
+            "created_at": "2026-10-09T11:59:50Z"
+          }
+        ],
+        "quantity_basis": "CURRENT_SYMBOL_METADATA",
+        "history_attestation": "UNVERIFIED",
+        "account_freshness": "UNVERIFIED",
+        "consistency": "NON_ATOMIC_SEQUENTIAL_READ",
+        "may_affect_portfolio": false,
+        "may_submit_orders": false,
+        "native_attestation": "UNVERIFIED"
+      },
+      "may_affect_portfolio": false,
+      "may_submit_orders": false,
+      "native_attestation": "UNVERIFIED"
+    },
+    "may_affect_portfolio": false,
+    "may_submit_orders": false
+  },
+  "may_submit_orders": false,
+  "may_affect_portfolio": false
+}
