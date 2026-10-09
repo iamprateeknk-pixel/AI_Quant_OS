@@ -2,6 +2,7 @@
 
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 
 from ai_quant_os.data_archive import _write_immutable
@@ -22,6 +23,10 @@ _BUILDERS = {
     "ai_quant_os.tick_strategy:TickMomentum": TickMomentum,
     "ai_quant_os.directional_strategy:DirectionalMovingAverage": DirectionalMovingAverage,
 }
+
+
+class StrategyCatalogChanged(ValueError):
+    """An observed immutable catalog changed while being read."""
 
 
 def _decode(record) -> StrategyImplementation:
@@ -70,7 +75,7 @@ class StrategyRegistry:
         ).encode()
         _write_immutable(self._path(implementation.strategy_ref), raw)
 
-    def get(self, strategy_ref: str) -> StrategyImplementation:
+    def _manifest(self, strategy_ref: str) -> tuple[StrategyImplementation, bytes]:
         path = self._path(strategy_ref)
         with path.open("rb") as source:
             raw = source.read(65537)
@@ -85,8 +90,52 @@ class StrategyRegistry:
             or implementation.fingerprint != record["sha256"]
         ):
             raise ValueError("Strategy registry fingerprint or identity mismatch")
+        return implementation, raw
+
+    def get(self, strategy_ref: str) -> StrategyImplementation:
+        implementation, _ = self._manifest(strategy_ref)
         self._read_sources(implementation)
         return implementation
+
+    def _catalog_manifests(self):
+        refs = []
+        with os.scandir(self.root) as entries:
+            for count, entry in enumerate(entries, 1):
+                if count > 2048:
+                    raise ValueError("Strategy archive directory capacity exceeded")
+                if entry.name.endswith(".json"):
+                    if entry.is_symlink() or not entry.is_file(follow_symlinks=False):
+                        raise ValueError("Strategy manifest must be a regular archive file")
+                    ref = entry.name[:-5]
+                    self._path(ref)
+                    refs.append(ref)
+        if len(refs) > 1000:
+            raise ValueError("Strategy catalog capacity exceeded")
+        rows, total = [], 0
+        for ref in sorted(refs):
+            implementation, raw = self._manifest(ref)
+            total += len(raw)
+            if total > 8388608:
+                raise ValueError("Strategy manifest inventory exceeds byte capacity")
+            rows.append((implementation, sha256(raw).hexdigest()))
+        return tuple(rows)
+
+    def catalog(self) -> tuple[str, tuple[StrategyImplementation, ...]]:
+        before = self._catalog_manifests()
+        total = 0
+        for implementation, _ in before:
+            total += sum(len(raw) for raw in self._read_sources(implementation).values())
+            if total > 33554432:
+                raise ValueError("Strategy source inventory exceeds byte capacity")
+        if before != self._catalog_manifests():
+            raise StrategyCatalogChanged("Strategy catalog changed during observation")
+        rows = tuple(implementation for implementation, _ in before)
+        head = sha256(
+            json.dumps(
+                [[row.strategy_ref, row.fingerprint] for row in rows], separators=(",", ":")
+            ).encode()
+        ).hexdigest()
+        return head, rows
 
     def _read_sources(self, implementation):
         sources = {}

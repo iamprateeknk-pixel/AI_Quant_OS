@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from ai_quant_os.research_dossier_views import ResearchDossierPage, dossier_preview
+from ai_quant_os.strategy_archive_views import StrategyArchivePage, strategy_preview
 
 
 class CandidateRegistrationInput(BaseModel):
@@ -23,6 +24,37 @@ class CandidateWithdrawalInput(BaseModel):
 
 def install_research_routes(app: FastAPI, workspace: Path | None, require_operator):
     root = workspace.resolve() if workspace is not None else None
+
+    @app.get("/api/v1/research/strategies/page", dependencies=[Depends(require_operator)])
+    def strategy_page(
+        limit: Annotated[int, Query(ge=1, le=10)] = 10,
+        offset: Annotated[int, Query(ge=0, le=1000)] = 0,
+        head: Annotated[str | None, Query(pattern=r"^[a-f0-9]{64}$")] = None,
+    ) -> StrategyArchivePage:
+        if offset and head is None:
+            raise HTTPException(422, "Continued page requires the original catalog head")
+        if root is None or not (root / "strategies").is_dir():
+            raise HTTPException(503, "Strategy archive is unavailable")
+        try:
+            from ai_quant_os.strategy_registry import StrategyCatalogChanged, StrategyRegistry
+
+            digest, rows = StrategyRegistry(root / "strategies").catalog()
+            if head is not None and head != digest:
+                raise HTTPException(409, "Strategy catalog changed; refresh the first page")
+            return StrategyArchivePage(
+                head_hash=digest,
+                total=len(rows),
+                offset=offset,
+                limit=limit,
+                next_offset=offset + limit if offset + limit < len(rows) else None,
+                strategies=tuple(strategy_preview(row) for row in rows[offset : offset + limit]),
+            )
+        except ImportError as error:
+            raise HTTPException(503, "Strategy archive dependencies are unavailable") from error
+        except StrategyCatalogChanged as error:
+            raise HTTPException(409, "Strategy catalog changed; refresh the first page") from error
+        except (ValueError, OSError) as error:
+            raise HTTPException(503, "Strategy archive verification failed") from error
 
     def store():
         if root is None:

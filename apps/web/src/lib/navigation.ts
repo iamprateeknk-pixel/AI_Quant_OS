@@ -20,7 +20,7 @@ export const sections = [
 export const sectionDetails = {
   "world-state": ["World State", "Versioned paper quote and regime evidence, currency coverage, and source freshness. Macro sources remain unconnected."],
   brokers: ["Brokers", "The paper simulator is the only enabled route. Exness remains a planned Priority-1 adapter subject to eligibility and release gates."],
-  strategies: ["Strategies", "No strategy is active. Validated candidates and allocation history will appear here."],
+  strategies: ["Strategies", "Saved implementation versions and source fingerprints. Approval, operating lifecycle and allocation history remain pending."],
   agents: ["Agents", "Versioned roles, development coverage and lifecycle restrictions from the paper agent registry. No agent has capital authority."],
   risk: ["Risk Center", "Deterministic safety state and paper order and portfolio ceilings are shown below."],
   portfolio: ["Paper Portfolio", "Paper positions by instrument and combined currency exposure from the backend. No account equity is inferred."],

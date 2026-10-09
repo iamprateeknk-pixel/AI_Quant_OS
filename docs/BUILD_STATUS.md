@@ -4,6 +4,20 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Strategy implementation archive view increment
+
+- Connected `/strategies` to protected checked implementation metadata: version,
+  inputs, defaults and source fingerprints. Registration does not imply approval,
+  activity or performance. Entire source inventories are checked before paging;
+  observed manifest changes and stale catalog fingerprints withhold rows.
+- Inventory, byte and preview bounds preserve original archive formats. The base
+  paper API and archive reads work with the optional native package absent.
+- Scoped archive/research/session checks, frontend checks, production build/types
+  and lint passed. Browser acceptance remains pending after the policy-rejected
+  preview launch. See `STRATEGY_ARCHIVE_UI_HANDOFF.md` and ADR 0097.
+- Strategy operating lifecycles, metrics, allocations, controls, A12 integration and
+  independent acceptance remain pending. P00-P13 remains incomplete.
+
 ## Evolution genome archive view increment
 
 - Connected `/evolution` to protected, bounded observations of saved agent genomes,

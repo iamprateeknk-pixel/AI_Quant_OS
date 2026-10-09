@@ -1,0 +1,183 @@
+{
+  "$defs": {
+    "ArchivedStrategy": {
+      "additionalProperties": false,
+      "properties": {
+        "strategy_ref": {
+          "maxLength": 128,
+          "pattern": "^[a-z][a-z0-9-]{0,63}@\\d+\\.\\d+\\.\\d+$",
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "implementation_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Implementation Sha256",
+          "type": "string"
+        },
+        "state": {
+          "const": "ARCHIVED_IMPLEMENTATION",
+          "default": "ARCHIVED_IMPLEMENTATION",
+          "title": "State",
+          "type": "string"
+        },
+        "parameters": {
+          "items": {
+            "$ref": "#/$defs/StrategyParameter"
+          },
+          "maxItems": 16,
+          "title": "Parameters",
+          "type": "array"
+        },
+        "source_inventory": {
+          "items": {
+            "$ref": "#/$defs/ArchivedStrategySource"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Source Inventory",
+          "type": "array"
+        },
+        "details_truncated": {
+          "title": "Details Truncated",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind",
+        "implementation_sha256",
+        "parameters",
+        "source_inventory",
+        "details_truncated"
+      ],
+      "title": "ArchivedStrategy",
+      "type": "object"
+    },
+    "ArchivedStrategySource": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 128,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArchivedStrategySource",
+      "type": "object"
+    },
+    "StrategyParameter": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z][a-z_]{0,31}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "maximum": 4096,
+          "minimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "StrategyParameter",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "head_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Head Hash",
+      "type": "string"
+    },
+    "total": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    },
+    "offset": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Offset",
+      "type": "integer"
+    },
+    "limit": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "next_offset": {
+      "anyOf": [
+        {
+          "maximum": 1000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Next Offset"
+    },
+    "strategies": {
+      "items": {
+        "$ref": "#/$defs/ArchivedStrategy"
+      },
+      "maxItems": 10,
+      "title": "Strategies",
+      "type": "array"
+    }
+  },
+  "required": [
+    "head_hash",
+    "total",
+    "offset",
+    "limit",
+    "next_offset",
+    "strategies"
+  ],
+  "title": "StrategyArchivePage",
+  "type": "object"
+}

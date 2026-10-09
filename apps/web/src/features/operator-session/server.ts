@@ -124,3 +124,8 @@ export async function readGenomes(offset = 0, head?: string): Promise<ProtectedR
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000 || (head !== undefined && !/^[a-f0-9]{64}$/.test(head)) || (offset > 0 && head === undefined)) return {ok:false,reason:"INVALID_PAGE"};
   return protectedRead(`/api/v1/evolution/genomes/page?limit=10&offset=${offset}${head ? `&head=${head}` : ""}`);
 }
+
+export async function readStrategies(offset = 0, head?: string): Promise<ProtectedRead> {
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000 || (head !== undefined && !/^[a-f0-9]{64}$/.test(head)) || (offset > 0 && head === undefined)) return {ok:false,reason:"INVALID_PAGE"};
+  return protectedRead(`/api/v1/research/strategies/page?limit=10&offset=${offset}${head ? `&head=${head}` : ""}`);
+}

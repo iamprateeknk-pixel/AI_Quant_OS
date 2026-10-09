@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-09",
+  "increment": "0097",
+  "mode": "PAPER",
+  "scope": "protected archived strategy implementation metadata",
+  "full_plan_complete": false,
+  "promotion_allowed": false,
+  "backend": {
+    "exact_staged_checkout": {
+      "passed": 45,
+      "seconds": 47.09
+    },
+    "files": [
+      "test_strategy_archive_page.py",
+      "test_strategy_registry.py",
+      "test_research_api.py",
+      "test_research_candidates.py",
+      "test_research_dossier_page.py",
+      "test_operator_sessions.py"
+    ],
+    "full_suite_run": false
+  },
+  "frontend": {
+    "workspace_checks_passed": 29,
+    "exact_staged_checks_passed": 29,
+    "workspace_production_build": "PASSED",
+    "workspace_types": "PASSED",
+    "workspace_lint": "PASSED",
+    "exact_staged_types": "PASSED",
+    "exact_staged_lint": "PASSED",
+    "fresh_production_build": "NOT_RUN"
+  },
+  "browser": {
+    "status": "NOT_RUN",
+    "reason": "Previous preview launch was rejected by execution policy; no alternate launch used",
+    "visual_acceptance": false
+  },
+  "observation": {
+    "transactional_snapshot": false,
+    "immutable_filesystem_convention": true,
+    "all_manifest_and_source_hashes_checked": true,
+    "before_after_manifest_inventory_checked": true,
+    "host_namespace_trust_required": true,
+    "source_executed_by_catalog": false,
+    "optional_native_package_absence": "VERIFIED_EMPTY_AND_REGISTERED_ARCHIVES"
+  },
+  "prior_schemas_unchanged": 68,
+  "tested_source": [
+    {
+      "path": "apps/web/src/app/[section]/page.tsx",
+      "sha256": "9f9c001391607f18b47940e3d269e915d84240c1f960df8ae040629d79db497c"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/server.ts",
+      "sha256": "daafcf411d8c339c62c48dd49d9ea748dd09f3ba70cc0faad1be889d8ab0f9b3"
+    },
+    {
+      "path": "apps/web/src/features/strategies/archive-panel.tsx",
+      "sha256": "aaa7fae49398748baddddf9d25db39c0333c774e9fdf921a95229fb549765e00"
+    },
+    {
+      "path": "apps/web/src/features/strategies/archives.ts",
+      "sha256": "e7f35a853620f1484064bdae64ee50e697aa6fbcd60a6cd70ed239ec2057d705"
+    },
+    {
+      "path": "apps/web/src/lib/navigation.ts",
+      "sha256": "bc90140dc1b4573ffb513f00e668f1c8b0f72386c51c88d88e819cd6cff8a727"
+    },
+    {
+      "path": "apps/web/tests/protected-reads.test.mjs",
+      "sha256": "f79e785f1916a614d69a42366025d741c282e95e11cb9ac0251b91efaa5b8341"
+    },
+    {
+      "path": "apps/web/tests/strategy-archives.test.mjs",
+      "sha256": "e1dcda04328ac9c43973fd39368cec4820b7488251ae383acf0cc0af0f3ffd8b"
+    },
+    {
+      "path": "docs/schemas/strategy-archive-page.schema.json",
+      "sha256": "b73badd2e2928afa3e46e7e3c6c0af69b59996cef0925923f1b50e14422fc015"
+    },
+    {
+      "path": "src/ai_quant_os/research_api.py",
+      "sha256": "c7702dd9c99740f5e96908abff54f8730d6b6c5e8991592d8a17b9a655bc1802"
+    },
+    {
+      "path": "src/ai_quant_os/strategy_archive_views.py",
+      "sha256": "9b4bf9f0278ab8c8994db4f3b8b3951aa77013b97f89238c402255212a2ddfd5"
+    },
+    {
+      "path": "src/ai_quant_os/strategy_registry.py",
+      "sha256": "24ef6172fb62cc3b7b332a9ff52a38957d473ed4069ad57d0b729ed5e0025861"
+    },
+    {
+      "path": "tests/test_research_api.py",
+      "sha256": "1579be1f8ba7181f309aaa5fc13958f00acb077c5f7f7c9ec68871faed4fb95a"
+    },
+    {
+      "path": "tests/test_strategy_archive_page.py",
+      "sha256": "691f6e4a24a3ab99fbf123a488d0d0dbc9b409eb1192f02391b8c818f71c6cb2"
+    }
+  ],
+  "remaining": [
+    "rendered browser acceptance",
+    "operating lifecycle tabs",
+    "measured metrics/reality gap",
+    "allocation history",
+    "per-strategy dossier links",
+    "audited pause/resume workflows",
+    "A12 selection integration",
+    "independent acceptance",
+    "all full-plan release gates"
+  ]
+}

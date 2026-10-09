@@ -9,7 +9,7 @@ function moduleUrl(source) {
 const boundary=moduleUrl(readFileSync(new URL('../src/features/operator-session/boundary.ts',import.meta.url),'utf8'));
 const original=readFileSync(new URL('../src/features/operator-session/server.ts',import.meta.url),'utf8');
 const source=original.replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies = () => globalThis.testCookies();').replace('import { NextResponse } from "next/server";','const NextResponse = {};').replace('from "./boundary"',`from "${boundary}"`);
-const {readHealth,readDossiers,readGenomes}=await import(moduleUrl(source));
+const {readHealth,readDossiers,readGenomes,readStrategies}=await import(moduleUrl(source));
 test('protected reads use only server session and fixed private paths',async()=>{
   const previousFetch=globalThis.fetch, previousCookies=globalThis.testCookies, previousOrigin=process.env.AI_QUANT_API_URL;
   let calls=[];
@@ -20,11 +20,12 @@ test('protected reads use only server session and fixed private paths',async()=>
     assert.deepEqual(await readGenomes(),{ok:false,reason:'SIGN_IN'});
     assert.equal(calls.length,0);
     globalThis.testCookies=()=>({get:name=>name==='ai_quant_operator'?{value:'synthetic-server-only-nonce'}:undefined});
-    for(const read of [()=>readHealth('status'),()=>readDossiers(),()=>readGenomes()]) assert.deepEqual(await read(),{ok:true,value:{observed:true}});
-    assert.deepEqual(calls.map(call=>new URL(call.url).pathname),['/api/v1/paper/health','/api/v1/research/candidates/page','/api/v1/evolution/genomes/page']);
+    for(const read of [()=>readHealth('status'),()=>readDossiers(),()=>readGenomes(),()=>readStrategies()]) assert.deepEqual(await read(),{ok:true,value:{observed:true}});
+    assert.deepEqual(calls.map(call=>new URL(call.url).pathname),['/api/v1/paper/health','/api/v1/research/candidates/page','/api/v1/evolution/genomes/page','/api/v1/research/strategies/page']);
     for(const {options} of calls) {assert.equal(options.headers['X-Operator-Session'],'synthetic-server-only-nonce');assert.equal(options.cache,'no-store');assert.equal(options.redirect,'error');assert(options.signal instanceof AbortSignal);}
     assert.deepEqual(await readGenomes(1),{ok:false,reason:'INVALID_PAGE'});
-    assert.equal(calls.length,3);
+    assert.deepEqual(await readStrategies(1),{ok:false,reason:'INVALID_PAGE'});
+    assert.equal(calls.length,4);
     for(const [status,reason] of [[401,'SIGN_IN'],[409,'CHANGED'],[503,'UNAVAILABLE']]) {
       globalThis.fetch=async()=>new Response(null,{status});
       assert.deepEqual(await readGenomes(),{ok:false,reason});
