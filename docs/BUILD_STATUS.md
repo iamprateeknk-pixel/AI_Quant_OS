@@ -930,3 +930,15 @@ no revision is invented. Inspection needs no native password or launch flag,
 while actual command admission remains unchanged. Existing schemas/events are
 unchanged. Native, custody, migration, deployment, independent, browser and P13
 acceptance remain pending.
+
+## Offline demo sync checkpoints — increment 0124
+
+The new checkpoint module/packaged command exports all three existing audited
+sync journals under a frozen SQLite writer snapshot, and restores only an
+independently pinned archive under the original policy into a new directory.
+Existing state is never overwritten. Uncertain attempts/owners and pending
+identities are retained; no native capture, timer or heartbeat is started.
+Interrupted restore publication retains an incomplete marker that blocks normal
+service launch. This supplies same-policy artifact migration; native custody,
+capacity rollover, installed deployment, independent review and P13 acceptance
+remain pending. See MT5_SYNC_CHECKPOINT_HANDOFF.md and ADR 0124.

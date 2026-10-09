@@ -1,0 +1,89 @@
+{
+  "increment": "0124",
+  "date": "2026-10-10",
+  "base_commit": "f30fc8ead2a91ce1a69ea088d3757412d605447c",
+  "feature": "Independently pinned same-policy offline export and restore of all three demo sync journals",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0124",
+    "tests": 310,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "14.374",
+    "scope": [
+      "tests/test_mt5_sync_checkpoint.py",
+      "tests/test_mt5_sync_inspection.py",
+      "tests/test_mt5_window_reduction.py",
+      "tests/test_mt5_history_backfill.py",
+      "tests/test_mt5_clock_recovery.py",
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 90,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "878042a7f3522acb9d573631c1dc4cced9f766b4496888c9e8b1c244e69e2f8a"
+      },
+      {
+        "path": "docs/MT5_SYNC_CHECKPOINT_HANDOFF.md",
+        "sha256": "9f15c68dbba4abb047a01dae7fc0f62e105717ac164f6ce3f9dce8597ff843e6"
+      },
+      {
+        "path": "docs/adr/0124-pinned-offline-demo-sync-checkpoints.md",
+        "sha256": "927e4d24d4f3f5527cf0be4cea3ca1efe0111ca2fc28119d5f7ea6ee2a0be601"
+      },
+      {
+        "path": "docs/schemas/demo-sync-checkpoint.schema.json",
+        "sha256": "3de77e44e3b4209c696f5775dc83b4f6e3f8ea05f481975a1105b9e5e2a0114f"
+      },
+      {
+        "path": "pyproject.toml",
+        "sha256": "dfb7e058dd253298ee0d4837500f7452aacc59f136b7fe865582398e9a7dd0f9"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_checkpoint.py",
+        "sha256": "8ece28382e9f05bfa1d2790d2144cbf32c8a1988aff8640a4f9d3989589252c9"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "50d32f411bd4696edc0f8a385f1c38068b1f662a018cc02fca967505fef59dad"
+      },
+      {
+        "path": "tests/test_mt5_sync_checkpoint.py",
+        "sha256": "ea343d471f50d1a60d3788ecf8d4de58359e1d7bc9bf454932875c72f30797d9"
+      }
+    ],
+    "junit_sha256": "eb5835cc2adef2ac7a00b3d70f4e43a0823105ea590fbaf4d986161cd06c0143",
+    "tdd_red": "Ten initial checks failed before the module; additive schema failed before export; interrupted-publication marker/service refusal and all-journal writer exclusion were reproduced red before their guards",
+    "debugging": "Actual Windows cleanup failure traced to sqlite3 transaction context retaining owned connections; explicit closing fixed file-handle release and all tested checkpoint paths",
+    "review": "Local five-axis self-review: existing-policy/full-audit admission, SQLite writer-frozen backup, independent whole-archive pin and bounded exact-member internal hashes, immutable existing destination refusal, retained original uncertain owners/pending identity, marker-protected incomplete publication, exclusive owned file cleanup, denied native/order/portfolio authority; independent native/release review pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "Same-policy observational journal migration only; no compaction/capacity rollover, custody resolution, event-format migration or native completeness claim",
+    "Original and restored launchers must stay stopped during migration and must not run concurrently; no cross-directory fencing lease is created",
+    "CLI exclusion and all three SQLite writer locks protect export; hostile filesystem replacement, ignored guards and directory power-loss durability are not attested",
+    "Uncertain original worker rows/owner identities and controller pending revision remain unchanged; restoring does not adopt or reconcile a process",
+    "Private normalized account/deal observations remain in the journal archive; configuration, credentials, heartbeat and service ownership lock are excluded",
+    "Each journal is bounded to 96 MiB, manifest to 32 KiB, total archive to three journal bounds plus 64 KiB; each native SQLite backup has a 20-second deadline",
+    "Hard-link publication requires a supported local filesystem; partial restored state and incomplete marker are retained on failure and never overwritten or automatically retried",
+    "The current service refuses incomplete-checkpoint markers before opening journals; older service versions require stopped launchers and must never launch partial destinations",
+    "Trusted fixtures, real SQLite/ZIP artifacts and real offline module subprocesses only; no SDK, terminal, actual credentials, external broker or live capital used",
+    "Existing 90 wire schemas and journal formats are unchanged; new checkpoint schema and packaged entry point are additive",
+    "Installed service deployment, independent broker review, native acceptance, browser acceptance and all P13 release gates remain pending",
+    "Focused checks are not full-system acceptance; preserved uncertain candidate jobs were not touched or restarted"
+  ]
+}

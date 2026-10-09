@@ -33,6 +33,7 @@ from ai_quant_os.mt5_sync_inspection import inspect_sync
 MAX_CONFIG_BYTES = 32768
 MAX_HEALTH_BYTES = 16384
 PASSWORD_ENV = "AI_QUANT_MT5_PASSWORD"
+CHECKPOINT_MARKER = "checkpoint-pending.json"
 
 
 class ServiceRejected(ValueError):
@@ -291,6 +292,8 @@ def main(argv=None) -> int:
             handlers[signum] = signal.signal(signum, lambda signum, frame: stop.set())
         with ExitStack() as stack:
             stack.enter_context(service_ownership(args.state_dir / "service-lock.sqlite"))
+            if (args.state_dir / CHECKPOINT_MARKER).exists():
+                raise ServiceRejected("CHECKPOINT_INCOMPLETE")
             gateway = DemoObservationGateway(args.state_dir / "gateway.sqlite")
             stack.callback(gateway.close)
             projection = SyncProjectionStore(args.state_dir / "projection.sqlite")
