@@ -13,8 +13,10 @@ from pydantic import UUID4, Field
 
 from ai_quant_os.audit_chain import AuditChain
 from ai_quant_os.mt5_demo_observation import DemoCaptureRequest, ObservationModel
+from ai_quant_os.mt5_account_sync import DemoSyncRequest
 from ai_quant_os.mt5_demo_worker import (
     SupervisedCapture,
+    SupervisedSync,
     confirmed_worker_exit,
     inspect_uncertain_worker,
     supervise_demo,
@@ -29,7 +31,15 @@ def canonical(value) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
 
-def request_identity(request: DemoCaptureRequest) -> str:
+def request_identity(request: DemoCaptureRequest | DemoSyncRequest) -> str:
+    if isinstance(request, DemoSyncRequest):
+        values = [
+            "ACCOUNT_SYNC",
+            request_identity(request.connection),
+            request.history_start.isoformat(),
+            request.history_end.isoformat(),
+        ]
+        return sha256(canonical(values).encode()).hexdigest()
     fields = request.model_dump(mode="json")
     fields.pop("password")
     fields["terminal_path"] = request.terminal_path
@@ -79,6 +89,17 @@ class GatewayReply(ObservationModel):
     @property
     def report(self):
         return self.result.report if self.result else None
+
+
+class SyncGatewayReply(GatewayReply):
+    observation_kind: Literal["ACCOUNT_SYNC"] = "ACCOUNT_SYNC"
+    result: SupervisedSync | None = None
+
+
+def decode_result(raw: str) -> SupervisedCapture | SupervisedSync:
+    data = json.loads(raw)
+    model = SupervisedSync if data.get("observation_kind") == "ACCOUNT_SYNC" else SupervisedCapture
+    return model.model_validate(data)
 
 
 class DemoObservationGateway:
@@ -196,7 +217,7 @@ class DemoObservationGateway:
                 if row.completed_at is None or utc(row.completed_at) < row.started_at:
                     raise ValueError("Invalid completion clock")
                 if row.result_json is not None:
-                    result = SupervisedCapture.model_validate_json(row.result_json)
+                    result = decode_result(row.result_json)
                     if result.worker_id not in (None, row.worker_id):
                         raise ValueError("Worker identity mismatch")
                     if row.state == "FINISHED" and result.worker_custody == "UNKNOWN":
@@ -263,33 +284,37 @@ class DemoObservationGateway:
         }:
             raise ValueError("Invalid worker reply code")
 
-    def _reply(self, row: AttemptRecord, request: DemoCaptureRequest) -> GatewayReply:
+    def _reply(
+        self, row: AttemptRecord, request: DemoCaptureRequest | DemoSyncRequest
+    ) -> GatewayReply:
+        reply_model = SyncGatewayReply if isinstance(request, DemoSyncRequest) else GatewayReply
         if row.state != "FINISHED":
-            return GatewayReply(
+            return reply_model(
                 state="WITHHELD", code="CUSTODY_UNCERTAIN", attempt_id=row.attempt_id
             )
-        result = SupervisedCapture.model_validate_json(row.result_json)
+        result = decode_result(row.result_json)
         if result.report is not None:
             try:
                 validate_capture(
                     result.report.model_dump_json().encode(), request, utc(self.clock())
                 )
             except Exception:
-                return GatewayReply(
-                    state="WITHHELD", code="STALE_RESULT", attempt_id=row.attempt_id
-                )
-        return GatewayReply(
+                return reply_model(state="WITHHELD", code="STALE_RESULT", attempt_id=row.attempt_id)
+        return reply_model(
             state=result.state,
             attempt_id=row.attempt_id,
             result=result,
             receipt_ref=sha256(canonical(row.model_dump(mode="json")).encode()).hexdigest(),
         )
 
-    def capture(self, request: DemoCaptureRequest, attempt_id: UUID) -> GatewayReply:
+    def capture(
+        self, request: DemoCaptureRequest | DemoSyncRequest, attempt_id: UUID
+    ) -> GatewayReply:
+        reply_model = SyncGatewayReply if isinstance(request, DemoSyncRequest) else GatewayReply
         if not isinstance(attempt_id, UUID) or attempt_id.version != 4:
             raise ValueError("Attempt identity must be UUID4")
         if not request.enabled:
-            return GatewayReply(state="DISABLED", attempt_id=attempt_id)
+            return reply_model(state="DISABLED", attempt_id=attempt_id)
         identity = request_identity(request)
         with self._lock:
             try:
@@ -301,18 +326,18 @@ class DemoObservationGateway:
                 if prior is not None:
                     self._connection.rollback()
                     if prior.request_sha256 != identity:
-                        return GatewayReply(
+                        return reply_model(
                             state="WITHHELD", code="ATTEMPT_CONFLICT", attempt_id=attempt_id
                         )
                     return self._reply(prior, request)
                 if any(r.state != "FINISHED" for r in rows.values()):
                     self._connection.rollback()
-                    return GatewayReply(
+                    return reply_model(
                         state="WITHHELD", code="CUSTODY_UNCERTAIN", attempt_id=attempt_id
                     )
                 if len(rows) >= MAX_ATTEMPTS:
                     self._connection.rollback()
-                    return GatewayReply(state="WITHHELD", code="CAPACITY", attempt_id=attempt_id)
+                    return reply_model(state="WITHHELD", code="CAPACITY", attempt_id=attempt_id)
                 row = AttemptRecord(
                     attempt_id=attempt_id,
                     owner_id=self.owner_id,
@@ -326,13 +351,15 @@ class DemoObservationGateway:
             except (sqlite3.Error, ValueError):
                 if self._connection is not None:
                     self._connection.rollback()
-                return GatewayReply(
+                return reply_model(
                     state="WITHHELD", code="STORAGE_UNAVAILABLE", attempt_id=attempt_id
                 )
         try:
             result = self.runner(request, clock=self.clock, worker_id=row.worker_id)
             if not isinstance(result, SupervisedCapture):
                 raise ValueError("Invalid worker response")
+            if isinstance(result, SupervisedSync) != isinstance(request, DemoSyncRequest):
+                raise ValueError("Wrong observation profile")
             self._validate_result_shape(result, row.worker_id)
             if result.report is not None:
                 validate_capture(
@@ -342,7 +369,7 @@ class DemoObservationGateway:
             if len(raw.encode()) > MAX_RESULT:
                 raise ValueError("Result limit")
         except Exception:
-            return GatewayReply(state="WITHHELD", code="INVALID_RESULT", attempt_id=attempt_id)
+            return reply_model(state="WITHHELD", code="INVALID_RESULT", attempt_id=attempt_id)
         with self._lock:
             try:
                 self._connection.execute("BEGIN IMMEDIATE")
@@ -361,16 +388,20 @@ class DemoObservationGateway:
             except (sqlite3.Error, ValueError, AttributeError):
                 if self._connection is not None:
                     self._connection.rollback()
-                return GatewayReply(
+                return reply_model(
                     state="WITHHELD", code="STORAGE_UNAVAILABLE", attempt_id=attempt_id
                 )
 
-    def reconcile(self, request: DemoCaptureRequest, attempt_id: UUID) -> GatewayReply:
+    def reconcile(
+        self, request: DemoCaptureRequest | DemoSyncRequest, attempt_id: UUID
+    ) -> GatewayReply:
         """Resolve only this live owner's exact retained child; never guess from a PID."""
+        reply_model = SyncGatewayReply if isinstance(request, DemoSyncRequest) else GatewayReply
+        result_model = SupervisedSync if isinstance(request, DemoSyncRequest) else SupervisedCapture
         if not isinstance(attempt_id, UUID) or attempt_id.version != 4:
             raise ValueError("Attempt identity must be UUID4")
         if not request.enabled:
-            return GatewayReply(state="DISABLED", attempt_id=attempt_id)
+            return reply_model(state="DISABLED", attempt_id=attempt_id)
         with self._lock:
             try:
                 if self._connection is None:
@@ -379,7 +410,7 @@ class DemoObservationGateway:
                 row = self._verify().get(str(attempt_id))
                 if row is None or row.request_sha256 != request_identity(request):
                     self._connection.rollback()
-                    return GatewayReply(
+                    return reply_model(
                         state="WITHHELD", code="ATTEMPT_CONFLICT", attempt_id=attempt_id
                     )
                 if row.state == "FINISHED":
@@ -387,7 +418,7 @@ class DemoObservationGateway:
                     return self._reply(row, request)
                 if row.owner_id != self.owner_id:
                     self._connection.rollback()
-                    return GatewayReply(
+                    return reply_model(
                         state="WITHHELD", code="CUSTODY_UNCERTAIN", attempt_id=attempt_id
                     )
                 if self._confirmed_exit != row.worker_id:
@@ -402,13 +433,13 @@ class DemoObservationGateway:
                         or observed.worker_custody != "EXIT_CONFIRMED"
                     ):
                         self._connection.rollback()
-                        return GatewayReply(
+                        return reply_model(
                             state="WITHHELD", code="CUSTODY_UNCERTAIN", attempt_id=attempt_id
                         )
                     # Exact child exit cannot reverse. Retain proof until its journal commit succeeds.
                     self._confirmed_exit = row.worker_id
                 # Exit proof resolves custody only; the lost native observation is not recovered.
-                result = SupervisedCapture(
+                result = result_model(
                     state="WITHHELD",
                     code="WORKER_EXIT",
                     worker_id=row.worker_id,
@@ -430,6 +461,6 @@ class DemoObservationGateway:
             except (sqlite3.Error, ValueError):
                 if self._connection is not None:
                     self._connection.rollback()
-                return GatewayReply(
+                return reply_model(
                     state="WITHHELD", code="STORAGE_UNAVAILABLE", attempt_id=attempt_id
                 )

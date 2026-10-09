@@ -147,7 +147,7 @@ def utc(value: datetime) -> datetime:
     return value
 
 
-def account_matches(request: DemoCaptureRequest, native: DemoSdk) -> None:
+def account_matches(request: DemoCaptureRequest, native: DemoSdk) -> object:
     terminal = native.terminal_info()
     account = native.account_info()
     if getattr(terminal, "connected", None) is not True:
@@ -162,6 +162,23 @@ def account_matches(request: DemoCaptureRequest, native: DemoSdk) -> None:
         or getattr(account, "currency", None) != request.expected_currency
     ):
         raise Withheld("ACCOUNT")
+    return account
+
+
+def open_demo(request: DemoCaptureRequest, native: DemoSdk) -> object:
+    if (
+        native.initialize(
+            request.terminal_path,
+            login=request.expected_login,
+            password=request.password.get_secret_value(),
+            server=request.expected_server.get_secret_value(),
+            timeout=3000,
+            portable=False,
+        )
+        is not True
+    ):
+        raise Withheld("CONNECTION")
+    return account_matches(request, native)
 
 
 def read_quote(symbol: DemoSymbol, native: DemoSdk) -> DemoQuote:
@@ -208,19 +225,7 @@ def capture_demo(
     result = DemoCaptureReport(state="WITHHELD", code="NATIVE_FAILURE")
     try:
         started = utc(clock())
-        if (
-            native.initialize(
-                request.terminal_path,
-                login=request.expected_login,
-                password=request.password.get_secret_value(),
-                server=request.expected_server.get_secret_value(),
-                timeout=3000,
-                portable=False,
-            )
-            is not True
-        ):
-            raise Withheld("CONNECTION")
-        account_matches(request, native)
+        open_demo(request, native)
         quotes = tuple(read_quote(symbol, native) for symbol in request.symbols)
         account_matches(request, native)
         ended = utc(clock())

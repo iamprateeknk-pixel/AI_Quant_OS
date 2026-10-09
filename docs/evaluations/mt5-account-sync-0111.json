@@ -1,0 +1,77 @@
+{
+  "increment": "0111",
+  "date": "2026-10-09",
+  "base_commit": "b5cfb87ef3ff7dd375b846adc70df9bf41bbfc68",
+  "feature": "Normalized demo account, position, active order, trading deal and cash observations through the fixed worker and durable journal",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0111",
+    "scope": [
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_broker_router.py"
+    ],
+    "tests": 115,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "3.591",
+    "tdd_red": "Twelve initial normalization tests failed because the implementation module was absent",
+    "ruff": "passed",
+    "prior_schemas_unchanged": 79,
+    "source_hashes": [
+      {
+        "path": "docs/MT5_ACCOUNT_SYNC_HANDOFF.md",
+        "sha256": "2fa34decec00afced8d7e9a9ae5cf6c7514c6605623bae31e7a28c694befbac1"
+      },
+      {
+        "path": "docs/adr/0111-normalized-demo-account-observations.md",
+        "sha256": "fb7e376e1a46f7726fa244bf254ada49da0b56b9fcf59f2b4189f5230031b029"
+      },
+      {
+        "path": "docs/schemas/demo-account-sync-receipt.schema.json",
+        "sha256": "51f99b6dc6105fe29d16dd9e337907dc1cfa909e31a799b0f667f71806361a07"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_account_sync.py",
+        "sha256": "22534bd3df52ef32efc891fddde1e1b49d3cf61628eecb65a403639d1b87c764"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_gateway.py",
+        "sha256": "f7b9da8a66a253525fbefd94b603766d3b58360122ffff6bfe0e43cecac7ecfb"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_observation.py",
+        "sha256": "c8ea88b9f99a8eedf6466eb07f389f7b4e941f85e1c69f756cb56e0bd15dd31f"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_worker.py",
+        "sha256": "6c7104b47626f0b56bb9f24bf382bf435cc04a831a73bab6ebdd8de60cd1d1c0"
+      },
+      {
+        "path": "tests/test_mt5_account_sync.py",
+        "sha256": "fc5d917dcfe153e6a8e0cf34a75b346a444f29a7a796bf26f130f7a48666a18e"
+      },
+      {
+        "path": "tests/test_mt5_sync_gateway.py",
+        "sha256": "57928cc1cdd0ed75a086cdd7602abd466b487a2695a129d55a7df8ee8a374bdd"
+      }
+    ],
+    "junit_sha256": "a12d2e86b7903f8300655dcc239944fa221e7bcab5e957f0ed9f68a0163d2d69",
+    "secrets_scan": "passed: staged gitleaks 8.30.1",
+    "review": "Local five-axis self-review; independent broker/release review remains pending",
+    "pytest_reported_seconds": 3.84,
+    "new_sync_checks": 32,
+    "integration_red": "Four worker/journal checks initially failed before the ACCOUNT_SYNC profile was wired",
+    "quote_schema_runtime_compatibility": "Original quote receipt schema exactly matches its runtime model"
+  },
+  "limits": [
+    "Fixture SDK only; no terminal or external broker used",
+    "Native SDK import restricted to the explicit worker; no API route or broker routing integration",
+    "Completed receipt replay and unfinished reservation blocking survive restart; orphan child and terminal custody remain unverified",
+    "No order submission, portfolio mutation, native attestation or live authorization",
+    "Native P04 acceptance, continuous/correction synchronization, orphan custody and external order idempotency remain open",
+    "Focused increment verification does not establish full-system or P13 acceptance"
+  ]
+}

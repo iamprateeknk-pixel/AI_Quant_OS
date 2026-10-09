@@ -23,8 +23,19 @@ if __name__ == "__main__" and not __package__:
 from ai_quant_os.mt5_demo_observation import (  # noqa: E402
     DemoCaptureReport,
     DemoCaptureRequest,
+    DemoSnapshot,
     ObservationModel,
     capture_demo,
+)
+from ai_quant_os.mt5_account_sync import (  # noqa: E402
+    DemoSyncRequest,
+    DemoSyncReport,
+    capture_sync,
+    account_scope,
+    event_ref,
+    ORDER_KINDS,
+    ORDER_STATES,
+    DEAL_KINDS,
 )
 
 REQUEST_LIMIT = 16 * 1024
@@ -62,12 +73,42 @@ class SupervisedCapture(ObservationModel):
     automatic_retry_allowed: Literal[False] = False
 
 
+class SupervisedSync(SupervisedCapture):
+    observation_kind: Literal["ACCOUNT_SYNC"] = "ACCOUNT_SYNC"
+    report: DemoSyncReport | None = None
+
+
+class SyncWorkerReply(WorkerReply):
+    observation_kind: Literal["ACCOUNT_SYNC"] = "ACCOUNT_SYNC"
+    report: DemoSyncReport | None = None
+
+
+class SyncWorkerRequest(ObservationModel):
+    operation: Literal["CAPTURE_DEMO_ACCOUNT"]
+    request: DemoSyncRequest
+
+
 class WorkerRequest(ObservationModel):
     operation: Literal["CAPTURE_DEMO_QUOTES"]
     request: DemoCaptureRequest
 
 
-def encode_request(request: DemoCaptureRequest) -> bytes:
+def encode_request(request: DemoCaptureRequest | DemoSyncRequest) -> bytes:
+    if isinstance(request, DemoSyncRequest):
+        connection = json.loads(encode_request(request.connection))["request"]
+        encoded = json.dumps(
+            {
+                "operation": "CAPTURE_DEMO_ACCOUNT",
+                "request": {
+                    "connection": connection,
+                    "history_start": request.history_start.isoformat(),
+                    "history_end": request.history_end.isoformat(),
+                },
+            }
+        ).encode()
+        if len(encoded) > REQUEST_LIMIT:
+            raise ValueError("Request exceeds worker input limit")
+        return encoded
     # The normal public model dump deliberately excludes private connection fields.
     fields = request.model_dump(mode="json")
     fields.update(
@@ -91,8 +132,12 @@ def unique_object(pairs):
     return result
 
 
-def validate_capture(raw: bytes, request: DemoCaptureRequest, now: datetime) -> DemoCaptureReport:
+def validate_capture(
+    raw: bytes, request: DemoCaptureRequest | DemoSyncRequest, now: datetime
+) -> DemoCaptureReport | DemoSyncReport:
     """Validate public worker facts; this is not proof of native attestation."""
+    if isinstance(request, DemoSyncRequest):
+        return validate_sync(raw, request, now)
     report = DemoCaptureReport.model_validate(json.loads(raw, object_pairs_hook=unique_object))
     if report.state == "DISABLED":
         if request.enabled or report.code != "DISABLED" or report.snapshot is not None:
@@ -119,6 +164,105 @@ def validate_capture(raw: bytes, request: DemoCaptureRequest, now: datetime) -> 
             != min(q.observed_at + timedelta(seconds=3) for q in snapshot.quotes)
         ):
             raise ValueError("Observation binding or freshness invalid")
+    return report
+
+
+def validate_sync(raw: bytes, request: DemoSyncRequest, now: datetime) -> DemoSyncReport:
+    report = DemoSyncReport.model_validate(json.loads(raw, object_pairs_hook=unique_object))
+    if report.state == "DISABLED":
+        if request.enabled or report.code != "DISABLED" or report.batch is not None:
+            raise ValueError("Invalid disabled sync")
+    elif report.state == "WITHHELD":
+        if report.code in (None, "DISABLED") or report.batch is not None:
+            raise ValueError("Invalid withheld sync")
+    else:
+        batch = report.batch
+        if not request.enabled or report.code is not None or batch is None:
+            raise ValueError("Invalid captured sync")
+        snapshot = DemoSnapshot(
+            enrollment_id=batch.enrollment_id,
+            sdk_version=batch.sdk_version,
+            capture_started_at=batch.capture_started_at,
+            observed_at=batch.observed_at,
+            valid_until=batch.valid_until,
+            quotes=batch.quotes,
+        )
+        quote_report = DemoCaptureReport(
+            state="CAPTURED", code=None, snapshot=snapshot, trace_id=report.trace_id
+        )
+        validate_capture(quote_report.model_dump_json().encode(), request.connection, now)
+        if (
+            batch.account_scope_ref != account_scope(request.connection)
+            or batch.account.currency != request.connection.expected_currency
+            or batch.history_start != request.history_start
+            or batch.history_end != request.history_end
+            or batch.history_end > batch.capture_started_at
+        ):
+            raise ValueError("Sync scope or history binding invalid")
+        quotes = {q.venue_symbol: q for q in batch.quotes}
+
+        def quote_for(item):
+            quote = quotes.get(item.venue_symbol)
+            if quote is None or quote.instrument_id != item.instrument_id:
+                raise ValueError("Unmapped sync record")
+            return quote
+
+        def aware(t):
+            if t.tzinfo is None or t.utcoffset() != timedelta(0):
+                raise ValueError("UTC sync timestamps required")
+
+        if len({p.ticket for p in batch.positions}) != len(batch.positions) or len(
+            {p.identifier for p in batch.positions}
+        ) != len(batch.positions):
+            raise ValueError("Duplicate position")
+        for p in batch.positions:
+            quote = quote_for(p)
+            aware(p.created_at)
+            aware(p.updated_at)
+            if (
+                not p.created_at <= p.updated_at <= batch.observed_at
+                or p.currency != batch.account.currency
+                or p.quantity_units != p.volume_lots * quote.contract_size
+            ):
+                raise ValueError("Invalid position facts")
+        if len({o.ticket for o in batch.orders}) != len(batch.orders):
+            raise ValueError("Duplicate order")
+        for o in batch.orders:
+            quote_for(o)
+            aware(o.created_at)
+            if (
+                o.kind not in ORDER_KINDS
+                or o.state not in ORDER_STATES.values()
+                or o.remaining_lots > o.initial_lots
+                or o.created_at > batch.observed_at
+                or (ORDER_KINDS.index(o.kind) >= 2 and o.price_open <= 0)
+                or (ORDER_KINDS.index(o.kind) >= 6 and o.stop_limit_price <= 0)
+            ):
+                raise ValueError("Invalid active order facts")
+        deals = (*batch.fills, *batch.cash_events)
+        if len(deals) > 16 or len({d.ticket for d in deals}) != len(deals):
+            raise ValueError("Duplicate or excessive history records")
+        for d in deals:
+            aware(d.observed_at)
+            if (
+                d.event_ref != event_ref(batch.account_scope_ref, d.ticket)
+                or d.currency != batch.account.currency
+                or not batch.history_start <= d.observed_at <= batch.history_end
+            ):
+                raise ValueError("Invalid deal identity or window")
+        for d in batch.fills:
+            quote = quote_for(d)
+            if (
+                d.order_ticket <= 0
+                or d.position_identifier <= 0
+                or d.quantity_units != d.volume_lots * quote.contract_size
+            ):
+                raise ValueError("Invalid execution observation")
+        if any(d.kind not in DEAL_KINDS[2:] for d in batch.cash_events):
+            raise ValueError("Trading deal mislabeled as cash")
+        for collection in (batch.fills, batch.cash_events):
+            if list(collection) != sorted(collection, key=lambda d: (d.observed_at, d.ticket)):
+                raise ValueError("History ordering invalid")
     return report
 
 
@@ -224,38 +368,41 @@ def confirmed_worker_exit(worker_id: UUID) -> SupervisedCapture:
 
 
 def supervise_demo(
-    request: DemoCaptureRequest,
+    request: DemoCaptureRequest | DemoSyncRequest,
     *,
     clock=lambda: datetime.now(timezone.utc),
     worker_id: UUID | None = None,
 ) -> SupervisedCapture:
+    result_model = SupervisedSync if isinstance(request, DemoSyncRequest) else SupervisedCapture
+    report_model = DemoSyncReport if isinstance(request, DemoSyncRequest) else DemoCaptureReport
     if worker_id is not None and (not isinstance(worker_id, UUID) or worker_id.version != 4):
         raise ValueError("Worker identity must be UUID4")
     if not request.enabled:
-        return SupervisedCapture(
+        return result_model(
             state="DISABLED",
-            report=DemoCaptureReport(state="DISABLED", code="DISABLED"),
+            report=report_model(state="DISABLED", code="DISABLED"),
             worker_custody="NOT_STARTED",
         )
     if not _supervision_lock.acquire(blocking=False):
-        return SupervisedCapture(state="WITHHELD", code="BUSY", worker_custody="NOT_STARTED")
+        return result_model(state="WITHHELD", code="BUSY", worker_custody="NOT_STARTED")
     try:
         retained = _inspect_locked()
         if retained.worker_custody == "UNKNOWN":
-            return retained
+            return result_model.model_validate(retained.model_dump())
         return _run_supervised(request, clock=clock, worker_id=worker_id or uuid4())
     finally:
         _supervision_lock.release()
 
 
-def _run_supervised(request: DemoCaptureRequest, *, clock, worker_id: UUID) -> SupervisedCapture:
+def _run_supervised(
+    request: DemoCaptureRequest | DemoSyncRequest, *, clock, worker_id: UUID
+) -> SupervisedCapture | SupervisedSync:
     global _uncertain_child
+    result_model = SupervisedSync if isinstance(request, DemoSyncRequest) else SupervisedCapture
     try:
         payload = encode_request(request)
     except ValueError:
-        return SupervisedCapture(
-            state="WITHHELD", code="INVALID_REQUEST", worker_custody="NOT_STARTED"
-        )
+        return result_model(state="WITHHELD", code="INVALID_REQUEST", worker_custody="NOT_STARTED")
     deadline = time.monotonic() + WORKER_SECONDS
     try:
         process = subprocess.Popen(
@@ -267,9 +414,7 @@ def _run_supervised(request: DemoCaptureRequest, *, clock, worker_id: UUID) -> S
             creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
     except OSError:
-        return SupervisedCapture(
-            state="WITHHELD", code="START_FAILURE", worker_custody="NOT_STARTED"
-        )
+        return result_model(state="WITHHELD", code="START_FAILURE", worker_custody="NOT_STARTED")
     pipes = BoundedPipes(process, payload)
     _uncertain_child = (worker_id, process, pipes)
     try:
@@ -280,7 +425,7 @@ def _run_supervised(request: DemoCaptureRequest, *, clock, worker_id: UUID) -> S
         custody = _inspect_locked().worker_custody
         if not isinstance(exc, Exception):
             raise
-        return SupervisedCapture(
+        return result_model(
             state="WITHHELD", code="WORKER_EXIT", worker_id=worker_id, worker_custody=custody
         )
     finally:
@@ -302,6 +447,8 @@ def stop_owned_worker(process, pipes):
 
 
 def _await_reply(process, pipes, worker_id, request, deadline, clock):
+    result_model = SupervisedSync if isinstance(request, DemoSyncRequest) else SupervisedCapture
+    reply_model = SyncWorkerReply if isinstance(request, DemoSyncRequest) else WorkerReply
     code = None
     while True:
         if pipes.overflow.is_set():
@@ -321,21 +468,21 @@ def _await_reply(process, pipes, worker_id, request, deadline, clock):
         else "UNKNOWN"
     )
     if code is not None:
-        return SupervisedCapture(
+        return result_model(
             state="WITHHELD", code=code, worker_custody=custody, worker_id=worker_id
         )
     if process.returncode != 0 or pipes.failed.is_set():
-        return SupervisedCapture(
+        return result_model(
             state="WITHHELD", code="WORKER_EXIT", worker_custody=custody, worker_id=worker_id
         )
     try:
-        reply = WorkerReply.model_validate(
+        reply = reply_model.model_validate(
             json.loads(pipes.output, object_pairs_hook=unique_object)
         )
         if reply.code != "OK":
             if reply.report is not None:
                 raise ValueError("Failure cannot carry observations")
-            return SupervisedCapture(
+            return result_model(
                 state="WITHHELD",
                 worker_reply_code=reply.code,
                 worker_custody=custody,
@@ -344,7 +491,7 @@ def _await_reply(process, pipes, worker_id, request, deadline, clock):
         if reply.report is None:
             raise ValueError("Missing report")
         report = validate_capture(reply.report.model_dump_json().encode(), request, clock())
-        return SupervisedCapture(
+        return result_model(
             state="RETURNED",
             report=report,
             worker_reply_code="OK",
@@ -352,7 +499,7 @@ def _await_reply(process, pipes, worker_id, request, deadline, clock):
             worker_id=worker_id,
         )
     except Exception:
-        return SupervisedCapture(
+        return result_model(
             state="WITHHELD", code="PROTOCOL", worker_custody=custody, worker_id=worker_id
         )
 
@@ -361,21 +508,29 @@ def worker_request(raw: bytes) -> WorkerReply:
     try:
         if len(raw) > REQUEST_LIMIT:
             raise ValueError("Input limit")
-        request = WorkerRequest.model_validate(
-            json.loads(raw, object_pairs_hook=unique_object)
-        ).request
+        data = json.loads(raw, object_pairs_hook=unique_object)
+        request_model = (
+            SyncWorkerRequest
+            if isinstance(data, dict) and data.get("operation") == "CAPTURE_DEMO_ACCOUNT"
+            else WorkerRequest
+        )
+        request = request_model.model_validate(data).request
     except Exception:
         return WorkerReply(code="INVALID_REQUEST")
+    reply_model = SyncWorkerReply if isinstance(request, DemoSyncRequest) else WorkerReply
+    report_model = DemoSyncReport if isinstance(request, DemoSyncRequest) else DemoCaptureReport
+    connection = request.connection if isinstance(request, DemoSyncRequest) else request
     if not request.enabled:
-        return WorkerReply(code="OK", report=DemoCaptureReport(state="DISABLED", code="DISABLED"))
-    if os.name != "nt" or not Path(request.terminal_path).is_file():
-        return WorkerReply(code="TERMINAL_UNAVAILABLE")
+        return reply_model(code="OK", report=report_model(state="DISABLED", code="DISABLED"))
+    if os.name != "nt" or not Path(connection.terminal_path).is_file():
+        return reply_model(code="TERMINAL_UNAVAILABLE")
     try:
         import MetaTrader5 as native
     except Exception:
-        return WorkerReply(code="SDK_UNAVAILABLE")
-    return WorkerReply(
-        code="OK", report=capture_demo(request, native, clock=lambda: datetime.now(timezone.utc))
+        return reply_model(code="SDK_UNAVAILABLE")
+    capture = capture_sync if isinstance(request, DemoSyncRequest) else capture_demo
+    return reply_model(
+        code="OK", report=capture(request, native, clock=lambda: datetime.now(timezone.utc))
     )
 
 
