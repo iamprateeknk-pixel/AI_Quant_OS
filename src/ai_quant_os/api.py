@@ -35,6 +35,7 @@ from ai_quant_os.task_supervisor import (
     TaskKind,
     task_supervisor_implementation,
 )
+from ai_quant_os.graph_trace import GraphTrace
 from ai_quant_os.supervisor_dispatch import SupervisorDispatch
 from ai_quant_os.supervisor_sources import (
     SUPERVISOR_INPUT_BYTES,
@@ -1534,6 +1535,19 @@ def create_app(
             "context_current": context_current,
             "receipt": receipt.model_dump(mode="json"),
         }
+
+    @app.get(
+        "/api/v1/agents/graph-runs/{run_id}/trace",
+        response_model=GraphTrace,
+        dependencies=[Depends(require_operator)],
+    )
+    def archived_graph_trace(run_id: str) -> dict[str, object]:
+        try:
+            return require_graph_runtime().trace(run_id).model_dump(mode="json")
+        except KeyError as error:
+            raise HTTPException(404, "Graph run not found") from error
+        except (ValueError, TypeError, sqlite3.Error) as error:
+            raise HTTPException(503, "Graph trace unavailable") from error
 
     @app.post(
         "/api/v1/paper/agents/graph-runs/{run_id}/resume", dependencies=[Depends(require_operator)]

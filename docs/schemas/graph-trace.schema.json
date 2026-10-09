@@ -1,0 +1,248 @@
+{
+  "$defs": {
+    "GraphTraceEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "CREATED",
+            "RUNNING",
+            "COMPLETED",
+            "UNAVAILABLE",
+            "EXPIRED",
+            "DENIED",
+            "WAIT_FOR_DATA",
+            "INVALID",
+            "FAILED",
+            "TIMEOUT",
+            "UNCERTAIN"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "record_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Hash",
+          "type": "string"
+        },
+        "event_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Event Hash",
+          "type": "string"
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observed At"
+        }
+      },
+      "required": [
+        "sequence",
+        "status",
+        "record_hash",
+        "event_hash",
+        "observed_at"
+      ],
+      "title": "GraphTraceEvent",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "scope": {
+      "enum": [
+        "PAPER",
+        "SANDBOX"
+      ],
+      "title": "Scope",
+      "type": "string"
+    },
+    "archival_only": {
+      "const": true,
+      "default": true,
+      "title": "Archival Only",
+      "type": "boolean"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "trace_id": {
+      "pattern": "^graph-trace:[a-f0-9]{64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,128}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "agent_id": {
+      "pattern": "^A(?:0[1-9]|1[0-8])$",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "context_ref": {
+      "pattern": "^agent-context:[a-f0-9]{64}$",
+      "title": "Context Ref",
+      "type": "string"
+    },
+    "manifest_ref": {
+      "pattern": "^agent-manifest:[a-f0-9]{64}$",
+      "title": "Manifest Ref",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "context_observed_at": {
+      "format": "date-time",
+      "title": "Context Observed At",
+      "type": "string"
+    },
+    "context_valid_until": {
+      "format": "date-time",
+      "title": "Context Valid Until",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "CREATED",
+        "RUNNING",
+        "COMPLETED",
+        "UNAVAILABLE",
+        "EXPIRED",
+        "DENIED",
+        "WAIT_FOR_DATA",
+        "INVALID",
+        "FAILED",
+        "TIMEOUT",
+        "UNCERTAIN"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "output_trace_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Output Trace Id"
+    },
+    "output_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Output Sha256"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/GraphTraceEvent"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "title": "Events",
+      "type": "array"
+    },
+    "timing_state": {
+      "enum": [
+        "AVAILABLE",
+        "PARTIAL",
+        "UNAVAILABLE",
+        "CLOCK_REGRESSION"
+      ],
+      "title": "Timing State",
+      "type": "string"
+    },
+    "elapsed_seconds": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Elapsed Seconds"
+    }
+  },
+  "required": [
+    "scope",
+    "trace_id",
+    "run_id",
+    "task_id",
+    "agent_id",
+    "agent_version",
+    "context_ref",
+    "manifest_ref",
+    "input_refs",
+    "context_observed_at",
+    "context_valid_until",
+    "status",
+    "events",
+    "timing_state",
+    "elapsed_seconds"
+  ],
+  "title": "GraphTrace",
+  "type": "object"
+}

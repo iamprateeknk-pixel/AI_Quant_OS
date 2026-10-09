@@ -1,0 +1,146 @@
+{
+  "increment": "0106",
+  "date": "2026-10-09",
+  "base_commit": "21dd76690425f5037786ab36e0e866d99e71a444",
+  "feature": "Durable observed graph transition times and protected typed archival trace",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0106",
+    "tests": [
+      {
+        "path": "tests/test_graph_trace.py"
+      },
+      {
+        "path": "tests/test_graph_runtime.py"
+      },
+      {
+        "path": "tests/test_graph_api.py"
+      },
+      {
+        "path": "tests/test_research_archive_reads.py"
+      },
+      {
+        "path": "tests/test_supervisor_agent.py"
+      },
+      {
+        "path": "tests/test_supervisor_dispatch.py"
+      },
+      {
+        "path": "tests/test_supervisor_api.py"
+      },
+      {
+        "path": "tests/test_supervisor_sources.py"
+      },
+      {
+        "path": "tests/test_supervisor_drift.py"
+      },
+      {
+        "path": "tests/test_task_supervisor.py"
+      },
+      {
+        "path": "tests/test_supervisor_evaluation.py"
+      },
+      {
+        "path": "tests/test_health_watchdog.py"
+      },
+      {
+        "path": "tests/test_health_api.py"
+      },
+      {
+        "path": "tests/test_research_hypothesis_api.py"
+      },
+      {
+        "path": "tests/test_agent_genomes.py"
+      },
+      {
+        "path": "tests/test_drift_agent.py"
+      },
+      {
+        "path": "tests/test_context_call_budgets.py"
+      },
+      {
+        "path": "tests/test_agent_call_budgets.py"
+      },
+      {
+        "path": "tests/test_operator_sessions.py"
+      }
+    ],
+    "passed": 227,
+    "failed": 0,
+    "duration_seconds": 209.67,
+    "new_feature_test_cases": 17,
+    "prior_schemas_unchanged": 76,
+    "schema_runtime_equal": true,
+    "ruff": "root check passed",
+    "diff_check": "passed",
+    "secret_scan": "final staged scan passed; no leaks found",
+    "junit_sha256": "05c06435b913bc174d96808de4ba346fade5af834139d092e02fb379494cc3e3",
+    "red_before_implementation": [
+      "GraphRuntime.trace missing",
+      "Protected graph trace endpoint absent (404)"
+    ],
+    "injected_clock_evidence": {
+      "context_observed_at": "2026-01-01T00:00:00Z",
+      "created_and_running_observed_at": "2026-01-01T00:00:01Z",
+      "completed_observed_at": "2026-01-01T00:00:01.250Z",
+      "elapsed_seconds": "0.25",
+      "basis": "Injected trusted test clock at actual graph transition; not a physical performance measurement"
+    }
+  },
+  "source_fingerprints": [
+    {
+      "path": "docs/AGENT_TRACE_HANDOFF.md",
+      "sha256": "bcfeee81549a74c121bf3b2bf6462861f60bd84e7851148ef2682df8dae9aa90"
+    },
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "a4b06e8620211d321f7fff8bdbacee435aea9194a670aa3f65e3232603578a3b"
+    },
+    {
+      "path": "docs/adr/0106-durable-agent-transition-observations.md",
+      "sha256": "76eb85b68a99ab0447a73b7be1fc746c806cefe77aea9291be4089d72b25b67d"
+    },
+    {
+      "path": "docs/schemas/graph-trace.schema.json",
+      "sha256": "35832b74df2e8b76ce6b92337a049bf6ce1e51a9659b7270b281a19c88c58b2b"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "0ff1ae6f0467fcfebb23467d3cc43919842554387a298259b7d272c375618413"
+    },
+    {
+      "path": "src/ai_quant_os/graph_ledger.py",
+      "sha256": "9934385ad8ee2d7def63676bab82ac40b331dc5d3b720cc25af8800c6bcc2e2f"
+    },
+    {
+      "path": "src/ai_quant_os/graph_runtime.py",
+      "sha256": "2690a79aa0835206e8870b581f5816de5ce120780fc75901f6a07900bdb8fd07"
+    },
+    {
+      "path": "src/ai_quant_os/graph_trace.py",
+      "sha256": "7af770365b7df21300c3933a4bced342e3db34be63c68140b737c70c56bf3e93"
+    },
+    {
+      "path": "tests/test_graph_trace.py",
+      "sha256": "48310caeb8115803431b9839108e6af1f7ea008a077a5360fb6b959f81789e51"
+    }
+  ],
+  "covered_behaviors": [
+    "Original API task graphs and exact restart/retry trace retention",
+    "Atomic graph/audit observation rollback on invalid clock or denied audit insert",
+    "Legacy UNAVAILABLE and mixed PARTIAL timing without invented duration",
+    "Clock regression withheld elapsed time",
+    "FAILED/TIMEOUT/UNAVAILABLE and actual cancellation RUNNING-to-recovery-UNCERTAIN",
+    "Historical record/context/time/extra-field forgery rejected even with recomputed audit chain",
+    "Corrupt journal withholds trace while independent order reads continue",
+    "Operator access and unknown-run handling",
+    "Typed timing/status/identity claim validation"
+  ],
+  "limitations": [
+    "Local wall-clock reservation interval; not monotonic/provider latency or exact unknown external operation completion",
+    "New audit event field needs compatible reader; preserve history on rollback",
+    "No context/output payloads, worker execution, paid calls or capital authority",
+    "Nested source/tool spans, OTel/export/retention, full UI navigation and quality metrics remain pending",
+    "No browser or full release acceptance claimed",
+    "All P00-P13 remain incomplete"
+  ]
+}

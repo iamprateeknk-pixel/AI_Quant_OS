@@ -3,11 +3,12 @@
 import json
 import re
 import sqlite3
+from datetime import datetime, timezone
 from contextlib import contextmanager
 from hashlib import sha256
 from pathlib import Path
 from threading import Lock
-from typing import Literal
+from typing import Callable, Literal, get_args
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
@@ -113,7 +114,8 @@ class GraphLedger:
         finally:
             ledger.close()
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, clock: Callable[[], datetime] | None = None) -> None:
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._db = sqlite3.connect(str(path), check_same_thread=False, timeout=5)
         self._lock = Lock()
         self._audit = AuditChain(self._db)
@@ -153,9 +155,23 @@ class GraphLedger:
         event = self._db.execute(
             "SELECT event_json FROM audit_events WHERE event_key = ?", (key,)
         ).fetchone()
-        if event is None or json.loads(event[0]) != self._event(record, digest):
+        if event is None or not self._matches_event(json.loads(event[0]), record, digest):
             raise ValueError("Graph record audit binding failed")
         return record
+
+    @staticmethod
+    def _matches_event(event, record: GraphRecord, digest: str) -> bool:
+        from ai_quant_os.graph_trace import observation
+
+        if not isinstance(event, dict):
+            return False
+        legacy = GraphLedger._event(record, digest)
+        if event == legacy:
+            return True
+        if set(event) != {*legacy, "observed_at"} or event["observed_at"] is None:
+            return False
+        observation(event["observed_at"])
+        return {key: value for key, value in event.items() if key != "observed_at"} == legacy
 
     @staticmethod
     def _event(record: GraphRecord, digest: str) -> dict[str, str]:
@@ -179,9 +195,14 @@ class GraphLedger:
             "record_hash=excluded.record_hash",
             (record.receipt.run_id, raw, digest),
         )
-        self._audit.append(
-            f"graph:{record.receipt.run_id}:{record.receipt.status}", self._event(record, digest)
-        )
+        moment = self._clock()
+        if not isinstance(moment, datetime) or moment.utcoffset() is None:
+            raise ValueError("Graph transition clock must be aware")
+        event = {
+            **self._event(record, digest),
+            "observed_at": moment.astimezone(timezone.utc).isoformat(),
+        }
+        self._audit.append(f"graph:{record.receipt.run_id}:{record.receipt.status}", event)
 
     def get(self, run_id: str) -> GraphRecord:
         with self._lock, self._db:
@@ -240,7 +261,11 @@ class GraphLedger:
                 event = json.loads(raw)
                 if (
                     not isinstance(event, dict)
-                    or set(event) != {"action", "run_id", "status", "record_hash", "context_ref"}
+                    or set(event)
+                    not in (
+                        {"action", "run_id", "status", "record_hash", "context_ref"},
+                        {"action", "run_id", "status", "record_hash", "context_ref", "observed_at"},
+                    )
                     or event["action"] != "AGENT_GRAPH_TRANSITION"
                     or not isinstance(event["run_id"], str)
                     or key != f"graph:{event['run_id']}:{event['status']}"
@@ -260,6 +285,93 @@ class GraphLedger:
                     if len(selected) > limit:
                         raise ValueError("Agent graph collection exceeds requested bound")
             return tuple(selected)
+
+    def trace(self, run_id: str):
+        """Read a bounded, audit-checked timeline without execution or source access."""
+        from ai_quant_os.graph_trace import (
+            GraphTrace,
+            GraphTraceEvent,
+            observation,
+            timing,
+            trace_identity,
+        )
+
+        if not isinstance(run_id, str) or re.fullmatch(r"[A-Za-z0-9_-]{1,128}", run_id) is None:
+            raise ValueError("Invalid graph trace run identity")
+        with self._lock, self._db:
+            self._db.execute("BEGIN")
+            count, largest = self._db.execute(
+                "SELECT COUNT(*),COALESCE(MAX(LENGTH(event_json)),0) FROM audit_events"
+            ).fetchone()
+            if count > 30000 or largest > 4096:
+                raise ValueError("Graph trace journal exceeds archive bound")
+            self._audit.require_valid()
+            record = self._read(run_id)
+            if record is None:
+                raise KeyError("Unknown graph run")
+            keys = [f"graph:{run_id}:{status}" for status in get_args(RunStatus)]
+            marks = ",".join("?" for _ in keys)
+            rows = self._db.execute(
+                "SELECT c.sequence,c.event_hash,e.event_json FROM audit_chain c "
+                "JOIN audit_events e ON e.event_key=c.event_key "
+                f"WHERE e.event_key IN ({marks}) ORDER BY c.sequence",
+                keys,
+            ).fetchall()
+            if not 1 <= len(rows) <= 3:
+                raise ValueError("Graph trace transition count mismatch")
+            events = []
+            receipt = record.receipt
+            for sequence, event_hash, raw in rows:
+                event = json.loads(raw)
+                # Reconstruct every historical record from the original checkpoint.
+                prior = GraphRecord(
+                    checkpoint=record.checkpoint,
+                    receipt=GraphReceipt.model_validate(
+                        {
+                            **receipt.model_dump(),
+                            "status": event["status"],
+                            "output_json": receipt.output_json
+                            if event["status"] == "COMPLETED"
+                            else None,
+                        }
+                    ),
+                )
+                digest = sha256(prior.model_dump_json().encode()).hexdigest()
+                if not self._matches_event(event, prior, digest):
+                    raise ValueError("Graph trace historical record binding mismatch")
+                events.append(
+                    GraphTraceEvent(
+                        sequence=sequence,
+                        status=event["status"],
+                        record_hash=digest,
+                        event_hash=event_hash,
+                        observed_at=observation(event.get("observed_at")),
+                    )
+                )
+            events = tuple(events)
+            state, elapsed = timing(events)
+            output = json.loads(receipt.output_json) if receipt.output_json is not None else {}
+            return GraphTrace(
+                scope=record.checkpoint.context.scope,
+                trace_id=trace_identity(run_id, receipt.context_ref, receipt.manifest_ref),
+                run_id=run_id,
+                task_id=receipt.task_id,
+                agent_id=receipt.agent_id,
+                agent_version=receipt.agent_version,
+                context_ref=receipt.context_ref,
+                manifest_ref=receipt.manifest_ref,
+                input_refs=receipt.input_refs,
+                context_observed_at=receipt.created_at,
+                context_valid_until=receipt.valid_until,
+                status=receipt.status,
+                output_trace_id=output.get("trace_id"),
+                output_sha256=sha256(receipt.output_json.encode()).hexdigest()
+                if receipt.output_json is not None
+                else None,
+                events=events,
+                timing_state=state,
+                elapsed_seconds=elapsed,
+            )
 
     def create(self, run_id: str, checkpoint: ContextCheckpoint) -> GraphRecord:
         context, manifest = checkpoint.context, checkpoint.manifest

@@ -102,7 +102,7 @@ class GraphRuntime:
         tools: AgentToolBoundary,
         clock: Callable[[], datetime] | None = None,
     ):
-        ledger = GraphLedger(path)
+        ledger = GraphLedger(path, clock=clock)
         try:
             async with aiosqlite.connect(str(path)) as connection:
                 saver = AsyncSqliteSaver(
@@ -267,6 +267,9 @@ class GraphRuntime:
     def receipt(self, run_id: str) -> GraphReceipt:
         """Read archival state without invoking or changing the graph."""
         return self._ledger.get(run_id).receipt
+
+    def trace(self, run_id: str):
+        return self._ledger.trace(run_id)
 
     def current(self, run_id: str) -> bool:
         """Current evidence/permission eligibility; never establishes order authority."""
