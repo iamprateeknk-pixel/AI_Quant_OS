@@ -1,0 +1,442 @@
+{
+  "$defs": {
+    "DemoCaptureReport": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "broker_id": {
+          "const": "EXNESS_MT5_DEMO",
+          "default": "EXNESS_MT5_DEMO",
+          "title": "Broker Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "DISABLED",
+            "WITHHELD",
+            "CAPTURED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "enum": [
+                "DISABLED",
+                "SDK_VERSION",
+                "CONNECTION",
+                "ACCOUNT",
+                "QUOTE",
+                "CLOCK",
+                "NATIVE_FAILURE",
+                "CLEANUP_FAILURE"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Code"
+        },
+        "snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DemoSnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "trace_id": {
+          "format": "uuid4",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "may_submit_orders": {
+          "const": false,
+          "default": false,
+          "title": "May Submit Orders",
+          "type": "boolean"
+        },
+        "may_affect_portfolio": {
+          "const": false,
+          "default": false,
+          "title": "May Affect Portfolio",
+          "type": "boolean"
+        },
+        "native_attestation": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Native Attestation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "code"
+      ],
+      "title": "DemoCaptureReport",
+      "type": "object"
+    },
+    "DemoQuote": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "venue_symbol": {
+          "title": "Venue Symbol",
+          "type": "string"
+        },
+        "bid": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Bid"
+        },
+        "ask": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Ask"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "contract_size": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Contract Size"
+        },
+        "digits": {
+          "maximum": 12,
+          "minimum": 0,
+          "title": "Digits",
+          "type": "integer"
+        },
+        "volume_min": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume Min"
+        },
+        "volume_max": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume Max"
+        },
+        "volume_step": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume Step"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "venue_symbol",
+        "bid",
+        "ask",
+        "observed_at",
+        "contract_size",
+        "digits",
+        "volume_min",
+        "volume_max",
+        "volume_step"
+      ],
+      "title": "DemoQuote",
+      "type": "object"
+    },
+    "DemoSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "enrollment_id": {
+          "format": "uuid4",
+          "title": "Enrollment Id",
+          "type": "string"
+        },
+        "sdk_version": {
+          "title": "Sdk Version",
+          "type": "string"
+        },
+        "capture_started_at": {
+          "format": "date-time",
+          "title": "Capture Started At",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "valid_until": {
+          "format": "date-time",
+          "title": "Valid Until",
+          "type": "string"
+        },
+        "quotes": {
+          "items": {
+            "$ref": "#/$defs/DemoQuote"
+          },
+          "title": "Quotes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "enrollment_id",
+        "sdk_version",
+        "capture_started_at",
+        "observed_at",
+        "valid_until",
+        "quotes"
+      ],
+      "title": "DemoSnapshot",
+      "type": "object"
+    },
+    "SupervisedCapture": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "DISABLED",
+            "RETURNED",
+            "WITHHELD"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "enum": [
+                "TIMEOUT",
+                "OUTPUT_LIMIT",
+                "WORKER_EXIT",
+                "PROTOCOL",
+                "START_FAILURE",
+                "BUSY",
+                "CUSTODY_UNCERTAIN",
+                "INVALID_REQUEST"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "report": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DemoCaptureReport"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "worker_reply_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worker Reply Code"
+        },
+        "worker_custody": {
+          "enum": [
+            "NOT_STARTED",
+            "EXIT_CONFIRMED",
+            "UNKNOWN"
+          ],
+          "title": "Worker Custody",
+          "type": "string"
+        },
+        "worker_id": {
+          "anyOf": [
+            {
+              "format": "uuid4",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worker Id"
+        },
+        "terminal_custody": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Terminal Custody",
+          "type": "string"
+        },
+        "automatic_retry_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Automatic Retry Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "state",
+        "worker_custody"
+      ],
+      "title": "SupervisedCapture",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "DISABLED",
+        "RETURNED",
+        "WITHHELD"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "code": {
+      "anyOf": [
+        {
+          "enum": [
+            "CUSTODY_UNCERTAIN",
+            "ATTEMPT_CONFLICT",
+            "STORAGE_UNAVAILABLE",
+            "STALE_RESULT",
+            "CAPACITY",
+            "INVALID_RESULT"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Code"
+    },
+    "attempt_id": {
+      "format": "uuid4",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "receipt_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Receipt Ref"
+    },
+    "result": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SupervisedCapture"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "may_submit_orders": {
+      "const": false,
+      "default": false,
+      "title": "May Submit Orders",
+      "type": "boolean"
+    },
+    "may_affect_portfolio": {
+      "const": false,
+      "default": false,
+      "title": "May Affect Portfolio",
+      "type": "boolean"
+    },
+    "automatic_retry_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Automatic Retry Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "state",
+    "attempt_id"
+  ],
+  "title": "GatewayReply",
+  "type": "object"
+}

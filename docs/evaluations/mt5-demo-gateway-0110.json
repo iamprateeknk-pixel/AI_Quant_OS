@@ -1,0 +1,62 @@
+{
+  "increment": "0110",
+  "date": "2026-10-09",
+  "base_commit": "d4a47e23060ec601b27d2c7100533a01c057c60e",
+  "feature": "Durable demo observation reservations, receipt replay and exact owned-child reconciliation",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0110-final",
+    "scope": [
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_broker_router.py"
+    ],
+    "tests": 83,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "3.404",
+    "tdd_red": "Six initial tests failed because the implementation module was absent",
+    "ruff": "passed",
+    "prior_schemas_unchanged": 78,
+    "source_hashes": [
+      {
+        "path": "docs/MT5_DEMO_GATEWAY_JOURNAL_HANDOFF.md",
+        "sha256": "bf40cb5387d2db7eb5fc1e153d05fba4d3a3e3a69b9943afe3ed0f6d7a22775f"
+      },
+      {
+        "path": "docs/adr/0110-durable-demo-observation-admission.md",
+        "sha256": "90f233efadbf3936592d1abb748149c4b2bf9eba7344dd9a329113c81b75fa8e"
+      },
+      {
+        "path": "docs/schemas/demo-gateway-receipt.schema.json",
+        "sha256": "8e123ce02190f2ea3cb934cf17ae27439a18242818eb94f59fa8bb562f2e999e"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_gateway.py",
+        "sha256": "e4be147a0f2d85968951f2e70037706315e4740fa391536ba836e9c895692ebe"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_worker.py",
+        "sha256": "19f2ba909e2c41285bcf0a738494c871a3a3e7fac11e81c0a98534f747731fb9"
+      },
+      {
+        "path": "tests/test_mt5_demo_gateway.py",
+        "sha256": "8e2a6eb8c339ab7699965cdc8580667913776a27b1db632b9b2decb73c8ad9c2"
+      }
+    ],
+    "junit_sha256": "b631b3651ac36188e453819a5916c9ade07ae70f3df0b95e708bd58d14288c85",
+    "secrets_scan": "passed: staged gitleaks 8.30.1",
+    "review": "Local five-axis self-review; independent broker/release review remains pending",
+    "pytest_reported_seconds": 3.68,
+    "gateway_checks_added": 23,
+    "additional_recovery_red": "A caller-interruption check demonstrated lost confirmed child-exit proof before the final recovery fix"
+  },
+  "limits": [
+    "Fixture SDK only; no terminal or external broker used",
+    "Native SDK import restricted to the explicit worker; no API route or broker routing integration",
+    "Completed receipt replay and unfinished reservation blocking survive restart; orphan child and terminal custody remain unverified",
+    "No order submission, portfolio mutation, native attestation or live authorization",
+    "Orphan-process custody, native P04 acceptance, order idempotency and synchronization remain open",
+    "Focused increment verification does not establish full-system or P13 acceptance"
+  ]
+}

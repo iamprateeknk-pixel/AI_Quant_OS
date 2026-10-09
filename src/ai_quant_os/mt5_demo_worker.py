@@ -171,15 +171,17 @@ class BoundedPipes:
 
 _supervision_lock = threading.Lock()
 _uncertain_child: tuple[UUID, subprocess.Popen, BoundedPipes] | None = None
+_last_confirmed_exit: UUID | None = None
 
 
 def _inspect_locked() -> SupervisedCapture:
-    global _uncertain_child
+    global _uncertain_child, _last_confirmed_exit
     if _uncertain_child is None:
         return SupervisedCapture(state="WITHHELD", worker_custody="NOT_STARTED")
     worker_id, process, pipes = _uncertain_child
     confirmed = process.poll() is not None and all(not t.is_alive() for t in pipes.threads)
     if confirmed:
+        _last_confirmed_exit = worker_id
         _uncertain_child = None
     return SupervisedCapture(
         state="WITHHELD",
@@ -199,9 +201,36 @@ def inspect_uncertain_worker() -> SupervisedCapture:
         _supervision_lock.release()
 
 
+def confirmed_worker_exit(worker_id: UUID) -> SupervisedCapture:
+    """Read the most recent verified exit by exact UUID, including interrupt cleanup.
+
+    This bounded in-process proof contains no native observation and does not
+    survive owner-process restart. It is never evidence for another worker UUID.
+    """
+    if not isinstance(worker_id, UUID) or worker_id.version != 4:
+        raise ValueError("Worker identity must be UUID4")
+    if not _supervision_lock.acquire(blocking=False):
+        return SupervisedCapture(state="WITHHELD", code="BUSY", worker_custody="NOT_STARTED")
+    try:
+        confirmed = _last_confirmed_exit == worker_id
+        return SupervisedCapture(
+            state="WITHHELD",
+            worker_id=worker_id,
+            worker_custody="EXIT_CONFIRMED" if confirmed else "UNKNOWN",
+            code=None if confirmed else "CUSTODY_UNCERTAIN",
+        )
+    finally:
+        _supervision_lock.release()
+
+
 def supervise_demo(
-    request: DemoCaptureRequest, *, clock=lambda: datetime.now(timezone.utc)
+    request: DemoCaptureRequest,
+    *,
+    clock=lambda: datetime.now(timezone.utc),
+    worker_id: UUID | None = None,
 ) -> SupervisedCapture:
+    if worker_id is not None and (not isinstance(worker_id, UUID) or worker_id.version != 4):
+        raise ValueError("Worker identity must be UUID4")
     if not request.enabled:
         return SupervisedCapture(
             state="DISABLED",
@@ -214,12 +243,12 @@ def supervise_demo(
         retained = _inspect_locked()
         if retained.worker_custody == "UNKNOWN":
             return retained
-        return _run_supervised(request, clock=clock)
+        return _run_supervised(request, clock=clock, worker_id=worker_id or uuid4())
     finally:
         _supervision_lock.release()
 
 
-def _run_supervised(request: DemoCaptureRequest, *, clock) -> SupervisedCapture:
+def _run_supervised(request: DemoCaptureRequest, *, clock, worker_id: UUID) -> SupervisedCapture:
     global _uncertain_child
     try:
         payload = encode_request(request)
@@ -241,7 +270,6 @@ def _run_supervised(request: DemoCaptureRequest, *, clock) -> SupervisedCapture:
         return SupervisedCapture(
             state="WITHHELD", code="START_FAILURE", worker_custody="NOT_STARTED"
         )
-    worker_id = uuid4()
     pipes = BoundedPipes(process, payload)
     _uncertain_child = (worker_id, process, pipes)
     try:
