@@ -4,6 +4,20 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Evolution genome archive view increment
+
+- Connected `/evolution` to protected, bounded observations of saved agent genomes,
+  inherited parent policies, objective references and source fingerprints. Every
+  retained record is checked under the original journal head; source and prompt
+  contents are withheld and challengers remain unverified.
+- Oversized exact decimal objectives are explicitly omitted from previews without
+  rounding or changing originals. Archive, CLI, session, health and research checks,
+  frontend checks, production build/type checks and lint passed.
+- Browser verification is pending: execution policy rejected launching the local
+  web preview. See `EVOLUTION_GENOME_UI_HANDOFF.md` and ADR 0096. Actual evaluation,
+  optimizer runs, champion/promotion/rollback/freeze workflows, strategy history,
+  telemetry and independent acceptance remain open. P00–P13 remains incomplete.
+
 ## Archived research dossier view increment
 
 - Connected `/research` to protected, typed candidate dossier pages. Lifecycle,

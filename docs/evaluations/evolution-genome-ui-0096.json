@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-09",
+  "increment": "0096",
+  "scope": "protected archival agent genome observations",
+  "mode": "PAPER",
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "full_plan_complete": false,
+  "backend": {
+    "workspace": {
+      "passed": 94,
+      "seconds": 29.14
+    },
+    "exact_staged_checkout": {
+      "passed": 94,
+      "seconds": 40.84
+    },
+    "files": [
+      "test_evolution_page.py",
+      "test_agent_genomes.py",
+      "test_evolution_protocols.py",
+      "test_evolution_cli.py",
+      "test_operator_sessions.py",
+      "test_health_timeline.py",
+      "test_research_dossier_page.py",
+      "test_research_api.py"
+    ],
+    "full_suite_run": false
+  },
+  "frontend": {
+    "checks_passed": 27,
+    "exact_staged_checks_passed": 27,
+    "workspace_production_build": "PASSED",
+    "workspace_types": "PASSED",
+    "workspace_lint": "PASSED",
+    "fresh_checkout_types": "PASSED",
+    "fresh_checkout_lint": "PASSED",
+    "fresh_checkout_production_build": "FAILED_DEPENDENCY_JUNCTION_OUTSIDE_TURBOPACK_ROOT"
+  },
+  "browser": {
+    "status": "NOT_RUN",
+    "preview_launch": "REJECTED_BLOCKED_BY_POLICY",
+    "pending": [
+      "keyboard lineage inspection",
+      "mobile overflow",
+      "actual protected page rendering",
+      "snapshot paging",
+      "privacy and logout"
+    ],
+    "api_test_server": "STOPPED"
+  },
+  "fixtures": {
+    "path": "data-local/evolution-genomes-0096",
+    "synthetic_genomes": 11,
+    "proposed_source_executed": false
+  },
+  "tdd": {
+    "missing_endpoint_failures": 3,
+    "missing_parser_failures": 1,
+    "oversized_decimal_failure": 1
+  },
+  "prior_schemas_unchanged": 67,
+  "tested_source": [
+    {
+      "path": "apps/web/src/app/[section]/page.tsx",
+      "sha256": "a34a2eae3203d77ba2fccd081de3f6fff8a94f62d127964f41dce91ec13287b8"
+    },
+    {
+      "path": "apps/web/src/features/evolution/genome-panel.tsx",
+      "sha256": "105da7252bc742941fa7b9f785359186e9033bfa1f5294c5aaddc84038c6379f"
+    },
+    {
+      "path": "apps/web/src/features/evolution/genomes.ts",
+      "sha256": "ca1d3448efd392b8f9297e8993ca2e8a3a5d4a7a11ca420221d5b7439ef03324"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/server.ts",
+      "sha256": "b3ba5926ebe6bfb0c5b836896e0ecfba01f6a019137220c7b823e22573873207"
+    },
+    {
+      "path": "apps/web/src/lib/navigation.ts",
+      "sha256": "59f1a371bd73bb592f4d20b44b2dc30b1baca559049962d834a72ff6c680d9b3"
+    },
+    {
+      "path": "apps/web/tests/evolution-genomes-browser.mjs",
+      "sha256": "43d50074dd8398d8af5393b93127a482cc12b982c5a0a8efcf56bbd7f026c435"
+    },
+    {
+      "path": "apps/web/tests/evolution-genomes.test.mjs",
+      "sha256": "111c395316de48a1a7b65dfe825fda3e3f431c013535e69233c4da95616df78c"
+    },
+    {
+      "path": "docs/schemas/evolution-genome-page.schema.json",
+      "sha256": "ad27d36967e02e85ae62dcb3a95396ab8274b04e2e11459e6ce0457642a5f8a8"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "39162faa185eff33506941f5f0ae5f57893d0ae5e66668e4ff1ae0f03784262c"
+    },
+    {
+      "path": "src/ai_quant_os/evolution_api.py",
+      "sha256": "d444752b5c2e3c677dbebf673ac5f01160804eea9503410e84933d57fc7915c7"
+    },
+    {
+      "path": "src/ai_quant_os/evolution_views.py",
+      "sha256": "fa92f2459e36a13b155271c9e79f6ddb87298f7fadc7652f81305ae62e667ff9"
+    },
+    {
+      "path": "src/ai_quant_os/genome_store.py",
+      "sha256": "160a9f61d854be3efd158cc72d751bc6acd2cc9af88f037c1d5ec41b692daaab"
+    },
+    {
+      "path": "tests/test_evolution_page.py",
+      "sha256": "772fc5992026b1442253db1c510e5faf8b3fa5d9dfe836b31ca9add6dd5f362f"
+    },
+    {
+      "path": "apps/web/tests/protected-reads.test.mjs",
+      "sha256": "e5ac4118c8f95256c111ab43920716cb8863e1c9d6fe0a39899e52b9f2c03e64"
+    }
+  ],
+  "remaining": [
+    "visual acceptance",
+    "strategy genome history",
+    "champion comparison",
+    "DSPy/Jev optimizer runs",
+    "admitted offline/replay/adversarial evaluation",
+    "shadow/canary evidence",
+    "promotion/rollback/freeze controls",
+    "telemetry",
+    "independent acceptance",
+    "all full-plan release gates"
+  ]
+}

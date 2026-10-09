@@ -1,6 +1,7 @@
 """Bounded transactional archive and audit-bound agent genome lineage."""
 
 import json
+import re
 import sqlite3
 from contextlib import closing
 from pathlib import Path
@@ -16,6 +17,10 @@ from ai_quant_os.agent_genomes import (
 )
 from ai_quant_os.agent_registry import AgentRegistry
 from ai_quant_os.audit_chain import AuditChain
+
+
+class GenomePageChanged(ValueError):
+    """The retained genome journal changed since the requested snapshot."""
 
 
 class GenomeStore:
@@ -144,6 +149,30 @@ class GenomeStore:
             db.execute("BEGIN")
             genomes = self._verified(db)
             return tuple(genomes[ref] for ref in sorted(genomes))
+
+    def page(
+        self, *, limit: int = 10, offset: int = 0, head: str | None = None
+    ) -> tuple[str, int, tuple[AgentGenome, ...]]:
+        if (
+            type(limit) is not int
+            or not 1 <= limit <= 10
+            or type(offset) is not int
+            or not 0 <= offset <= 1000
+            or (
+                head is not None
+                and (not isinstance(head, str) or not re.fullmatch(r"[a-f0-9]{64}", head))
+            )
+            or (offset and head is None)
+        ):
+            raise ValueError("Bounded page and original journal head required")
+        with closing(self._connection()) as db:
+            db.execute("BEGIN")
+            genomes = self._verified(db)
+            digest = AuditChain(db).require_valid().head_hash
+            if head is not None and digest != head:
+                raise GenomePageChanged("Genome journal changed")
+            refs = sorted(genomes)
+            return digest, len(refs), tuple(genomes[ref] for ref in refs[offset : offset + limit])
 
     def get(self, genome_ref: str) -> AgentGenome | None:
         if not isinstance(genome_ref, str) or not GENOME_REF.fullmatch(genome_ref):

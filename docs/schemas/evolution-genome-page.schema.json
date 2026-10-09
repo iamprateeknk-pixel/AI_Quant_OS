@@ -1,0 +1,231 @@
+{
+  "$defs": {
+    "GenomePreview": {
+      "additionalProperties": false,
+      "properties": {
+        "genome_ref": {
+          "pattern": "^agent-genome:[a-f0-9]{64}$",
+          "title": "Genome Ref",
+          "type": "string"
+        },
+        "agent_id": {
+          "pattern": "^A(0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "maxLength": 32,
+          "pattern": "^(?:0|[1-9][0-9]{0,5})(?:\\.(?:0|[1-9][0-9]{0,5})){2}$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "manifest_ref": {
+          "pattern": "^agent-manifest:[a-f0-9]{64}$",
+          "title": "Manifest Ref",
+          "type": "string"
+        },
+        "parent_ref": {
+          "anyOf": [
+            {
+              "pattern": "^agent-genome:[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parent Ref"
+        },
+        "state": {
+          "enum": [
+            "ARCHIVED_BASELINE",
+            "UNVERIFIED_CHALLENGER"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "objective": {
+          "$ref": "#/$defs/ObjectivePreview"
+        },
+        "source_inventory": {
+          "items": {
+            "$ref": "#/$defs/SourceFingerprint"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Source Inventory",
+          "type": "array"
+        },
+        "execution_verified": {
+          "const": false,
+          "default": false,
+          "title": "Execution Verified",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        },
+        "details_truncated": {
+          "title": "Details Truncated",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "genome_ref",
+        "agent_id",
+        "agent_version",
+        "manifest_ref",
+        "parent_ref",
+        "state",
+        "objective",
+        "source_inventory",
+        "details_truncated"
+      ],
+      "title": "GenomePreview",
+      "type": "object"
+    },
+    "ObjectivePreview": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "metric": {
+          "maxLength": 32,
+          "title": "Metric",
+          "type": "string"
+        },
+        "direction": {
+          "enum": [
+            "MAXIMIZE",
+            "MINIMIZE"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "minimum_improvement": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Minimum Improvement"
+        },
+        "protocol_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Protocol Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "direction",
+        "minimum_improvement",
+        "protocol_sha256"
+      ],
+      "title": "ObjectivePreview",
+      "type": "object"
+    },
+    "SourceFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "SourceFingerprint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "head_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Head Hash",
+      "type": "string"
+    },
+    "total": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    },
+    "offset": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Offset",
+      "type": "integer"
+    },
+    "limit": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "next_offset": {
+      "anyOf": [
+        {
+          "maximum": 1000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Next Offset"
+    },
+    "genomes": {
+      "items": {
+        "$ref": "#/$defs/GenomePreview"
+      },
+      "maxItems": 10,
+      "title": "Genomes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "head_hash",
+    "total",
+    "offset",
+    "limit",
+    "next_offset",
+    "genomes"
+  ],
+  "title": "EvolutionGenomePage",
+  "type": "object"
+}

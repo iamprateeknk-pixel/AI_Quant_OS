@@ -26,7 +26,7 @@ export const sectionDetails = {
   portfolio: ["Paper Portfolio", "Paper positions by instrument and combined currency exposure from the backend. No account equity is inferred."],
   orders: ["Orders", "Paper order receipts, manual fills, and fills imported from the durable simulator. Uncertain orders require operator reconciliation."],
   research: ["Research", "Verified archived candidate outcomes, validation gates and provenance. Research evidence does not authorize promotion."],
-  evolution: ["Evolution", "Champion and challenger promotions require offline, replay, shadow, and canary evidence."],
+  evolution: ["Evolution", "Saved agent genome lineage and evaluation objectives. Challengers remain unverified; promotion requires all release gates."],
   incidents: ["Incidents", "Verified paper health incidents, monitoring observations and retained quarantine restrictions. Recovery remains a separately gated workflow."],
   costs: ["Costs", "Model, compute, and data costs are not being collected yet."],
   audit: ["Audit", "Paper control events persist with a verified local hash chain. Independent immutable storage remains a release gate."],

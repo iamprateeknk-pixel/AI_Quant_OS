@@ -87,6 +87,7 @@ from ai_quant_os.operator_control_api import install_operator_control_routes
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
+from ai_quant_os.evolution_api import install_evolution_routes
 from ai_quant_os.research_data_api import install_research_data_routes
 from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog
 from ai_quant_os.research_hypothesis_agent import hypothesis_implementation
@@ -244,6 +245,7 @@ def create_app(
     fast_classifier: FastClassifier | None = None,
     deep_reviewer: DeepReviewer | None = None,
     research_workspace: Path | None = None,
+    evolution_workspace: Path | None = None,
     daily_evidence_enabled: bool | None = None,
     temporal_recovery_enabled: bool | None = None,
     temporal_recovery_target: str | None = None,
@@ -1829,6 +1831,14 @@ def create_app(
             Path(os.environ["AI_QUANT_RESEARCH_WORKSPACE"])
             if os.getenv("AI_QUANT_RESEARCH_WORKSPACE")
             else None
+        ),
+        require_operator,
+    )
+    install_evolution_routes(
+        app,
+        evolution_workspace or (
+            Path(os.environ["AI_QUANT_EVOLUTION_WORKSPACE"])
+            if os.getenv("AI_QUANT_EVOLUTION_WORKSPACE") else None
         ),
         require_operator,
     )

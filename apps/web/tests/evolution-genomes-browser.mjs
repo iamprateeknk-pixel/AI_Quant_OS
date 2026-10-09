@@ -1,0 +1,55 @@
+/** Synthetic archived metadata only. Proposed genome source is never executed. */
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const require=createRequire(import.meta.url);
+const {chromium}=require(process.env.AI_QUANT_PLAYWRIGHT_MODULE);
+const browser=await chromium.launch({headless:true,channel:'msedge'});
+const context=await browser.newContext({viewport:{width:1360,height:900}});
+const page=await context.newPage(), base=process.env.AI_QUANT_TEST_WEB_ORIGIN;
+const errors=[];page.on('pageerror',error=>errors.push(error.message));
+try {
+  await page.goto(base+'/evolution');
+  await page.getByText('Sign in to view protected genome archives.',{exact:true}).waitFor();
+  await page.getByRole('link',{name:'Sign in at Risk Center'}).click();
+  await page.getByLabel('Operator access code',{exact:true}).fill('synthetic-evolution-browser-code-0096');
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await page.getByText('Signed in until',{exact:false}).waitFor();
+  const nonce=(await context.cookies()).find(cookie=>cookie.name==='ai_quant_operator').value;
+  await page.goto(base+'/evolution');
+  await page.getByText('11 RETAINED',{exact:true}).waitFor();
+  assert.equal(await page.locator('.research-dossier').count(),10);
+  const challenger=page.locator('.research-dossier').filter({hasText:'UNVERIFIED_CHALLENGER'}).first();
+  await challenger.locator('summary').focus();await page.keyboard.press('Enter');
+  assert.equal(await challenger.getByText('Parent genome',{exact:true}).isVisible(),true);
+  assert.equal(await challenger.getByText('Unverified / Not authorized',{exact:true}).count(),1);
+  assert(!(await page.content()).includes(nonce));
+  assert(!(await page.content()).includes('challenger must never run on host'));
+  await page.screenshot({path:process.env.AI_QUANT_TEST_SCREENSHOT,fullPage:false});
+  await page.getByRole('link',{name:'Next genomes',exact:true}).click();
+  await page.waitForURL(/offset=10/);
+  await page.getByText('11 RETAINED',{exact:true}).waitFor();
+  assert.equal(await page.locator('.research-dossier').count(),1);
+  await page.getByRole('link',{name:'Previous genomes',exact:true}).click();
+  await page.waitForURL(/offset=0/);
+  await page.getByText('11 RETAINED',{exact:true}).waitFor();
+  assert.equal(await page.locator('.research-dossier').count(),10);
+  await page.goto(base+'/evolution?offset=10&head='+'0'.repeat(64));
+  await page.getByText('The genome journal changed. Refresh the first page.',{exact:true}).waitFor();
+  assert.equal(await page.locator('.research-dossier').count(),0);
+  await page.goto(base+'/evolution');
+  await page.setViewportSize({width:390,height:844});await page.reload();
+  await page.getByText('11 RETAINED',{exact:true}).waitFor();
+  await page.locator('.research-details summary').first().click();
+  assert.equal(await page.locator('.research-provenance').first().isVisible(),true);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  await page.screenshot({path:process.env.AI_QUANT_TEST_SCREENSHOT.replace('desktop','mobile'),fullPage:false});
+  await page.goto(base+'/incidents');
+  await page.getByRole('heading',{name:'Health monitoring',exact:true}).waitFor();
+  await page.goto(base+'/risk');await page.getByRole('button',{name:'Sign out',exact:true}).click();
+  await page.getByRole('button',{name:'Sign in',exact:true}).waitFor();
+  await page.goto(base+'/evolution');
+  await page.getByText('Sign in to view protected genome archives.',{exact:true}).waitFor();
+  assert.equal(await page.locator('.research-dossier').count(),0);assert.deepEqual(errors,[]);
+  console.log(JSON.stringify({status:'passed',synthetic_genomes:11,pages:[10,1],keyboard_lineage_inspection:true,changed_head_withholds_records:true,mobile_width:390,nonce_and_source_absent:true,logout_hides_records:true}));
+} catch(error) { console.error(JSON.stringify({url:page.url(),visible:(await page.locator('.page-content').innerText()).slice(0,1500)}));throw error; }
+finally {await context.close();await browser.close();}
