@@ -237,7 +237,20 @@ def load_agent_catalog() -> AgentRegistry:
                 allowed_tools=tuple(sorted(ROLE_CEILINGS[identifier])),
             )
         )
-    for identifier in ("A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08", "A09", "A10", "A14", "A18"):
+    for identifier in (
+        "A01",
+        "A02",
+        "A03",
+        "A04",
+        "A05",
+        "A06",
+        "A07",
+        "A08",
+        "A09",
+        "A10",
+        "A14",
+        "A18",
+    ):
         original = registry.get(identifier, "0.1.0")
         registry.register(
             AgentManifest.model_validate(
@@ -252,6 +265,15 @@ def load_agent_catalog() -> AgentRegistry:
     registry.register(
         AgentManifest.model_validate(
             {**registry.get("A01", "0.2.0").model_dump(), "agent_version": "0.3.0"}
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A01", "0.3.0").model_dump(),
+                "agent_version": "0.4.0",
+                "required_inputs": (*registry.get("A01", "0.3.0").required_inputs, "task_spec"),
+            }
         )
     )
     return registry

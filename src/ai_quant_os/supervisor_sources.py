@@ -112,8 +112,24 @@ def supervisor_sources(
     health_status="UNAVAILABLE",
     open_incidents=None,
     version="0.2.0",
+    task_id=None,
+    task_kind=None,
 ) -> dict[str, SourceBinding]:
-    if version == "0.3.0":
+    common = dict(as_of=world.as_of, world_state_version=world.world_state_version)
+    extra = {}
+    if version != "0.4.0" and (task_id is not None or task_kind is not None):
+        raise ValueError("Task declaration requires supervisor 0.4.0")
+    if version == "0.4.0":
+        from ai_quant_os.task_supervisor import (
+            TaskRegistryEvidence,
+            TaskSupervisorEvidence,
+            TaskDeclaration,
+            executable,
+        )
+
+        registry_type, evidence_type = TaskRegistryEvidence, TaskSupervisorEvidence
+        extra = {"task_spec": TaskDeclaration(**common, task_id=task_id, task_kind=task_kind)}
+    elif version == "0.3.0":
         from ai_quant_os.supervisor_drift import (
             DriftRegistryEvidence,
             DriftSupervisorEvidence,
@@ -128,7 +144,6 @@ def supervisor_sources(
             return agent in (*SPECIALISTS, "A01") and version == "0.2.0"
     else:
         raise ValueError("Unsupported supervisor source version")
-    common = dict(as_of=world.as_of, world_state_version=world.world_state_version)
     entries = tuple(
         CatalogEntry(
             manifest=row,
@@ -138,6 +153,7 @@ def supervisor_sources(
         for row in registry.manifests()
     )
     evidence = evidence_type(
+        **extra,
         agent_registry=registry_type(**common, entries=entries),
         world_state=MacroWorldEvidence(world=world),
         health=HealthEvidence(**common, status=health_status, open_incidents=open_incidents),
@@ -155,6 +171,7 @@ def supervisor_sources(
         ("world_state", "WORLD_STATE_READ"),
         ("health", "HEALTH_READ"),
         ("permissions", "HEALTH_READ"),
+        *((("task_spec", "HEALTH_READ"),) if extra else ()),
     ):
         record = EvidenceRecord(
             source_id=f"paper-supervisor:{name}:{world.world_state_version}",

@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "task_kind": {
+      "enum": [
+        "MARKET_REVIEW",
+        "DATA_REVIEW",
+        "EVENT_REVIEW",
+        "DRIFT_REVIEW"
+      ],
+      "title": "Task Kind",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "task_kind"
+  ],
+  "title": "TaskSupervisionInput",
+  "type": "object"
+}

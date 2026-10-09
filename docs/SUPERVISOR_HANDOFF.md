@@ -152,3 +152,8 @@ not an executable rollback. Existing specialist versions remain retained.
 seconds. Ruff passed and all 268 Python files were formatted. Both 96-package
 locks reproduced; dependency consistency and previous strategy/artifact/genome/
 protocol compatibility checks passed. The full regression passed with 1,285 checks and 15 skips in 980.31 seconds, with actual built-frontend integration required. A fresh index checkout verified the corrected named source/fixture/evaluator pins, all six schema-valid outputs and prior mission/ECB preservation. Staged changes and all 84 prior commits passed secret scans. Manual import review passed and all five pure domain modules remain unchanged; automatic boundary checking remains unavailable without its declaration. Details are recorded in BUILD_STATUS.
+
+## Later declared task routing
+
+A01 0.4.0 adds four explicit review cohorts while preserving this version.
+See `TASK_SUPERVISOR_HANDOFF.md` and ADR 0105. Full adaptive scheduling remains open.

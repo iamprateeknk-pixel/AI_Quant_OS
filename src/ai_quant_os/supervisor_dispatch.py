@@ -17,6 +17,11 @@ from ai_quant_os.supervisor_agent import (
 
 
 def dispatch_contract(version: str):
+    if version == "0.4.0":
+        from ai_quant_os.task_supervisor import read_context, wake_plan as task_wake_plan
+        from ai_quant_os.supervisor_drift import child_run_id as task_child_id, DriftSpecialistCall
+
+        return read_context, task_wake_plan, task_child_id, DriftSpecialistCall
     if version == "0.3.0":
         from ai_quant_os.supervisor_drift import (
             read_context,

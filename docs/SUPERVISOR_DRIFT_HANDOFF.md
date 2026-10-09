@@ -65,3 +65,8 @@ missions, autonomous scheduling, full causal live/shadow drift, demotion workflo
 independent evaluation/promotion and complete cost governance remain pending.
 No browser/UI acceptance or full-suite release acceptance is claimed.
 See evaluations/supervisor-drift-0103.json for final verification evidence.
+
+## Later declared task routing
+
+A01 0.4.0 adds four explicit review cohorts while preserving this version.
+See `TASK_SUPERVISOR_HANDOFF.md` and ADR 0105. Full adaptive scheduling remains open.

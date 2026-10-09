@@ -30,6 +30,11 @@ from ai_quant_os.incident_proposal_store import IncidentProposalStore
 from ai_quant_os.incident_proposal_api import IncidentPropose, install_incident_proposal_routes
 from ai_quant_os.supervisor_agent import supervisor_implementation
 from ai_quant_os.supervisor_drift import supervisor_drift_implementation
+from ai_quant_os.task_supervisor import (
+    TaskSupervisionInput,
+    TaskKind,
+    task_supervisor_implementation,
+)
 from ai_quant_os.supervisor_dispatch import SupervisorDispatch
 from ai_quant_os.supervisor_sources import (
     SUPERVISOR_INPUT_BYTES,
@@ -466,6 +471,7 @@ def create_app(
                 implementations={
                     ("A01", "0.2.0"): supervisor_implementation(agent_registry),
                     ("A01", "0.3.0"): supervisor_drift_implementation(agent_registry),
+                    ("A01", "0.4.0"): task_supervisor_implementation(agent_registry),
                     ("A02", "0.2.0"): regime_implementation(agent_registry),
                     ("A03", "0.2.0"): macro_implementation(agent_registry),
                     ("A04", "0.2.0"): currency_strength_implementation(agent_registry),
@@ -625,7 +631,8 @@ def create_app(
     try:
         operator_sessions = OperatorSessionStore(
             configured_path.with_name(configured_path.stem + ".operator-sessions.sqlite3")
-            if configured_path else None
+            if configured_path
+            else None
         )
     except (ValueError, TypeError, KeyError, OSError, sqlite3.Error):
         # Withhold session authority while preserving independently authenticated
@@ -1063,9 +1070,25 @@ def create_app(
 
     @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
+        return await compile_context(payload)
+
+    @app.post("/api/v1/paper/tasks/supervise/context", dependencies=[Depends(require_operator)])
+    async def compile_task_context(payload: TaskSupervisionInput) -> dict[str, object]:
+        return await compile_context(
+            AgentContextInput(agent_id="A01", agent_version="0.4.0", task_id=payload.task_id),
+            task_kind=payload.task_kind,
+        )
+
+    async def compile_context(
+        payload: AgentContextInput, *, task_kind: TaskKind | None = None
+    ) -> dict[str, object]:
+        if (payload.agent_id, payload.agent_version) == ("A01", "0.4.0") and task_kind is None:
+            raise HTTPException(422, "Typed task supervision context route required")
         incident_mission = (payload.agent_id, payload.agent_version) == ("A18", "0.2.0")
         supervisor_mission = payload.agent_id == "A01" and payload.agent_version in (
-            "0.2.0", "0.3.0"
+            "0.2.0",
+            "0.3.0",
+            "0.4.0",
         )
         event_mission = (payload.agent_id, payload.agent_version) == ("A06", "0.2.0")
         macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
@@ -1073,7 +1096,11 @@ def create_app(
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
             None
-            if event_mission or macro_mission or supervisor_mission or incident_mission or drift_mission
+            if event_mission
+            or macro_mission
+            or supervisor_mission
+            or incident_mission
+            or drift_mission
             else world_state.snapshot(context_quotes, now=current_time())
         )
         try:
@@ -1082,7 +1109,9 @@ def create_app(
             if drift_mission:
                 try:
                     ledger = await asyncio.to_thread(lambda: execution.execution_evidence_ledger)
-                    sources = drift_sources(*ledger, now=current_time(), policy=configured_drift_policy)
+                    sources = drift_sources(
+                        *ledger, now=current_time(), policy=configured_drift_policy
+                    )
                 except (ValueError, TypeError, OSError, ArithmeticError, sqlite3.Error) as error:
                     raise HTTPException(503, "Drift execution evidence unavailable") from error
             elif incident_mission:
@@ -1105,6 +1134,8 @@ def create_app(
                     snapshot,
                     agent_registry,
                     version=payload.agent_version,
+                    task_id=payload.task_id if task_kind is not None else None,
+                    task_kind=task_kind,
                     health_status="UNAVAILABLE"
                     if health is None
                     else "ERROR"
@@ -1918,9 +1949,11 @@ def create_app(
     install_agent_call_routes(app, call_budget, require_operator)
     install_evolution_routes(
         app,
-        evolution_workspace or (
+        evolution_workspace
+        or (
             Path(os.environ["AI_QUANT_EVOLUTION_WORKSPACE"])
-            if os.getenv("AI_QUANT_EVOLUTION_WORKSPACE") else None
+            if os.getenv("AI_QUANT_EVOLUTION_WORKSPACE")
+            else None
         ),
         require_operator,
     )

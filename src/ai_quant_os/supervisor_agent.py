@@ -186,6 +186,7 @@ async def coordinate_plan(
     *,
     plan_type=TaskPlan,
     call_type=SpecialistCall,
+    plan_fields: dict[str, object] | None = None,
 ) -> TaskPlan:
     context = invocation.context
     result = await invocation.tools.call("TASK_ORCHESTRATE", {})
@@ -217,6 +218,7 @@ async def coordinate_plan(
         selected=selected,
         deferred=deferred,
         calls=calls,
+        **(plan_fields or {}),
     )
 
 

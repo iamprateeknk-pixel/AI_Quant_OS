@@ -1,0 +1,169 @@
+{
+  "increment": "0105",
+  "date": "2026-10-09",
+  "base_commit": "eca07b32337e6ec2899fe922f6e735dcc95d14fa",
+  "feature": "A01 0.4.0 declared task cohorts; only requested specialist contexts and graphs run",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0105",
+    "tests": [
+      {
+        "path": "tests/test_task_supervisor.py"
+      },
+      {
+        "path": "tests/test_supervisor_drift.py"
+      },
+      {
+        "path": "tests/test_supervisor_sources.py"
+      },
+      {
+        "path": "tests/test_supervisor_agent.py"
+      },
+      {
+        "path": "tests/test_supervisor_dispatch.py"
+      },
+      {
+        "path": "tests/test_supervisor_api.py"
+      },
+      {
+        "path": "tests/test_supervisor_evaluation.py"
+      },
+      {
+        "path": "tests/test_agent_registry.py"
+      },
+      {
+        "path": "tests/test_graph_runtime.py"
+      },
+      {
+        "path": "tests/test_context_call_budgets.py"
+      },
+      {
+        "path": "tests/test_agent_call_budgets.py"
+      },
+      {
+        "path": "tests/test_health_api.py"
+      },
+      {
+        "path": "tests/test_operator_sessions.py"
+      }
+    ],
+    "passed": 240,
+    "failed": 0,
+    "duration_seconds": 178.43,
+    "new_feature_test_cases": 23,
+    "prior_schemas_unchanged": 74,
+    "new_schema_runtime_equal": true,
+    "original_supervisor_schema_runtime_equal": true,
+    "original_supervisor_baseline": "six declared development cases, actual API graphs and restart; preserved",
+    "ruff": "root check passed",
+    "diff_check": "passed",
+    "secret_scan": "final staged scan passed; no leaks found",
+    "junit_sha256": "363d30214ef4540c4920f8b5413eee4115e286ea64b0e49759f2813d231c3c59",
+    "red_before_implementation": "Four actual API task cases returned 404 before route and profile existed"
+  },
+  "source_fingerprints": [
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "03f87d9848a6b76010f85ba4fecfbc9e417d565f63df38484b0abdaf585d2e3e"
+    },
+    {
+      "path": "docs/SUPERVISOR_DRIFT_HANDOFF.md",
+      "sha256": "b5c2afc73971dd4832eb40f1327ef1569550d2a53b1e4ea9fd29973dc68f13e6"
+    },
+    {
+      "path": "docs/SUPERVISOR_HANDOFF.md",
+      "sha256": "8faf30de5d2ba21e45659551aae552279ab89f1f8b81698434a0b8da817142fb"
+    },
+    {
+      "path": "docs/TASK_SUPERVISOR_HANDOFF.md",
+      "sha256": "5be5c8a05059df76bad28879df98f22edb5f11fe13f142d916427c24fe31f85f"
+    },
+    {
+      "path": "docs/adr/0105-declared-task-supervision.md",
+      "sha256": "b55c42a86cd3b5ec4f4987a2b0cfc6728c2a3ed7568ac0d037edc6f31838e221"
+    },
+    {
+      "path": "docs/schemas/task-plan-0.4.0.schema.json",
+      "sha256": "7a7cbab624853ca5a554ac98a5f48d8be0ac98b6705b56ffaf241affa9dc2886"
+    },
+    {
+      "path": "docs/schemas/task-supervision-input.schema.json",
+      "sha256": "c0673c3a763a9fd53df02d2451b4001dca4f7d855767d74f8be11fce41ccb906"
+    },
+    {
+      "path": "src/ai_quant_os/agent_registry.py",
+      "sha256": "8a4aff3835089ab3fc9c57da0f6a2b60b88cf6646e4e1d721a863707ab89f06e"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "5adeab696423273522f82693d827d5d05b7c3de43d7dcf3b4e80af7bd5ee44db"
+    },
+    {
+      "path": "src/ai_quant_os/supervisor_agent.py",
+      "sha256": "6eea7ff49092cc091a9703d5a0751dc4e935c27ab7db507e3e9000ad8c3048ae"
+    },
+    {
+      "path": "src/ai_quant_os/supervisor_dispatch.py",
+      "sha256": "0472f895bf7965c4d3c137f68d07289ff8b326b9f77676a3248e92aa2cb6ec84"
+    },
+    {
+      "path": "src/ai_quant_os/supervisor_sources.py",
+      "sha256": "82a475a69e4cac43ef361512f816dfbe7adfc29f6d1d55bc3002b173035bdc7c"
+    },
+    {
+      "path": "src/ai_quant_os/task_supervisor.py",
+      "sha256": "fb2dd1d03bbcc9a5dd4c37eda878aa627b9b63704840e2bd18fbf2ab53f4ec59"
+    },
+    {
+      "path": "tests/test_agent_registry.py",
+      "sha256": "0f13bdb6427fbf1644d09cceace70d6a02a1ed760b57a51ea498028ac2c05ab2"
+    },
+    {
+      "path": "tests/test_supervisor_api.py",
+      "sha256": "23e7e07a4bb1b15b56ed1d525b8d34d61507429a4a0cadb42c734f64bd4542df"
+    },
+    {
+      "path": "tests/test_supervisor_sources.py",
+      "sha256": "e01c8b866ebe460d3fe5e2b80199eb5c2d3428ea54b69a49887125df68d0dc39"
+    },
+    {
+      "path": "tests/test_task_supervisor.py",
+      "sha256": "f91a38ed18b3b87a25402f499e5a572911c042869bf525f4402d29b376503add"
+    }
+  ],
+  "task_cohorts": {
+    "MARKET_REVIEW": [
+      "A07",
+      "A06",
+      "A05",
+      "A02",
+      "A04",
+      "A03"
+    ],
+    "DATA_REVIEW": [
+      "A07"
+    ],
+    "EVENT_REVIEW": [
+      "A06"
+    ],
+    "DRIFT_REVIEW": [
+      "A14"
+    ]
+  },
+  "observed_quota": {
+    "task": "DRIFT_REVIEW",
+    "first_parent_A01_calls": 6,
+    "A14_calls": 5,
+    "all_other_roles_calls": 0,
+    "retry_A01_additional_calls": 1,
+    "retry_A14_additional_calls": 0,
+    "basis": "logical admitted attempts; not token or monetary costs"
+  },
+  "limitations": [
+    "Four explicit review kinds; no autonomous classification, task registry, queue or adaptive scheduler",
+    "Full agent missions, calibration and reputation unfinished",
+    "No paid providers, live broker, capital, promotion or release authorization",
+    "No UI changes or browser acceptance in this increment",
+    "Focused compatibility scope, not full release suite",
+    "All P00-P13 remain incomplete"
+  ]
+}
