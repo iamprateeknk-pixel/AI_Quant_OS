@@ -1,0 +1,49 @@
+{
+  "increment": "0108",
+  "date": "2026-10-09",
+  "base_commit": "ccf73d35c9b1735788c1405f66bb6b72b2047cf1",
+  "feature": "Injected read-only MT5 demo account and quote observation policy",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0108",
+    "scope": [
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_broker_router.py"
+    ],
+    "tests": 42,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "0.836",
+    "tdd_red": "Nine initial tests failed because the implementation module was absent",
+    "ruff": "passed",
+    "prior_schemas_unchanged": 78,
+    "source_hashes": [
+      {
+        "path": "docs/MT5_DEMO_OBSERVATION_HANDOFF.md",
+        "sha256": "30187d574911f4ba3fcb945685121bef1d55ca5042359448de2b4119ff7c5314"
+      },
+      {
+        "path": "docs/adr/0108-mt5-demo-observation-boundary.md",
+        "sha256": "6e43bf556baae4c97adadc7b4f1c0e0f7f77504e72e7e0b6ae1efec4daf5d56a"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_observation.py",
+        "sha256": "5f12ea8690b9269c8b316facf61d945792d4415bf109126935879f363ac1fce2"
+      },
+      {
+        "path": "tests/test_mt5_demo_observation.py",
+        "sha256": "0f92ab0ee60a918032dbd073fd3f825cc14bb5acb4fbf06733db9fc60a5b57a1"
+      }
+    ],
+    "junit_sha256": "feb5f69f9df96b804e6116286cf3430b206c4f78f7be91028da002ac6c10a3bc",
+    "secrets_scan": "passed: staged gitleaks 8.30.1",
+    "review": "Local five-axis self-review; independent broker/release review remains pending"
+  },
+  "limits": [
+    "Fixture SDK only; no terminal or external broker used",
+    "No native SDK import, operational worker, API route or broker routing integration",
+    "Post-call clock checks do not provide native cancellation",
+    "No order submission, portfolio mutation, native attestation or live authorization",
+    "P04 gateway custody, native acceptance and synchronization remain open",
+    "Focused increment verification does not establish full-system or P13 acceptance"
+  ]
+}
