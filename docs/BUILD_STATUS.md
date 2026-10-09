@@ -855,3 +855,14 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
 - Full contexts and exact manifests now persist with their audit entries in one transaction. Operator-authenticated archive retrieval verifies evidence/manifest hashes and audit binding without extending expiry or reactivating agents. Capacity and duplicate inserts are enforced across concurrent connections.
 - Tests cover audit rollback, restart expiry, exact manifest retention, corruption, valid-chain/wrong-artifact binding and archive authorization. These are context evidence checkpoints, not LangGraph execution state. See ADR 0017; the supervisor and full agent missions remain open.
 - Verification: 420 tests passed, 11 optional integration tests skipped; Python lint and format checks passed. No frontend change was made.
+
+
+### Increment 0118 — exclusive foreground demo service ownership
+
+The demo sync CLI now holds one local SQLite ownership gate through its full
+loop and journal shutdown. Competing launches fail before sync data or health
+publication; lock storage failure is sanitized. The persistent lock file is
+retained, and only the owned connection is released on exit. Real local process
+contention and disabled launches are checked. This does not establish terminal
+custody or native acceptance. P04 service deployment/operator recovery and P13
+release acceptance remain incomplete.

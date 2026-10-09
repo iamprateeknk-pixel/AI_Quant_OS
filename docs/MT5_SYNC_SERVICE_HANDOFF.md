@@ -82,3 +82,31 @@ independent review and P13 live acceptance remain pending.
 Rollback retains all journals and custody evidence. The entry-point addition
 changes no dependencies or lock pins. Remove the service launch configuration
 without deleting its state. Previous code does not consume service health files.
+
+
+## Exclusive local service ownership — increment 0118
+
+The CLI acquires a SQLite writer transaction in fixed `service-lock.sqlite`
+before opening sync journals or publishing health. It holds that connection
+through the service loop and journal shutdown. A competing launch exits with
+`SERVICE_ALREADY_RUNNING`; unreadable lock storage exits with
+`SERVICE_LOCK_UNAVAILABLE`. Both use sanitized output and touch no sync journal
+or heartbeat. Configuration/enrollment launch checks still precede acquisition.
+The existing disabled CLI follows the same ownership rule.
+
+The transaction is a local exclusion gate, with zero wait on contention. Its
+persistent file is retained. Normal exit, an exception, or process exit releases
+the lock through closing the owned connection or OS handle cleanup; no timer,
+PID lookup, expired lease, reset, lock-file deletion or owner adoption is used.
+It creates no durable ownership receipt and does not prove native terminal
+custody. Direct controller/library users are outside this CLI gate. Filesystem
+integrity, deletion/replacement of the lock file by another local actor, network
+filesystem locking, and launchers that ignore this gate are outside its scope.
+Use one trusted local state directory and retain the lock file with all journals.
+
+Checks exercise real SQLite contention, a separate owned Python process exiting
+without SQLite cleanup, repeated disabled launches, lock-storage failure, and
+ownership during loop failure. No native SDK, terminal, credentials or external
+broker is used. Native/service-manager/independent acceptance remains pending.
+Rolling back to a version before 0118 removes this CLI exclusion: stop all service
+launches first, and preserve the entire state directory.

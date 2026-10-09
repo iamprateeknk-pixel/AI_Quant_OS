@@ -4,9 +4,10 @@ import argparse
 import json
 import os
 import signal
+import sqlite3
 import sys
 import tempfile
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from threading import Event
@@ -185,6 +186,29 @@ def run_service(
     return publish("STOPPED", "TICK_LIMIT" if ticks >= max_ticks else None)
 
 
+@contextmanager
+def service_ownership(path: Path):
+    """Hold a local SQLite writer lock until this service exits.
+
+    The file is retained; process exit releases the kernel lock without any
+    PID adoption, lease expiry, or deletion of another owner's state.
+    """
+    connection = None
+    try:
+        try:
+            connection = sqlite3.connect(path, timeout=0, isolation_level=None)
+            connection.execute("BEGIN IMMEDIATE")
+        except sqlite3.Error as exc:
+            code = getattr(exc, "sqlite_errorcode", 0) & 0xFF
+            if code in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
+                raise ServiceRejected("SERVICE_ALREADY_RUNNING") from None
+            raise ServiceRejected("SERVICE_LOCK_UNAVAILABLE") from None
+        yield
+    finally:
+        if connection is not None:
+            connection.close()
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Run explicitly enrolled demo account observations"
@@ -206,6 +230,7 @@ def main(argv=None) -> int:
         for signum in (signal.SIGINT, signal.SIGTERM):
             handlers[signum] = signal.signal(signum, lambda signum, frame: stop.set())
         with ExitStack() as stack:
+            stack.enter_context(service_ownership(args.state_dir / "service-lock.sqlite"))
             gateway = DemoObservationGateway(args.state_dir / "gateway.sqlite")
             stack.callback(gateway.close)
             projection = SyncProjectionStore(args.state_dir / "projection.sqlite")

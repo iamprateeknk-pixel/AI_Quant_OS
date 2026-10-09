@@ -1,0 +1,63 @@
+{
+  "increment": "0118",
+  "date": "2026-10-09",
+  "base_commit": "0606c5a5b6a65fc02750003d697d74ddb906eed7",
+  "feature": "Exclusive local ownership of the foreground demo sync service state lifecycle",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0118",
+    "tests": 195,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "8.370",
+    "scope": [
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "prior_schemas_unchanged": 85,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "6bb76c15038d9c9d8b8477fd06f24738d85167157073e17fd9f0634f1b203216"
+      },
+      {
+        "path": "docs/MT5_SYNC_SERVICE_HANDOFF.md",
+        "sha256": "cd8e045ef6cc54d26ce51b5729d31ef9b2f7127ab3eb7d8c9a3a33f4b0533ba3"
+      },
+      {
+        "path": "docs/adr/0118-exclusive-demo-sync-service-ownership.md",
+        "sha256": "e6d5afa14a3a870e41b46da423f32e87b17086b5a51fcd27ed8c353f7effbc19"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "ff08a3438362965b572af551fab7eca8b59af15a255eb23b9804fb34908a6b14"
+      },
+      {
+        "path": "tests/test_mt5_sync_service.py",
+        "sha256": "b1852945838329ad91957dd31de24cc52a6f42f7d8e6c8d113c87125b639f86e"
+      }
+    ],
+    "junit_sha256": "cc8c32b683fe43b3c04cfaaa4c83642cd63b277267a693c0e47c75b8b109d6b2",
+    "tdd_red": "Competing owner, missing retained ownership file, and unavailable lock storage checks each failed before implementation",
+    "review": "Local correctness/readability/architecture/security/performance self-review: fixed zero-wait SQL, acquisition before shared state, ExitStack releases ownership last, sanitized failures, no dependency or schema changes; independent acceptance pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "Only cooperating CLI launches against the same unchanged local lock file are excluded; direct library callers are outside this gate",
+    "Local SQLite contention, separate owned Python process exit, and disabled service launches only; no native SDK, terminal, credentials, or external broker",
+    "Lock file remains retained; no PID adoption, lease expiry, deletion, state reset, or process-tree cleanup",
+    "No durable owner receipt, terminal custody, network filesystem locking, or protection against filesystem replacement/tampering is attested",
+    "Native P04 acceptance, Windows service deployment, explicit halted recovery, orphan custody, full lifecycle reconciliation and external order routing remain pending",
+    "Focused verification does not establish full-system or P13 release acceptance"
+  ]
+}

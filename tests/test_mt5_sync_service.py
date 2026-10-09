@@ -264,3 +264,117 @@ def test_package_registers_service_entry_point():
     assert (
         project["project"]["scripts"]["ai-quant-demo-sync"] == "ai_quant_os.mt5_sync_service:main"
     )
+
+
+def test_second_cli_is_rejected_before_health_or_sync_storage(tmp_path, capsys):
+    import sqlite3
+
+    module = implementation()
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config_document(False)), encoding="utf-8")
+    directory = tmp_path / "state"
+    directory.mkdir()
+    health = directory / "health.json"
+    health.write_bytes(b"previous complete heartbeat")
+    owner = sqlite3.connect(directory / "service-lock.sqlite", timeout=0)
+    owner.execute("BEGIN IMMEDIATE")
+    try:
+        assert module.main(["--config", str(path), "--state-dir", str(directory)]) == 2
+        result = json.loads(capsys.readouterr().out)
+        assert result["code"] == "SERVICE_ALREADY_RUNNING"
+        assert health.read_bytes() == b"previous complete heartbeat"
+        assert not (directory / "gateway.sqlite").exists()
+        assert not (directory / "controller.sqlite").exists()
+        assert not (directory / "projection.sqlite").exists()
+    finally:
+        owner.close()
+
+
+def test_released_service_ownership_allows_next_disabled_launch(tmp_path, capsys):
+    module = implementation()
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config_document(False)), encoding="utf-8")
+    directory = tmp_path / "state"
+    for _ in range(2):
+        assert module.main(["--config", str(path), "--state-dir", str(directory)]) == 0
+        assert json.loads(capsys.readouterr().out)["state"] == "DISABLED"
+    assert (directory / "service-lock.sqlite").exists()
+
+
+def test_service_lock_storage_error_is_sanitized_before_sync_storage(tmp_path, capsys):
+    module = implementation()
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config_document(False)), encoding="utf-8")
+    directory = tmp_path / "state"
+    directory.mkdir()
+    (directory / "service-lock.sqlite").mkdir()
+    assert module.main(["--config", str(path), "--state-dir", str(directory)]) == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result["code"] == "SERVICE_LOCK_UNAVAILABLE"
+    assert str(directory) not in json.dumps(result)
+    assert not (directory / "gateway.sqlite").exists()
+
+
+def test_separate_process_owner_blocks_cli_and_exit_releases_lock(tmp_path, capsys):
+    import subprocess
+    import sys
+
+    module = implementation()
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config_document(False)), encoding="utf-8")
+    directory = tmp_path / "state"
+    directory.mkdir()
+    script = (
+        "import os, sqlite3, sys; "
+        "connection = sqlite3.connect(sys.argv[1], timeout=0); "
+        "connection.execute('BEGIN IMMEDIATE'); "
+        "print('READY', flush=True); sys.stdin.read(1); os._exit(0)"
+    )
+    owner = subprocess.Popen(
+        [sys.executable, "-u", "-c", script, str(directory / "service-lock.sqlite")],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    from concurrent.futures import ThreadPoolExecutor
+
+    executor = ThreadPoolExecutor(max_workers=1)
+    try:
+        assert executor.submit(owner.stdout.readline).result(timeout=10) == "READY\n"
+        assert module.main(["--config", str(path), "--state-dir", str(directory)]) == 2
+        assert json.loads(capsys.readouterr().out)["code"] == "SERVICE_ALREADY_RUNNING"
+        assert not (directory / "health.json").exists()
+        _, error = owner.communicate("x", timeout=10)
+        assert owner.returncode == 0 and error == ""
+        assert module.main(["--config", str(path), "--state-dir", str(directory)]) == 0
+        assert json.loads(capsys.readouterr().out)["state"] == "DISABLED"
+    finally:
+        if owner.poll() is None:
+            owner.kill()
+            owner.communicate(timeout=10)
+        executor.shutdown(wait=True)
+
+
+def test_owner_is_held_during_loop_and_released_after_failure(tmp_path, monkeypatch, capsys):
+    import sqlite3
+
+    module = implementation()
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(config_document(False)), encoding="utf-8")
+    directory = tmp_path / "state"
+
+    def fail_during_loop(*args, **kwargs):
+        contender = sqlite3.connect(directory / "service-lock.sqlite", timeout=0)
+        try:
+            with pytest.raises(sqlite3.OperationalError, match="locked"):
+                contender.execute("BEGIN IMMEDIATE")
+        finally:
+            contender.close()
+        raise RuntimeError("private failure")
+
+    monkeypatch.setattr(module, "run_service", fail_during_loop)
+    assert module.main(["--config", str(path), "--state-dir", str(directory)]) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "SERVICE_FAILURE"
+    with module.service_ownership(directory / "service-lock.sqlite"):
+        pass
