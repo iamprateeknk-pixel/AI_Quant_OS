@@ -1,0 +1,83 @@
+{
+  "increment": "0121",
+  "date": "2026-10-10",
+  "base_commit": "5360fa00ea1d21821ce2f576902418c0ceb52a4d",
+  "feature": "Explicit one-window demo history backfill preserving oldest uncovered coverage and durable caller-owned attempt intent",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0121",
+    "tests": 261,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "20.835",
+    "scope": [
+      "tests/test_mt5_history_backfill.py",
+      "tests/test_mt5_clock_recovery.py",
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 87,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "efb06caf0028d4ef46daf05e5182f9584a5a9108ac55191ecf8216c64beb306d"
+      },
+      {
+        "path": "docs/MT5_HISTORY_BACKFILL_HANDOFF.md",
+        "sha256": "65313d2ff44bfb41b7910c0c1860e8c33c9ffdf0c18e751f4a11a8fa060f7210"
+      },
+      {
+        "path": "docs/adr/0121-explicit-bounded-demo-history-backfill.md",
+        "sha256": "103ba1b052a6d730a1277a90783ba91ec7364f2d65974360e2b7437a6ea32ac2"
+      },
+      {
+        "path": "docs/schemas/demo-sync-backfill.schema.json",
+        "sha256": "c5c86140b012b9bfd7b39c97c3dd026a550a66cc75feeb24ac794e3c91074198"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_gateway.py",
+        "sha256": "40195c8313bd8a28f85e863b84190bede1cb2b4f285f32f901f375df2373814c"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_controller.py",
+        "sha256": "2d2a57fe2db3a5d5c1271406f28eb5deea6dcd531afc074ec5561724129eba8e"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "790b1f9763cb7556ceefd716e8cbffa3ea01d484ee06c5ec7b9eb8670430d0d6"
+      },
+      {
+        "path": "tests/test_mt5_history_backfill.py",
+        "sha256": "49adfcbcfdbdb96ab09c28438db63d4fb2bf7c5599dc31c66edd36339e975764"
+      }
+    ],
+    "junit_sha256": "365e75cc07c21c9c53ff620d8a595a61e17e8917ecd8609b5802d0d4cf92e7f7",
+    "tdd_red": "Four initial oldest-window/repeated/stale checks failed before the interface; CLI and wire checks failed before their addition. CLI fixture clocks were aligned, and corruption fixture changed from deleting an empty event table to deleting the audit head",
+    "review": "Local five-axis self-review: exact halted revision/reason/UUID, audited pre-dispatch original intent, retained overlap, reused identity refusal, gateway custody and projection admission, original pending restart path, bounded one-day native request, no automatic multi-day loop, shared canonical history/projection checks, sanitized outcomes; independent acceptance pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "Each explicit command captures at most one oldest bounded window; more distant gaps halt again and require a new explicit intent after the normal interval",
+    "Native request/deal/output bounds remain enforced; an oversized day is withheld and finer subdivision remains pending",
+    "Current account/position/order/quote context accompanying old deals is not historical account state; completeness and execution-time contract units remain unverified",
+    "Unknown custody retains exact pending intent; no worker adoption, process-tree cleanup, store reset or live order authority",
+    "Cross-journal admission reads are snapshots, not a distributed lease; existing gateway reservation/request binding guards native dispatch",
+    "One-shot CLI uses existing enrollment/ownership/original-store gates, performs one fixture-verified capture path, starts no timer and updates no heartbeat",
+    "Existing 87 schemas and tables are unchanged; backfill audit metadata is withheld by older readers, requiring preserved journals and stopped launchers on rollback",
+    "Fixture native observations only; no actual SDK, terminal, real credentials or external broker used",
+    "Native history completeness/corrections, oversized-window subdivision, native/orphan custody, checkpoint migration, service deployment, independent broker review and P13 live acceptance remain pending",
+    "Focused checks do not establish full-system acceptance"
+  ]
+}

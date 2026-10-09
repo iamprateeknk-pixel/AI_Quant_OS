@@ -484,6 +484,24 @@ class DemoObservationGateway:
                 if self._connection is not None:
                     self._connection.rollback()
 
+    def attempt_status(
+        self, attempt_id: UUID
+    ) -> Literal["ABSENT", "PRESENT", "STORAGE_UNAVAILABLE"]:
+        """Check a proposed identity against verified retained intent without dispatch."""
+        if not isinstance(attempt_id, UUID) or attempt_id.version != 4:
+            raise ValueError("Attempt identity must be UUID4")
+        with self._lock:
+            try:
+                if self._connection is None:
+                    return "STORAGE_UNAVAILABLE"
+                self._connection.execute("BEGIN")
+                return "PRESENT" if str(attempt_id) in self._verify() else "ABSENT"
+            except (sqlite3.Error, ValueError):
+                return "STORAGE_UNAVAILABLE"
+            finally:
+                if self._connection is not None:
+                    self._connection.rollback()
+
     def replay_existing(
         self, request: DemoCaptureRequest | DemoSyncRequest, attempt_id: UUID
     ) -> GatewayReply:

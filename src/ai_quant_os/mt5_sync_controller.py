@@ -151,6 +151,38 @@ class SyncClockRecoveryResult(ObservationModel):
     native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
 
 
+class SyncBackfillRequest(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    action: Literal["BACKFILL_HISTORY"] = "BACKFILL_HISTORY"
+    expected_revision: int = Field(ge=1, le=MAX_TRANSITIONS, strict=True)
+    attempt_id: UUID4
+
+
+class SyncBackfillResult(ObservationModel):
+    schema_version: Literal["1.0"] = "1.0"
+    state: Literal["COMPLETED", "WITHHELD", "DISABLED"]
+    code: (
+        Literal[
+            "BUSY",
+            "STORAGE_UNAVAILABLE",
+            "STATE_CONFLICT",
+            "CLOCK_REGRESSION",
+            "CAPACITY",
+            "ATTEMPT_CONFLICT",
+            "CUSTODY_UNCERTAIN",
+            "SOURCE_FAILURE",
+            "PROJECTION_FAILURE",
+            "HISTORY_GAP",
+        ]
+        | None
+    ) = None
+    request: SyncBackfillRequest
+    health: SyncHealth | None = None
+    may_submit_orders: Literal[False] = False
+    may_affect_portfolio: Literal[False] = False
+    native_attestation: Literal["UNVERIFIED"] = "UNVERIFIED"
+
+
 class DemoSyncController:
     """Call tick from a service timer; each call performs at most one fixed worker capture."""
 
@@ -245,6 +277,7 @@ class DemoSyncController:
                     {"policy_ref", "state"},
                     {"policy_ref", "state", "recovery"},
                     {"policy_ref", "state", "clock_recovery"},
+                    {"policy_ref", "state", "backfill"},
                 )
                 or event["policy_ref"] != self._policy
             ):
@@ -297,12 +330,33 @@ class DemoSyncController:
                     or state.next_due_at != max(state.observed_at, prior.next_due_at)
                 ):
                     raise ValueError("Invalid clock recovery transition")
+            if "backfill" in event:
+                backfill = SyncBackfillRequest.model_validate(event["backfill"])
+                start = self._history_start(prior) if prior is not None else None
+                if (
+                    prior is None
+                    or prior.state != "HALTED"
+                    or prior.code != "HISTORY_GAP"
+                    or prior.pending_attempt_id is not None
+                    or prior.revision != backfill.expected_revision
+                    or state.state != "ACTIVE"
+                    or state.code is not None
+                    or state.pending_attempt_id != backfill.attempt_id
+                    or state.pending_history_start != start
+                    or state.pending_history_end
+                    != min(state.observed_at, start + timedelta(days=1))
+                    or state.last_history_end != prior.last_history_end
+                    or state.last_success_at != prior.last_success_at
+                    or state.consecutive_failures != prior.consecutive_failures
+                    or state.next_due_at != prior.next_due_at
+                ):
+                    raise ValueError("Invalid backfill intent transition")
             prior = state
         if prior is None or canonical(prior.model_dump(mode="json")) != row[0][3]:
             raise ValueError("Controller differs from audit history")
         return prior
 
-    def _save(self, old, *, recovery=None, clock_recovery=None, **changes):
+    def _save(self, old, *, recovery=None, clock_recovery=None, backfill=None, **changes):
         if old.revision >= MAX_TRANSITIONS:
             raise ValueError("Controller transition capacity")
         state = SyncHealth.model_validate(
@@ -318,6 +372,7 @@ class DemoSyncController:
                 "policy_ref": self._policy,
                 "state": state.model_dump(mode="json"),
                 **({"recovery": recovery.model_dump(mode="json")} if recovery else {}),
+                **({"backfill": backfill.model_dump(mode="json")} if backfill else {}),
                 **(
                     {"clock_recovery": clock_recovery.model_dump(mode="json")}
                     if clock_recovery
@@ -326,6 +381,23 @@ class DemoSyncController:
             },
         )
         return state
+
+    def _history_start(self, state):
+        start = self.schedule.initial_history_start
+        if state.last_history_end is not None:
+            start = max(
+                start, state.last_history_end - timedelta(seconds=self.schedule.overlap_seconds)
+            )
+        return start
+
+    def _projection_matches_cursor(self, state):
+        try:
+            view = self.projection.view(self.connection)
+            return (view is None and state.last_history_end is None) or (
+                view is not None and view.batch.history_end == state.last_history_end
+            )
+        except Exception:
+            return False
 
     def _unavailable(self, now):
         return SyncHealth(
@@ -430,25 +502,13 @@ class DemoSyncController:
                         return reply("CLOCK_REGRESSION", current)
                     if current.revision >= MAX_TRANSITIONS - 2:
                         return reply("CAPACITY", current)
-                    start = self.schedule.initial_history_start
-                    if current.last_history_end is not None:
-                        start = max(
-                            start,
-                            current.last_history_end
-                            - timedelta(seconds=self.schedule.overlap_seconds),
-                        )
+                    start = self._history_start(current)
                     if not timedelta(0) < now - start <= timedelta(days=1):
                         return reply("HISTORY_GAP", current)
                     custody = self.gateway.custody_status()
                     if custody != "ALL_FINISHED":
                         return reply(custody, current)
-                    try:
-                        view = self.projection.view(self.connection)
-                        if (view is None) != (current.last_history_end is None) or (
-                            view is not None and view.batch.history_end != current.last_history_end
-                        ):
-                            return reply("PROJECTION_WITHHELD", current)
-                    except Exception:
+                    if not self._projection_matches_cursor(current):
                         return reply("PROJECTION_WITHHELD", current)
                     resumed = self._save(
                         current,
@@ -465,6 +525,78 @@ class DemoSyncController:
                 finally:
                     if self._db is not None:
                         self._db.rollback()
+        finally:
+            self._dispatch_lock.release()
+
+    def backfill_history(self, request: SyncBackfillRequest) -> SyncBackfillResult:
+        """Capture one oldest bounded history window under an explicit durable intent."""
+        request = SyncBackfillRequest.model_validate(request.model_dump())
+        now = utc(self.clock())
+
+        def reply(code=None, health=None, state="WITHHELD"):
+            return SyncBackfillResult(state=state, code=code, request=request, health=health)
+
+        if not self.schedule.enabled or not self.connection.enabled:
+            return reply(state="DISABLED")
+        if not self._dispatch_lock.acquire(blocking=False):
+            return reply("BUSY")
+        try:
+            with self._lock:
+                try:
+                    if self._db is None:
+                        raise ValueError("Controller unavailable")
+                    self._db.execute("BEGIN IMMEDIATE")
+                    current = self._read()
+                    if (
+                        current.state != "HALTED"
+                        or current.code != "HISTORY_GAP"
+                        or current.pending_attempt_id is not None
+                        or current.revision != request.expected_revision
+                    ):
+                        return reply("STATE_CONFLICT", current)
+                    if now < current.observed_at:
+                        return reply("CLOCK_REGRESSION", current)
+                    if current.revision >= MAX_TRANSITIONS - 2:
+                        return reply("CAPACITY", current)
+                    custody = self.gateway.custody_status()
+                    if custody != "ALL_FINISHED":
+                        return reply(custody, current)
+                    identity = self.gateway.attempt_status(request.attempt_id)
+                    if identity != "ABSENT":
+                        return reply(
+                            "ATTEMPT_CONFLICT" if identity == "PRESENT" else identity, current
+                        )
+                    start = self._history_start(current)
+                    end = min(now, start + timedelta(days=1))
+                    if end <= start:
+                        return reply("HISTORY_GAP", current)
+                    if not self._projection_matches_cursor(current):
+                        return reply("PROJECTION_FAILURE", current)
+                    pending = self._save(
+                        current,
+                        backfill=request,
+                        state="ACTIVE",
+                        code=None,
+                        observed_at=now,
+                        pending_attempt_id=request.attempt_id,
+                        pending_history_start=start,
+                        pending_history_end=end,
+                    )
+                    self._db.commit()
+                except Exception:
+                    return reply("STORAGE_UNAVAILABLE")
+                finally:
+                    if self._db is not None:
+                        self._db.rollback()
+            try:
+                outcome = self._capture_pending(pending)
+                return reply(
+                    code=outcome.code,
+                    health=outcome,
+                    state="COMPLETED" if outcome.state == "HEALTHY" else "WITHHELD",
+                )
+            except Exception:
+                return reply("STORAGE_UNAVAILABLE")
         finally:
             self._dispatch_lock.release()
 
@@ -507,13 +639,7 @@ class DemoSyncController:
                     if now < state.next_due_at:
                         self._db.rollback()
                         return state
-                    start = self.schedule.initial_history_start
-                    if state.last_history_end is not None:
-                        start = max(
-                            start,
-                            state.last_history_end
-                            - timedelta(seconds=self.schedule.overlap_seconds),
-                        )
+                    start = self._history_start(state)
                     if not timedelta(0) < now - start <= timedelta(days=1):
                         state = self._save(
                             state, state="HALTED", code="HISTORY_GAP", observed_at=now

@@ -893,3 +893,16 @@ schemas are unchanged; the separate clock recovery schema and older-reader
 rollback limit are documented. Historical backfill, native/orphan custody,
 checkpoint migration, service deployment, independent review and P13 acceptance
 remain pending.
+
+
+### Increment 0121 - explicit oldest-window history backfill
+
+The controller and one-shot CLI can now process one bounded oldest history
+window from a HISTORY_GAP halt, using an exact revision and caller-owned UUID.
+The original window/overlap is committed before fixed-worker dispatch. Restart
+retains that intent; duplicate/reused commands and unknown custody are refused.
+Fixture backfills followed by normal scheduling preserve coverage and old deal
+versions. Existing schemas are unchanged; the new backfill contract and
+older-reader audit limitation are documented. Native completeness, oversized-day
+subdivision, custody resolution, checkpoint migration, service deployment,
+independent review and P13 acceptance remain pending.

@@ -1,0 +1,292 @@
+{
+  "$defs": {
+    "SyncBackfillRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "action": {
+          "const": "BACKFILL_HISTORY",
+          "default": "BACKFILL_HISTORY",
+          "title": "Action",
+          "type": "string"
+        },
+        "expected_revision": {
+          "maximum": 3000,
+          "minimum": 1,
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "attempt_id": {
+          "format": "uuid4",
+          "title": "Attempt Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expected_revision",
+        "attempt_id"
+      ],
+      "title": "SyncBackfillRequest",
+      "type": "object"
+    },
+    "SyncBackfillResult": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "COMPLETED",
+            "WITHHELD",
+            "DISABLED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "enum": [
+                "BUSY",
+                "STORAGE_UNAVAILABLE",
+                "STATE_CONFLICT",
+                "CLOCK_REGRESSION",
+                "CAPACITY",
+                "ATTEMPT_CONFLICT",
+                "CUSTODY_UNCERTAIN",
+                "SOURCE_FAILURE",
+                "PROJECTION_FAILURE",
+                "HISTORY_GAP"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "request": {
+          "$ref": "#/$defs/SyncBackfillRequest"
+        },
+        "health": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SyncHealth"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "may_submit_orders": {
+          "const": false,
+          "default": false,
+          "title": "May Submit Orders",
+          "type": "boolean"
+        },
+        "may_affect_portfolio": {
+          "const": false,
+          "default": false,
+          "title": "May Affect Portfolio",
+          "type": "boolean"
+        },
+        "native_attestation": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Native Attestation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "request"
+      ],
+      "title": "SyncBackfillResult",
+      "type": "object"
+    },
+    "SyncHealth": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "observation_kind": {
+          "const": "DEMO_SYNC_HEALTH",
+          "default": "DEMO_SYNC_HEALTH",
+          "title": "Observation Kind",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "DISABLED",
+            "STARTING",
+            "ACTIVE",
+            "HEALTHY",
+            "DEGRADED",
+            "HALTED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "enum": [
+                "STORAGE_UNAVAILABLE",
+                "CLOCK_REGRESSION",
+                "HISTORY_GAP",
+                "CUSTODY_UNCERTAIN",
+                "SOURCE_FAILURE",
+                "PROJECTION_FAILURE",
+                "CAPACITY"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "revision": {
+          "default": 0,
+          "maximum": 3000,
+          "minimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "next_due_at": {
+          "format": "date-time",
+          "title": "Next Due At",
+          "type": "string"
+        },
+        "last_history_end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last History End"
+        },
+        "last_success_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Success At"
+        },
+        "consecutive_failures": {
+          "default": 0,
+          "maximum": 3000,
+          "minimum": 0,
+          "title": "Consecutive Failures",
+          "type": "integer"
+        },
+        "pending_attempt_id": {
+          "anyOf": [
+            {
+              "format": "uuid4",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pending Attempt Id"
+        },
+        "pending_history_start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pending History Start"
+        },
+        "pending_history_end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pending History End"
+        },
+        "may_submit_orders": {
+          "const": false,
+          "default": false,
+          "title": "May Submit Orders",
+          "type": "boolean"
+        },
+        "may_affect_portfolio": {
+          "const": false,
+          "default": false,
+          "title": "May Affect Portfolio",
+          "type": "boolean"
+        },
+        "native_attestation": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Native Attestation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "observed_at",
+        "next_due_at"
+      ],
+      "title": "SyncHealth",
+      "type": "object"
+    }
+  },
+  "anyOf": [
+    {
+      "$ref": "#/$defs/SyncBackfillRequest"
+    },
+    {
+      "$ref": "#/$defs/SyncBackfillResult"
+    }
+  ]
+}

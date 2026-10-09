@@ -24,6 +24,7 @@ from ai_quant_os.mt5_sync_controller import (
     SyncSchedule,
     SyncRecoveryRequest,
     SyncClockRecoveryRequest,
+    SyncBackfillRequest,
 )
 from ai_quant_os.mt5_sync_projection import SyncProjectionStore
 
@@ -225,6 +226,7 @@ def main(argv=None) -> int:
     actions = parser.add_mutually_exclusive_group()
     actions.add_argument("--recover-pending-attempt")
     actions.add_argument("--resume-clock-halt", action="store_true")
+    actions.add_argument("--backfill-history-attempt")
     parser.add_argument("--expected-revision", type=int)
     args = parser.parse_args(argv)
     stop = Event()
@@ -235,9 +237,15 @@ def main(argv=None) -> int:
             args.recover_pending_attempt is not None
             or args.expected_revision is not None
             or args.resume_clock_halt
+            or args.backfill_history_attempt is not None
         ):
             try:
-                if args.resume_clock_halt:
+                if args.backfill_history_attempt is not None:
+                    recovery = SyncBackfillRequest(
+                        expected_revision=args.expected_revision,
+                        attempt_id=args.backfill_history_attempt,
+                    )
+                elif args.resume_clock_halt:
                     recovery = SyncClockRecoveryRequest(expected_revision=args.expected_revision)
                 else:
                     recovery = SyncRecoveryRequest(
@@ -275,13 +283,14 @@ def main(argv=None) -> int:
             )
             stack.callback(controller.close)
             if recovery is not None:
-                result = (
-                    controller.recover_clock(recovery)
-                    if isinstance(recovery, SyncClockRecoveryRequest)
-                    else controller.recover_pending(recovery)
-                )
+                if isinstance(recovery, SyncBackfillRequest):
+                    result = controller.backfill_history(recovery)
+                elif isinstance(recovery, SyncClockRecoveryRequest):
+                    result = controller.recover_clock(recovery)
+                else:
+                    result = controller.recover_pending(recovery)
                 print(result.model_dump_json(), flush=True)
-                return 0 if result.state in {"RECOVERED", "RESUMED"} else 2
+                return 0 if result.state in {"RECOVERED", "RESUMED", "COMPLETED"} else 2
             result = run_service(
                 controller,
                 args.state_dir / "health.json",
