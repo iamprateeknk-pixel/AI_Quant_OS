@@ -16,7 +16,7 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
 - Browser verification is pending: execution policy rejected launching the local
   web preview. See `EVOLUTION_GENOME_UI_HANDOFF.md` and ADR 0096. Actual evaluation,
   optimizer runs, champion/promotion/rollback/freeze workflows, strategy history,
-  telemetry and independent acceptance remain open. P00–P13 remains incomplete.
+  telemetry and independent acceptance remain open. P00-P13 remains incomplete.
 
 ## Archived research dossier view increment
 
