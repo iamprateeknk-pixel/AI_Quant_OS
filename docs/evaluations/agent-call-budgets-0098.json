@@ -1,0 +1,104 @@
+{
+  "increment": "0098",
+  "feature": "Durable daily and monthly graph tool-call admission",
+  "base_commit": "19f0a386de0cb81722481d47150d56981ce358b6",
+  "verification": {
+    "checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0098",
+    "scoped_tests_passed": 172,
+    "test_files": [
+      "tests/test_agent_call_budgets.py",
+      "tests/test_graph_runtime.py",
+      "tests/test_agent_registry.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_health_watchdog.py",
+      "tests/test_health_api.py",
+      "tests/test_supervisor_dispatch.py"
+    ],
+    "ruff_src_tests": "passed",
+    "prior_schemas_unchanged": 69,
+    "red_checks": {
+      "missing_budget_module": 3,
+      "missing_api_configuration_keyword": 1,
+      "blocking_admission_cancellation": 1,
+      "unreadable_quota_namespace": 1
+    },
+    "full_suite_claimed": false,
+    "frontend_build_claimed": false,
+    "browser_acceptance_claimed": false
+  },
+  "scope": {
+    "roles": 18,
+    "period_clock": "server UTC",
+    "versions_share_role_quota": true,
+    "reserve_before_handler": true,
+    "failed_attempts_refunded": false,
+    "recovery_reserves_protected": true,
+    "recovery_spending_enabled": false,
+    "provider_token_accounting": false,
+    "billable_cost_accounting": false,
+    "legacy_provider_and_context_source_calls_covered": false
+  },
+  "limits": [
+    "Host administrator custody is outside the storage integrity boundary.",
+    "All P00-P13 completion gates remain open.",
+    "Full cost governance, remaining agent missions, operator workflows and independent acceptance remain pending."
+  ],
+  "tested_staged_files": [
+    {
+      "path": ".clean/decisions.md",
+      "sha256": "6431c53659b7f8bcb0323e7c14502de08af18927488d1044b08ed184d96ec099"
+    },
+    {
+      "path": "docs/AGENT_CALL_BUDGET_HANDOFF.md",
+      "sha256": "3757d8c21bb6c8531513bbf894b205351a064acb6d9b16ce1602d61d6facda02"
+    },
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "5fb146ee201c43d35ae1b918e9a6f22b81da416fd04576d42f9439a0e3a7c9ba"
+    },
+    {
+      "path": "docs/adr/0098-durable-agent-call-admission.md",
+      "sha256": "37ccb18c45d9cd381d43602c47b8e74c40694e98795c5db7ee310cbdabfd3797"
+    },
+    {
+      "path": "docs/schemas/agent-call-budget-status.schema.json",
+      "sha256": "08eb7454b8384eab3742dca41c2feace481c6611aa16d56770b883f4005a54b0"
+    },
+    {
+      "path": "src/ai_quant_os/agent_call_api.py",
+      "sha256": "da7c13b34cd257252268b0ba6f47311e36ec81dc789ad448cfea4d91d10483a6"
+    },
+    {
+      "path": "src/ai_quant_os/agent_call_budgets.py",
+      "sha256": "e896ddd20f48ff4a7d1cbbca0dd50bea46c4d8b4e6a6c1f5bf244273d18c5188"
+    },
+    {
+      "path": "src/ai_quant_os/agent_call_policy.py",
+      "sha256": "6968d09a06dad42627f5eda88963e40ac6e7280b5cc1ab7914fc0b13f4bb9a39"
+    },
+    {
+      "path": "src/ai_quant_os/agent_call_store.py",
+      "sha256": "7ac4ba9232def86e27d04dcafa488d7010951523d6fe7091d94495867ba5d573"
+    },
+    {
+      "path": "src/ai_quant_os/agent_registry.py",
+      "sha256": "1cdd5cac2554890509ca546ca54036af30f23113b7824f9abc80197e03ca0970"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "13eb89aa318f8856b1f35679526f4a9ee29d9d1d7e39a78cbf9b4d2a1992b493"
+    },
+    {
+      "path": "tests/test_agent_call_budgets.py",
+      "sha256": "d9d4079884d2e8928300200b6fed4e6d4f99dcbd1352c7904449499739be0a72"
+    },
+    {
+      "path": ".env.example",
+      "sha256": "2c7249c65013e28b47f64a75c8ae4655cf826938cffa21b615a870c1f15a3103"
+    },
+    {
+      "path": "docs/examples/agent-call-policy.json",
+      "sha256": "8c08ad44f0b4ad64449c0849a3c80253ed6bfeafa50434894a2b71ee0cb60d35"
+    }
+  ]
+}

@@ -5,7 +5,7 @@ import json
 from hashlib import sha256
 from dataclasses import dataclass
 from threading import Lock
-from typing import Awaitable, Callable, Literal
+from typing import Awaitable, Callable, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -145,11 +145,17 @@ class ToolInvocation:
     task_id: str | None = None
 
 
+class CallBudget(Protocol):
+    def reserve(self, invocation: ToolInvocation) -> None: ...
+
+
 class AgentToolBoundary:
     def __init__(
         self,
         registry: AgentRegistry,
         handlers: dict[str, Callable[[ToolInvocation], Awaitable[dict[str, object]]]],
+        *,
+        call_budget: CallBudget | None = None,
     ) -> None:
         if not set(handlers).issubset(KNOWN_TOOLS) or any(
             not callable(handler) for handler in handlers.values()
@@ -157,6 +163,7 @@ class AgentToolBoundary:
             raise ValueError("Unrecognized agent tool handler")
         self._registry = registry
         self._handlers = handlers.copy()
+        self._call_budget = call_budget
 
     def capabilities(self, agent_id: str, version: str) -> tuple[str, ...]:
         manifest = self._registry.get(agent_id, version)
@@ -196,6 +203,9 @@ class AgentToolBoundary:
         invocation = ToolInvocation(
             agent_id, version, tool, scope, json.loads(raw), context_ref, task_id
         )
+        if self._call_budget is not None:
+            await asyncio.to_thread(self._call_budget.reserve, invocation)
+            self._registry.require_tool(agent_id, version, tool, scope=scope)
         timeout = self._registry.get(agent_id, version).timeout_seconds
         try:
             result = await asyncio.wait_for(handler(invocation), timeout=timeout)

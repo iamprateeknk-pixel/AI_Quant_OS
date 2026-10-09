@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "rules": [
+    {
+      "agent_id": "A01",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A02",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A03",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A04",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A05",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A06",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A07",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A08",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A09",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A10",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A11",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A12",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A13",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A14",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A15",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A16",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A17",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    },
+    {
+      "agent_id": "A18",
+      "daily_calls": 100,
+      "monthly_calls": 2000,
+      "daily_recovery_reserve": 10,
+      "monthly_recovery_reserve": 200
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "$defs": {
+    "AgentCallCounters": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "pattern": "^A(0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "daily_calls": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Daily Calls",
+          "type": "integer"
+        },
+        "monthly_calls": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Monthly Calls",
+          "type": "integer"
+        },
+        "daily_remaining": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Daily Remaining",
+          "type": "integer"
+        },
+        "monthly_remaining": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Monthly Remaining",
+          "type": "integer"
+        },
+        "daily_recovery_reserve": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Daily Recovery Reserve",
+          "type": "integer"
+        },
+        "monthly_recovery_reserve": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Monthly Recovery Reserve",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "agent_id",
+        "daily_calls",
+        "monthly_calls",
+        "daily_remaining",
+        "monthly_remaining",
+        "daily_recovery_reserve",
+        "monthly_recovery_reserve"
+      ],
+      "title": "AgentCallCounters",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "ENFORCED",
+        "DISABLED",
+        "UNAVAILABLE"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "accounting_basis": {
+      "const": "RESERVED_ROUTINE_TOOL_CALL_ATTEMPTS",
+      "default": "RESERVED_ROUTINE_TOOL_CALL_ATTEMPTS",
+      "title": "Accounting Basis",
+      "type": "string"
+    },
+    "recovery_spending_enabled": {
+      "const": false,
+      "default": false,
+      "title": "Recovery Spending Enabled",
+      "type": "boolean"
+    },
+    "provider_token_accounting": {
+      "const": false,
+      "default": false,
+      "title": "Provider Token Accounting",
+      "type": "boolean"
+    },
+    "billable_cost_accounting": {
+      "const": false,
+      "default": false,
+      "title": "Billable Cost Accounting",
+      "type": "boolean"
+    },
+    "day": {
+      "anyOf": [
+        {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Day"
+    },
+    "month": {
+      "anyOf": [
+        {
+          "pattern": "^\\d{4}-\\d{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Month"
+    },
+    "head_hash": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Head Hash"
+    },
+    "policy_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Sha256"
+    },
+    "agents": {
+      "items": {
+        "$ref": "#/$defs/AgentCallCounters"
+      },
+      "maxItems": 18,
+      "title": "Agents",
+      "type": "array"
+    }
+  },
+  "required": [
+    "state",
+    "agents"
+  ],
+  "title": "AgentCallBudgetStatus",
+  "type": "object"
+}

@@ -87,6 +87,9 @@ from ai_quant_os.operator_control_api import install_operator_control_routes
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
+from ai_quant_os.agent_call_policy import AgentCallPolicy
+from ai_quant_os.agent_call_api import call_budget_configuration, install_agent_call_routes
+from ai_quant_os.agent_call_budgets import AgentCallBudget
 from ai_quant_os.evolution_api import install_evolution_routes
 from ai_quant_os.research_data_api import install_research_data_routes
 from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog
@@ -246,6 +249,7 @@ def create_app(
     deep_reviewer: DeepReviewer | None = None,
     research_workspace: Path | None = None,
     evolution_workspace: Path | None = None,
+    agent_call_policy: AgentCallPolicy | None = None,
     daily_evidence_enabled: bool | None = None,
     temporal_recovery_enabled: bool | None = None,
     temporal_recovery_target: str | None = None,
@@ -285,6 +289,16 @@ def create_app(
     risk = RiskKernel(limits, currency_policy=currency_policy)
     configured_path = paper_db_path or (
         Path(os.environ["AI_QUANT_PAPER_DB"]) if os.getenv("AI_QUANT_PAPER_DB") else None
+    )
+    configured_call_policy = call_budget_configuration(
+        agent_call_policy, configured_path, configured_token
+    )
+    call_budget = AgentCallBudget(
+        configured_path.with_name(configured_path.stem + ".agent-calls.sqlite3")
+        if configured_path
+        else None,
+        policy=configured_call_policy,
+        clock=current_time,
     )
     daily_setting = os.getenv("AI_QUANT_DAILY_EVIDENCE_ENABLED", "0")
     if daily_evidence_enabled is None and daily_setting not in ("0", "1"):
@@ -456,6 +470,7 @@ def create_app(
                             risk_states=lambda: (risk.safety_state, state_store.safety_state()),
                         ),
                     },
+                    call_budget=call_budget,
                 ),
                 clock=current_time,
             ) as runtime,
@@ -1834,6 +1849,7 @@ def create_app(
         ),
         require_operator,
     )
+    install_agent_call_routes(app, call_budget, require_operator)
     install_evolution_routes(
         app,
         evolution_workspace or (

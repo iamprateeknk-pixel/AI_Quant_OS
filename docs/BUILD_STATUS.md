@@ -4,6 +4,22 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Durable agent tool-call admission increment
+
+- Added configured UTC daily/monthly call admission for all 18 roles, shared across
+  versions and committed before graph tool effects. Routine attempts cannot spend
+  protected recovery capacity; failed/interrupted admitted attempts remain charged.
+- Immutable policy, full audit replay and original creation pins prevent silent
+  restoration/reset after configuration removal, corruption or database loss.
+  Admission I/O runs outside the graph event loop; cancellation withholds dispatch.
+- Protected quota metadata distinguishes enforced/disabled/unavailable states and
+  explicitly denies provider-token, dollar-accounting and recovery-spend claims.
+  Emergency paper controls remain independent. Scoped graph, registry, health,
+  operator and quota checks passed; see `AGENT_CALL_BUDGET_HANDOFF.md` and ADR 0098.
+- Legacy-provider/context-source integration, tokens/monetary governance, authorized
+  recovery spending, migration/retention, cost UI and independent acceptance remain
+  pending. This does not complete cost governance or the P00-P13 build.
+
 ## Strategy implementation archive view increment
 
 - Connected `/strategies` to protected checked implementation metadata: version,
