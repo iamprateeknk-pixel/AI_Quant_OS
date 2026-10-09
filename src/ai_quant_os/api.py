@@ -276,6 +276,7 @@ def create_app(
     temporal_recovery_enabled: bool | None = None,
     temporal_recovery_target: str | None = None,
     health_watchdog_enabled: bool | None = None,
+    demo_sync_state_dir: Path | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -1929,6 +1930,9 @@ def create_app(
     install_recovery_routes(app, require_operator)
     install_event_feed_routes(app, event_feed_store, require_operator, current_time)
     install_health_routes(app, require_operator, health_worker, enabled_health)
+    from ai_quant_os.mt5_sync_health_api import install_demo_sync_health_routes
+
+    install_demo_sync_health_routes(app, require_operator, demo_sync_state_dir, current_time)
     install_incident_proposal_routes(app, require_operator, incident_proposal_store)
     install_research_data_routes(app, research_data_catalog, require_operator, current_time)
     install_validation_package_routes(

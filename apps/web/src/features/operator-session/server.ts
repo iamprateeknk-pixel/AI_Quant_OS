@@ -126,6 +126,10 @@ export async function readGenomes(offset = 0, head?: string): Promise<ProtectedR
   return protectedRead(`/api/v1/evolution/genomes/page?limit=10&offset=${offset}${head ? `&head=${head}` : ""}`);
 }
 
+export async function readDemoSyncHealth(): Promise<ProtectedRead> {
+  return protectedRead("/api/v1/brokers/demo-sync/health");
+}
+
 export async function readCallBudget(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/agents/call-budget");
 }

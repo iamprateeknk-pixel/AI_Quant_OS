@@ -1,0 +1,117 @@
+{
+  "increment": "0115",
+  "date": "2026-10-09",
+  "base_commit": "66b5eb53286be2d527f39b013283c24987ef24e5",
+  "feature": "Expose the local demo-sync heartbeat through owner-protected fixed-path API reads and a metadata-only Brokers panel",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0115-final",
+    "scope": [
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_broker_router.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py::test_child_environments_keep_operator_secret_only_on_backend",
+      "tests/test_local_runtime.py::test_custom_web_port_sets_the_exact_operator_origin"
+    ],
+    "tests": 183,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "9.938",
+    "tdd_red": "Missing protected route/schema, absent UI/parser/server read and missing fixed launcher path reproduced before their implementations",
+    "ruff": "passed",
+    "frontend": {
+      "tests": 55,
+      "failures": 0,
+      "scope": "apps/web/tests/*.test.mjs",
+      "next_production_build": "passed",
+      "scoped_eslint": "passed",
+      "source_identity": "working tree matches the staged hashes below",
+      "browser_acceptance": "pending; prior browser launch blocked by policy, no bypass attempted"
+    },
+    "prior_schemas_unchanged": 83,
+    "source_hashes": [
+      {
+        "path": "apps/web/src/app/[section]/page.tsx",
+        "sha256": "808ada7aa878bb8ae65894e9cba9281b5f46fb1fa99857bf9ffb414e3ff872f8"
+      },
+      {
+        "path": "apps/web/src/features/brokers/demo-sync-health.ts",
+        "sha256": "f4d4bd01a9ca7335c4e37a90a63d968aab5f05ad3e0573d820103cf701659982"
+      },
+      {
+        "path": "apps/web/src/features/brokers/demo-sync-panel.tsx",
+        "sha256": "3799ccb9ef6428cf74df0424b73429298ab2baa75186b6c9cb72088747c2549b"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/server.ts",
+        "sha256": "63827a5d1500f06527352ede428df2109e824fd24751a3441171ec40e6ab0ec9"
+      },
+      {
+        "path": "apps/web/tests/demo-sync-health.test.mjs",
+        "sha256": "f3146dffc566ec420d9772660993d2a686cb9cb1e505c0ce916bc7a27a9c2d6f"
+      },
+      {
+        "path": "apps/web/tests/demo-sync-panel.test.mjs",
+        "sha256": "1fcf54725be36a4c8f344c1f3bd3e5e3626d704cd8238fdb6c1ffa94bf915b10"
+      },
+      {
+        "path": "apps/web/tests/demo-sync-server.test.mjs",
+        "sha256": "cdb56242938c9dead610d7d127649b2bd53121b578f7dfbb81862bf4ca010ab7"
+      },
+      {
+        "path": "apps/web/tests/fixtures/demo-sync.mjs",
+        "sha256": "44affb2f1fc88d0f0a208b0e8f3547218b3f32ca514d568ee36c7846d4cb652f"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "110d9a2f8c4c477a0f5e666a013ea965663947b35bb9e09374c08f321db45d84"
+      },
+      {
+        "path": "docs/MT5_SYNC_HEALTH_UI_HANDOFF.md",
+        "sha256": "a00646ee39d74603a46cafc364d9f036c8ed931652593b1dd3cbf46116a95636"
+      },
+      {
+        "path": "docs/adr/0115-protected-demo-sync-health-view.md",
+        "sha256": "8f1be95b6e9959f6c39b211642808bc386a5ce14243bf816bae445bb3a8017a0"
+      },
+      {
+        "path": "docs/schemas/demo-sync-health-api.schema.json",
+        "sha256": "14ecb2f7dadadcf52350f3b81a5c55cd8601a3b61f310dc64de7ff87f9359c05"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "c9eac189400b07fbb9082b47e06e1d50cb7a2acea1b1bfb731ae492ad9e1c41d"
+      },
+      {
+        "path": "src/ai_quant_os/local_runtime.py",
+        "sha256": "171802822f2abfce9669fc01ff6bdca143585779b1fe3d4e9e0683ac7cdaf426"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_health_api.py",
+        "sha256": "d803da5b0d9b71c7103d940ce4c55c88f5e467a09d16fc5fb1c8e58940f0a54c"
+      },
+      {
+        "path": "tests/test_mt5_sync_health_api.py",
+        "sha256": "a3e1d94b84f56987553d24daffbadc409336b1d1088eae7f7176dede8b17ea4c"
+      }
+    ],
+    "junit_sha256": "9066e310eb4bbffb4bc2c6d4a36e89de86ca200b9ac038328cbc1053f0328297",
+    "secrets_scan": "passed",
+    "review": "Local five-axis self-review; independent broker/release review remains pending"
+  },
+  "limits": [
+    "Fixture SDK and real disabled service CLI only; no terminal, real credentials or external broker used",
+    "API route reads only the owner-protected server-configured heartbeat; it does not dispatch native work or grant broker routing authority",
+    "Completed receipt replay and unfinished reservation blocking survive restart; orphan child and terminal custody remain unverified",
+    "No order submission, portfolio mutation, native attestation or live authorization",
+    "Native P04 acceptance, operational enrollment/service manager deployment, browser interaction acceptance, explicit halted recovery, correction attestation, lifecycle reconciliation, orphan custody and external order idempotency remain open",
+    "Focused increment verification does not establish full-system or P13 acceptance"
+  ]
+}

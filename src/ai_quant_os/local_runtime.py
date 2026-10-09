@@ -74,6 +74,7 @@ class LocalSettings:
         backend = {
             **base,
             "AI_QUANT_PAPER_DB": str(self.state.resolve() / "paper.sqlite3"),
+            "AI_QUANT_DEMO_SYNC_STATE": str(self.state.resolve() / "demo-sync"),
             "AI_QUANT_RESEARCH_WORKSPACE": str(self.state.resolve() / "research"),
             "AI_QUANT_JEV_ENABLED": "false",
             "AI_QUANT_REVIEW_ENABLED": "false",

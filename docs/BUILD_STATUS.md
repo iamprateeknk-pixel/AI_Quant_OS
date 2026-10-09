@@ -4,6 +4,21 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Demo broker observation service and monitoring
+
+- Added explicit demo-only normalized account/position/order/deal observations
+  through a bounded fixed worker and durable attempt journal (0108–0111).
+- Retained receipt-bound deal revisions and missing records, then added durable
+  scheduling, overlapping history progress, bounded reconnect observations and
+  a foreground service with atomic public health publication (0112–0114).
+- Connected owner-protected local heartbeat reads to Brokers with explicit
+  sign-in, missing/stale/stopped/halted states and metadata-only projection (0115).
+- Native demo acceptance, browser interaction acceptance, service deployment,
+  halted/orphan recovery, native history/lifecycle reconciliation, external order
+  idempotency/routing, alternatives and independent review remain pending.
+  These slices grant no order or portfolio authority. All P00–P13 remain incomplete.
+  See `MT5_SYNC_HEALTH_UI_HANDOFF.md` and its linked increment handoffs.
+
 ## Saved execution trace explorer increment
 
 - Connected Traces navigation to a protected, bounded saved-run list and original
