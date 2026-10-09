@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "OpeningPosition": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "position_identifier": {
+          "exclusiveMinimum": 0,
+          "title": "Position Identifier",
+          "type": "integer"
+        },
+        "signed_lots": {
+          "anyOf": [
+            {
+              "maximum": 1000000000.0,
+              "minimum": -1000000000.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Signed Lots"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "position_identifier",
+        "signed_lots"
+      ],
+      "title": "OpeningPosition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "account_scope_ref": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Account Scope Ref",
+      "type": "string"
+    },
+    "history_start": {
+      "format": "date-time",
+      "title": "History Start",
+      "type": "string"
+    },
+    "boundary": {
+      "const": "IMMEDIATELY_BEFORE_HISTORY_START",
+      "default": "IMMEDIATELY_BEFORE_HISTORY_START",
+      "title": "Boundary",
+      "type": "string"
+    },
+    "positions": {
+      "items": {
+        "$ref": "#/$defs/OpeningPosition"
+      },
+      "maxItems": 128,
+      "title": "Positions",
+      "type": "array"
+    },
+    "attestation": {
+      "const": "DECLARED_UNVERIFIED",
+      "default": "DECLARED_UNVERIFIED",
+      "title": "Attestation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "account_scope_ref",
+    "history_start",
+    "positions"
+  ],
+  "title": "DeclaredOpeningPositions",
+  "type": "object"
+}

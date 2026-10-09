@@ -1,0 +1,94 @@
+{
+  "increment": "0125",
+  "date": "2026-10-10",
+  "base_commit": "ff41faf991b9df18fcf095e848a493d8f0cd55e1",
+  "feature": "Latest retained normalized fill-to-position lot comparison under explicit account/start-bound opening declaration",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0125",
+    "tests": 332,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "16.557",
+    "scope": [
+      "tests/test_mt5_position_comparison.py",
+      "tests/test_mt5_sync_checkpoint.py",
+      "tests/test_mt5_sync_inspection.py",
+      "tests/test_mt5_window_reduction.py",
+      "tests/test_mt5_history_backfill.py",
+      "tests/test_mt5_clock_recovery.py",
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 91,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "809870d31801a0919f5c99e6ca13b8bf6557d808bf89f71497d6011eb1488b18"
+      },
+      {
+        "path": "docs/MT5_POSITION_COMPARISON_HANDOFF.md",
+        "sha256": "857fcaabd5f42e6f58c9a627de09504583b834b716eccba83a95956e8635611f"
+      },
+      {
+        "path": "docs/adr/0125-declared-opening-position-history-comparison.md",
+        "sha256": "e6c1cd76f7617254da415ffdedbd32dc9662336a1ddaa36e24a7a2c435f166ae"
+      },
+      {
+        "path": "docs/schemas/demo-opening-positions.schema.json",
+        "sha256": "ece7817ec95412b0645469dd0bd6601906e54571783182bd5b12a8d21c422ca1"
+      },
+      {
+        "path": "docs/schemas/demo-position-comparison.schema.json",
+        "sha256": "5bfa68633b4034b638a904409c6517e045def39f2aece4b1551c820235124eaf"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_position_comparison.py",
+        "sha256": "0169d23c0df4ee70e90ef7b361f6f2752d149319ee13a16b47aaee04813d2888"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_projection.py",
+        "sha256": "3ccde041df74c0835cde06643efbf5610097faf4062e25f39ff590beef5fa881"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "e43fd5d8c08a05cf02d06bb563caed2e784021f5e1db6977cfb0b613050ac185"
+      },
+      {
+        "path": "tests/test_mt5_position_comparison.py",
+        "sha256": "809db71b8f0e5507f4d25e1471827c42f0c08ebf667ac74a2c6aa4aaa6b7e0a5"
+      }
+    ],
+    "junit_sha256": "57849d00ae764f084b8e6f9a2c5022412e66c8fbae8bab4c21a57462ee0ac8f1",
+    "tdd_red": "Fourteen initial checks failed before the comparison module; CLI flag and additive schemas failed before those surfaces. Inconsistent wire arithmetic was reproduced before model validation was added",
+    "debugging": "Zero native position identity was already refused by source normalization; fixture now proves DATA_INVALID and no invented comparison history. Oversized JSON fixture received a short test id to avoid Windows fixture-path overflow",
+    "review": "Local five-axis self-review: explicit opening scope/start, one verified immutable projection snapshot, latest-version contribution once, cancelled CASH excludes lots, missing histories withheld, separate stable hedged identities, bounded context-independent arithmetic, retained declaration/source refs, fixed denied authority and offline ownership/password rules; independent native/release review pending",
+    "secrets_scan": "passed"
+  },
+  "limits": [
+    "CONSISTENT_WITH_DECLARATION is agreement with an unverified supplied opening inventory, not independently proved native completeness, lifecycle validity or position freshness",
+    "Opening is immediately before exact retained history start; no arbitrary-history zero baseline is inferred, and explicit empty inventory asserts flat opening",
+    "Current positions are the latest saved non-atomic sequential observation, including expired snapshots; no new native observation is acquired",
+    "Only latest retained deal versions contribute lots; missing prior deal identities withhold rather than erase or silently cancel prior contributions",
+    "Comparison operates on signed lots per instrument/stable position identifier; no historical contract-unit conversion, cash accounting, marked PnL, eligibility or portfolio mutation is established",
+    "Opening inventories and comparison rows cap at 128; per-source lots cap at one billion with eight decimal places, arithmetic uses a private 64-digit context, and oversized/unsupported values are withheld without rounding or truncation",
+    "Offline CLI uses existing journals and ownership/incomplete-checkpoint gates; it takes a noncredential policy placeholder, no capture or timer, no gateway reservation and no heartbeat write",
+    "Actual capture/recovery still requires original enrollment, password, platform and launch gates",
+    "Existing 91 wire schemas, journal event formats and paper domain contracts remain unchanged; two schemas and projection snapshot reader are additive",
+    "Trusted native doubles, real audited SQLite and a real offline CLI only; no SDK, terminal, actual credentials, external broker or live capital used",
+    "Native history/corrections, complete cash accounting, portfolio integration, custody, capacity rollover, installed services, independent broker review, browser acceptance and P13 gates remain pending",
+    "Focused checks do not establish full-system completion; preserved uncertain candidate jobs were not touched or restarted"
+  ]
+}

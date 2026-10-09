@@ -371,26 +371,38 @@ class SyncProjectionStore:
 
     def view(self, connection: DemoCaptureRequest) -> ProjectionView | None:
         with self._lock:
+            return self._view(self._read(connection))
+
+    def _view(self, records, folded=None):
+        if not records:
+            return None
+        versions, missing, start, through = folded if folded is not None else fold(records)
+        last = records[-1]
+        now = utc(self.clock())
+        return ProjectionView(
+            latest_attempt_id=last.attempt_id,
+            latest_receipt_ref=last.receipt_ref,
+            receipts=len(records),
+            known_deals=len(versions),
+            revision_count=sum(len(v) for v in versions.values()) - len(versions),
+            history_start=start,
+            history_through=through,
+            missing_prior_deals=missing,
+            quote_context="FRESH"
+            if last.batch.observed_at <= now < last.batch.valid_until
+            else "STALE",
+            batch=last.batch,
+        )
+
+    def position_history(self, connection: DemoCaptureRequest):
+        """Read current positions and latest deal versions from one verified snapshot."""
+        with self._lock:
             records = self._read(connection)
             if not records:
-                return None
-            versions, missing, start, through = fold(records)
-            last = records[-1]
-            now = utc(self.clock())
-            return ProjectionView(
-                latest_attempt_id=last.attempt_id,
-                latest_receipt_ref=last.receipt_ref,
-                receipts=len(records),
-                known_deals=len(versions),
-                revision_count=sum(len(v) for v in versions.values()) - len(versions),
-                history_start=start,
-                history_through=through,
-                missing_prior_deals=missing,
-                quote_context="FRESH"
-                if last.batch.observed_at <= now < last.batch.valid_until
-                else "STALE",
-                batch=last.batch,
-            )
+                return None, ()
+            folded = fold(records)
+            latest = tuple(folded[0][ref][-1] for ref in sorted(folded[0]))
+            return self._view(records, folded), latest
 
     def deal_versions(
         self, connection: DemoCaptureRequest, event_ref: str

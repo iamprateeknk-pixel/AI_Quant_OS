@@ -29,6 +29,7 @@ from ai_quant_os.mt5_sync_controller import (
 )
 from ai_quant_os.mt5_sync_projection import SyncProjectionStore
 from ai_quant_os.mt5_sync_inspection import inspect_sync
+from ai_quant_os.mt5_position_comparison import DeclaredOpeningPositions, compare_positions
 
 MAX_CONFIG_BYTES = 32768
 MAX_HEALTH_BYTES = 16384
@@ -232,6 +233,7 @@ def main(argv=None) -> int:
     actions.add_argument("--backfill-history-attempt")
     actions.add_argument("--reduce-history-attempt")
     actions.add_argument("--inspect-state", action="store_true")
+    actions.add_argument("--compare-position-history", type=Path)
     parser.add_argument("--prior-failed-attempt")
     parser.add_argument("--history-window-seconds", type=int)
     parser.add_argument("--expected-revision", type=int)
@@ -273,19 +275,32 @@ def main(argv=None) -> int:
                     )
             except Exception:
                 raise ServiceRejected("RECOVERY_INVALID") from None
-        environment = {PASSWORD_ENV: "INSPECTION_ONLY"} if args.inspect_state else os.environ
+        opening = None
+        if args.compare_position_history is not None:
+            try:
+                with args.compare_position_history.open("rb") as stream:
+                    raw = stream.read(MAX_CONFIG_BYTES + 1)
+                if len(raw) > MAX_CONFIG_BYTES:
+                    raise ValueError("Opening declaration bound exceeded")
+                opening = DeclaredOpeningPositions.model_validate(
+                    json.loads(raw, object_pairs_hook=_unique)
+                )
+            except Exception:
+                raise ServiceRejected("COMPARISON_INVALID") from None
+        offline = args.inspect_state or opening is not None
+        environment = {PASSWORD_ENV: "INSPECTION_ONLY"} if offline else os.environ
         config = load_config(args.config, environment)
-        if config.schedule.enabled and config.connection.enabled and not args.inspect_state:
+        if config.schedule.enabled and config.connection.enabled and not offline:
             if not args.enable_demo_service:
                 raise ServiceRejected("ENABLE_REQUIRED")
             if sys.platform != "win32":
                 raise ServiceRejected("WINDOWS_REQUIRED")
-        if (recovery is not None or args.inspect_state) and not all(
+        if (recovery is not None or offline) and not all(
             (args.state_dir / name).is_file()
             for name in ("gateway.sqlite", "projection.sqlite", "controller.sqlite")
         ):
             raise ServiceRejected(
-                "INSPECTION_STATE_REQUIRED" if args.inspect_state else "RECOVERY_STATE_REQUIRED"
+                "INSPECTION_STATE_REQUIRED" if offline else "RECOVERY_STATE_REQUIRED"
             )
         args.state_dir.mkdir(parents=True, exist_ok=True)
         for signum in (signal.SIGINT, signal.SIGTERM):
@@ -306,6 +321,10 @@ def main(argv=None) -> int:
                 projection,
             )
             stack.callback(controller.close)
+            if opening is not None:
+                result = compare_positions(projection, config.connection, opening)
+                print(result.model_dump_json(), flush=True)
+                return 0 if result.state == "CONSISTENT_WITH_DECLARATION" else 2
             if args.inspect_state:
                 result = inspect_sync(controller)
                 print(result.model_dump_json(), flush=True)

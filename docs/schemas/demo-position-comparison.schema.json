@@ -1,0 +1,279 @@
+{
+  "$defs": {
+    "PositionDifference": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "position_identifier": {
+          "exclusiveMinimum": 0,
+          "title": "Position Identifier",
+          "type": "integer"
+        },
+        "opening_lots": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Opening Lots"
+        },
+        "recorded_movement_lots": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Recorded Movement Lots"
+        },
+        "expected_lots": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Expected Lots"
+        },
+        "observed_lots": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Observed Lots"
+        },
+        "difference_lots": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Difference Lots"
+        },
+        "fill_count": {
+          "maximum": 4096,
+          "minimum": 0,
+          "title": "Fill Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "position_identifier",
+        "opening_lots",
+        "recorded_movement_lots",
+        "expected_lots",
+        "observed_lots",
+        "difference_lots",
+        "fill_count"
+      ],
+      "title": "PositionDifference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "observation_kind": {
+      "const": "DECLARED_OPENING_LOT_COMPARISON",
+      "default": "DECLARED_OPENING_LOT_COMPARISON",
+      "title": "Observation Kind",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "CONSISTENT_WITH_DECLARATION",
+        "DIVERGENT",
+        "WITHHELD"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "code": {
+      "anyOf": [
+        {
+          "enum": [
+            "STORAGE_UNAVAILABLE",
+            "SOURCE_INVALID",
+            "NO_HISTORY",
+            "OPENING_MISMATCH",
+            "MISSING_PRIOR_DEALS",
+            "POSITION_IDENTITY",
+            "UNMAPPED_INSTRUMENT",
+            "HISTORY_ENDPOINT",
+            "ARITHMETIC_BOUND",
+            "CAPACITY"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Code"
+    },
+    "opening_ref": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Opening Ref",
+      "type": "string"
+    },
+    "source_receipt_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Receipt Ref"
+    },
+    "account_scope_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Account Scope Ref"
+    },
+    "history_start": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "History Start"
+    },
+    "history_through": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "History Through"
+    },
+    "position_observed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Position Observed At"
+    },
+    "rows": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PositionDifference"
+      },
+      "maxItems": 128,
+      "title": "Rows",
+      "type": "array"
+    },
+    "revised_deals": {
+      "default": 0,
+      "maximum": 4096,
+      "minimum": 0,
+      "title": "Revised Deals",
+      "type": "integer"
+    },
+    "cancelled_deals": {
+      "default": 0,
+      "maximum": 4096,
+      "minimum": 0,
+      "title": "Cancelled Deals",
+      "type": "integer"
+    },
+    "opening_attestation": {
+      "const": "DECLARED_UNVERIFIED",
+      "default": "DECLARED_UNVERIFIED",
+      "title": "Opening Attestation",
+      "type": "string"
+    },
+    "history_attestation": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "History Attestation",
+      "type": "string"
+    },
+    "consistency": {
+      "const": "NON_ATOMIC_SEQUENTIAL_READ",
+      "default": "NON_ATOMIC_SEQUENTIAL_READ",
+      "title": "Consistency",
+      "type": "string"
+    },
+    "may_affect_portfolio": {
+      "const": false,
+      "default": false,
+      "title": "May Affect Portfolio",
+      "type": "boolean"
+    },
+    "may_submit_orders": {
+      "const": false,
+      "default": false,
+      "title": "May Submit Orders",
+      "type": "boolean"
+    },
+    "native_attestation": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "Native Attestation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "state",
+    "opening_ref"
+  ],
+  "title": "PositionComparison",
+  "type": "object"
+}

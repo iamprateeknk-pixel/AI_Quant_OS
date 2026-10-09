@@ -942,3 +942,15 @@ Interrupted restore publication retains an incomplete marker that blocks normal
 service launch. This supplies same-policy artifact migration; native custody,
 capacity rollover, installed deployment, independent review and P13 acceptance
 remain pending. See MT5_SYNC_CHECKPOINT_HANDOFF.md and ADR 0124.
+
+## Declared opening position comparison — increment 0125
+
+The offline demo service command compares latest retained normalized fill
+versions with saved positions using an explicit account/start-bound opening
+lot inventory. Partial closes, reversals, hedged identities and corrected or
+cancelled fills retain separate contributions; missing prior deals withhold
+comparison. Declaration/source hashes, numeric bounds and denied portfolio/order
+authority remain explicit. Original scheduling, audit formats and wire schemas
+are preserved. Native completeness, cash accounting, portfolio integration,
+custody, deployment, independent review and P13 acceptance remain pending. See
+MT5_POSITION_COMPARISON_HANDOFF.md and ADR 0125.
