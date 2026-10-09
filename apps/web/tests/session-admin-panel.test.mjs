@@ -1,0 +1,23 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {pathToFileURL} from 'node:url';
+import ts from 'typescript';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+const require=createRequire(import.meta.url);
+const compile=s=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+const url=s=>`data:text/javascript;base64,${Buffer.from(s).toString('base64')}`;
+const boundary=url(compile(readFileSync(new URL('../src/features/operator-session/boundary.ts',import.meta.url),'utf8')));
+let source=readFileSync(new URL('../src/features/operator-session/session-admin-panel.tsx',import.meta.url),'utf8').replace('import { useRouter } from "next/navigation";','const useRouter=()=>({refresh(){}});').replace('from "./boundary"',`from "${boundary}"`);
+const code=compile(source).replaceAll('"react/jsx-runtime"',JSON.stringify(pathToFileURL(require.resolve('react/jsx-runtime')).href)).replaceAll('from "react"',`from "${pathToFileURL(require.resolve('react')).href}"`);
+const {SessionAdminPanel}=await import(url(code));
+const actor='12345678-1234-4234-8234-123456789abc';
+const view={schema_version:'1.0',mode:'PAPER',scope:'LOCAL_SINGLE_OWNER',observed_at:'2026-10-09T12:00:00Z',current_session_id:actor,source_head:'a'.repeat(64),source_event_count:1,sessions:[{mode:'PAPER',session_id:actor,created_at:'2026-10-09T12:00:00Z',expires_at:'2026-10-09T12:15:00Z',status:'CURRENT'}]};
+test('settings renders current session metadata and explicit protected/error states',()=>{
+ const html=renderToStaticMarkup(React.createElement(SessionAdminPanel,{result:{ok:true,value:{...view,session_token:'private'}}}));
+ assert(html.includes('Owner sessions'));assert(html.includes(actor));assert(html.includes('This session'));assert(html.includes('UTC'));assert(!html.includes('private'));assert(!html.includes('Live enable'));
+ for(const [reason,text] of [['SIGN_IN','Sign in'],['UNAVAILABLE','could not be verified']])assert(renderToStaticMarkup(React.createElement(SessionAdminPanel,{result:{ok:false,reason}})).includes(text));
+ assert(renderToStaticMarkup(React.createElement(SessionAdminPanel,{result:{ok:true,value:{...view,sessions:[]}}})).includes('could not be verified'));
+});

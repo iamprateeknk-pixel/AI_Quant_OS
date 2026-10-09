@@ -1,0 +1,156 @@
+{
+  "increment": "0104",
+  "date": "2026-10-09",
+  "base_commit": "fc10bd8",
+  "feature": "Settings local-owner session inventory and targeted revocation",
+  "verification": {
+    "fresh_backend_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0104",
+    "backend_tests": [
+      {
+        "path": "tests/test_session_admin.py"
+      },
+      {
+        "path": "tests/test_operator_sessions.py"
+      },
+      {
+        "path": "tests/test_operator_controls.py"
+      },
+      {
+        "path": "tests/test_health_api.py"
+      },
+      {
+        "path": "tests/test_agent_call_budgets.py"
+      },
+      {
+        "path": "tests/test_context_call_budgets.py"
+      },
+      {
+        "path": "tests/test_provider_call_admission.py"
+      }
+    ],
+    "backend_passed": 81,
+    "backend_failed": 0,
+    "backend_duration_seconds": 25.53,
+    "new_backend_cases": 9,
+    "frontend": "all apps/web/tests/*.test.mjs; 40 passed, zero failed",
+    "frontend_source_binding": "workspace frontend source/test bytes normalized to staged index and same fresh copy; no later source edits",
+    "frontend_production_build": "Next.js 16.3.6, passed after final UI edit; TypeScript build checking passed",
+    "frontend_lint": "ESLint passed after backend-observation expiry display timer change",
+    "python_lint": "root Ruff passed",
+    "prior_schemas_unchanged": 72,
+    "new_contract_exports": "SessionInventory and SessionRevocationReceipt schemas match runtime; actual API DTOs validated",
+    "red_before_implementation": [
+      "GET sessions method missing",
+      "frontend public projection functions missing",
+      "Next admin proxy missing",
+      "Settings panel missing",
+      "credential rotation could not issue into full old-epoch capacity",
+      "typed public response models missing"
+    ]
+  },
+  "source_fingerprints": [
+    {
+      "path": "apps/web/src/app/[section]/page.tsx",
+      "sha256": "5495bed8ceddc7db814146bbe47f2ebaadf8bf54dd7279206154a05dd77c74b9"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/sessions/revoke/route.ts",
+      "sha256": "607d18855153ab2c75b86b26c0a3def7819c7d3917bde3fc2ff180cd000f939f"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/sessions/route.ts",
+      "sha256": "1545093d4cebf4f3554ec894d63f96330efc43fb5a06642ebac8dcbf77c17dff"
+    },
+    {
+      "path": "apps/web/src/app/globals.css",
+      "sha256": "d2f501424e93185803fd0876e8d3288c98eab5977b6130e143df4f898c8f86aa"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/boundary.ts",
+      "sha256": "eeb8635d5165b6210450f35dc438fe8ed8d9940b9d86305bc02568e52c5f1678"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/server.ts",
+      "sha256": "41f10803059f50e508bed87e6e17a13991d1d20599b21a367ebae68d07f86d6e"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/session-admin-panel.tsx",
+      "sha256": "f2f8c573230764a1fa61b3b7eabf0d4cb4306f7cf93a407e340117f6738fdbad"
+    },
+    {
+      "path": "apps/web/src/lib/navigation.ts",
+      "sha256": "58aae1fcf56bb8aedee3a5212ff526488353f6e9d718f2d72e692552b76abe45"
+    },
+    {
+      "path": "apps/web/tests/session-admin-panel.test.mjs",
+      "sha256": "13a5cacb64bcb3fe29d288bed934c0808c86bcdd80a4d533b6d701037d066f18"
+    },
+    {
+      "path": "apps/web/tests/session-admin-server.test.mjs",
+      "sha256": "9dd5034a88b53bc6b4964c5c5368bee109866ac54ed72d14304b605f4fef30e0"
+    },
+    {
+      "path": "apps/web/tests/session-admin.test.mjs",
+      "sha256": "85761ae2253420c5d95607be1705fe26b5face9eae451f56b614380130125636"
+    },
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "d1fe7f8e46c22326ec20a18f71a4425bf6adead845bc27c6ce24d48e1fc3d35d"
+    },
+    {
+      "path": "docs/SESSION_ADMIN_HANDOFF.md",
+      "sha256": "2c8716b47ce3be123b1d272631043611d157ca488b24285816ec4f0b37a1d767"
+    },
+    {
+      "path": "docs/adr/0104-local-owner-session-administration.md",
+      "sha256": "f7cc82b740bfd55231fea537403ff40383c4bbe3eb88c18b7abde2392a364fcc"
+    },
+    {
+      "path": "docs/schemas/operator-session-inventory.schema.json",
+      "sha256": "fa8fffdea11e7304ada93d1010c5ee2d236c3a3b6bb73ebe80b5f458f5bc249f"
+    },
+    {
+      "path": "docs/schemas/operator-session-revocation.schema.json",
+      "sha256": "c5b92be8f30e2309039f4acf47db81edcba369599e8089ea760a7564385055e6"
+    },
+    {
+      "path": "src/ai_quant_os/operator_session_api.py",
+      "sha256": "55c5b2bed99693155cccf4e7ba5f0215cdc084e693dad1481a03379ff76b611b"
+    },
+    {
+      "path": "src/ai_quant_os/operator_session_contracts.py",
+      "sha256": "4c1d1be5aa7df80174bd786c9e4f0f6fa93f4db46b6ab8be0fbb199e3f58d227"
+    },
+    {
+      "path": "src/ai_quant_os/operator_session_store.py",
+      "sha256": "97068ffdfc53265eb5519a477f109183071e23339ef51a7ac157b039db13787b"
+    },
+    {
+      "path": "tests/test_session_admin.py",
+      "sha256": "2f0e201ca219d552d3bd2927e0234a03e7c539a33873c26c3d7a3f54fe4c870b"
+    }
+  ],
+  "observed": {
+    "protected_scope": "LOCAL_SINGLE_OWNER; valid server session and current credential epoch",
+    "write_admission": "fresh credential plus atomic actor/time/head/target checks",
+    "concurrency": "one accepted revocation, one stale-head conflict on the same original inventory",
+    "rollback": "failed projection deletion leaves original audit head/inventory and target authentication",
+    "restart": "target remains revoked and original actor remains valid",
+    "self_revocation": "current session denied afterwards; verified Next receipt clears HttpOnly cookie",
+    "tamper": "rehashing a forged original-request head cannot restore verified administrative history",
+    "expiry": "actor expiry after HTTP admission prevents transactional revocation",
+    "rotation": "invalidated prior-epoch grants retire through audit before capacity admission",
+    "public_projection": "nonces, fingerprints, raw credentials and extra upstream private fields withheld"
+  },
+  "limits": {
+    "all_P00_P13_complete": false,
+    "release_gates_complete": false,
+    "full_suite_acceptance": false,
+    "browser_acceptance": "pending; no preview retry after prior rejection",
+    "independent_security_review": false,
+    "paid_or_external_broker_calls": false,
+    "capital_authority": false,
+    "scope": "session inventory and revocation; preferences, integrations, feature flags, broader roles, retention/export and independent acceptance pending",
+    "compatibility": "new admin event requires compatible reader; original session events retained; no deletion/reseed rollback"
+  }
+}

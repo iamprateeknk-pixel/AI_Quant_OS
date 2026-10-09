@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "SessionMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        },
+        "session_id": {
+          "format": "uuid4",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "CURRENT",
+            "ACTIVE",
+            "EXPIRED",
+            "FUTURE"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "created_at",
+        "expires_at",
+        "status"
+      ],
+      "title": "SessionMetadata",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "scope": {
+      "const": "LOCAL_SINGLE_OWNER",
+      "default": "LOCAL_SINGLE_OWNER",
+      "title": "Scope",
+      "type": "string"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "current_session_id": {
+      "format": "uuid4",
+      "title": "Current Session Id",
+      "type": "string"
+    },
+    "source_head": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Head",
+      "type": "string"
+    },
+    "source_event_count": {
+      "maximum": 8192,
+      "minimum": 1,
+      "title": "Source Event Count",
+      "type": "integer"
+    },
+    "sessions": {
+      "items": {
+        "$ref": "#/$defs/SessionMetadata"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Sessions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "observed_at",
+    "current_session_id",
+    "source_head",
+    "source_event_count",
+    "sessions"
+  ],
+  "title": "SessionInventory",
+  "type": "object"
+}

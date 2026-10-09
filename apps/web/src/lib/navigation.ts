@@ -30,7 +30,7 @@ export const sectionDetails = {
   incidents: ["Incidents", "Verified paper health incidents, monitoring observations and retained quarantine restrictions. Recovery remains a separately gated workflow."],
   costs: ["Costs", "Protected agent call capacity and recovery reserves. Model, compute, and data charges remain unmeasured."],
   audit: ["Audit", "Paper control events persist with a verified local hash chain. Independent immutable storage remains a release gate."],
-  settings: ["Settings", "Only non-capital preferences will be managed here. Live enablement is not a UI toggle."],
+  settings: ["Settings", "Manage local owner sessions. Display preferences and integration administration remain pending."],
 } as const;
 
 export type SectionKey = keyof typeof sectionDetails;

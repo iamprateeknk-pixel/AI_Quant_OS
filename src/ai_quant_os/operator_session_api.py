@@ -7,8 +7,23 @@ from typing import Callable
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Response
 
-from ai_quant_os.operator_session_contracts import OperatorSession
-from ai_quant_os.operator_session_store import OperatorSessionStore
+from ai_quant_os.operator_session_contracts import (
+    OperatorSession,
+    SessionInventory,
+    SessionRevocationReceipt,
+)
+from ai_quant_os.operator_session_store import (
+    OperatorSessionStore,
+    SessionHeadChanged,
+    SessionTargetMissing,
+)
+from pydantic import BaseModel, ConfigDict, Field, UUID4
+
+
+class SessionRevocation(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    target_session_id: UUID4
+    expected_head: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
 class OperatorAuthorization:
@@ -81,6 +96,60 @@ class OperatorAuthorization:
             self._credential(x_operator_reauth)
 
     def install(self, app: FastAPI):
+        @app.get(
+            "/api/v1/operator/sessions",
+            dependencies=[Depends(self.require_session)],
+            response_model=SessionInventory,
+        )
+        def session_inventory(response: Response, x_operator_session: str = Header()):
+            try:
+                view = SessionInventory.model_validate(
+                    self._available_store().administrative_view(
+                        x_operator_session, self._clock(), self._epoch
+                    )
+                )
+            except PermissionError as error:
+                raise HTTPException(401, "Operator session expired or invalid") from error
+            except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
+                raise HTTPException(503, "Session inventory could not be verified") from error
+            response.headers["Cache-Control"] = "no-store"
+            return view
+
+        @app.post(
+            "/api/v1/operator/sessions/revoke",
+            dependencies=[Depends(self.require_session)],
+            response_model=SessionRevocationReceipt,
+        )
+        def revoke_selected(
+            command: SessionRevocation,
+            response: Response,
+            x_operator_session: str = Header(),
+            x_operator_reauth: str | None = Header(default=None),
+        ):
+            self._credential(x_operator_reauth)
+            try:
+                result = SessionRevocationReceipt.model_validate(
+                    self._available_store().administrative_revoke(
+                        x_operator_session,
+                        str(command.target_session_id),
+                        command.expected_head,
+                        self._clock(),
+                        self._epoch,
+                    )
+                )
+            except PermissionError as error:
+                raise HTTPException(401, "Operator session expired or invalid") from error
+            except SessionHeadChanged as error:
+                raise HTTPException(
+                    409, "Session inventory changed; refresh before selecting a session"
+                ) from error
+            except SessionTargetMissing as error:
+                raise HTTPException(404, "Session is no longer in the current inventory") from error
+            except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
+                raise HTTPException(503, "Session revocation could not be verified") from error
+            response.headers["Cache-Control"] = "no-store"
+            return result
+
         @app.post(
             "/api/v1/operator/sessions",
             status_code=201,

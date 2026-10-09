@@ -1,0 +1,56 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "status": {
+      "const": "REVOKED",
+      "default": "REVOKED",
+      "title": "Status",
+      "type": "string"
+    },
+    "target_session_id": {
+      "format": "uuid4",
+      "title": "Target Session Id",
+      "type": "string"
+    },
+    "actor_session_id": {
+      "format": "uuid4",
+      "title": "Actor Session Id",
+      "type": "string"
+    },
+    "current_session_revoked": {
+      "title": "Current Session Revoked",
+      "type": "boolean"
+    },
+    "revoked_at": {
+      "format": "date-time",
+      "title": "Revoked At",
+      "type": "string"
+    },
+    "source_head": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Head",
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_session_id",
+    "actor_session_id",
+    "current_session_revoked",
+    "revoked_at",
+    "source_head"
+  ],
+  "title": "SessionRevocationReceipt",
+  "type": "object"
+}
