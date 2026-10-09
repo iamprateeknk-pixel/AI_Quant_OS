@@ -1,0 +1,51 @@
+{
+  "increment": "0109",
+  "date": "2026-10-09",
+  "base_commit": "82517461d6da989bbcfd0c66f39690264bfac014",
+  "feature": "Fixed supervised MT5 demo observation worker with bounded IPC and retained uncertain child handles",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0109",
+    "scope": [
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_broker_router.py"
+    ],
+    "tests": 60,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "30.669",
+    "tdd_red": "Five initial tests failed because the implementation module was absent",
+    "ruff": "passed",
+    "prior_schemas_unchanged": 78,
+    "source_hashes": [
+      {
+        "path": "docs/MT5_DEMO_WORKER_HANDOFF.md",
+        "sha256": "aa80946f27dddc8814647613af5ef24f69a621800fe8f6015302b68c2caf9f95"
+      },
+      {
+        "path": "docs/adr/0109-supervised-demo-observation-worker.md",
+        "sha256": "7547c5c962f1b83d4513cce2df74c4c53e1b598686578c2311f2f31c0547116f"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_worker.py",
+        "sha256": "b6b51c729e0423e27b8a0619205127cf6f00cb980da3771bb90c0a0eb1417642"
+      },
+      {
+        "path": "tests/test_mt5_demo_worker.py",
+        "sha256": "5d5c135562642a2b1de12ad541dc1dd884cb3709ee2d5a28073664308c5480ae"
+      }
+    ],
+    "junit_sha256": "25f6a829b802598cc34b9fd0645aa66b2fbda0be60581277058bc0a8a7720b34",
+    "secrets_scan": "passed: staged gitleaks 8.30.1",
+    "review": "Local five-axis self-review; independent broker/release review remains pending",
+    "pytest_reported_seconds": 34.89
+  },
+  "limits": [
+    "Fixture SDK only; no terminal or external broker used",
+    "Native SDK import restricted to the explicit worker; no API route or broker routing integration",
+    "Exact Python child termination is bounded; terminal custody and durable restart recovery remain unverified",
+    "No order submission, portfolio mutation, native attestation or live authorization",
+    "Durable P04 gateway custody, native acceptance and synchronization remain open",
+    "Focused increment verification does not establish full-system or P13 acceptance"
+  ]
+}
