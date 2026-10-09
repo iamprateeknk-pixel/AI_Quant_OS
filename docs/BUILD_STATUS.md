@@ -4,6 +4,18 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Agent call capacity view increment
+
+- Connected Costs to protected durable daily/monthly call observations for all
+  18 roles, including attempts, remaining routine calls and protected reserves.
+  Disabled, unavailable and sign-in states show no fabricated counters or charges.
+- Strict frontend projection, static rendered states and protected session reads
+  passed all 35 frontend checks, production build, type checking and lint.
+  Browser acceptance remains pending after the earlier rejected preview launch.
+- Provider tokens, monetary/compute/data costs, recovery spending, complete cost
+  workflows and independent acceptance remain pending. See
+  `AGENT_CALL_CAPACITY_UI_HANDOFF.md` and ADR 0099. P00-P13 remains incomplete.
+
 ## Durable agent tool-call admission increment
 
 - Added configured UTC daily/monthly call admission for all 18 roles, shared across

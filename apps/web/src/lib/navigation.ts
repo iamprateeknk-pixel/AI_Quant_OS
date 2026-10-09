@@ -28,7 +28,7 @@ export const sectionDetails = {
   research: ["Research", "Verified archived candidate outcomes, validation gates and provenance. Research evidence does not authorize promotion."],
   evolution: ["Evolution", "Saved agent genome lineage and evaluation objectives. Challengers remain unverified; promotion requires all release gates."],
   incidents: ["Incidents", "Verified paper health incidents, monitoring observations and retained quarantine restrictions. Recovery remains a separately gated workflow."],
-  costs: ["Costs", "Model, compute, and data costs are not being collected yet."],
+  costs: ["Costs", "Protected agent call capacity and recovery reserves. Model, compute, and data charges remain unmeasured."],
   audit: ["Audit", "Paper control events persist with a verified local hash chain. Independent immutable storage remains a release gate."],
   settings: ["Settings", "Only non-capital preferences will be managed here. Live enablement is not a UI toggle."],
 } as const;

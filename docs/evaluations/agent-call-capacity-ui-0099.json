@@ -1,0 +1,76 @@
+{
+  "increment": "0099",
+  "feature": "Protected agent call capacity Costs view",
+  "base_commit": "034f591dfc7f8f02ebd949a3c68dfe764ca717dc",
+  "verification": {
+    "workspace_matches_staged_files": true,
+    "frontend_tests_passed": 35,
+    "feature_tests_passed": 6,
+    "missing_parser_red_check_failed": true,
+    "production_build": "passed",
+    "typescript_no_emit": "passed",
+    "eslint": "passed",
+    "browser_acceptance": "pending: prior preview launch rejected by execution policy; no alternate launch attempted",
+    "full_suite_claimed": false,
+    "fresh_checkout_build_claimed": false
+  },
+  "scope": [
+    "18-role daily/monthly reserved attempts, remaining routine capacity and protected recovery reserves",
+    "Server-only operator session transport",
+    "Distinct disabled, unavailable and sign-in states",
+    "No write authority, recovery spending, token usage or monetary accounting"
+  ],
+  "pending": [
+    "Browser keyboard/responsive/privacy acceptance",
+    "Provider tokens and monetary cost governance",
+    "Context-source and legacy provider budget integration",
+    "Recovery spending and retention/migration",
+    "Complete P00-P13 development and independent release gates"
+  ],
+  "tested_staged_files": [
+    {
+      "path": ".clean/decisions.md",
+      "sha256": "44911f173c615bb4230f5994fc419b64bdd9903186d96a438dcd150a09a58617"
+    },
+    {
+      "path": "apps/web/src/app/[section]/page.tsx",
+      "sha256": "1fe9e6a213a07b61b709266f6c59fe93d9860dbd2bcba1074974da6eb8185698"
+    },
+    {
+      "path": "apps/web/src/features/costs/call-budget-panel.tsx",
+      "sha256": "c0b53ec6e7b68701d20a5bf81adffeccb99319e3ffdaefd4828cbd014d8b2705"
+    },
+    {
+      "path": "apps/web/src/features/costs/call-budgets.ts",
+      "sha256": "3b3921abe347a510444be8b59d3d6b5a6cb63f37155d05c6e69b7ec870691729"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/server.ts",
+      "sha256": "c2aabd5e278205b7eeebbc9cefc913913d02f982dfca58f8ba4501d700fc2424"
+    },
+    {
+      "path": "apps/web/src/lib/navigation.ts",
+      "sha256": "70c11c255f1e6a211d76842eb688c1275652c992b5cfbda846dc86f2524e05d1"
+    },
+    {
+      "path": "apps/web/tests/call-budgets.test.mjs",
+      "sha256": "13180a746f0ed89a9208757068a3092e754623872a1b196e6cb5d80a3ecaf0f6"
+    },
+    {
+      "path": "apps/web/tests/protected-reads.test.mjs",
+      "sha256": "89ae907dd49dc6492ffa0c02bad3ef73082ae31cb73cecd38a53a2081c3b83dd"
+    },
+    {
+      "path": "docs/AGENT_CALL_CAPACITY_UI_HANDOFF.md",
+      "sha256": "7900c06b12413120f295eded60d31364e8107e6c9db674098d65c768b078b533"
+    },
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "beb309868875ef905fa06cdf685b765baeb81a66e82bff71b1f72916d5b052f2"
+    },
+    {
+      "path": "docs/adr/0099-protected-agent-call-capacity-view.md",
+      "sha256": "424239cc6ab85863ee8d61cc71b1cc4de0643375a36a7366ab73afa3b321ba60"
+    }
+  ]
+}
