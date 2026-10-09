@@ -1,0 +1,1131 @@
+{
+  "$defs": {
+    "AccountView": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        },
+        "balance": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Balance"
+        },
+        "credit": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Credit"
+        },
+        "equity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Equity"
+        },
+        "profit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Profit"
+        },
+        "margin": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Margin"
+        },
+        "margin_free": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Margin Free"
+        },
+        "margin_mode": {
+          "enum": [
+            "NETTING",
+            "EXCHANGE",
+            "HEDGING"
+          ],
+          "title": "Margin Mode",
+          "type": "string"
+        },
+        "leverage": {
+          "exclusiveMinimum": 0,
+          "title": "Leverage",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "currency",
+        "balance",
+        "credit",
+        "equity",
+        "profit",
+        "margin",
+        "margin_free",
+        "margin_mode",
+        "leverage"
+      ],
+      "title": "AccountView",
+      "type": "object"
+    },
+    "CashEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "ticket": {
+          "exclusiveMinimum": 0,
+          "title": "Ticket",
+          "type": "integer"
+        },
+        "event_ref": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Event Ref",
+          "type": "string"
+        },
+        "order_ticket": {
+          "minimum": 0,
+          "title": "Order Ticket",
+          "type": "integer"
+        },
+        "position_identifier": {
+          "minimum": 0,
+          "title": "Position Identifier",
+          "type": "integer"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "profit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Profit"
+        },
+        "commission": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Commission"
+        },
+        "swap": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Swap"
+        },
+        "fee": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ticket",
+        "event_ref",
+        "order_ticket",
+        "position_identifier",
+        "observed_at",
+        "currency",
+        "profit",
+        "commission",
+        "swap",
+        "fee",
+        "kind"
+      ],
+      "title": "CashEvent",
+      "type": "object"
+    },
+    "DealVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "event_ref": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Event Ref",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "FILL",
+            "CASH"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "content_ref": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Ref",
+          "type": "string"
+        },
+        "source_attempt_id": {
+          "format": "uuid4",
+          "title": "Source Attempt Id",
+          "type": "string"
+        },
+        "source_receipt_ref": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Source Receipt Ref",
+          "type": "string"
+        },
+        "observed_in_capture": {
+          "format": "date-time",
+          "title": "Observed In Capture",
+          "type": "string"
+        },
+        "payload": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FillView"
+            },
+            {
+              "$ref": "#/$defs/CashEvent"
+            }
+          ],
+          "title": "Payload"
+        },
+        "native_correction_attestation": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Native Correction Attestation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_ref",
+        "revision",
+        "kind",
+        "content_ref",
+        "source_attempt_id",
+        "source_receipt_ref",
+        "observed_in_capture",
+        "payload"
+      ],
+      "title": "DealVersion",
+      "type": "object"
+    },
+    "DemoQuote": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "venue_symbol": {
+          "title": "Venue Symbol",
+          "type": "string"
+        },
+        "bid": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Bid"
+        },
+        "ask": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Ask"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "contract_size": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Contract Size"
+        },
+        "digits": {
+          "maximum": 12,
+          "minimum": 0,
+          "title": "Digits",
+          "type": "integer"
+        },
+        "volume_min": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume Min"
+        },
+        "volume_max": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume Max"
+        },
+        "volume_step": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume Step"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "venue_symbol",
+        "bid",
+        "ask",
+        "observed_at",
+        "contract_size",
+        "digits",
+        "volume_min",
+        "volume_max",
+        "volume_step"
+      ],
+      "title": "DemoQuote",
+      "type": "object"
+    },
+    "FillView": {
+      "additionalProperties": false,
+      "properties": {
+        "ticket": {
+          "exclusiveMinimum": 0,
+          "title": "Ticket",
+          "type": "integer"
+        },
+        "event_ref": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Event Ref",
+          "type": "string"
+        },
+        "order_ticket": {
+          "minimum": 0,
+          "title": "Order Ticket",
+          "type": "integer"
+        },
+        "position_identifier": {
+          "minimum": 0,
+          "title": "Position Identifier",
+          "type": "integer"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "profit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Profit"
+        },
+        "commission": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Commission"
+        },
+        "swap": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Swap"
+        },
+        "fee": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "venue_symbol": {
+          "title": "Venue Symbol",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "entry": {
+          "enum": [
+            "IN",
+            "OUT",
+            "INOUT",
+            "OUT_BY"
+          ],
+          "title": "Entry",
+          "type": "string"
+        },
+        "volume_lots": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume Lots"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Price"
+        },
+        "quantity_units": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Quantity Units"
+        },
+        "quantity_basis": {
+          "const": "CURRENT_SYMBOL_METADATA_UNVERIFIED_AT_EXECUTION",
+          "default": "CURRENT_SYMBOL_METADATA_UNVERIFIED_AT_EXECUTION",
+          "title": "Quantity Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ticket",
+        "event_ref",
+        "order_ticket",
+        "position_identifier",
+        "observed_at",
+        "currency",
+        "profit",
+        "commission",
+        "swap",
+        "fee",
+        "instrument_id",
+        "venue_symbol",
+        "side",
+        "entry",
+        "volume_lots",
+        "price",
+        "quantity_units"
+      ],
+      "title": "FillView",
+      "type": "object"
+    },
+    "OrderView": {
+      "additionalProperties": false,
+      "properties": {
+        "ticket": {
+          "exclusiveMinimum": 0,
+          "title": "Ticket",
+          "type": "integer"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "venue_symbol": {
+          "title": "Venue Symbol",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "initial_lots": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Initial Lots"
+        },
+        "remaining_lots": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Remaining Lots"
+        },
+        "price_open": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Price Open"
+        },
+        "stop_limit_price": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Stop Limit Price"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ticket",
+        "instrument_id",
+        "venue_symbol",
+        "kind",
+        "state",
+        "initial_lots",
+        "remaining_lots",
+        "price_open",
+        "stop_limit_price",
+        "created_at"
+      ],
+      "title": "OrderView",
+      "type": "object"
+    },
+    "PositionView": {
+      "additionalProperties": false,
+      "properties": {
+        "ticket": {
+          "exclusiveMinimum": 0,
+          "title": "Ticket",
+          "type": "integer"
+        },
+        "identifier": {
+          "exclusiveMinimum": 0,
+          "title": "Identifier",
+          "type": "integer"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "venue_symbol": {
+          "title": "Venue Symbol",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "volume_lots": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Volume Lots"
+        },
+        "quantity_units": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Quantity Units"
+        },
+        "quantity_basis": {
+          "const": "CURRENT_SYMBOL_METADATA",
+          "default": "CURRENT_SYMBOL_METADATA",
+          "title": "Quantity Basis",
+          "type": "string"
+        },
+        "price_open": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Price Open"
+        },
+        "price_current": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Price Current"
+        },
+        "profit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Profit"
+        },
+        "swap": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Swap"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ticket",
+        "identifier",
+        "instrument_id",
+        "venue_symbol",
+        "side",
+        "volume_lots",
+        "quantity_units",
+        "price_open",
+        "price_current",
+        "profit",
+        "swap",
+        "currency",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "PositionView",
+      "type": "object"
+    },
+    "ProjectionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "DISABLED",
+            "APPLIED",
+            "ALREADY_APPLIED",
+            "WITHHELD"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "enum": [
+                "SOURCE_WITHHELD",
+                "STORAGE_UNAVAILABLE",
+                "ATTEMPT_CONFLICT",
+                "FOREIGN_SCOPE",
+                "STALE_OBSERVATION",
+                "HISTORY_GAP",
+                "CAPACITY"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "attempt_id": {
+          "format": "uuid4",
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "new_deals": {
+          "default": 0,
+          "minimum": 0,
+          "title": "New Deals",
+          "type": "integer"
+        },
+        "revised_deals": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Revised Deals",
+          "type": "integer"
+        },
+        "may_submit_orders": {
+          "const": false,
+          "default": false,
+          "title": "May Submit Orders",
+          "type": "boolean"
+        },
+        "may_affect_portfolio": {
+          "const": false,
+          "default": false,
+          "title": "May Affect Portfolio",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "state",
+        "attempt_id"
+      ],
+      "title": "ProjectionResult",
+      "type": "object"
+    },
+    "ProjectionView": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "observation_kind": {
+          "const": "ACCOUNT_SYNC_PROJECTION",
+          "default": "ACCOUNT_SYNC_PROJECTION",
+          "title": "Observation Kind",
+          "type": "string"
+        },
+        "latest_attempt_id": {
+          "format": "uuid4",
+          "title": "Latest Attempt Id",
+          "type": "string"
+        },
+        "latest_receipt_ref": {
+          "title": "Latest Receipt Ref",
+          "type": "string"
+        },
+        "receipts": {
+          "minimum": 1,
+          "title": "Receipts",
+          "type": "integer"
+        },
+        "known_deals": {
+          "minimum": 0,
+          "title": "Known Deals",
+          "type": "integer"
+        },
+        "revision_count": {
+          "minimum": 0,
+          "title": "Revision Count",
+          "type": "integer"
+        },
+        "history_start": {
+          "format": "date-time",
+          "title": "History Start",
+          "type": "string"
+        },
+        "history_through": {
+          "format": "date-time",
+          "title": "History Through",
+          "type": "string"
+        },
+        "missing_prior_deals": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Prior Deals",
+          "type": "array"
+        },
+        "quote_context": {
+          "enum": [
+            "FRESH",
+            "STALE"
+          ],
+          "title": "Quote Context",
+          "type": "string"
+        },
+        "batch": {
+          "$ref": "#/$defs/SyncBatch"
+        },
+        "history_attestation": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "History Attestation",
+          "type": "string"
+        },
+        "may_submit_orders": {
+          "const": false,
+          "default": false,
+          "title": "May Submit Orders",
+          "type": "boolean"
+        },
+        "may_affect_portfolio": {
+          "const": false,
+          "default": false,
+          "title": "May Affect Portfolio",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "latest_attempt_id",
+        "latest_receipt_ref",
+        "receipts",
+        "known_deals",
+        "revision_count",
+        "history_start",
+        "history_through",
+        "missing_prior_deals",
+        "quote_context",
+        "batch"
+      ],
+      "title": "ProjectionView",
+      "type": "object"
+    },
+    "SyncBatch": {
+      "additionalProperties": false,
+      "properties": {
+        "enrollment_id": {
+          "format": "uuid4",
+          "title": "Enrollment Id",
+          "type": "string"
+        },
+        "sdk_version": {
+          "title": "Sdk Version",
+          "type": "string"
+        },
+        "account_scope_ref": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Account Scope Ref",
+          "type": "string"
+        },
+        "capture_started_at": {
+          "format": "date-time",
+          "title": "Capture Started At",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "valid_until": {
+          "format": "date-time",
+          "title": "Valid Until",
+          "type": "string"
+        },
+        "history_start": {
+          "format": "date-time",
+          "title": "History Start",
+          "type": "string"
+        },
+        "history_end": {
+          "format": "date-time",
+          "title": "History End",
+          "type": "string"
+        },
+        "account": {
+          "$ref": "#/$defs/AccountView"
+        },
+        "quotes": {
+          "items": {
+            "$ref": "#/$defs/DemoQuote"
+          },
+          "title": "Quotes",
+          "type": "array"
+        },
+        "positions": {
+          "items": {
+            "$ref": "#/$defs/PositionView"
+          },
+          "maxItems": 8,
+          "title": "Positions",
+          "type": "array"
+        },
+        "orders": {
+          "items": {
+            "$ref": "#/$defs/OrderView"
+          },
+          "maxItems": 8,
+          "title": "Orders",
+          "type": "array"
+        },
+        "fills": {
+          "items": {
+            "$ref": "#/$defs/FillView"
+          },
+          "maxItems": 16,
+          "title": "Fills",
+          "type": "array"
+        },
+        "cash_events": {
+          "items": {
+            "$ref": "#/$defs/CashEvent"
+          },
+          "maxItems": 16,
+          "title": "Cash Events",
+          "type": "array"
+        },
+        "consistency": {
+          "const": "NON_ATOMIC_SEQUENTIAL_READ",
+          "default": "NON_ATOMIC_SEQUENTIAL_READ",
+          "title": "Consistency",
+          "type": "string"
+        },
+        "account_freshness": {
+          "const": "UNVERIFIED",
+          "default": "UNVERIFIED",
+          "title": "Account Freshness",
+          "type": "string"
+        },
+        "history_coverage": {
+          "const": "DECLARED_WINDOW_ONLY",
+          "default": "DECLARED_WINDOW_ONLY",
+          "title": "History Coverage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "enrollment_id",
+        "sdk_version",
+        "account_scope_ref",
+        "capture_started_at",
+        "observed_at",
+        "valid_until",
+        "history_start",
+        "history_end",
+        "account",
+        "quotes",
+        "positions",
+        "orders",
+        "fills",
+        "cash_events"
+      ],
+      "title": "SyncBatch",
+      "type": "object"
+    }
+  },
+  "anyOf": [
+    {
+      "$ref": "#/$defs/ProjectionResult"
+    },
+    {
+      "$ref": "#/$defs/ProjectionView"
+    },
+    {
+      "$ref": "#/$defs/DealVersion"
+    }
+  ]
+}

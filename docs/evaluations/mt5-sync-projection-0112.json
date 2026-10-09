@@ -1,0 +1,62 @@
+{
+  "increment": "0112",
+  "date": "2026-10-09",
+  "base_commit": "0f6cb336ff89bea94f476bd56434931972d1f2c6",
+  "feature": "Retain source-bound account observations, overlap deal revisions and missing-record flags in a durable audited projection",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0112",
+    "scope": [
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_broker_router.py"
+    ],
+    "tests": 130,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "14.353",
+    "tdd_red": "Initial projection behavior tests failed before implementation; receipt alias, disconnected backward history, unavailable reads and missing schema each reproduced before their fixes",
+    "ruff": "passed",
+    "prior_schemas_unchanged": 80,
+    "source_hashes": [
+      {
+        "path": "docs/MT5_SYNC_PROJECTION_HANDOFF.md",
+        "sha256": "17e3be31c18aebfa877b88dfc5c45dd7505b92998a8ac7d03e8e994f472ad4b4"
+      },
+      {
+        "path": "docs/adr/0112-retained-demo-sync-projection.md",
+        "sha256": "e190a9070d57e534a30ee575d7d3577d32b718a8957e990b6694dd6690ca3a2d"
+      },
+      {
+        "path": "docs/schemas/demo-sync-projection.schema.json",
+        "sha256": "e100e9b4d690ff75caae320da3cf7c0a2bf2061de0a6bc6faf42ba9945d1365c"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_demo_gateway.py",
+        "sha256": "e32b5a395969d7d03cbbb176b559b7283651b1d7a9777b8af8688841518f1e2f"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_projection.py",
+        "sha256": "993b918cb2450553e82d0de4ab686325f02061a9d16cccccc826fbf50cefc0f6"
+      },
+      {
+        "path": "tests/test_mt5_sync_projection.py",
+        "sha256": "2136f746127d0a2c49d3b1b5a109e62d19472ceae1a8d42fee243b3feeca2b57"
+      }
+    ],
+    "junit_sha256": "c5f650f9f09fe82537b81b87d09af93f407ed0b446fe2992674e99f69a8abee6",
+    "secrets_scan": "passed",
+    "review": "Local five-axis self-review; independent broker/release review remains pending"
+  },
+  "limits": [
+    "Fixture SDK only; no terminal, credentials or external broker used",
+    "Native SDK import restricted to the explicit worker; no API route or broker routing integration",
+    "Completed receipt replay and unfinished reservation blocking survive restart; orphan child and terminal custody remain unverified",
+    "No order submission, portfolio mutation, native attestation or live authorization",
+    "Native P04 acceptance, autonomous cursor/polling/reconnect, correction attestation, lifecycle reconciliation, orphan custody and external order idempotency remain open",
+    "Focused increment verification does not establish full-system or P13 acceptance"
+  ]
+}

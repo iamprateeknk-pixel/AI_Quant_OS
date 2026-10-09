@@ -464,3 +464,60 @@ class DemoObservationGateway:
                 return reply_model(
                     state="WITHHELD", code="STORAGE_UNAVAILABLE", attempt_id=attempt_id
                 )
+
+    def replay_existing(
+        self, request: DemoCaptureRequest | DemoSyncRequest, attempt_id: UUID
+    ) -> GatewayReply:
+        """Read only an existing verified receipt; never reserve or dispatch a missing attempt."""
+        reply_model = SyncGatewayReply if isinstance(request, DemoSyncRequest) else GatewayReply
+        if not isinstance(attempt_id, UUID) or attempt_id.version != 4:
+            raise ValueError("Attempt identity must be UUID4")
+        if not request.enabled:
+            return reply_model(state="DISABLED", attempt_id=attempt_id)
+        with self._lock:
+            try:
+                if self._connection is None:
+                    raise ValueError("Journal unavailable")
+                self._connection.execute("BEGIN")
+                row = self._verify().get(str(attempt_id))
+                if row is None or row.request_sha256 != request_identity(request):
+                    self._connection.rollback()
+                    return reply_model(
+                        state="WITHHELD", code="ATTEMPT_CONFLICT", attempt_id=attempt_id
+                    )
+                result = self._reply(row, request)
+                self._connection.rollback()
+                return result
+            except (sqlite3.Error, ValueError):
+                if self._connection is not None:
+                    self._connection.rollback()
+                return reply_model(
+                    state="WITHHELD", code="STORAGE_UNAVAILABLE", attempt_id=attempt_id
+                )
+
+    def receipt_reference(
+        self, request: DemoCaptureRequest | DemoSyncRequest, attempt_id: UUID
+    ) -> str | None:
+        """Read an immutable finished-receipt commitment without projecting expired facts."""
+        if not isinstance(attempt_id, UUID) or attempt_id.version != 4:
+            raise ValueError("Attempt identity must be UUID4")
+        if not request.enabled:
+            return None
+        with self._lock:
+            try:
+                if self._connection is None:
+                    return None
+                self._connection.execute("BEGIN")
+                row = self._verify().get(str(attempt_id))
+                if (
+                    row is None
+                    or row.state != "FINISHED"
+                    or row.request_sha256 != request_identity(request)
+                ):
+                    return None
+                return sha256(canonical(row.model_dump(mode="json")).encode()).hexdigest()
+            except (sqlite3.Error, ValueError):
+                return None
+            finally:
+                if self._connection is not None:
+                    self._connection.rollback()
