@@ -1,0 +1,156 @@
+{
+  "$defs": {
+    "ComponentAllocation": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "BUY",
+            "SELL",
+            "BALANCE",
+            "CREDIT",
+            "CHARGE",
+            "CORRECTION",
+            "BONUS",
+            "COMMISSION",
+            "COMMISSION_DAILY",
+            "COMMISSION_MONTHLY",
+            "COMMISSION_AGENT_DAILY",
+            "COMMISSION_AGENT_MONTHLY",
+            "INTEREST",
+            "BUY_CANCELED",
+            "SELL_CANCELED",
+            "DIVIDEND",
+            "DIVIDEND_FRANKED",
+            "TAX"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "profit": {
+          "enum": [
+            "BALANCE",
+            "CREDIT"
+          ],
+          "title": "Profit",
+          "type": "string"
+        },
+        "commission": {
+          "enum": [
+            "BALANCE",
+            "CREDIT"
+          ],
+          "title": "Commission",
+          "type": "string"
+        },
+        "swap": {
+          "enum": [
+            "BALANCE",
+            "CREDIT"
+          ],
+          "title": "Swap",
+          "type": "string"
+        },
+        "fee": {
+          "enum": [
+            "BALANCE",
+            "CREDIT"
+          ],
+          "title": "Fee",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "profit",
+        "commission",
+        "swap",
+        "fee"
+      ],
+      "title": "ComponentAllocation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "account_scope_ref": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Account Scope Ref",
+      "type": "string"
+    },
+    "history_start": {
+      "format": "date-time",
+      "title": "History Start",
+      "type": "string"
+    },
+    "boundary": {
+      "const": "IMMEDIATELY_BEFORE_HISTORY_START",
+      "default": "IMMEDIATELY_BEFORE_HISTORY_START",
+      "title": "Boundary",
+      "type": "string"
+    },
+    "currency": {
+      "pattern": "^[A-Z]{3}$",
+      "title": "Currency",
+      "type": "string"
+    },
+    "balance": {
+      "anyOf": [
+        {
+          "maximum": 1000000000000.0,
+          "minimum": -1000000000000.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+          "type": "string"
+        }
+      ],
+      "title": "Balance"
+    },
+    "credit": {
+      "anyOf": [
+        {
+          "maximum": 1000000000000.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+          "type": "string"
+        }
+      ],
+      "title": "Credit"
+    },
+    "allocations": {
+      "items": {
+        "$ref": "#/$defs/ComponentAllocation"
+      },
+      "maxItems": 18,
+      "title": "Allocations",
+      "type": "array"
+    },
+    "attestation": {
+      "const": "DECLARED_UNVERIFIED",
+      "default": "DECLARED_UNVERIFIED",
+      "title": "Attestation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "account_scope_ref",
+    "history_start",
+    "currency",
+    "balance",
+    "credit",
+    "allocations"
+  ],
+  "title": "DeclaredOpeningMoney",
+  "type": "object"
+}

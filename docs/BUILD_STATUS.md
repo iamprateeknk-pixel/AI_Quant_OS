@@ -954,3 +954,15 @@ authority remain explicit. Original scheduling, audit formats and wire schemas
 are preserved. Native completeness, cash accounting, portfolio integration,
 custody, deployment, independent review and P13 acceptance remain pending. See
 MT5_POSITION_COMPARISON_HANDOFF.md and ADR 0125.
+
+## Declared account-money comparison — increment 0126
+
+The offline demo command groups latest retained profit/commission/swap/fee
+components under explicit balance/credit bucket rules and an account/start/
+currency-bound opening declaration. It compares saved balance and credit
+separately, preserves reported signs and corrected identities once, and withholds
+missing/unclassified/cancelled histories. Bounded wire conservation and fixed
+denied portfolio/trading authority are explicit. Original scheduling, audit
+formats and prior schemas remain unchanged. Native cash settlement/correction,
+financing/equity, portfolio integration, custody, deployment, independent review
+and P13 acceptance remain pending. See MT5_MONEY_COMPARISON_HANDOFF.md and ADR 0126.

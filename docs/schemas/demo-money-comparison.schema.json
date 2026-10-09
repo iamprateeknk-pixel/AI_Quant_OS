@@ -1,0 +1,512 @@
+{
+  "$defs": {
+    "MoneyKindTotal": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "BUY",
+            "SELL",
+            "BALANCE",
+            "CREDIT",
+            "CHARGE",
+            "CORRECTION",
+            "BONUS",
+            "COMMISSION",
+            "COMMISSION_DAILY",
+            "COMMISSION_MONTHLY",
+            "COMMISSION_AGENT_DAILY",
+            "COMMISSION_AGENT_MONTHLY",
+            "INTEREST",
+            "BUY_CANCELED",
+            "SELL_CANCELED",
+            "DIVIDEND",
+            "DIVIDEND_FRANKED",
+            "TAX"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "deals": {
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "Deals",
+          "type": "integer"
+        },
+        "profit": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Profit"
+        },
+        "commission": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Commission"
+        },
+        "swap": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Swap"
+        },
+        "fee": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee"
+        },
+        "balance_movement": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Balance Movement"
+        },
+        "credit_movement": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Credit Movement"
+        }
+      },
+      "required": [
+        "kind",
+        "deals",
+        "profit",
+        "commission",
+        "swap",
+        "fee",
+        "balance_movement",
+        "credit_movement"
+      ],
+      "title": "MoneyKindTotal",
+      "type": "object"
+    },
+    "MoneySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "opening_balance": {
+          "anyOf": [
+            {
+              "maximum": 1000000000000.0,
+              "minimum": -1000000000000.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Opening Balance"
+        },
+        "opening_credit": {
+          "anyOf": [
+            {
+              "maximum": 1000000000000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Opening Credit"
+        },
+        "balance_movement": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Balance Movement"
+        },
+        "credit_movement": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Credit Movement"
+        },
+        "expected_balance": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Expected Balance"
+        },
+        "expected_credit": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Expected Credit"
+        },
+        "observed_balance": {
+          "anyOf": [
+            {
+              "maximum": 1000000000000.0,
+              "minimum": -1000000000000.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Observed Balance"
+        },
+        "observed_credit": {
+          "anyOf": [
+            {
+              "maximum": 1000000000000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Observed Credit"
+        },
+        "balance_difference": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Balance Difference"
+        },
+        "credit_difference": {
+          "anyOf": [
+            {
+              "maximum": 1e+17,
+              "minimum": -1e+17,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,8}0*$",
+              "type": "string"
+            }
+          ],
+          "title": "Credit Difference"
+        }
+      },
+      "required": [
+        "opening_balance",
+        "opening_credit",
+        "balance_movement",
+        "credit_movement",
+        "expected_balance",
+        "expected_credit",
+        "observed_balance",
+        "observed_credit",
+        "balance_difference",
+        "credit_difference"
+      ],
+      "title": "MoneySummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "observation_kind": {
+      "const": "DECLARED_OPENING_MONEY_COMPARISON",
+      "default": "DECLARED_OPENING_MONEY_COMPARISON",
+      "title": "Observation Kind",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "CONSISTENT_WITH_DECLARATION",
+        "DIVERGENT",
+        "WITHHELD"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "code": {
+      "anyOf": [
+        {
+          "enum": [
+            "STORAGE_UNAVAILABLE",
+            "SOURCE_INVALID",
+            "NO_HISTORY",
+            "OPENING_MISMATCH",
+            "MISSING_PRIOR_DEALS",
+            "HISTORY_ENDPOINT",
+            "CURRENCY_MISMATCH",
+            "ARITHMETIC_BOUND",
+            "UNCLASSIFIED_COMPONENTS",
+            "CANCELLATION_ACCOUNTING_UNVERIFIED"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Code"
+    },
+    "declaration_ref": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Declaration Ref",
+      "type": "string"
+    },
+    "source_receipt_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Receipt Ref"
+    },
+    "account_scope_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Account Scope Ref"
+    },
+    "currency": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Currency"
+    },
+    "history_start": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "History Start"
+    },
+    "history_through": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "History Through"
+    },
+    "account_observed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Account Observed At"
+    },
+    "revised_deals": {
+      "default": 0,
+      "maximum": 4096,
+      "minimum": 0,
+      "title": "Revised Deals",
+      "type": "integer"
+    },
+    "cancelled_deals": {
+      "default": 0,
+      "maximum": 4096,
+      "minimum": 0,
+      "title": "Cancelled Deals",
+      "type": "integer"
+    },
+    "rows": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MoneyKindTotal"
+      },
+      "maxItems": 18,
+      "title": "Rows",
+      "type": "array"
+    },
+    "summary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MoneySummary"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "opening_attestation": {
+      "const": "DECLARED_UNVERIFIED",
+      "default": "DECLARED_UNVERIFIED",
+      "title": "Opening Attestation",
+      "type": "string"
+    },
+    "allocation_attestation": {
+      "const": "DECLARED_UNVERIFIED",
+      "default": "DECLARED_UNVERIFIED",
+      "title": "Allocation Attestation",
+      "type": "string"
+    },
+    "history_attestation": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "History Attestation",
+      "type": "string"
+    },
+    "account_freshness": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "Account Freshness",
+      "type": "string"
+    },
+    "consistency": {
+      "const": "NON_ATOMIC_SEQUENTIAL_READ",
+      "default": "NON_ATOMIC_SEQUENTIAL_READ",
+      "title": "Consistency",
+      "type": "string"
+    },
+    "may_affect_portfolio": {
+      "const": false,
+      "default": false,
+      "title": "May Affect Portfolio",
+      "type": "boolean"
+    },
+    "may_submit_orders": {
+      "const": false,
+      "default": false,
+      "title": "May Submit Orders",
+      "type": "boolean"
+    },
+    "native_attestation": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "Native Attestation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "state",
+    "declaration_ref"
+  ],
+  "title": "MoneyComparison",
+  "type": "object"
+}

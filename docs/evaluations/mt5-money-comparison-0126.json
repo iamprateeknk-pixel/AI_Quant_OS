@@ -1,0 +1,103 @@
+{
+  "increment": "0126",
+  "date": "2026-10-10",
+  "base_commit": "2a768ae37137f6272e7fc3338e3eede9d74b0763",
+  "feature": "Reported account-money comparison under explicit opening and balance/credit component allocations",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0126",
+    "tests": 352,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "16.483",
+    "scope": [
+      "tests/test_mt5_money_comparison.py",
+      "tests/test_mt5_position_comparison.py",
+      "tests/test_mt5_sync_checkpoint.py",
+      "tests/test_mt5_sync_inspection.py",
+      "tests/test_mt5_window_reduction.py",
+      "tests/test_mt5_history_backfill.py",
+      "tests/test_mt5_clock_recovery.py",
+      "tests/test_mt5_sync_recovery.py",
+      "tests/test_mt5_sync_service.py",
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_mt5_sync_health_api.py",
+      "tests/test_broker_capabilities.py",
+      "tests/test_broker_capability_api.py",
+      "tests/test_broker_router.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 93,
+    "source_hashes": [
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "e851920c7a73866deae764de22c11d9ecbbf7c3864d8ba631dfe31d0ff404b4b"
+      },
+      {
+        "path": "docs/MT5_MONEY_COMPARISON_HANDOFF.md",
+        "sha256": "705d8847e662f198a925beff98764684d7a089d8f1312f77859211441b2260b8"
+      },
+      {
+        "path": "docs/adr/0126-declared-account-money-component-comparison.md",
+        "sha256": "24e863dafc3145c1f420eba44b6025893938d5f5224e26ea07d43ab41eae0731"
+      },
+      {
+        "path": "docs/schemas/demo-money-comparison.schema.json",
+        "sha256": "c8e5f9bbb943be76e60c04c887f81ca03416ff5b31fbe98a2c74eb407d563df4"
+      },
+      {
+        "path": "docs/schemas/demo-opening-money.schema.json",
+        "sha256": "46c9ea077768456c6be405ea594c6ff879a1d7e29d9b00514e110b8c36d35d30"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_money_comparison.py",
+        "sha256": "99cd6a7fb45ab31e125e5e8c0641084a7d86f76d22395061903974cdbe946e78"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_service.py",
+        "sha256": "fde5ea4611f2e980355b6c682a4ef6af427269a838eea9de4816420deef8f26d"
+      },
+      {
+        "path": "tests/test_mt5_money_comparison.py",
+        "sha256": "bb0428a5752514eb9890cfb9b489af936fc2f186bba8068bb017c75d364d3dbe"
+      }
+    ],
+    "junit_sha256": "9c511c60c1532b516052f2a3f9f6d1ddf76cebdb185a08342ef13ca0695d5444",
+    "tdd_red": "Fourteen initial checks failed before the module; wire schemas and money CLI flag failed before those surfaces. An arithmetic wire claim with cancelled_deals=1 was reproduced before the cancellation state guard",
+    "review": "Local five-axis self-review: account/start/currency-bound declaration, no implicit allocation/sign inversion, latest audited source identities once, missing/cancelled history withheld, bounded context-independent component conservation and summary differences, additive offline CLI under original ownership/enrollment gates, fixed denied native/order/portfolio authority; independent native/release acceptance pending",
+    "secrets_scan": "passed"
+  },
+  "native_documentation": [
+    {
+      "url": "https://www.mql5.com/en/docs/constants/tradingconstants/dealproperties",
+      "checked": "2026-10-10",
+      "scope": "Reported monetary fields and documented cancelled-deal zeroing with separate balance adjustment; not proof of actual broker postings"
+    },
+    {
+      "url": "https://www.mql5.com/en/docs/constants/environment_state/accountinformation",
+      "checked": "2026-10-10",
+      "scope": "Separate reported account properties; not proof of opening or allocation rules"
+    }
+  ],
+  "limits": [
+    "CONSISTENT_WITH_DECLARATION is agreement with unverified supplied opening and component allocation, not native ledger completeness, freshness, financing semantics or eligibility",
+    "Every observed normalized kind requires explicit BALANCE/CREDIT classification for profit, commission, swap and fee; native interpretation is not inferred or attested",
+    "Reported signs are retained, including positive rebates; current open position profit/swap, equity/margin and currency conversions are not added to cash",
+    "Latest corrected amounts replace the earlier recorded contribution once, while original revisions remain retained; this is not proof of native correction posting semantics",
+    "Any latest cancelled BUY/SELL withholds arithmetic because original posted cash and separate balance adjustment linkage are unverified; a caller allocation cannot override this gate",
+    "Missing prior deal identities withhold instead of deleting contributions; source scope, exact start, currency and latest coverage endpoint must match",
+    "Source amounts cap at one trillion with eight decimal places; bounded 64-digit arithmetic preserves reported precision, and 100-quadrillion rollups cover retained capacity without truncation",
+    "Offline command uses existing journals, CLI ownership/incomplete-checkpoint guards and a noncredential policy placeholder; real subprocess preserved heartbeat, revision and gateway attempt count",
+    "Original capture/recovery credentials, platform and launch gates remain enforced; order and portfolio authority stay false",
+    "Existing 93 wire schemas, journal formats, dependencies and paper-domain contracts remain unchanged; two new schemas are additive",
+    "Trusted normalized doubles, actual SQLite and real offline CLI only; no SDK, terminal, actual credentials, broker or live capital used",
+    "Native cash/cancellation/correction acceptance, equity/financing, portfolio integration, custody, capacity rollover, installed services, independent review, browser acceptance and P13 gates remain pending",
+    "Focused checks are not full-system acceptance; preserved uncertain candidate jobs were neither touched nor restarted"
+  ]
+}

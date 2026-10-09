@@ -30,6 +30,7 @@ from ai_quant_os.mt5_sync_controller import (
 from ai_quant_os.mt5_sync_projection import SyncProjectionStore
 from ai_quant_os.mt5_sync_inspection import inspect_sync
 from ai_quant_os.mt5_position_comparison import DeclaredOpeningPositions, compare_positions
+from ai_quant_os.mt5_money_comparison import DeclaredOpeningMoney, compare_money
 
 MAX_CONFIG_BYTES = 32768
 MAX_HEALTH_BYTES = 16384
@@ -234,6 +235,7 @@ def main(argv=None) -> int:
     actions.add_argument("--reduce-history-attempt")
     actions.add_argument("--inspect-state", action="store_true")
     actions.add_argument("--compare-position-history", type=Path)
+    actions.add_argument("--compare-money-history", type=Path)
     parser.add_argument("--prior-failed-attempt")
     parser.add_argument("--history-window-seconds", type=int)
     parser.add_argument("--expected-revision", type=int)
@@ -276,15 +278,19 @@ def main(argv=None) -> int:
             except Exception:
                 raise ServiceRejected("RECOVERY_INVALID") from None
         opening = None
-        if args.compare_position_history is not None:
+        opening_path = args.compare_position_history or args.compare_money_history
+        if opening_path is not None:
             try:
-                with args.compare_position_history.open("rb") as stream:
+                with opening_path.open("rb") as stream:
                     raw = stream.read(MAX_CONFIG_BYTES + 1)
                 if len(raw) > MAX_CONFIG_BYTES:
                     raise ValueError("Opening declaration bound exceeded")
-                opening = DeclaredOpeningPositions.model_validate(
-                    json.loads(raw, object_pairs_hook=_unique)
+                opening_model = (
+                    DeclaredOpeningPositions
+                    if args.compare_position_history is not None
+                    else DeclaredOpeningMoney
                 )
+                opening = opening_model.model_validate(json.loads(raw, object_pairs_hook=_unique))
             except Exception:
                 raise ServiceRejected("COMPARISON_INVALID") from None
         offline = args.inspect_state or opening is not None
@@ -322,7 +328,11 @@ def main(argv=None) -> int:
             )
             stack.callback(controller.close)
             if opening is not None:
-                result = compare_positions(projection, config.connection, opening)
+                result = (
+                    compare_money(projection, config.connection, opening)
+                    if isinstance(opening, DeclaredOpeningMoney)
+                    else compare_positions(projection, config.connection, opening)
+                )
                 print(result.model_dump_json(), flush=True)
                 return 0 if result.state == "CONSISTENT_WITH_DECLARATION" else 2
             if args.inspect_state:
