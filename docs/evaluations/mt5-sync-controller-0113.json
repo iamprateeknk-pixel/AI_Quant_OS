@@ -1,0 +1,59 @@
+{
+  "increment": "0113",
+  "date": "2026-10-09",
+  "base_commit": "3f0482749d96755ef77cbfd19fba0efe4652ec6a",
+  "feature": "Persist due capture intent and overlapping history progress; schedule confirmed transient reconnect observations with capped backoff",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0113",
+    "scope": [
+      "tests/test_mt5_sync_controller.py",
+      "tests/test_mt5_sync_projection.py",
+      "tests/test_mt5_account_sync.py",
+      "tests/test_mt5_sync_gateway.py",
+      "tests/test_mt5_demo_gateway.py",
+      "tests/test_mt5_demo_worker.py",
+      "tests/test_mt5_demo_observation.py",
+      "tests/test_broker_router.py"
+    ],
+    "tests": 146,
+    "failures": 0,
+    "errors": 0,
+    "seconds": "5.217",
+    "tdd_red": "Eight initial controller tests failed before implementation; overlapping timers, wrong-account reconnect, missing contract and transition-capacity admission reproduced before fixes",
+    "ruff": "passed",
+    "prior_schemas_unchanged": 81,
+    "source_hashes": [
+      {
+        "path": "docs/MT5_SYNC_CONTROLLER_HANDOFF.md",
+        "sha256": "1d1744e045134f919ec0388cff886e622db5c1de1ef41b009e5f95c955dfffea"
+      },
+      {
+        "path": "docs/adr/0113-durable-demo-sync-scheduling.md",
+        "sha256": "fb02895c829aa8a690f949640418aef4249d850488ed2428615a6afb08e2a832"
+      },
+      {
+        "path": "docs/schemas/demo-sync-controller.schema.json",
+        "sha256": "65090331174f16147c7aa6e764394e2babc19500982adbe8ab7a2533720e7e3b"
+      },
+      {
+        "path": "src/ai_quant_os/mt5_sync_controller.py",
+        "sha256": "dc2565d2235c4805f2d8858b112ce0941bb93a1d9f426f46965a553b79988ea2"
+      },
+      {
+        "path": "tests/test_mt5_sync_controller.py",
+        "sha256": "5d098f302e07eea7c8396f0a289d15392afa4af02d0447011e8cfff1618a1290"
+      }
+    ],
+    "junit_sha256": "7335d093e050c76309830b87583f7063b58b3ef837c7091e0f0049b89d771205",
+    "secrets_scan": "passed",
+    "review": "Local five-axis self-review; independent broker/release review remains pending"
+  },
+  "limits": [
+    "Fixture SDK only; no terminal, credentials or external broker used",
+    "Controller composes the fixed worker/gateway/projection boundary; no background service, API route or broker routing integration",
+    "Completed receipt replay and unfinished reservation blocking survive restart; orphan child and terminal custody remain unverified",
+    "No order submission, portfolio mutation, native attestation or live authorization",
+    "Native P04 acceptance, running service/health API/UI composition, explicit halted recovery, correction attestation, lifecycle reconciliation, orphan custody and external order idempotency remain open",
+    "Focused increment verification does not establish full-system or P13 acceptance"
+  ]
+}
