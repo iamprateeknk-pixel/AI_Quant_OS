@@ -95,7 +95,7 @@ export async function controlReceipt(actionId: string) {
   } catch { return failure(503); }
 }
 
-export type ProtectedRead = { ok: true; value: unknown } | { ok: false; reason: "SIGN_IN" | "CHANGED" | "UNAVAILABLE" | "INVALID_PAGE" };
+export type ProtectedRead = { ok: true; value: unknown } | { ok: false; reason: "SIGN_IN" | "CHANGED" | "UNAVAILABLE" | "INVALID_PAGE" | "INVALID_TRACE" | "NOT_FOUND" };
 
 export async function readHealth(resource: "status" | "incidents", offset = 0, head?: string): Promise<ProtectedRead> {
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000 || (head !== undefined && !/^[a-f0-9]{64}$/.test(head)) || (offset > 0 && head === undefined)) return { ok: false, reason: "INVALID_PAGE" };
@@ -104,13 +104,14 @@ export async function readHealth(resource: "status" | "incidents", offset = 0, h
   return protectedRead(path);
 }
 
-async function protectedRead(path: string): Promise<ProtectedRead> {
+async function protectedRead(path: string, distinguishMissing = false): Promise<ProtectedRead> {
   try {
     const token = (await cookies()).get(COOKIE)?.value;
     if (!token) return { ok: false, reason: "SIGN_IN" };
     const response = await upstream(path, "GET", { "X-Operator-Session": token }, undefined, 131072);
     if (response.status === 401) return { ok: false, reason: "SIGN_IN" };
     if (response.status === 409) return { ok: false, reason: "CHANGED" };
+    if (response.status === 404 && distinguishMissing) return {ok:false,reason:"NOT_FOUND"};
     return response.value ? { ok: true, value: response.value } : { ok: false, reason: "UNAVAILABLE" };
   } catch { return { ok: false, reason: "UNAVAILABLE" }; }
 }
@@ -127,6 +128,16 @@ export async function readGenomes(offset = 0, head?: string): Promise<ProtectedR
 
 export async function readCallBudget(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/agents/call-budget");
+}
+
+export async function readGraphRuns(after = "", head?: string): Promise<ProtectedRead> {
+  if (typeof after !== "string" || (after !== "" && !/^[A-Za-z0-9_-]{1,128}$/.test(after)) || (head !== undefined && (typeof head !== "string" || !/^[a-f0-9]{64}$/.test(head))) || (after !== "" && head === undefined)) return {ok:false,reason:"INVALID_PAGE"};
+  return protectedRead(`/api/v1/agents/graph-runs?limit=25${after ? `&after_run_id=${encodeURIComponent(after)}` : ""}${head ? `&head=${head}` : ""}`);
+}
+
+export async function readGraphTrace(runId: string): Promise<ProtectedRead> {
+  if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(runId)) return {ok:false,reason:"INVALID_TRACE"};
+  return protectedRead(`/api/v1/agents/graph-runs/${encodeURIComponent(runId)}/trace`, true);
 }
 
 export async function readStrategies(offset = 0, head?: string): Promise<ProtectedRead> {

@@ -271,6 +271,9 @@ class GraphRuntime:
     def trace(self, run_id: str):
         return self._ledger.trace(run_id)
 
+    def archive_page(self, *, after_run_id: str = "", head: str | None = None, limit: int = 25):
+        return self._ledger.page(after_run_id=after_run_id, head=head, limit=limit)
+
     def current(self, run_id: str) -> bool:
         """Current evidence/permission eligibility; never establishes order authority."""
         record = self._ledger.get(run_id)

@@ -286,6 +286,73 @@ class GraphLedger:
                         raise ValueError("Agent graph collection exceeds requested bound")
             return tuple(selected)
 
+    def page(self, *, after_run_id: str = "", head: str | None = None, limit: int = 25):
+        from ai_quant_os.graph_archive import GraphArchiveChanged, GraphRunPage, summary
+        from ai_quant_os.graph_trace import observation
+
+        if (
+            not isinstance(after_run_id, str)
+            or (after_run_id and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", after_run_id) is None)
+            or type(limit) is not int
+            or not 1 <= limit <= 25
+            or (
+                head is not None
+                and (not isinstance(head, str) or re.fullmatch(r"[a-f0-9]{64}", head) is None)
+            )
+            or (after_run_id and head is None)
+        ):
+            raise ValueError("Invalid graph archive page")
+        with self._lock, self._db:
+            self._db.execute("BEGIN")
+            rows = self._db.execute(
+                "SELECT run_id FROM graph_runs ORDER BY run_id LIMIT 10001"
+            ).fetchall()
+            count, largest = self._db.execute(
+                "SELECT COUNT(*),COALESCE(MAX(LENGTH(event_json)),0) FROM audit_events"
+            ).fetchone()
+            if len(rows) > 10000 or count > 30000 or largest > 4096:
+                raise ValueError("Graph archive exceeds bound")
+            integrity = self._audit.require_valid()
+            if head is not None and head != integrity.head_hash:
+                raise GraphArchiveChanged("Graph archive changed")
+            audited = set()
+            for key, raw in self._db.execute("SELECT event_key,event_json FROM audit_events"):
+                event = json.loads(raw)
+                if (
+                    not isinstance(event, dict)
+                    or set(event)
+                    not in (
+                        {"action", "run_id", "status", "record_hash", "context_ref"},
+                        {"action", "run_id", "status", "record_hash", "context_ref", "observed_at"},
+                    )
+                    or event["action"] != "AGENT_GRAPH_TRANSITION"
+                    or event["status"] not in get_args(RunStatus)
+                    or not isinstance(event["run_id"], str)
+                    or key != f"graph:{event['run_id']}:{event['status']}"
+                ):
+                    raise ValueError("Graph archive journal identity mismatch")
+                if "observed_at" in event:
+                    if event["observed_at"] is None:
+                        raise ValueError("Graph archive observation missing")
+                    observation(event["observed_at"])
+                audited.add(event["run_id"])
+            identities = [row[0] for row in rows]
+            if audited != set(identities):
+                raise ValueError("Graph archive projection identity mismatch")
+            if after_run_id and after_run_id not in identities:
+                raise KeyError("Graph archive cursor missing")
+            selected = [value for value in identities if value > after_run_id]
+            page = selected[:limit]
+            remaining = len(selected) - len(page)
+            return GraphRunPage(
+                head_hash=integrity.head_hash,
+                total=len(rows),
+                after_run_id=after_run_id,
+                remaining=remaining,
+                next_after=page[-1] if remaining else None,
+                records=tuple(summary(self._read(value)) for value in page),
+            )
+
     def trace(self, run_id: str):
         """Read a bounded, audit-checked timeline without execution or source access."""
         from ai_quant_os.graph_trace import (

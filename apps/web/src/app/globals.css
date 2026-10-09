@@ -40,3 +40,7 @@ button,input{font:inherit}
 .research-dossier h3{overflow-wrap:anywhere;max-width:100%}.research-dossier .fact-list dd{overflow-wrap:anywhere;min-width:0}
 
 .session-admin .operator-session-status{margin:16px 17px}.session-admin .operator-control-form{margin-bottom:18px}.session-admin fieldset{display:grid;gap:12px;padding:14px;border:1px solid var(--border-strong);border-radius:5px;min-width:0}.session-admin fieldset p{margin:0;overflow-wrap:anywhere}.session-admin .session-confirm{display:flex;align-items:center;gap:10px}.session-admin .session-confirm input{width:20px;min-height:20px;height:20px;flex-shrink:0}.session-admin .table-scroll{margin-top:18px}
+
+.trace-reference { overflow-wrap: anywhere; word-break: break-word; }
+.graph-run-table { min-width: 760px; table-layout: fixed; }
+.trace-pagination { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }

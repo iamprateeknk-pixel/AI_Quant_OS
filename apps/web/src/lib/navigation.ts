@@ -11,7 +11,7 @@ export const sections = [
   { href: "/research", label: "Research", group: "Development" },
   { href: "/evolution", label: "Evolution", group: "Development" },
   { href: "/incidents", label: "Incidents", group: "Operations" },
-  { href: "/traces/demo", label: "Traces", group: "Operations" },
+  { href: "/traces", label: "Traces", group: "Operations" },
   { href: "/costs", label: "Costs", group: "Operations" },
   { href: "/audit", label: "Audit", group: "Operations" },
   { href: "/settings", label: "Settings", group: "Operations" },

@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "GraphRunSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "pattern": "^[A-Za-z0-9_-]{1,128}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "agent_id": {
+          "pattern": "^A(?:0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "PAPER",
+            "SANDBOX"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "CREATED",
+            "RUNNING",
+            "COMPLETED",
+            "UNAVAILABLE",
+            "EXPIRED",
+            "DENIED",
+            "WAIT_FOR_DATA",
+            "INVALID",
+            "FAILED",
+            "TIMEOUT",
+            "UNCERTAIN"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "context_ref": {
+          "pattern": "^agent-context:[a-f0-9]{64}$",
+          "title": "Context Ref",
+          "type": "string"
+        },
+        "manifest_ref": {
+          "pattern": "^agent-manifest:[a-f0-9]{64}$",
+          "title": "Manifest Ref",
+          "type": "string"
+        },
+        "trace_id": {
+          "pattern": "^graph-trace:[a-f0-9]{64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "context_observed_at": {
+          "format": "date-time",
+          "title": "Context Observed At",
+          "type": "string"
+        },
+        "context_valid_until": {
+          "format": "date-time",
+          "title": "Context Valid Until",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "agent_id",
+        "agent_version",
+        "task_id",
+        "scope",
+        "status",
+        "context_ref",
+        "manifest_ref",
+        "trace_id",
+        "context_observed_at",
+        "context_valid_until"
+      ],
+      "title": "GraphRunSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "archival_only": {
+      "const": true,
+      "default": true,
+      "title": "Archival Only",
+      "type": "boolean"
+    },
+    "head_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Head Hash",
+      "type": "string"
+    },
+    "total": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    },
+    "after_run_id": {
+      "maxLength": 128,
+      "pattern": "^(?:[A-Za-z0-9_-]{1,128})?$",
+      "title": "After Run Id",
+      "type": "string"
+    },
+    "remaining": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Remaining",
+      "type": "integer"
+    },
+    "next_after": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9_-]{1,128}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Next After"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/GraphRunSummary"
+      },
+      "maxItems": 25,
+      "title": "Records",
+      "type": "array"
+    }
+  },
+  "required": [
+    "head_hash",
+    "total",
+    "after_run_id",
+    "remaining",
+    "next_after",
+    "records"
+  ],
+  "title": "GraphRunPage",
+  "type": "object"
+}

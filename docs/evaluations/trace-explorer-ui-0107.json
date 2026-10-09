@@ -1,0 +1,485 @@
+{
+  "increment": "0107",
+  "date": "2026-10-09",
+  "base_commit": "2fe342bc939788db69942d6aea4e2d9a035f301f",
+  "feature": "Protected saved graph execution list and Mission Control trace timelines",
+  "verification": {
+    "fresh_staged_backend_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0107",
+    "backend_scope": [
+      {
+        "path": "tests/test_graph_archive_page.py"
+      },
+      {
+        "path": "tests/test_graph_trace.py"
+      },
+      {
+        "path": "tests/test_graph_runtime.py"
+      },
+      {
+        "path": "tests/test_graph_api.py"
+      },
+      {
+        "path": "tests/test_research_archive_reads.py"
+      },
+      {
+        "path": "tests/test_supervisor_agent.py"
+      },
+      {
+        "path": "tests/test_supervisor_dispatch.py"
+      },
+      {
+        "path": "tests/test_supervisor_api.py"
+      },
+      {
+        "path": "tests/test_supervisor_sources.py"
+      },
+      {
+        "path": "tests/test_supervisor_drift.py"
+      },
+      {
+        "path": "tests/test_task_supervisor.py"
+      },
+      {
+        "path": "tests/test_supervisor_evaluation.py"
+      },
+      {
+        "path": "tests/test_health_watchdog.py"
+      },
+      {
+        "path": "tests/test_health_api.py"
+      },
+      {
+        "path": "tests/test_research_hypothesis_api.py"
+      },
+      {
+        "path": "tests/test_agent_genomes.py"
+      },
+      {
+        "path": "tests/test_drift_agent.py"
+      },
+      {
+        "path": "tests/test_context_call_budgets.py"
+      },
+      {
+        "path": "tests/test_agent_call_budgets.py"
+      },
+      {
+        "path": "tests/test_operator_sessions.py"
+      },
+      {
+        "path": "tests/test_operator_controls.py"
+      },
+      {
+        "path": "tests/test_session_admin.py"
+      }
+    ],
+    "backend_passed": 260,
+    "backend_failed": 0,
+    "backend_duration_seconds": 300.87,
+    "new_backend_cases": 11,
+    "frontend_tested_checkout": "D:/AI_Quant_OS/apps/web",
+    "frontend_passed": 48,
+    "frontend_failed": 0,
+    "new_frontend_cases": 8,
+    "frontend_scope": "all tests/*.test.mjs; not browser .mjs probes",
+    "frontend_source_files_bound": 67,
+    "next_production_build": "passed",
+    "typescript_no_emit": "passed",
+    "eslint": "passed without warnings",
+    "ruff": "root check passed",
+    "diff_check": "passed",
+    "secret_scan": "final staged scan passed; no leaks found",
+    "prior_schemas_unchanged": 77,
+    "new_page_schema_runtime_equal": true,
+    "junit_sha256": "d6ac57be9729aaabfc75b8f2e5daffa75e5a7f5b78f4f5cfce424b7cfc0e8b4e",
+    "red_before_implementation": [
+      "Missing graph collection (404)",
+      "Missing frontend trace parser and panels",
+      "Missing protected graph read functions"
+    ],
+    "production_build_repair": "BigInt literals rejected by existing TS target; exact arithmetic uses constructors; target unchanged",
+    "earlier_backend_attempt": {
+      "passed": 259,
+      "failed": 1,
+      "duration_seconds": 4448.5,
+      "failure": "Retained-report supervisor CLI check raised TimeoutExpired after an unusually long elapsed interval; remaining timeout was negative. Cause not established. Existing retained report remained unchanged.",
+      "junit_sha256": "8e51f6fe8eed7996f27f54551b214ddaad961a4aaf4b863653ae8d41064f3135",
+      "unchanged_failed_case_recheck": {
+        "passed": 1,
+        "failed": 0,
+        "duration_seconds": 94.21,
+        "junit_sha256": "a90120c9149dec626581ab3547008acb3f8f4b1c00fc724e99340d93e5d04be8"
+      },
+      "resolution": "Same staged source and timeouts; exact failed case passed, then complete original planned scope passed"
+    }
+  },
+  "source_fingerprints": [
+    {
+      "path": "apps/web/src/app/globals.css",
+      "sha256": "a32bc01703f2fddfcd88659896761626f969d9591a573b637119ce6d5d9ee7f2"
+    },
+    {
+      "path": "apps/web/src/app/traces/[trace_id]/page.tsx",
+      "sha256": "f1ebbe6466bce55c0ce80ac4dcad169f57d18020e0d392070634930a2ac24185"
+    },
+    {
+      "path": "apps/web/src/app/traces/loading.tsx",
+      "sha256": "3f8cc51e981bacd34249f0e62fa84cb0245aec2e7f23e4d13e1b4540cf54037f"
+    },
+    {
+      "path": "apps/web/src/app/traces/page.tsx",
+      "sha256": "bea3e5ec157f7fde7fa4a70a4163bc72425ff2e8910cc682591a4731baff7dbe"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/server.ts",
+      "sha256": "e8145c596543ce527952513ab95f915208ed528c1e33b984854c6e8175631a01"
+    },
+    {
+      "path": "apps/web/src/features/traces/graph-traces.ts",
+      "sha256": "bc5971afc371c4655772a16a93e948f19e284bd451a4874136240f1b94d4d859"
+    },
+    {
+      "path": "apps/web/src/features/traces/trace-panels.tsx",
+      "sha256": "79b1a76f89156b97b4a756c930c386285bdf72898b0f5f211fd3927a66529fbd"
+    },
+    {
+      "path": "apps/web/src/lib/navigation.ts",
+      "sha256": "d5334e59af05980ba67ce148b6b903a87cd0a32b7513df1b0c86c6f6c6d6b871"
+    },
+    {
+      "path": "apps/web/tests/graph-trace-panels.test.mjs",
+      "sha256": "b324c94d17134622259e17e51560f022145f1412f065672acc564695893cea96"
+    },
+    {
+      "path": "apps/web/tests/graph-trace-server.test.mjs",
+      "sha256": "64010104b3c7756a0fec837bd73a709c8a98f1db5b7f9004cfefc5d8e17014ca"
+    },
+    {
+      "path": "apps/web/tests/graph-traces.test.mjs",
+      "sha256": "3fe42c4e8d36e9f67fe2ac4cb19c70a49b1d7349098a89a680a4056ec2996c64"
+    },
+    {
+      "path": "docs/BUILD_STATUS.md",
+      "sha256": "744e96b9f7b9e6b9241ca700fbf7d97aefd4ba812b136cebeef64930bb599bc8"
+    },
+    {
+      "path": "docs/TRACE_EXPLORER_UI_HANDOFF.md",
+      "sha256": "be8c3422e010733c9d1d459c118c02574f427688b620a1e966e9493eb7d73358"
+    },
+    {
+      "path": "docs/adr/0107-saved-execution-trace-explorer.md",
+      "sha256": "a612288ed2c2ca79503bc9f2e2e301283f1c109fac138bff73cbbd0635ece36b"
+    },
+    {
+      "path": "docs/schemas/graph-run-page.schema.json",
+      "sha256": "f4456cd96d0d145a8ea68a96adf1fc945ea9df264eae0e5cc0b6a2fcbe82c8cc"
+    },
+    {
+      "path": "src/ai_quant_os/api.py",
+      "sha256": "0e1ce69cbd960861c2c685a1a35512603d106d67f039eea10670450291147d2b"
+    },
+    {
+      "path": "src/ai_quant_os/graph_archive.py",
+      "sha256": "d9fbbd1b5a64a9ee4be9cb9bfa4e251f98c73f8de49285deea496c59a3789f09"
+    },
+    {
+      "path": "src/ai_quant_os/graph_ledger.py",
+      "sha256": "043857daa6de9281a91be01275cbbafb332e9c8a61327f7251128a549937524a"
+    },
+    {
+      "path": "src/ai_quant_os/graph_runtime.py",
+      "sha256": "b4bcd0ad9aa311e849d41d0563430a16eaec4826fa9d53aa93c34eaea01e7d27"
+    },
+    {
+      "path": "tests/test_graph_archive_page.py",
+      "sha256": "cfd36da104f10227927da80035d75ad5db88416b1ccdb5dab2a629e48e7de9cb"
+    }
+  ],
+  "frontend_full_source_fingerprints": [
+    {
+      "path": "apps/web/eslint.config.mjs",
+      "sha256": "870f1adccecf3051cbcd9fd307cef51d7633cf510979c181a81f4b1797273493"
+    },
+    {
+      "path": "apps/web/next.config.ts",
+      "sha256": "614bce25b089c3f19b1e17a6346c74b858034040154c6621e7d35303004767cc"
+    },
+    {
+      "path": "apps/web/package-lock.json",
+      "sha256": "3376fad6c2ca1bdc4b917be083e578babdabd6276a2a02273d8f72fed9508739"
+    },
+    {
+      "path": "apps/web/package.json",
+      "sha256": "f7955656d4ec7e6ad41ad9b2328ebad6f5be5eef6a5f90380b21601bb915bc4f"
+    },
+    {
+      "path": "apps/web/src/app/[section]/page.tsx",
+      "sha256": "5495bed8ceddc7db814146bbe47f2ebaadf8bf54dd7279206154a05dd77c74b9"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/controls/[action_id]/route.ts",
+      "sha256": "69cdf8076d4bca0bc28ce8299cf02a8ef99f5a3908d6b3c913a8dbcc202adf78"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/controls/route.ts",
+      "sha256": "79787fd6dbfcd9125e12054eef6ccb546dceda8d2730f10929595560edc28f18"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/session/route.ts",
+      "sha256": "6cb1376473e3aae24e9681c1b1ea390411cb11b45417635ab45a22c36f6f936a"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/sessions/revoke/route.ts",
+      "sha256": "607d18855153ab2c75b86b26c0a3def7819c7d3917bde3fc2ff180cd000f939f"
+    },
+    {
+      "path": "apps/web/src/app/api/operator/sessions/route.ts",
+      "sha256": "1545093d4cebf4f3554ec894d63f96330efc43fb5a06642ebac8dcbf77c17dff"
+    },
+    {
+      "path": "apps/web/src/app/globals.css",
+      "sha256": "a32bc01703f2fddfcd88659896761626f969d9591a573b637119ce6d5d9ee7f2"
+    },
+    {
+      "path": "apps/web/src/app/icon.svg",
+      "sha256": "86a39255851e3dd7548e56442306965a011699914cd03cb07c8027dae33c8e41"
+    },
+    {
+      "path": "apps/web/src/app/layout.tsx",
+      "sha256": "a568271e7181c218a42b17ba27f6b3219c031bf8791f494eb29442281a81207b"
+    },
+    {
+      "path": "apps/web/src/app/markets/[instrument]/page.tsx",
+      "sha256": "8c7a39e9cd510b70fc2c0b56d767172254021afac46b3a4f448ded09bdd8a071"
+    },
+    {
+      "path": "apps/web/src/app/page.tsx",
+      "sha256": "8273988423dc9519fa8ec77a2f2e087dd4a0f0102c132ab6adc3dafadf44d44b"
+    },
+    {
+      "path": "apps/web/src/app/traces/[trace_id]/page.tsx",
+      "sha256": "f1ebbe6466bce55c0ce80ac4dcad169f57d18020e0d392070634930a2ac24185"
+    },
+    {
+      "path": "apps/web/src/app/traces/loading.tsx",
+      "sha256": "3f8cc51e981bacd34249f0e62fa84cb0245aec2e7f23e4d13e1b4540cf54037f"
+    },
+    {
+      "path": "apps/web/src/app/traces/page.tsx",
+      "sha256": "bea3e5ec157f7fde7fa4a70a4163bc72425ff2e8910cc682591a4731baff7dbe"
+    },
+    {
+      "path": "apps/web/src/features/agents/registry-panel.tsx",
+      "sha256": "862592db43938fd75e1d2bca5d1fefd37d4edfd8a038fa3bacf6c0e36704d5a4"
+    },
+    {
+      "path": "apps/web/src/features/agents/registry.ts",
+      "sha256": "03b7cfaa1edce70ee9d93077c920eee2f01846d16a348e6bd2fd622a9ecb32fa"
+    },
+    {
+      "path": "apps/web/src/features/audit/audit-integrity-panel.tsx",
+      "sha256": "51b432aadc6172e40546408926376521e3c1c828f3144518c1339019e23d2e66"
+    },
+    {
+      "path": "apps/web/src/features/costs/call-budget-panel.tsx",
+      "sha256": "bc4617cd272901195644d27d5c69a0717f623bbade0e22f69e91827175b8a03a"
+    },
+    {
+      "path": "apps/web/src/features/costs/call-budgets.ts",
+      "sha256": "3b3921abe347a510444be8b59d3d6b5a6cb63f37155d05c6e69b7ec870691729"
+    },
+    {
+      "path": "apps/web/src/features/evolution/genome-panel.tsx",
+      "sha256": "105da7252bc742941fa7b9f785359186e9033bfa1f5294c5aaddc84038c6379f"
+    },
+    {
+      "path": "apps/web/src/features/evolution/genomes.ts",
+      "sha256": "ca1d3448efd392b8f9297e8993ca2e8a3a5d4a7a11ca420221d5b7439ef03324"
+    },
+    {
+      "path": "apps/web/src/features/health/health-panel.tsx",
+      "sha256": "efffbbd4e2a9afa1ac5f1b852395fc5e340c8f9f1a3857e70e7160601c0fbecc"
+    },
+    {
+      "path": "apps/web/src/features/health/timeline.ts",
+      "sha256": "78d6900685b4fac8ba65dd230f6e446e624ac390e84a63d7e590656669e1e7c7"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/boundary.ts",
+      "sha256": "eeb8635d5165b6210450f35dc438fe8ed8d9940b9d86305bc02568e52c5f1678"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/control-outcome.ts",
+      "sha256": "e5b44ae5b5bd5cda1ad0f55a5e33560875c3bb77b01cea8875b5099ce39d60dd"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/operator-console.tsx",
+      "sha256": "63ff103203c48a4b3ed39912c836c02f49fe3e63469aa522f947c2a4045bb551"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/pending-action-store.ts",
+      "sha256": "cd7514aed7eb48acea078881177ec4915e5506d332384e11de4a8e8748558aa9"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/pending-action.ts",
+      "sha256": "bdb20513e97a881aee69cffa1bcb66d35e673c77e25d1b69a6a6ad7ca240ad6c"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/server.ts",
+      "sha256": "e8145c596543ce527952513ab95f915208ed528c1e33b984854c6e8175631a01"
+    },
+    {
+      "path": "apps/web/src/features/operator-session/session-admin-panel.tsx",
+      "sha256": "f2f8c573230764a1fa61b3b7eabf0d4cb4306f7cf93a407e340117f6738fdbad"
+    },
+    {
+      "path": "apps/web/src/features/portfolio/currency-exposure-panel.tsx",
+      "sha256": "69b4ad43beba325007a943a2346702ee45b5e05bb522dc324d0b64500024d07d"
+    },
+    {
+      "path": "apps/web/src/features/portfolio/instrument-positions-panel.tsx",
+      "sha256": "847bff51967a93e2c5679f16f04cd3fbb267c4e410caeeeaac6e73f28f4cf0c3"
+    },
+    {
+      "path": "apps/web/src/features/research/dossier-panel.tsx",
+      "sha256": "69e72e8849a0f561fc83884d6c35b625685b1c5b3116fef7e8a5e33ee9c1e4c3"
+    },
+    {
+      "path": "apps/web/src/features/research/dossiers.ts",
+      "sha256": "8714b9d6de50dc2af1f7e119f6d849a8ca22939a7901d4950f5bb05bd9f683f9"
+    },
+    {
+      "path": "apps/web/src/features/strategies/archive-panel.tsx",
+      "sha256": "aaa7fae49398748baddddf9d25db39c0333c774e9fdf921a95229fb549765e00"
+    },
+    {
+      "path": "apps/web/src/features/strategies/archives.ts",
+      "sha256": "e7f35a853620f1484064bdae64ee50e697aa6fbcd60a6cd70ed239ec2057d705"
+    },
+    {
+      "path": "apps/web/src/features/traces/graph-traces.ts",
+      "sha256": "bc5971afc371c4655772a16a93e948f19e284bd451a4874136240f1b94d4d859"
+    },
+    {
+      "path": "apps/web/src/features/traces/trace-panels.tsx",
+      "sha256": "79b1a76f89156b97b4a756c930c386285bdf72898b0f5f211fd3927a66529fbd"
+    },
+    {
+      "path": "apps/web/src/features/world-state/world-state-panel.tsx",
+      "sha256": "80ae9dd264896bac46f7939ce08d6217a62ce1c8bf3c5bd9cc558f31707c7a1f"
+    },
+    {
+      "path": "apps/web/src/lib/control-api.ts",
+      "sha256": "db4f47e56816363a50dc555ed4a0f378229f926b6918d40b7c0dd8483345b59b"
+    },
+    {
+      "path": "apps/web/src/lib/navigation.ts",
+      "sha256": "d5334e59af05980ba67ce148b6b903a87cd0a32b7513df1b0c86c6f6c6d6b871"
+    },
+    {
+      "path": "apps/web/tests/agent-registry-browser.mjs",
+      "sha256": "77c23663ce793829322937052af560ed0357e8e7f4cf04f68d0c1eb22f698876"
+    },
+    {
+      "path": "apps/web/tests/agent-registry.test.mjs",
+      "sha256": "4ef199efe0abea9745d4bafd738141abdc11d0e6af387bd4aa70467eff79aa8d"
+    },
+    {
+      "path": "apps/web/tests/call-budgets.test.mjs",
+      "sha256": "13180a746f0ed89a9208757068a3092e754623872a1b196e6cb5d80a3ecaf0f6"
+    },
+    {
+      "path": "apps/web/tests/control-outcome.test.mjs",
+      "sha256": "6816f58107dfbcfaf5b9d43ac2a721b66ef07d9efc45cc06411ca1844ca2842f"
+    },
+    {
+      "path": "apps/web/tests/evolution-genomes-browser.mjs",
+      "sha256": "43d50074dd8398d8af5393b93127a482cc12b982c5a0a8efcf56bbd7f026c435"
+    },
+    {
+      "path": "apps/web/tests/evolution-genomes.test.mjs",
+      "sha256": "111c395316de48a1a7b65dfe825fda3e3f431c013535e69233c4da95616df78c"
+    },
+    {
+      "path": "apps/web/tests/graph-trace-panels.test.mjs",
+      "sha256": "b324c94d17134622259e17e51560f022145f1412f065672acc564695893cea96"
+    },
+    {
+      "path": "apps/web/tests/graph-trace-server.test.mjs",
+      "sha256": "64010104b3c7756a0fec837bd73a709c8a98f1db5b7f9004cfefc5d8e17014ca"
+    },
+    {
+      "path": "apps/web/tests/graph-traces.test.mjs",
+      "sha256": "3fe42c4e8d36e9f67fe2ac4cb19c70a49b1d7349098a89a680a4056ec2996c64"
+    },
+    {
+      "path": "apps/web/tests/health-timeline-browser.mjs",
+      "sha256": "6708e965f9a0acccad674af14d71e5798da19dd3154cc63fb391132c3f8f7c66"
+    },
+    {
+      "path": "apps/web/tests/health-timeline.test.mjs",
+      "sha256": "f714ac538e1a7baf9a7d1eab4218bbae4c8fe04d8d7a4a4b20c54c37be9c05f4"
+    },
+    {
+      "path": "apps/web/tests/operator-boundary.test.mjs",
+      "sha256": "a11a4986ceba830b36a141ecbc99426ada38554a208878896f9e8c214c12b3e8"
+    },
+    {
+      "path": "apps/web/tests/operator-browser.mjs",
+      "sha256": "94b78b49d5942fa86fddac3b7a0a9ee1b68f50fd8946752e7498059b68ca9cc0"
+    },
+    {
+      "path": "apps/web/tests/pending-action.test.mjs",
+      "sha256": "55141cd5623400ecd04354038ff0fc81010f1701d332918c6e8cbf364cc38986"
+    },
+    {
+      "path": "apps/web/tests/protected-reads.test.mjs",
+      "sha256": "89ae907dd49dc6492ffa0c02bad3ef73082ae31cb73cecd38a53a2081c3b83dd"
+    },
+    {
+      "path": "apps/web/tests/research-dossiers-browser.mjs",
+      "sha256": "60d5ba244862de8cf8c738d2afcb35c33d65f8459396bbcf698642e0a3a46626"
+    },
+    {
+      "path": "apps/web/tests/research-dossiers.test.mjs",
+      "sha256": "947b0fd857c79e57fcd623fe5d4e91e7c71fe18c412c163cbd8eb69d7fcfd5eb"
+    },
+    {
+      "path": "apps/web/tests/session-admin-panel.test.mjs",
+      "sha256": "13a5cacb64bcb3fe29d288bed934c0808c86bcdd80a4d533b6d701037d066f18"
+    },
+    {
+      "path": "apps/web/tests/session-admin-server.test.mjs",
+      "sha256": "9dd5034a88b53bc6b4964c5c5368bee109866ac54ed72d14304b605f4fef30e0"
+    },
+    {
+      "path": "apps/web/tests/session-admin.test.mjs",
+      "sha256": "85761ae2253420c5d95607be1705fe26b5face9eae451f56b614380130125636"
+    },
+    {
+      "path": "apps/web/tests/strategy-archives.test.mjs",
+      "sha256": "e1dcda04328ac9c43973fd39368cec4820b7488251ae383acf0cc0af0f3ffd8b"
+    },
+    {
+      "path": "apps/web/tsconfig.json",
+      "sha256": "5c51df4c59f4510d8c7dadf07a5c32132228826a3b331da5e286207b4df7ef9c"
+    }
+  ],
+  "covered_behaviors": [
+    "Current owner admission and fixed local/private server fetch paths",
+    "Bounded 25-row archive, exact head/cursor paging and stale snapshot conflict",
+    "Original metadata/trace identity, restart and readonly archive reads",
+    "No source execution or role quota usage for collection/trace reads",
+    "Invalid page/cursor bounds and damaged audit/projection withholding",
+    "Public field projection, requested identity/page binding and exact microsecond intervals",
+    "Static React empty/sign-in/changed/missing/legacy states and real run links"
+  ],
+  "limitations": [
+    "Office web UI skill requires actual browser inspection; prior preview launch blocked by policy, no retry/bypass. Keyboard/focus/layout/responsive acceptance pending.",
+    "Frontend tests/build ran against root checkout, with full source/config/test fingerprints bound; fresh copied checkout used for backend tests",
+    "No full release suite or independent acceptance claimed",
+    "Parent/child causal links, filters/search, node/tool/source spans, market/risk/order correlation, OTel/export/retention remain pending",
+    "No risk, graph execution/retry, broker, promotion or recovery controls added",
+    "All P00-P13 remain incomplete"
+  ]
+}

@@ -1,6 +1,7 @@
 import asyncio
 import hmac
 import os
+import re
 import sqlite3
 from dataclasses import asdict
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -36,6 +37,7 @@ from ai_quant_os.task_supervisor import (
     task_supervisor_implementation,
 )
 from ai_quant_os.graph_trace import GraphTrace
+from ai_quant_os.graph_archive import GraphRunPage, GraphArchiveChanged
 from ai_quant_os.supervisor_dispatch import SupervisorDispatch
 from ai_quant_os.supervisor_sources import (
     SUPERVISOR_INPUT_BYTES,
@@ -1518,6 +1520,35 @@ def create_app(
             "context_current": context_current,
             "receipt": receipt.model_dump(mode="json"),
         }
+
+    @app.get(
+        "/api/v1/agents/graph-runs",
+        response_model=GraphRunPage,
+        dependencies=[Depends(require_operator)],
+    )
+    def archived_graph_page(
+        after_run_id: str = "", head: str | None = None, limit: int = 25
+    ) -> dict[str, object]:
+        if (
+            not isinstance(after_run_id, str)
+            or (after_run_id and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", after_run_id) is None)
+            or not 1 <= limit <= 25
+            or (head is not None and re.fullmatch(r"[a-f0-9]{64}", head) is None)
+            or (after_run_id and head is None)
+        ):
+            raise HTTPException(422, "Invalid graph archive page")
+        try:
+            return (
+                require_graph_runtime()
+                .archive_page(after_run_id=after_run_id, head=head, limit=limit)
+                .model_dump(mode="json")
+            )
+        except GraphArchiveChanged as error:
+            raise HTTPException(409, "Graph archive changed; restart pagination") from error
+        except KeyError as error:
+            raise HTTPException(404, "Graph archive cursor not found") from error
+        except (ValueError, TypeError, sqlite3.Error) as error:
+            raise HTTPException(503, "Graph archive unavailable") from error
 
     @app.get("/api/v1/agents/graph-runs/{run_id}", dependencies=[Depends(require_operator)])
     def archived_graph_run(run_id: str) -> dict[str, object]:
