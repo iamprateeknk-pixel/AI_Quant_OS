@@ -52,6 +52,6 @@ test('renders sign-in, disabled and unavailable without usage rows',()=>{
     assert.doesNotMatch(html,/<tbody>|scope="row"/);
     assert.match(html,/role="status"/);
     if (!result.ok && result.reason==='SIGN_IN') assert.match(html,/href="\/risk"/);
-    else assert.match(html,/href="\/costs"/);
+    else { assert.match(html,/<form(?=[^>]*method="get")(?=[^>]*action="\/costs")[^>]*>/); assert.match(html,/>Refresh call capacity<\/button>/); }
   }
 });

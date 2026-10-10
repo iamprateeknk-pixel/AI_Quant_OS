@@ -142,6 +142,10 @@ export async function readCallBudget(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/agents/call-budget");
 }
 
+export async function readReviewSpending(): Promise<ProtectedRead> {
+  return protectedRead("/api/v1/providers/review-spending");
+}
+
 export async function readGraphRuns(after = "", head?: string): Promise<ProtectedRead> {
   if (typeof after !== "string" || (after !== "" && !/^[A-Za-z0-9_-]{1,128}$/.test(after)) || (head !== undefined && (typeof head !== "string" || !/^[a-f0-9]{64}$/.test(head))) || (after !== "" && head === undefined)) return {ok:false,reason:"INVALID_PAGE"};
   return protectedRead(`/api/v1/agents/graph-runs?limit=25${after ? `&after_run_id=${encodeURIComponent(after)}` : ""}${head ? `&head=${head}` : ""}`);

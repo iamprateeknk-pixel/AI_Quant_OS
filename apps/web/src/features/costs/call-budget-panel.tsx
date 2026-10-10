@@ -7,7 +7,7 @@ export function CallBudgetPanel({ result }: { result: { ok: true; value: unknown
   const signIn = !result.ok && result.reason === "SIGN_IN";
   return <section className="panel content-panel">
     <div className="panel-heading"><h2>Agent call capacity</h2><span>{budget?.state ?? "UNAVAILABLE"}</span></div>
-    <p className="panel-muted">Counts are reserved routine graph tool and context fetch attempts, shared across each role&apos;s versions. Failed or interrupted attempts remain counted. Token usage, model charges, compute and data costs are not collected.</p>
+    <p className="panel-muted">Counts are reserved routine graph tool and context fetch attempts, shared across each role&apos;s versions. Failed or interrupted attempts remain counted. This call ledger does not measure tokens or charges; configured review spending is shown separately.</p>
     {enforced ? <>
       <dl className="fact-list"><div><dt>Daily period (UTC)</dt><dd>{budget.day}</dd></div><div><dt>Monthly period (UTC)</dt><dd>{budget.month}</dd></div><div><dt>Recovery spending</dt><dd>Disabled; reserved capacity is protected</dd></div></dl>
       <div className="table-scroll"><table>
@@ -17,6 +17,6 @@ export function CallBudgetPanel({ result }: { result: { ok: true; value: unknown
       </table></div>
       <details className="research-details"><summary>Inspect policy and journal fingerprints</summary><dl className="fact-list research-provenance"><div><dt>Policy fingerprint</dt><dd className="mono">{budget.policy_sha256}</dd></div><div><dt>Journal head</dt><dd className="mono">{budget.head_hash}</dd></div></dl></details>
     </> : <div className="empty-list" role="status"><p>{signIn ? "Sign in to view protected agent call capacity." : budget?.state === "DISABLED" ? "Agent call limits are not configured. Usage and remaining capacity are not measured." : "Verified call capacity is unavailable. No usage or remaining capacity is inferred."}</p></div>}
-    <div className="health-navigation"><Link className="health-link" href={signIn ? "/risk" : "/costs"}>{signIn ? "Sign in at Risk Center" : "Refresh call capacity"}</Link><Link className="health-link" href="/agents">View agent versions</Link></div>
+    <div className="health-navigation">{signIn ? <Link className="health-link" href="/risk">Sign in at Risk Center</Link> : <form method="get" action="/costs"><button type="submit" className="health-link">Refresh call capacity</button></form>}<Link className="health-link" href="/agents">View agent versions</Link></div>
   </section>;
 }

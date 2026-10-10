@@ -334,6 +334,21 @@ class ProviderSpendStore:
                         daily_nano_usd=daily_money,
                         monthly_nano_usd=monthly_money,
                         pending_count=pending,
+                        unsettled_tokens=sum(
+                            row["input_tokens"] + row["max_output_tokens"]
+                            for key, row in reservations.items()
+                            if row["agent_id"] == rule.agent_id and key not in usage
+                        ),
+                        unsettled_nano_usd=sum(
+                            row["input_tokens"] * policy.input_nano_usd
+                            + row["max_output_tokens"] * policy.output_nano_usd
+                            for key, row in reservations.items()
+                            if row["agent_id"] == rule.agent_id and key not in usage
+                        ),
+                        daily_token_limit=rule.daily_tokens,
+                        monthly_token_limit=rule.monthly_tokens,
+                        daily_money_limit=rule.daily_nano_usd,
+                        monthly_money_limit=rule.monthly_nano_usd,
                         daily_token_remaining=max(
                             0, rule.daily_tokens - rule.daily_token_reserve - daily
                         ),

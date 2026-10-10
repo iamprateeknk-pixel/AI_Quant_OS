@@ -236,11 +236,15 @@ def test_concurrent_request_cap_and_cancellation_accounting():
 
 def test_older_success_cannot_close_newly_opened_circuit():
     calls = []
+    started = asyncio.Event()
+    release_success = asyncio.Event()
 
     async def handler(request):
         index = len(calls)
         calls.append(request)
-        await asyncio.sleep(0.03 if index == 0 else 0.01)
+        if index == 0:
+            started.set()
+            await release_success.wait()
         return httpx.Response(200, json=response(request)) if index == 0 else httpx.Response(503)
 
     reviewer = OpenAIReviewer(
@@ -252,10 +256,15 @@ def test_older_success_cannot_close_newly_opened_circuit():
 
     async def invoke():
         state, decision = await inputs()
+        older = asyncio.create_task(reviewer.review(state, decision))
+        await asyncio.wait_for(started.wait(), timeout=2)
         results = await asyncio.gather(
-            *(reviewer.review(state, decision) for _ in range(3)), return_exceptions=True
+            *(reviewer.review(state, decision) for _ in range(2)), return_exceptions=True
         )
-        assert sum(not isinstance(result, Exception) for result in results) == 1
+        assert all(isinstance(result, ValueError) for result in results)
+        assert reviewer.status()["circuit_state"] == "OPEN"
+        release_success.set()
+        assert (await older).classification == "RANGING"
 
     asyncio.run(invoke())
     assert reviewer.status()["circuit_state"] == "OPEN"

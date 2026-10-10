@@ -76,6 +76,7 @@ from ai_quant_os.paper_context_sources import paper_context_sources
 from ai_quant_os.context_checkpoints import ContextCheckpoint
 from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
 from ai_quant_os.openai_reviewer import OpenAIReviewer, reviewer_from_environment
+from ai_quant_os.provider_spend_api import install_spending_routes
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -2012,6 +2013,12 @@ def create_app(
         require_operator,
     )
     install_agent_call_routes(app, call_budget, require_operator)
+    install_spending_routes(
+        app,
+        configured_reviewer if isinstance(configured_reviewer, OpenAIReviewer) else None,
+        require_operator,
+        current_time,
+    )
     install_evolution_routes(
         app,
         evolution_workspace

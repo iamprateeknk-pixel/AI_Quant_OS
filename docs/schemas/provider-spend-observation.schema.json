@@ -1,0 +1,287 @@
+{
+  "$defs": {
+    "SpendCounters": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "pattern": "^A(0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "daily_tokens": {
+          "maximum": 40000000000000,
+          "minimum": 0,
+          "title": "Daily Tokens",
+          "type": "integer"
+        },
+        "monthly_tokens": {
+          "maximum": 40000000000000,
+          "minimum": 0,
+          "title": "Monthly Tokens",
+          "type": "integer"
+        },
+        "unsettled_tokens": {
+          "maximum": 40000000000000,
+          "minimum": 0,
+          "title": "Unsettled Tokens",
+          "type": "integer"
+        },
+        "pending_count": {
+          "maximum": 20000,
+          "minimum": 0,
+          "title": "Pending Count",
+          "type": "integer"
+        },
+        "daily_token_limit": {
+          "maximum": 1000000000,
+          "minimum": 0,
+          "title": "Daily Token Limit",
+          "type": "integer"
+        },
+        "monthly_token_limit": {
+          "maximum": 1000000000,
+          "minimum": 0,
+          "title": "Monthly Token Limit",
+          "type": "integer"
+        },
+        "daily_token_remaining": {
+          "maximum": 1000000000,
+          "minimum": 0,
+          "title": "Daily Token Remaining",
+          "type": "integer"
+        },
+        "monthly_token_remaining": {
+          "maximum": 1000000000,
+          "minimum": 0,
+          "title": "Monthly Token Remaining",
+          "type": "integer"
+        },
+        "daily_token_reserve": {
+          "maximum": 1000000000,
+          "minimum": 0,
+          "title": "Daily Token Reserve",
+          "type": "integer"
+        },
+        "monthly_token_reserve": {
+          "maximum": 1000000000,
+          "minimum": 0,
+          "title": "Monthly Token Reserve",
+          "type": "integer"
+        },
+        "daily_nano_usd": {
+          "maxLength": 24,
+          "pattern": "^(0|[1-9][0-9]{0,23})$",
+          "title": "Daily Nano Usd",
+          "type": "string"
+        },
+        "monthly_nano_usd": {
+          "maxLength": 24,
+          "pattern": "^(0|[1-9][0-9]{0,23})$",
+          "title": "Monthly Nano Usd",
+          "type": "string"
+        },
+        "unsettled_nano_usd": {
+          "maxLength": 24,
+          "pattern": "^(0|[1-9][0-9]{0,23})$",
+          "title": "Unsettled Nano Usd",
+          "type": "string"
+        },
+        "daily_money_limit": {
+          "maxLength": 24,
+          "pattern": "^(0|[1-9][0-9]{0,23})$",
+          "title": "Daily Money Limit",
+          "type": "string"
+        },
+        "monthly_money_limit": {
+          "maxLength": 24,
+          "pattern": "^(0|[1-9][0-9]{0,23})$",
+          "title": "Monthly Money Limit",
+          "type": "string"
+        },
+        "daily_money_remaining": {
+          "maxLength": 24,
+          "pattern": "^(0|[1-9][0-9]{0,23})$",
+          "title": "Daily Money Remaining",
+          "type": "string"
+        },
+        "monthly_money_remaining": {
+          "maxLength": 24,
+          "pattern": "^(0|[1-9][0-9]{0,23})$",
+          "title": "Monthly Money Remaining",
+          "type": "string"
+        },
+        "daily_money_reserve": {
+          "maxLength": 24,
+          "pattern": "^(0|[1-9][0-9]{0,23})$",
+          "title": "Daily Money Reserve",
+          "type": "string"
+        },
+        "monthly_money_reserve": {
+          "maxLength": 24,
+          "pattern": "^(0|[1-9][0-9]{0,23})$",
+          "title": "Monthly Money Reserve",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_id",
+        "daily_tokens",
+        "monthly_tokens",
+        "unsettled_tokens",
+        "pending_count",
+        "daily_token_limit",
+        "monthly_token_limit",
+        "daily_token_remaining",
+        "monthly_token_remaining",
+        "daily_token_reserve",
+        "monthly_token_reserve",
+        "daily_nano_usd",
+        "monthly_nano_usd",
+        "unsettled_nano_usd",
+        "daily_money_limit",
+        "monthly_money_limit",
+        "daily_money_remaining",
+        "monthly_money_remaining",
+        "daily_money_reserve",
+        "monthly_money_reserve"
+      ],
+      "title": "SpendCounters",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "provider_id": {
+      "const": "OPENAI_RESPONSES",
+      "default": "OPENAI_RESPONSES",
+      "title": "Provider Id",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "ENFORCED",
+        "BREACHED",
+        "NOT_CONFIGURED",
+        "UNAVAILABLE"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "accounting": {
+      "const": "PROVIDER_REPORTED_USAGE_AT_DECLARED_RATE_CEILING",
+      "default": "PROVIDER_REPORTED_USAGE_AT_DECLARED_RATE_CEILING",
+      "title": "Accounting",
+      "type": "string"
+    },
+    "billable_cost_accounting": {
+      "const": false,
+      "default": false,
+      "title": "Billable Cost Accounting",
+      "type": "boolean"
+    },
+    "recovery_spending_enabled": {
+      "const": false,
+      "default": false,
+      "title": "Recovery Spending Enabled",
+      "type": "boolean"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "day": {
+      "anyOf": [
+        {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Day"
+    },
+    "month": {
+      "anyOf": [
+        {
+          "pattern": "^\\d{4}-\\d{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Month"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "pattern": "^gpt-[a-z0-9.-]+-\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model"
+    },
+    "policy_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Sha256"
+    },
+    "head_hash": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Head Hash"
+    },
+    "agents": {
+      "items": {
+        "$ref": "#/$defs/SpendCounters"
+      },
+      "maxItems": 18,
+      "title": "Agents",
+      "type": "array"
+    }
+  },
+  "required": [
+    "state",
+    "observed_at",
+    "agents"
+  ],
+  "title": "SpendObservation",
+  "type": "object"
+}

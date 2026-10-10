@@ -1,0 +1,197 @@
+{
+  "increment": "0136",
+  "date": "2026-10-10",
+  "base_commit": "69b6676a002d19aa247ad6443bef47d6df87f5f9",
+  "feature": "Protected read-only review spending Cost Center with exact original holds, ceilings and declared-rate amounts",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0136-release",
+    "backend_tested_checkout": "D:/AI_Quant_OS/data-local/operator-checkout-0136-final",
+    "identical_backend_source_files": 529,
+    "backend_tests": 253,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "64.465",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 103,
+    "additive_schemas": 1,
+    "frontend": {
+      "tests": 94,
+      "pass": 94,
+      "fail": 0,
+      "skipped": 0,
+      "next_production_build": "passed",
+      "scoped_eslint": "passed",
+      "identity_file_count": 108,
+      "identity": "All tracked frontend bytes normalized LF match root, staged index and fresh checkout; all frontend tests/build ran in locked installed root workspace",
+      "browser_acceptance": "Pending; previous policy refusal preserved, no alternate launch attempted"
+    },
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "41e8640c9ffef61d3b93396ca766a797c7de2cb3bb4e2b5f93f662b13e6cc70b"
+      },
+      {
+        "path": "apps/web/src/app/[section]/page.tsx",
+        "sha256": "650e5d34159db170c59cd4f3eb81d80f38d38429e4d7a1e0d457908b9bcc4786"
+      },
+      {
+        "path": "apps/web/src/app/globals.css",
+        "sha256": "5a14817a6bc79298fd59b77115ceea19ffebdee6feb83731e38403e433d085f1"
+      },
+      {
+        "path": "apps/web/src/features/costs/call-budget-panel.tsx",
+        "sha256": "bf1556d416e5fe5e223efff6d466fcf49551b8b9df7c4957a279902011742da9"
+      },
+      {
+        "path": "apps/web/src/features/costs/review-spending-panel.tsx",
+        "sha256": "862256942e6857b43126dd66aa0478d7adfc7e42b57b2e896c3fb597ad8f393c"
+      },
+      {
+        "path": "apps/web/src/features/costs/review-spending.ts",
+        "sha256": "9279672138fff6f446d7b9b668572f7e1fad4c8e5083e248d1bdb0571dfdf249"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/server.ts",
+        "sha256": "63e65e0f28b74a5f0a162669f73c466eaaf3958896b778788c209516769a8925"
+      },
+      {
+        "path": "apps/web/src/lib/navigation.ts",
+        "sha256": "afb53483c93ad2ccc48394fa02cff3c6eeea68631de34e3b1d8038bd65a1da30"
+      },
+      {
+        "path": "apps/web/tests/call-budgets.test.mjs",
+        "sha256": "1d6b5140b4513871087131adf77689573d2a185c3c73008366fde92b29c86a35"
+      },
+      {
+        "path": "apps/web/tests/fixtures/review-spending.json",
+        "sha256": "e1f348eac45eb1f41f8e0a90b963d15e61b6bbbdc7e1b7f6d16123c195a3b90c"
+      },
+      {
+        "path": "apps/web/tests/review-spending-server.test.mjs",
+        "sha256": "0d9faf4689fa0949993c31bc5fdeb48a93478ba0605efa2951025e95ed591c9c"
+      },
+      {
+        "path": "apps/web/tests/review-spending.test.mjs",
+        "sha256": "5a8e0583932728784c7da9a34ea26c8b7e9b4a903e58e4737706779bb2284957"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "5a760d8193b8361897169f10d5de54addd44610f304557bc913a3b59606da77a"
+      },
+      {
+        "path": "docs/REVIEW_SPENDING_CONSOLE_HANDOFF.md",
+        "sha256": "0bd624a8be21f4e4c177456c9ba842f5296af21c35a264280cdf234ee616e735"
+      },
+      {
+        "path": "docs/adr/0136-protected-review-spending-cost-center.md",
+        "sha256": "2edfd8918b9224f983228458810dcc746926ee74dea33e40fa2bfc7373d83a92"
+      },
+      {
+        "path": "docs/schemas/provider-spend-observation.schema.json",
+        "sha256": "d76dad3361633fcb1d728d9609e7c7d953c070cbfd9bdaef8ebec90b9370edb2"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "c38befaa8023a3cb57f18c61e8e21c1a30959afe04b090e37fc3b83d2b2200b5"
+      },
+      {
+        "path": "src/ai_quant_os/openai_reviewer.py",
+        "sha256": "a345e875ef1c5ebbc9d326bedb4746783877d347ec9e639786eb31c403e0b27e"
+      },
+      {
+        "path": "src/ai_quant_os/provider_spend_api.py",
+        "sha256": "86b70aa26cb2f7a9e16e0f66b2de3bad76171e33edf2063fa1a4b81e23304750"
+      },
+      {
+        "path": "src/ai_quant_os/provider_spend_store.py",
+        "sha256": "1450177ec2309c8f62426df871ac0b744f41fb6237311f0fe166a43e6809d505"
+      },
+      {
+        "path": "tests/test_openai_reviewer.py",
+        "sha256": "f2f57310bba2a0979d0e29e5f9470d78169ac1eec6b36de8b771ab18c71287a7"
+      },
+      {
+        "path": "tests/test_provider_spend_api.py",
+        "sha256": "fa817a45291f1870808e91c3133e2820e269edeac7ae24c2ad854b082717b839"
+      }
+    ],
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "3627548264bb72fd74a45bc2844a0e09aac07f2a0f1dd1861760ea93c5afe24f"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "f57152af69ed696672a20f7a07dc500ce85005053092505a680768f611957e48"
+      },
+      {
+        "check": "schema",
+        "sha256": "52061fadccd7c7d811a33dd3988304bc06830b979cf737e2dceaeb2d7bf0cfad"
+      },
+      {
+        "check": "frontend",
+        "sha256": "a406b4ff51ae6913e266bfa1d3eb09e9ca1f8018303880a311f0d4adb5f53af3"
+      },
+      {
+        "check": "eslint",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "check": "build",
+        "sha256": "ed2c414f59e3ae1936694d5eefd9977fdef2e8d59139d87a4429716a323093ea"
+      }
+    ],
+    "junit_sha256": "500aafa5cdee62a80209d241ef3676697d31450e9d79fc4fb4602c5132709b20",
+    "tdd_red": "Missing protected spending API module, missing actual frontend fixture and five missing parser/panel checks reproduced before implementation",
+    "debugging": "Installed TypeScript target ES2017 rejected bigint literal syntax; replaced literals with BigInt constructors without changing project target or exact arithmetic. First staged regression found sleep-based older-success test non-determinism; deterministic events now hold older success until two failures and a confirmed OPEN state, then assert the older success cannot close it. Circuit production implementation unchanged. Next lint rejected a literal native refresh anchor; native GET forms now perform explicit read-only refresh, with order-independent form attribute assertions and scoped button styling.",
+    "preserved_initial_check": {
+      "checkout": "D:/AI_Quant_OS/data-local/operator-checkout-0136",
+      "backend_log_sha256": "edae4e5c6bc4e3dde68c824ebf34421b841a7978dc1e783c9edc4c05f974138b",
+      "result": "252 passed, one old sleep-ordering test failed; separate original logs/checkouts retained"
+    },
+    "native_api": "Actual protected create_app/TestClient ledger read: original pending capacity and all declared ceilings; head unchanged after observation; no-store; unauthenticated 401; session revoked during read withheld by post-read check; corrupt/unconfigured states contain no counters; retained BREACHED evidence and exact native 2e18-nanodollar amount",
+    "fixture": "Actual protected pending-reservation response equals frontend fixture except random journal head from original creation budget ID",
+    "schema": "Fresh additive Pydantic observation schema equals model_json_schema; Draft202012Validator checks schema and native fixture; original schemas byte-identical",
+    "private_server_boundary": "Actual server helper with cookie/fetch fixtures: absent cookie prevents upstream call, fixed path, private header, no cache/redirects, abort signal, 131072-byte response bound, 401 sign-in behavior",
+    "presentation": "Real React server rendering covers both 18-role tables, exact nanodollar USD formatting, snapshot timestamps, protected reserves, unsettled explanation, sign-in/missing/breached states and native GET refresh form. No actual browser or visual acceptance claim.",
+    "review": "Local five-axis review: existing single-transaction ledger custody remains canonical; typed outer projection, policy/hold/UTC/role coherence, exact string money and bounded integer tokens; no invoice/all-provider claim; read-only effect boundary; post-read authorization; private server path and safe selected frontend projection; parallel independent source reads keep separate heads; existing features/styles reused; no dependency addition or deterministic domain change",
+    "boundary_checker": "Existing architecture prose has no machine declaration; manually reviewed outer adapter/UI imports and unchanged inward domain modules",
+    "full_suite": "Not run: preserve uncertain candidate-worker custody from 0084/0088; focused backend provider/quota/context/decision/API/risk/audit/local-runtime regressions and all frontend Node tests only",
+    "secrets_scan": "passed"
+  },
+  "rollback": "Revert 0136 read endpoint and Cost Center presentation, retaining 0135 spend ledger/pin and new fixture/evidence. No database/old wire-schema migration or quota reset.",
+  "limits": [
+    "All P00-P13 remain incomplete; independent critical review and full-system acceptance pending",
+    "Point-in-time Cost Center snapshot, not realtime cost subscription or atomic combination of call and spending ledgers",
+    "Configured OpenAI review ledger only; other provider/model/Jev governance, actual price/provider/invoice acceptance, compute/data charges and recovery spending pending",
+    "Native browser navigation, refresh, focus/accessibility, table overflow and visual acceptance pending under preserved launch refusal",
+    "Original custody assumptions, archive retention/migration, production throughput and external attestation remain pending",
+    "No real provider request, broker SDK, credentials, proposed candidate execution, remote push, promotion or live capital used",
+    "Unknown candidate-worker custody and untracked user skills preserved"
+  ]
+}

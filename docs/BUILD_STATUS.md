@@ -4,6 +4,19 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Protected review spending Cost Center increment
+
+- Costs now reads configured review token/declared-rate capacity through the private
+  session, with backend observation time, all role ceilings, remaining limits,
+  protected reserves, unsettled holds and exact nanodollar display.
+- Added a typed read-only endpoint with authorization before/after observation,
+  no-store and explicit unconfigured/unavailable/breached states. Older call ledger
+  accounting remains separate; no provider effect or reset is attached to the read.
+- Browser/visual checks, realtime all-model costs, actual provider/price/invoice
+  acceptance, other routes, recovery spending and independent review remain pending.
+  See REVIEW_SPENDING_CONSOLE_HANDOFF.md, ADR 0136 and evaluation 0136.
+  All P00–P13 remain incomplete.
+
 ## Durable reviewer spending admission increment
 
 - Added immutable eighteen-role UTC daily/monthly token and declared USD nanodollar

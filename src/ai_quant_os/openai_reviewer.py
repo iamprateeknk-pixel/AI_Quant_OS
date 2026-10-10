@@ -159,6 +159,9 @@ class OpenAIReviewer:
                 "declared_rate_budget_enforced": False,
             }
 
+    def spending_observation(self, now: datetime) -> dict[str, object] | None:
+        return self._spend_store.status(now) if self._spend_store is not None else None
+
     async def _response(self, raw: bytes, endpoint: str) -> bytes:
         async with httpx.AsyncClient(
             timeout=self._timeout,

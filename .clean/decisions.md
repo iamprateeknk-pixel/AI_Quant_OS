@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-10: Show verified configured review spending via an additive private read, authorized before/after observation. Keep call and spending ledgers separate, preserve exact nanodollar strings, expose unsettled holds/declared ceilings and withhold unavailable rows. Full refresh reads a new snapshot; no provider, quota reset or recovery effect belongs to this view. Browser, billing/all-model and independent acceptance remain pending. See ADR 0136.
+
 - 2026-10-10: Reserve official input-count plus bounded output in immutable per-role token/declared-rate ceilings before OpenAI generation. Retain unknown holds across restart/UTC rollover, charge rejected content and latch above-bound reports. Bind spending/route owners and recheck permission/source after preflight. Environment activation requires persistent custody; actual prices, other providers, recovery spending and independent acceptance remain pending. See ADR 0135.
 
 - 2026-10-10: Share one read-only realtime snapshot hook across the persistent console header, Mission Control and World State. Centralize owned subscription/retry/expiry behavior while keeping feature workflows and command acknowledgements separate. Preserve backend schemas and original numeric feature strings; validate coverage before publication. Browser and independent acceptance remain pending. See ADR 0134.
