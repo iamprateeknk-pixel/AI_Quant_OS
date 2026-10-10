@@ -4,6 +4,20 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Durable reviewer spending admission increment
+
+- Added immutable eighteen-role UTC daily/monthly token and declared USD nanodollar
+  ceilings, shared across versions, with protected recovery reserves and audited
+  pre-generation holds. Unknown holds survive restart/rollover; above-bound reports
+  are retained and latch a breach.
+- OpenAI review uses official input-count preflight and its maximum output cap,
+  source/owner binding and permission rechecks. Environment activation requires
+  persistent spending custody and a declared owner.
+- Actual provider acceptance, price sufficiency/billing, shared Jev/other-model
+  governance, recovery spending, Cost Center and independent review remain pending.
+  See PROVIDER_SPENDING_HANDOFF.md, ADR 0135 and evaluation 0135.
+  All P00–P13 remain incomplete.
+
 ## Asynchronous native recorded-quote portfolio increment
 
 - Added two-to-four independent quote streams in one native USD account, canonical

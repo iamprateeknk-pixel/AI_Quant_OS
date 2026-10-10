@@ -163,7 +163,7 @@ def test_request_cap_and_circuit_prevent_further_http_calls():
     assert reviewer.status()["unreported_usage_count"] == 3
 
 
-def test_disabled_environment_and_explicit_pinned_configuration(monkeypatch):
+def test_disabled_environment_and_explicit_pinned_configuration(monkeypatch, tmp_path):
     monkeypatch.delenv("AI_QUANT_REVIEW_ENABLED", raising=False)
     assert reviewer_from_environment() is None
     monkeypatch.setenv("AI_QUANT_REVIEW_ENABLED", "true")
@@ -172,6 +172,13 @@ def test_disabled_environment_and_explicit_pinned_configuration(monkeypatch):
     with pytest.raises(ValueError, match="pinned"):
         reviewer_from_environment()
     monkeypatch.setenv("AI_QUANT_REVIEW_MODEL", MODEL)
+    from test_provider_spend import policy
+
+    declared = tmp_path / "spend-policy.json"
+    declared.write_bytes(policy().encode())
+    monkeypatch.setenv("AI_QUANT_REVIEW_SPEND_PATH", str(tmp_path / "spend.sqlite3"))
+    monkeypatch.setenv("AI_QUANT_REVIEW_SPEND_POLICY", str(declared))
+    monkeypatch.setenv("AI_QUANT_REVIEW_OWNER", "A02@0.2.0")
     assert reviewer_from_environment().provider_version == MODEL
 
 

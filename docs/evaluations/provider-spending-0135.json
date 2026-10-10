@@ -1,0 +1,137 @@
+{
+  "increment": "0135",
+  "date": "2026-10-10",
+  "base_commit": "6a376fc87b6c7f6c6f3851ee078846ad4f84ab4e",
+  "feature": "Durable OpenAI paper reviewer counted-input/output-cap token and declared-rate spending admission",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0135",
+    "backend_tests": 243,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "58.391",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 102,
+    "additive_schemas": 1,
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "84edd4b1ec21097dda91511e07c51c05b3fece10f5aca735f54909d1700f2d3f"
+      },
+      {
+        "path": "README.md",
+        "sha256": "47888b3dac5059331b9b968c9eb4cd742bd037afd4d8901c828591a0f7c9c454"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "eb19457685f238fef279c2a3d9031bf739b1f3c6c277faff4deef99d03f3de0f"
+      },
+      {
+        "path": "docs/PROVIDER_SPENDING_HANDOFF.md",
+        "sha256": "748b6080e8cf8892f5da0cf5f2633a59471e3f74e6cac22e70a273399da0514e"
+      },
+      {
+        "path": "docs/adr/0135-durable-reviewer-spending-admission.md",
+        "sha256": "6a5ec1e63e64eeeca6be326b96cf5e8636248d4fd6b5a8f39cf86a79f92b81d2"
+      },
+      {
+        "path": "docs/schemas/provider-spend-policy.schema.json",
+        "sha256": "04cbbf7b7801f2a54772caba3939ef51239700770a6599859e22cbcebafd6bb2"
+      },
+      {
+        "path": "src/ai_quant_os/openai_reviewer.py",
+        "sha256": "70a8f4920da7f4ea0ac7d19afacf2a05b0b7e464e0c5ad61bc5076923061b02d"
+      },
+      {
+        "path": "src/ai_quant_os/provider_call_admission.py",
+        "sha256": "9c2035c8dba53ab228c9bb2938267b42e270160959e0b75455e8aa743ea42651"
+      },
+      {
+        "path": "src/ai_quant_os/provider_spend_policy.py",
+        "sha256": "721af06e50b610e648cf074abbff6fd359cac7eab66bdf27570efa7dd462a690"
+      },
+      {
+        "path": "src/ai_quant_os/provider_spend_store.py",
+        "sha256": "53083911d3fd96ed468162d29ae7b77fe8972ceafb2e842077a1635a1e88d59a"
+      },
+      {
+        "path": "tests/test_openai_reviewer.py",
+        "sha256": "7fe121c2960815a19f8695f8875b8ff71ee26867597d3aed24c038c0dc864504"
+      },
+      {
+        "path": "tests/test_openai_spend_admission.py",
+        "sha256": "3e1988c59d17f2d04d9aace2fce91b41714743c1c2ca3e844f9ed4a38e3d2db6"
+      },
+      {
+        "path": "tests/test_provider_spend.py",
+        "sha256": "660be8f7df75467884d17b3c80026c758423e64edde4dfcb877649783e786aa7"
+      }
+    ],
+    "junit_sha256": "14b18e733ea3c417d7ac34540e83573038e16f3b83dd1b6c5a16aad02d92c5fb",
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "8cf01b3133ca21f6a7c7ea562b529324e434cad77f298fd181462322f6422ba6"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "9fa2e30088122b883ebbf1c300359d4a0c9d09c988b20631e8625a40425a9723"
+      }
+    ],
+    "tdd_red": "Missing policy/store collection, seven missing adapter/configuration checks, permission quarantine during count still dispatched generation, and enabled environment without persistent spending admission all reproduced before their implementation",
+    "debugging": "Added exact guarded preflight and route-owner binding after observing a second HTTP dispatch following quarantine; enabled factory now requires original spending custody. Prior pinned-model test retains its model assertion and supplies required explicit budget setup.",
+    "ledger": "Actual SQLite creation/reopen/concurrent owners; policy/creation pin/full audit checks; strict bounded integers; UTC period/version shared token and money capacity; protected recovery reserves; unknown carry; unchanged idempotent usage and retained breaches",
+    "http": "Actual OpenAI adapter with httpx transport fixtures; exact count model/input/instructions/text/tools preserved into generation, disabled truncation and bounded output, committed reservation inspected inside generation handler, usage settlement before accepted advisory output",
+    "native_api": "Actual create_app/TestClient decision and control paths: token capacity zero or damaged ledger prevents generation while quantitative classification and authenticated NO_NEW_RISK control still work; no order generated or credential/path exposed",
+    "schema": "Additive policy schema checked by Draft202012Validator against runtime canonical policy; duplicate role and duplicate JSON key rejection verified. Runtime additionally validates ceiling/reserve inequalities.",
+    "structure_map": {
+      "matching_new_module_findings": 0,
+      "sha256": "05d839cb62fee1547e8867aa15b1d7b11f9df5f4e3a5de9017119ef55e497b16"
+    },
+    "review": "Local five-axis self-review: policy arithmetic and UTC rules separate from SQLite custody and HTTP effects; existing audited chain reused; mode=rw prevents missing-db replacement; transactional reservations before generation; original policy immutable; unknown holds retained; routine recovery spending impossible; matching model required for settlement; permission/source rechecked after awaited boundaries; no backend domain outward imports; bounded archive/source/response and off-event-loop admission. Independent critical review remains pending.",
+    "boundary_checker": "Existing prose architecture lacks machine declaration; manually checked inward imports. No contracts/market/portfolio/risk/backtest module change.",
+    "frontend": "Unchanged; no new browser build/acceptance claim. Prior launch refusal preserved.",
+    "full_suite": "Not run: preserve uncertain candidate-worker custody from 0084/0088; focused provider/call/context/decision/API/risk/audit/local-runtime regressions only",
+    "secrets_scan": "passed"
+  },
+  "configuration_change": "Disabled by default. Enabled environment review now requires server key, dated model, declared registered route/spending owner, original persistent spend path and a first-creation policy; reopen accepts original pinned policy without resupplying it. Partial configuration cannot silently disable spending admission.",
+  "rollback": "Disable review before reverting. Preserve new ledger, creation pin and evaluation evidence; never reset/delete spending custody to regain capacity. No earlier paper/order/world/risk/call-budget schema migration.",
+  "limits": [
+    "All P00-P13 remain incomplete; full-system and independent critical acceptance remain open",
+    "No real provider call, paid count/generation, broker SDK, credential, candidate source execution, remote push, promotion or live capital used",
+    "Count/output correspondence, declared-price sufficiency, service-tier/cache/write/non-generation endpoint billing and actual invoice reconciliation require credentialed and independent verification",
+    "Only OpenAI review generation integrated; shared multi-provider/model/Jev governance, incident reserve spending and operator Cost Center integration pending",
+    "Explicit direct unconfigured library fixtures remain visibly unbudgeted; production embedding requires configured admission and review",
+    "UTC settled usage assigned to original reservation period; unknown holds carry to later periods until resolved. No automatic retry/refund/reset/recovery.",
+    "Trusted host filesystem remains custody assumption; external pin attestation, disaster recovery, archive retention/migration and production throughput pending",
+    "Unknown candidate-worker custody and untracked user skill files untouched"
+  ],
+  "provider_references_checked": [
+    "https://developers.openai.com/api/reference/resources/responses/subresources/input_tokens/methods/count",
+    "https://developers.openai.com/api/docs/guides/token-counting",
+    "https://developers.openai.com/api/reference/resources/responses/methods/create"
+  ]
+}

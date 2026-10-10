@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-10: Reserve official input-count plus bounded output in immutable per-role token/declared-rate ceilings before OpenAI generation. Retain unknown holds across restart/UTC rollover, charge rejected content and latch above-bound reports. Bind spending/route owners and recheck permission/source after preflight. Environment activation requires persistent custody; actual prices, other providers, recovery spending and independent acceptance remain pending. See ADR 0135.
+
 - 2026-10-10: Share one read-only realtime snapshot hook across the persistent console header, Mission Control and World State. Centralize owned subscription/retry/expiry behavior while keeping feature workflows and command acknowledgements separate. Preserve backend schemas and original numeric feature strings; validate coverage before publication. Browser and independent acceptance remain pending. See ADR 0134.
 
 - 2026-10-07: Bind original candidate test, holdout and complete ordered development observations to immutable descriptive statistical scorecards. Retain every required gate, exact declared Monte Carlo seed/trials and missing-evidence reasons; do not infer independence, source attestation or promotion. Portable evidence binds immutable image content rather than original archive locations. See ADR 0084.

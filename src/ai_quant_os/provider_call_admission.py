@@ -130,6 +130,10 @@ class ProviderCallAdmission:
             "monetary_budget_enforced": False,
         }
 
+    def require_owner(self, owner: ProviderOwner) -> None:
+        if owner != self._owner:
+            raise ValueError("Provider spending owner differs from route owner")
+
 
 class AdmittedClassifier:
     def __init__(self, provider: FastClassifier, admission: ProviderCallAdmission):
@@ -147,10 +151,19 @@ class AdmittedReviewer:
     def __init__(self, provider: DeepReviewer, admission: ProviderCallAdmission):
         self._provider, self._admission = provider, admission
         self.provider_id, self.provider_version = provider.provider_id, provider.provider_version
+        spend_owner = getattr(provider, "spend_owner", None)
+        if spend_owner is not None:
+            admission.require_owner(spend_owner)
 
     async def review(self, snapshot: WorldState, decision: AgentEnvelope) -> object:
         instrument = decision.output.instrument_id
         await self._admission.reserve(self._provider, snapshot, instrument, decision)
-        result = await self._provider.review(snapshot, decision)
+        guarded_review = getattr(self._provider, "review_with_admission", None)
+        if callable(guarded_review):
+            result = await guarded_review(
+                snapshot, decision, lambda: self._admission.check(snapshot, instrument, decision)
+            )
+        else:
+            result = await self._provider.review(snapshot, decision)
         self._admission.check(snapshot, instrument, decision)
         return result
