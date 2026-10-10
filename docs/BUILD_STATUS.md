@@ -32,6 +32,19 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
   OTel/Grafana, browser acceptance and independent critical review remain open.
   See `REALTIME_PAPER_FEED_HANDOFF.md` and ADR 0133. All P00–P13 are incomplete.
 
+## Shared console and World State realtime increment
+
+- Connected the persistent header and full World State features/coverage to the
+  same private observation as Mission Control. One owned subscription store
+  handles original expiry, bounded reconnect, callback identity and cleanup.
+- The header withholds expired safety; world tables label retained data as
+  historical. Exact feature strings and validated currency coverage survive the
+  web boundary, with populated fixture agreement against the protected backend.
+- Browser navigation/login/timer/visual acceptance, production distribution/load,
+  remaining view detail subscriptions, OTel/Grafana and independent critical
+  review remain pending. See `SHARED_REALTIME_WORLD_HANDOFF.md` and ADR 0134.
+  All P00–P13 remain incomplete; no live routing or promotion is activated.
+
 ## Broker capability registry view
 
 - Connected the protected five-profile registry to Brokers with separate simulator,

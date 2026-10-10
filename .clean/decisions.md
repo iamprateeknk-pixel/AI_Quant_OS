@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-10: Share one read-only realtime snapshot hook across the persistent console header, Mission Control and World State. Centralize owned subscription/retry/expiry behavior while keeping feature workflows and command acknowledgements separate. Preserve backend schemas and original numeric feature strings; validate coverage before publication. Browser and independent acceptance remain pending. See ADR 0134.
+
 - 2026-10-07: Bind original candidate test, holdout and complete ordered development observations to immutable descriptive statistical scorecards. Retain every required gate, exact declared Monte Carlo seed/trials and missing-evidence reasons; do not infer independence, source attestation or promotion. Portable evidence binds immutable image content rather than original archive locations. See ADR 0084.
 
 - 2026-10-07: Keep original-source training folds in explicit retrospective dataset views with selection overlap and no independence claim. Bind each run to its exact window and passed source-only test observation; retain partial final intervals, reuse guarded custody and native BASE/stress replay, and preserve original holdout wire models. See ADR 0083.

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getSystemStatus } from "@/lib/control-api";
+import { RealtimeHeader } from "@/features/realtime/realtime-header";
 import { sections } from "@/lib/navigation";
 import "./globals.css";
 
@@ -16,10 +16,9 @@ function Navigation() {
   })}</nav>;
 }
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const status = await getSystemStatus();
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return <html lang="en" className="scheme-only-dark"><body>
-    <header className="topbar"><Link href="/" className="brand"><span className="brand-mark">AQ</span><span><strong>AI Quant OS</strong><small>MISSION CONTROL</small></span></Link><div className="topbar-center">PERSONAL TRADING OPERATIONS</div><div className="topbar-state"><span className="state-dot" /><span>{status.ok ? `${status.value.mode} · ${status.value.safety_state}` : "API OFFLINE"}</span></div></header>
+    <header className="topbar"><Link href="/" className="brand"><span className="brand-mark">AQ</span><span><strong>AI Quant OS</strong><small>MISSION CONTROL</small></span></Link><div className="topbar-center">PERSONAL TRADING OPERATIONS</div><RealtimeHeader /></header>
     <div className="app-frame"><aside className="sidebar"><Navigation /><div className="sidebar-foot"><span className="sidebar-foot-label">SYSTEM MODE</span><strong>Paper only</strong><p>Live routing disabled</p></div></aside><div className="main-area"><details className="mobile-nav"><summary>Menu</summary><Navigation /></details><main id="main-content">{children}</main><footer className="footer"><span>AI Quant OS · local development</span><span>Financial truth is backend owned</span></footer></div></div>
   </body></html>;
 }

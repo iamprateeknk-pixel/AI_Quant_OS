@@ -1,0 +1,160 @@
+{
+  "increment": "0134",
+  "date": "2026-10-10",
+  "base_commit": "9addf228f32a76db8bff34bdb78d43651c7023dc",
+  "feature": "One shared private realtime console store, current header and full World State original-value projection",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0134",
+    "backend_tests": 93,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "42.336",
+    "backend_scope": [
+      "tests/test_realtime_feed.py",
+      "tests/test_api.py",
+      "tests/test_world_state.py",
+      "tests/test_world_state_store.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_pending.py",
+      "tests/test_operator_rejections.py",
+      "tests/test_order_store.py",
+      "tests/test_realtime_world_ui_contract.py"
+    ],
+    "frontend": {
+      "tests": 87,
+      "pass": 87,
+      "fail": 0,
+      "skipped": 0,
+      "next_production_build": "passed",
+      "scoped_eslint": "passed",
+      "identity_file_count": 103,
+      "identity": "All tracked frontend bytes normalized LF match root, staged index and fresh checkout; commands used the locked installed root frontend dependencies",
+      "browser_acceptance": "Pending; existing policy refusal preserved, no alternate launch attempted"
+    },
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 102,
+    "additive_schemas": 0,
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "ff7abdfa125a3a92abdd520c5d6c70c24ab9dea5fbc4932fef91a7165ecca514"
+      },
+      {
+        "path": "apps/web/src/app/layout.tsx",
+        "sha256": "b2bcc6ed5f8e4dc0cf755607fe881f88793c12ee5adf196772a17cc4faaf88ef"
+      },
+      {
+        "path": "apps/web/src/features/realtime/frames.ts",
+        "sha256": "9d348424da889bcdc99fcfc4324611e1aeace59963b5247386b3f8d918caf688"
+      },
+      {
+        "path": "apps/web/src/features/realtime/realtime-header.tsx",
+        "sha256": "58de395d4be51f22d3823a0e5e12a204ed78615f494bd01902bbb39e85fbf76f"
+      },
+      {
+        "path": "apps/web/src/features/realtime/realtime-panel.tsx",
+        "sha256": "bb66dfd923bae756c1b6fa81eeaa3db7981db28e5350eb1c407366f9e58c8928"
+      },
+      {
+        "path": "apps/web/src/features/realtime/store.ts",
+        "sha256": "796d4bf56c43854ab305fd2ddac3746063a4fc0d5520212fbf36909ab574c82a"
+      },
+      {
+        "path": "apps/web/src/features/realtime/stream-proxy.ts",
+        "sha256": "dcef88e43c288bb2411c458b78b2ed6aac3e6e5f1cb3d428187a205608201f27"
+      },
+      {
+        "path": "apps/web/src/features/realtime/use-realtime.ts",
+        "sha256": "df3b43de6e15a8a57429be7409012948a0b4f463a063749854be3e0d95ff5d3e"
+      },
+      {
+        "path": "apps/web/src/features/world-state/world-state-panel.tsx",
+        "sha256": "4078ff605069e5dd4ff0c7fba1dc53b2296f3e17b7ffb71aec7fbf0b3073af39"
+      },
+      {
+        "path": "apps/web/tests/fixtures/realtime-world.json",
+        "sha256": "fb6a78f606af9d05b0eb9706f7d3b71fd71d298d1445a577e1c823cb8997d4f1"
+      },
+      {
+        "path": "apps/web/tests/realtime-consumers.test.mjs",
+        "sha256": "4469f94f823ba4342bc616ff26e32063bc5e29460fb9abcf59bad52ee6b48be3"
+      },
+      {
+        "path": "apps/web/tests/realtime-panel.test.mjs",
+        "sha256": "ec810b4fabd38eca60ed667823bd1012e4386cf3e7c60f1868ccdd048559d369"
+      },
+      {
+        "path": "apps/web/tests/realtime-store.test.mjs",
+        "sha256": "8023cc46a621103ae914fa174e5d3975bdc9b016201167a4e407515f8f7a8802"
+      },
+      {
+        "path": "apps/web/tests/realtime.test.mjs",
+        "sha256": "005f59180092ce44ac6515f40d22ea5bc5e46e88356ddd6a020d8c0626da80d3"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "a90337c2a873c07dceae95e6ec04c236a4c870d4204814f6519ec2d80b791c22"
+      },
+      {
+        "path": "docs/SHARED_REALTIME_WORLD_HANDOFF.md",
+        "sha256": "b703b5ea3246cfe1937e291249728db68cbf13edb2b32ba932c2c3b82b60b562"
+      },
+      {
+        "path": "docs/adr/0134-shared-realtime-console-and-world-state.md",
+        "sha256": "59229ca54b96e3b18aead96179d351b05497ce13225f44e2e9d4091e85d09325"
+      },
+      {
+        "path": "tests/test_realtime_world_ui_contract.py",
+        "sha256": "a1faf7539df5400a8d849bcc7e4be25544b2f8ded1bc3a38745acf7c73fd4963"
+      }
+    ],
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "7fdab378e27a5ce980056df3ea131c165595abe7214f1eb3c76c45ab8850f369"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "7688ae71c60af2e4266827abb3678cc2145655f587daf33dfa649dbac2c619c3"
+      },
+      {
+        "check": "frontend",
+        "sha256": "04fd3b74f13d39e372a5d8c190fe6ca5ad415d3e3af01e9e166e630071585d9b"
+      },
+      {
+        "check": "eslint",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "check": "build",
+        "sha256": "2bd619389c77d1afbe0a96bc44005d2efcb59e3442d1c1c26e6c2a2c7c6fc071"
+      }
+    ],
+    "junit_sha256": "7a7d885b931edd7cfcfad9c8b60f4fde786697289c48357eea3177bdb2abb7b9",
+    "tdd_red": "Missing shared store/header and disconnected World State presentation reproduced before implementation; missing populated fixture and lost exact rich feature reproduced before projection changes",
+    "debugging": "Updated the existing SSR test compiler to load the actual shared store and hook without relaxing original unknown-state assertions",
+    "contract": "Actual protected populated quote/bar snapshot matches retained fixture except boot epoch; original numeric strings and coherent currency inventories survive native SSE proxy and client validation",
+    "store": "Four injected-clock/channel checks cover sharing, stable SSR snapshot, original expiry, source identity, retry after access failure, capped backoff, sequence/epoch withholding and final cleanup",
+    "presentation": "Real React server-rendered header/World State checks cover current, historical, missing and HALT presentation; they are not browser acceptance",
+    "review": "Local five-axis self-review: one read-only hook boundary reused by three consumers, no domain imports or dependency additions; SSR owns no channel; last subscription owns cleanup; original source lease never renewed; selected bounded exact decimal fields and currency coherence; existing backend admission and command authority unchanged; no financial arithmetic in UI",
+    "boundary_checker": "Existing prose architecture lacks machine clean-architecture declaration; manual import review used",
+    "full_suite": "Not run: preserve uncertain candidate-worker custody from 0084/0088; focused backend regressions and all frontend Node tests only",
+    "secrets_scan": "passed"
+  },
+  "rollback": "Revert 0134 to restore page-specific channel and static header/world reads; no backend schema or database migration. Preserve fixtures and evaluation artifacts.",
+  "limits": [
+    "All P00-P13 remain incomplete; independent critical review and full-system acceptance remain open",
+    "Actual browser navigation, login retry, background timer throttling, accessibility and visual acceptance pending",
+    "Per-tab and multi-worker production load, all-view detail subscriptions, order/portfolio/cost/agent updates and OTel/Grafana pending",
+    "Paper observations carry no broker or live capital authority; no actual provider, broker SDK, credential, remote push or promotion exercised",
+    "Unknown/expired/disconnected evidence retained only as historical; rejected frames withhold current state",
+    "Existing uncertain candidate-worker custody and untracked user skill files preserved; no proposed candidate execution on host"
+  ]
+}

@@ -1,32 +1,9 @@
 "use client";
 
-import {useEffect, useRef, useState} from "react";
-import {acceptRealtimeFrame, parseRealtimeFrame, type RealtimeFrame} from "./frames";
+import {useRealtime} from "./use-realtime";
 
-type State = "CONNECTING" | "CURRENT" | "STALE" | "DISCONNECTED" | "WITHHELD";
 export function RealtimePanel() {
-  const [frame,setFrame]=useState<RealtimeFrame|null>(null),[state,setState]=useState<State>("CONNECTING");
-  const previous=useRef<RealtimeFrame|null>(null);
-  useEffect(()=>{
-    const source=new EventSource("/api/realtime/events");
-    const receive=(event:MessageEvent,reset:boolean)=>{
-      try{
-        if(typeof event.data!=="string" || event.data.length>33000) throw new Error("Invalid event");
-        const next=parseRealtimeFrame(JSON.parse(event.data),Date.now());
-        if(!next || event.lastEventId!==`${next.epoch}:${next.sequence}` || !acceptRealtimeFrame(previous.current,next,reset)) throw new Error("Invalid state");
-        previous.current=next;setFrame(next);setState("CURRENT");
-      }catch{setState("WITHHELD");}
-    };
-    const reset=(event:MessageEvent)=>receive(event,true),update=(event:MessageEvent)=>receive(event,false);
-    source.addEventListener("reset",reset);source.addEventListener("snapshot",update);
-    source.onerror=()=>setState("DISCONNECTED");
-    return()=>{source.removeEventListener("reset",reset);source.removeEventListener("snapshot",update);source.close();};
-  },[]);
-  useEffect(()=>{
-    if(!frame) return;
-    const timer=setTimeout(()=>setState(current=>current==="CURRENT"?"STALE":current),Math.max(0,Date.parse(frame.valid_until)-Date.now()));
-    return()=>clearTimeout(timer);
-  },[frame]);
+  const {frame,state}=useRealtime();
   const current=state==="CURRENT" && frame!==null;
   const label=current?"Current paper snapshot":state==="CONNECTING"?"Connecting":state==="STALE"?"Snapshot expired":state==="WITHHELD"?"Update withheld":"Disconnected";
   return <section className="panel content-panel" aria-labelledby="realtime-heading">
