@@ -1,0 +1,115 @@
+{
+  "schema_version": "1.0",
+  "mode": "PAPER",
+  "epoch": "443f1f11-1e6d-4ffe-aaa7-d681fb1e3e14",
+  "sequence": 1,
+  "captured_at": "2026-10-10T00:00:00Z",
+  "valid_until": "2026-10-10T00:00:03Z",
+  "safety_state": "NORMAL",
+  "order_count": 0,
+  "world": {
+    "schema_version": "1.0",
+    "world_state_version": "world:14ac6a53da2cb986ca4179fdfccdea25f9a015022bce87add92e9a2ceb321d2e",
+    "as_of": "2026-10-10T00:00:00Z",
+    "valid_until": "2026-10-10T00:00:05Z",
+    "status": "EMPTY",
+    "instruments": [
+      {
+        "instrument_id": "EURUSD",
+        "base_currency": "EUR",
+        "quote_currency": "USD",
+        "quote_status": "MISSING",
+        "mid_price": null,
+        "spread_bps": null,
+        "history_status": "INSUFFICIENT",
+        "bar_count": 0,
+        "return_bps": null,
+        "realized_volatility_bps": null,
+        "regime": "UNKNOWN",
+        "evidence_refs": []
+      },
+      {
+        "instrument_id": "GBPUSD",
+        "base_currency": "GBP",
+        "quote_currency": "USD",
+        "quote_status": "MISSING",
+        "mid_price": null,
+        "spread_bps": null,
+        "history_status": "INSUFFICIENT",
+        "bar_count": 0,
+        "return_bps": null,
+        "realized_volatility_bps": null,
+        "regime": "UNKNOWN",
+        "evidence_refs": []
+      },
+      {
+        "instrument_id": "USDJPY",
+        "base_currency": "USD",
+        "quote_currency": "JPY",
+        "quote_status": "MISSING",
+        "mid_price": null,
+        "spread_bps": null,
+        "history_status": "INSUFFICIENT",
+        "bar_count": 0,
+        "return_bps": null,
+        "realized_volatility_bps": null,
+        "regime": "UNKNOWN",
+        "evidence_refs": []
+      },
+      {
+        "instrument_id": "EURJPY",
+        "base_currency": "EUR",
+        "quote_currency": "JPY",
+        "quote_status": "MISSING",
+        "mid_price": null,
+        "spread_bps": null,
+        "history_status": "INSUFFICIENT",
+        "bar_count": 0,
+        "return_bps": null,
+        "realized_volatility_bps": null,
+        "regime": "UNKNOWN",
+        "evidence_refs": []
+      }
+    ],
+    "currency_twins": [
+      {
+        "currency": "EUR",
+        "instrument_ids": [
+          "EURJPY",
+          "EURUSD"
+        ],
+        "fresh_quote_count": 0,
+        "macro_available": false
+      },
+      {
+        "currency": "GBP",
+        "instrument_ids": [
+          "GBPUSD"
+        ],
+        "fresh_quote_count": 0,
+        "macro_available": false
+      },
+      {
+        "currency": "JPY",
+        "instrument_ids": [
+          "EURJPY",
+          "USDJPY"
+        ],
+        "fresh_quote_count": 0,
+        "macro_available": false
+      },
+      {
+        "currency": "USD",
+        "instrument_ids": [
+          "EURUSD",
+          "GBPUSD",
+          "USDJPY"
+        ],
+        "fresh_quote_count": 0,
+        "macro_available": false
+      }
+    ],
+    "policy_version": "paper-regime-v1",
+    "source": "PAPER_SIMULATED"
+  }
+}

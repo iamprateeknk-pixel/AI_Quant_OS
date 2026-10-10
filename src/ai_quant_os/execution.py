@@ -126,6 +126,12 @@ class PaperExecutionGateway:
             )
 
     @property
+    def order_count(self) -> int:
+        """Recorded order inventory; does not certify individual order records."""
+        with self._lock:
+            return self._store.order_count()
+
+    @property
     def fills(self) -> tuple[PaperFill, ...]:
         return self._store.all_fills()
 

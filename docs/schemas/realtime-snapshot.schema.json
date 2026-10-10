@@ -1,0 +1,265 @@
+{
+  "$defs": {
+    "CurrencyTwin": {
+      "properties": {
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "fresh_quote_count": {
+          "title": "Fresh Quote Count",
+          "type": "integer"
+        },
+        "instrument_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Instrument Ids",
+          "type": "array"
+        },
+        "macro_available": {
+          "default": false,
+          "title": "Macro Available",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "currency",
+        "instrument_ids",
+        "fresh_quote_count"
+      ],
+      "title": "CurrencyTwin",
+      "type": "object"
+    },
+    "InstrumentWorldState": {
+      "properties": {
+        "bar_count": {
+          "title": "Bar Count",
+          "type": "integer"
+        },
+        "base_currency": {
+          "title": "Base Currency",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "history_status": {
+          "title": "History Status",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "mid_price": {
+          "anyOf": [
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mid Price"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "quote_status": {
+          "title": "Quote Status",
+          "type": "string"
+        },
+        "realized_volatility_bps": {
+          "anyOf": [
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Realized Volatility Bps"
+        },
+        "regime": {
+          "title": "Regime",
+          "type": "string"
+        },
+        "return_bps": {
+          "anyOf": [
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Return Bps"
+        },
+        "spread_bps": {
+          "anyOf": [
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Bps"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "base_currency",
+        "quote_currency",
+        "quote_status",
+        "mid_price",
+        "spread_bps",
+        "history_status",
+        "bar_count",
+        "return_bps",
+        "realized_volatility_bps",
+        "regime",
+        "evidence_refs"
+      ],
+      "title": "InstrumentWorldState",
+      "type": "object"
+    },
+    "WorldState": {
+      "properties": {
+        "as_of": {
+          "format": "date-time",
+          "title": "As Of",
+          "type": "string"
+        },
+        "currency_twins": {
+          "items": {
+            "$ref": "#/$defs/CurrencyTwin"
+          },
+          "title": "Currency Twins",
+          "type": "array"
+        },
+        "instruments": {
+          "items": {
+            "$ref": "#/$defs/InstrumentWorldState"
+          },
+          "title": "Instruments",
+          "type": "array"
+        },
+        "policy_version": {
+          "default": "paper-regime-v1",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source": {
+          "default": "PAPER_SIMULATED",
+          "title": "Source",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "valid_until": {
+          "format": "date-time",
+          "title": "Valid Until",
+          "type": "string"
+        },
+        "world_state_version": {
+          "title": "World State Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "world_state_version",
+        "as_of",
+        "valid_until",
+        "status",
+        "instruments",
+        "currency_twins"
+      ],
+      "title": "WorldState",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "epoch": {
+      "format": "uuid4",
+      "title": "Epoch",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "order_count": {
+      "maximum": 100000,
+      "minimum": 0,
+      "title": "Order Count",
+      "type": "integer"
+    },
+    "safety_state": {
+      "enum": [
+        "NORMAL",
+        "NO_NEW_RISK",
+        "FLATTEN_ONLY",
+        "HALT"
+      ],
+      "title": "Safety State",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "world": {
+      "$ref": "#/$defs/WorldState"
+    }
+  },
+  "required": [
+    "epoch",
+    "sequence",
+    "captured_at",
+    "valid_until",
+    "safety_state",
+    "order_count",
+    "world"
+  ],
+  "title": "RealtimeSnapshot",
+  "type": "object"
+}

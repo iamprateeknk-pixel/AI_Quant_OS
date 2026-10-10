@@ -18,6 +18,20 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
   remain pending. See `ASYNC_TICK_PORTFOLIO_HANDOFF.md` and ADR 0132.
   All P00–P13 remain incomplete; promotion and live authority remain denied.
 
+## Protected realtime paper operations increment
+
+- Added authenticated full-state snapshots/SSE with boot epochs, monotonic
+  sequences, bounded channels and original source expiry. Access is rechecked
+  for each frame; revoked sessions, regressed clocks and unverifiable state
+  withhold the stream. Recorded order count avoids full history materialization.
+- Connected Mission Control through private server mediation, bounded event
+  validation and explicit disconnected/expired/withheld states. Selected safe
+  metadata reaches the client; safety commands retain separate acknowledgements.
+- Actual local HTTP/session revocation and durable order-inventory fixtures are
+  exercised. All-view realtime detail, production load/distributed consistency,
+  OTel/Grafana, browser acceptance and independent critical review remain open.
+  See `REALTIME_PAPER_FEED_HANDOFF.md` and ADR 0133. All P00–P13 are incomplete.
+
 ## Broker capability registry view
 
 - Connected the protected five-profile registry to Brokers with separate simulator,

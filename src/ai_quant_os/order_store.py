@@ -105,6 +105,11 @@ class PaperOrderStore:
             ).fetchone()
             return (row[0], row[1]) if row else None
 
+    def order_count(self) -> int:
+        """Observe inventory size without loading financial records."""
+        with self._lock:
+            return self._connection.execute("SELECT COUNT(*) FROM paper_orders").fetchone()[0]
+
     def all_orders(self) -> tuple[str, ...]:
         with self._lock:
             rows = self._connection.execute(

@@ -648,6 +648,19 @@ def create_app(
     operator_authorization.install(app)
     require_operator = operator_authorization.require_operator
     require_control_operator = operator_authorization.require_control
+    from ai_quant_os.realtime_feed import RealtimeFeed, install_realtime_routes
+
+    def realtime_capture(now):
+        with control_lock:
+            return (
+                risk.safety_state.value,
+                execution.order_count,
+                world_state.snapshot(tuple(quotes.copy().values()), now=now),
+            )
+
+    install_realtime_routes(
+        app, operator_authorization, RealtimeFeed(realtime_capture, clock=current_time)
+    )
     install_operator_control_routes(
         app, operator_authorization, state_store, risk, control_lock, current_time
     )

@@ -1,0 +1,18 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {pathToFileURL} from 'node:url';
+import ts from 'typescript';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+const require=createRequire(import.meta.url);
+const compile=source=>ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+const frames=`data:text/javascript;base64,${Buffer.from(compile(readFileSync(new URL('../src/features/realtime/frames.ts',import.meta.url),'utf8'))).toString('base64')}`;
+const source=compile(readFileSync(new URL('../src/features/realtime/realtime-panel.tsx',import.meta.url),'utf8').replace('from "./frames"',`from "${frames}"`)).replace('"react/jsx-runtime"',JSON.stringify(pathToFileURL(require.resolve('react/jsx-runtime')).href)).replace('from "react"',`from "${pathToFileURL(require.resolve('react')).href}"`);
+const panel=(await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)).RealtimePanel;
+test('initial realtime panel communicates connection and unknown state without invented observations',()=>{
+ const html=renderToStaticMarkup(React.createElement(panel));
+ for(const text of ['Connecting','Current state is unknown','No current observation has been received','Sign in through Risk Center','Live routing is disabled'])assert(html.includes(text));
+ assert(!html.includes('<td>0</td>'));assert(!html.includes('<button'));assert(!html.includes('Current paper snapshot'));
+});
