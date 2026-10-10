@@ -4,6 +4,20 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Asynchronous native recorded-quote portfolio increment
+
+- Added two-to-four independent quote streams in one native USD account, canonical
+  equal-time quote ordering and prior-history decisions, shared gross collateral
+  admission and explicit source-age guards. Active risk reductions can proceed
+  with an unrelated stale quote.
+- Retained original source quotes and fills, exact quote cash with USD fees,
+  signed final JPY conversion, additive schemas and an immutable bounded command
+  export with source file hashes. Existing bar portfolio behavior is preserved.
+- Maintenance margin/liquidation, production feed/custody evidence, native
+  accounting attestation, isolated acceptance and independent critical review
+  remain pending. See `ASYNC_TICK_PORTFOLIO_HANDOFF.md` and ADR 0132.
+  All P00–P13 remain incomplete; promotion and live authority remain denied.
+
 ## Broker capability registry view
 
 - Connected the protected five-profile registry to Brokers with separate simulator,

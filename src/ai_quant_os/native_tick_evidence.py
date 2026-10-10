@@ -46,7 +46,7 @@ def canonical_tick_source(dataset, quantity, costs):
     return source, metadata
 
 
-def reconcile_tick_fills(fills, source, quantity, costs):
+def reconcile_tick_fills(fills, source, quantity, costs, *, fees_in_quote_currency=True):
     """Check next-quote execution and exact quote-currency cash; no target replay."""
     if type(fills) is not tuple or len(fills) > len(source.ticks) - 1:
         raise ValueError("Native fill count exceeds source events")
@@ -73,7 +73,7 @@ def reconcile_tick_fills(fills, source, quantity, costs):
             raise ValueError("Native fill price differs from source quote")
         signed = fill.quantity if fill.side == "BUY" else -fill.quantity
         position += signed
-        cash -= signed * fill.price + fill.fee
+        cash -= signed * fill.price + (fill.fee if fees_in_quote_currency else Decimal(0))
         if position not in (-Decimal(quantity), Decimal(0), Decimal(quantity)):
             raise ValueError("Native fill exceeds declared target position")
         previous = fill.observed_at

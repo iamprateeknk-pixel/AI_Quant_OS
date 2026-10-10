@@ -1,0 +1,126 @@
+{
+  "$defs": {
+    "StrategyGenome": {
+      "properties": {
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameters",
+          "type": "array"
+        },
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind"
+      ],
+      "title": "StrategyGenome",
+      "type": "object"
+    },
+    "TickLegFile": {
+      "additionalProperties": false,
+      "properties": {
+        "csv": {
+          "format": "path",
+          "title": "Csv",
+          "type": "string"
+        },
+        "genome": {
+          "$ref": "#/$defs/StrategyGenome"
+        },
+        "quantity": {
+          "maximum": 500000,
+          "minimum": 1,
+          "title": "Quantity",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "csv",
+        "genome",
+        "quantity"
+      ],
+      "title": "TickLegFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "fee_per_order_usd": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Fee Per Order Usd"
+    },
+    "initial_balance_usd": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "100000",
+      "title": "Initial Balance Usd"
+    },
+    "legs": {
+      "items": {
+        "$ref": "#/$defs/TickLegFile"
+      },
+      "maxItems": 4,
+      "minItems": 2,
+      "title": "Legs",
+      "type": "array"
+    },
+    "max_quote_age_seconds": {
+      "default": 3,
+      "maximum": 300,
+      "minimum": 1,
+      "title": "Max Quote Age Seconds",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "legs"
+  ],
+  "title": "TickPortfolioFiles",
+  "type": "object"
+}

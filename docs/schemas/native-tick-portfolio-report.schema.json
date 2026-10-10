@@ -1,0 +1,439 @@
+{
+  "$defs": {
+    "NativeFill": {
+      "properties": {
+        "fee": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Fee",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "price": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Price",
+          "type": "string"
+        },
+        "quantity": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Quantity",
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        }
+      },
+      "required": [
+        "observed_at",
+        "side",
+        "price",
+        "quantity",
+        "fee"
+      ],
+      "title": "NativeFill",
+      "type": "object"
+    },
+    "SourceFingerprint": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "SourceFingerprint",
+      "type": "object"
+    },
+    "StrategyBinding": {
+      "properties": {
+        "genome": {
+          "$ref": "#/$defs/StrategyGenome"
+        },
+        "genome_sha256": {
+          "title": "Genome Sha256",
+          "type": "string"
+        },
+        "implementation": {
+          "$ref": "#/$defs/StrategyImplementation"
+        },
+        "implementation_sha256": {
+          "title": "Implementation Sha256",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "TRUSTED_BUILTIN_SOURCE_BINDING",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "provenance",
+        "genome",
+        "genome_sha256",
+        "implementation",
+        "implementation_sha256"
+      ],
+      "title": "StrategyBinding",
+      "type": "object"
+    },
+    "StrategyGenome": {
+      "properties": {
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameters",
+          "type": "array"
+        },
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind"
+      ],
+      "title": "StrategyGenome",
+      "type": "object"
+    },
+    "StrategyImplementation": {
+      "properties": {
+        "entry_point": {
+          "title": "Entry Point",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameter_defaults": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameter Defaults",
+          "type": "array"
+        },
+        "source_files": {
+          "items": {
+            "$ref": "#/$defs/SourceFingerprint"
+          },
+          "title": "Source Files",
+          "type": "array"
+        },
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind",
+        "entry_point",
+        "parameter_defaults",
+        "source_files"
+      ],
+      "title": "StrategyImplementation",
+      "type": "object"
+    },
+    "Tick": {
+      "properties": {
+        "ask": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Ask",
+          "type": "string"
+        },
+        "ask_size": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Ask Size",
+          "type": "string"
+        },
+        "bid": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Bid",
+          "type": "string"
+        },
+        "bid_size": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Bid Size",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "sequence": {
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "source_id",
+        "sequence",
+        "observed_at",
+        "bid",
+        "ask",
+        "bid_size",
+        "ask_size"
+      ],
+      "title": "Tick",
+      "type": "object"
+    },
+    "TickPortfolioLeg": {
+      "properties": {
+        "binding": {
+          "$ref": "#/$defs/StrategyBinding"
+        },
+        "dataset_fingerprint": {
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "fee_currency": {
+          "const": "USD",
+          "default": "USD",
+          "title": "Fee Currency",
+          "type": "string"
+        },
+        "fees_usd": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Fees Usd",
+          "type": "string"
+        },
+        "fills": {
+          "items": {
+            "$ref": "#/$defs/NativeFill"
+          },
+          "title": "Fills",
+          "type": "array"
+        },
+        "final_position": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Final Position",
+          "type": "string"
+        },
+        "gross_pnl_quote": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Gross Pnl Quote",
+          "type": "string"
+        },
+        "gross_pnl_usd": {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "title": "Gross Pnl Usd",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quantity": {
+          "title": "Quantity",
+          "type": "integer"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "source_ticks": {
+          "items": {
+            "$ref": "#/$defs/Tick"
+          },
+          "title": "Source Ticks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "quote_currency",
+        "source_ticks",
+        "dataset_fingerprint",
+        "binding",
+        "quantity",
+        "fills",
+        "final_position",
+        "gross_pnl_quote",
+        "gross_pnl_usd",
+        "fees_usd"
+      ],
+      "title": "TickPortfolioLeg",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "collateral_model": {
+      "const": "FRESH_GROSS_TARGET_NOTIONAL_USD_NATIVE_BALANCE_V1",
+      "default": "FRESH_GROSS_TARGET_NOTIONAL_USD_NATIVE_BALANCE_V1",
+      "title": "Collateral Model",
+      "type": "string"
+    },
+    "decision_model": {
+      "const": "ALL_EVENT_QUOTES_BEFORE_PRIOR_HISTORY_TARGETS_V1",
+      "default": "ALL_EVENT_QUOTES_BEFORE_PRIOR_HISTORY_TARGETS_V1",
+      "title": "Decision Model",
+      "type": "string"
+    },
+    "engine": {
+      "const": "NAUTILUS_BACKTEST",
+      "default": "NAUTILUS_BACKTEST",
+      "title": "Engine",
+      "type": "string"
+    },
+    "engine_version": {
+      "const": "1.221.0",
+      "default": "1.221.0",
+      "title": "Engine Version",
+      "type": "string"
+    },
+    "fee_per_order_usd": {
+      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "title": "Fee Per Order Usd",
+      "type": "string"
+    },
+    "initial_balance_usd": {
+      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "title": "Initial Balance Usd",
+      "type": "string"
+    },
+    "legs": {
+      "items": {
+        "$ref": "#/$defs/TickPortfolioLeg"
+      },
+      "title": "Legs",
+      "type": "array"
+    },
+    "max_quote_age_seconds": {
+      "title": "Max Quote Age Seconds",
+      "type": "integer"
+    },
+    "native_balance_usd": {
+      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "title": "Native Balance Usd",
+      "type": "string"
+    },
+    "native_order_count": {
+      "title": "Native Order Count",
+      "type": "integer"
+    },
+    "net_pnl_usd": {
+      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "title": "Net Pnl Usd",
+      "type": "string"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    },
+    "replay_model": {
+      "const": "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V1",
+      "default": "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V1",
+      "title": "Replay Model",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "total_fees_usd": {
+      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "title": "Total Fees Usd",
+      "type": "string"
+    },
+    "valuation_model": {
+      "const": "FINAL_MIDPOINT_SIGN_FX_DECIMAL28_V1",
+      "default": "FINAL_MIDPOINT_SIGN_FX_DECIMAL28_V1",
+      "title": "Valuation Model",
+      "type": "string"
+    },
+    "venue": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Venue",
+      "type": "string"
+    }
+  },
+  "required": [
+    "initial_balance_usd",
+    "fee_per_order_usd",
+    "max_quote_age_seconds",
+    "observed_at",
+    "legs",
+    "native_order_count",
+    "total_fees_usd",
+    "net_pnl_usd",
+    "native_balance_usd"
+  ],
+  "title": "TickPortfolioReport",
+  "type": "object"
+}

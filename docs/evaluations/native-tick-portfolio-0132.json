@@ -1,0 +1,112 @@
+{
+  "increment": "0132",
+  "date": "2026-10-10",
+  "base_commit": "c569d27880e2f762f7fa5e1856f33b51f9957ca9",
+  "feature": "Asynchronous source-bound recorded-quote FX portfolio in one pinned native USD account",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0132",
+    "tests": 193,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "87.304",
+    "scope": [
+      "tests/test_native_tick_portfolio.py",
+      "tests/test_tick_portfolio_cli.py",
+      "tests/test_native_realized_history.py",
+      "tests/test_native_tick_evidence.py",
+      "tests/test_nautilus_ticks.py",
+      "tests/test_nautilus_runtime.py",
+      "tests/test_nautilus_directional.py",
+      "tests/test_native_portfolio.py",
+      "tests/test_tick_data.py",
+      "tests/test_tick_archive.py",
+      "tests/test_strategy_registry.py",
+      "tests/test_directional_research.py",
+      "tests/test_counterfactual.py",
+      "tests/test_daily_evidence.py",
+      "tests/test_shadow_portfolio.py",
+      "tests/test_research_adversarial.py",
+      "tests/test_research_candidates.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 99,
+    "additive_schemas": 2,
+    "source_hashes": [
+      {
+        "path": "docs/ASYNC_TICK_PORTFOLIO_HANDOFF.md",
+        "sha256": "63735b576a5fde4368b8929eeb6797d807143acda5c35a2414ca7566727cc8bc"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "8f1b28207dc8b251072825553560b488d01aa79a1ce1c70659411dd677345dca"
+      },
+      {
+        "path": "docs/adr/0132-asynchronous-native-recorded-quote-portfolio.md",
+        "sha256": "b324b4240d6a617133f0c8e7617c55940f64819be849712c47eab66e5539af92"
+      },
+      {
+        "path": "docs/schemas/native-tick-portfolio-plan.schema.json",
+        "sha256": "d9e1086d373b61d0148b715ffee46632dada22e4f2ebdaf5ab2c1ba1bc34b04d"
+      },
+      {
+        "path": "docs/schemas/native-tick-portfolio-report.schema.json",
+        "sha256": "51f84454083190ac6bcf8e5dd4a6042554ab10719e229afa9a23dbc5375ff308"
+      },
+      {
+        "path": "pyproject.toml",
+        "sha256": "c66d9b9e82d4ecb3122fe2a93bd409f1f774b38ac2c4d2225741951856c34998"
+      },
+      {
+        "path": "src/ai_quant_os/native_tick_evidence.py",
+        "sha256": "488b16a1b1328c92d0659daec0fee3cb8baf519229368156533d74df4df29b18"
+      },
+      {
+        "path": "src/ai_quant_os/native_tick_portfolio.py",
+        "sha256": "7365cc32168704a0705a51fea8800633a7abe660b74e8cc4a9829004fbc75883"
+      },
+      {
+        "path": "src/ai_quant_os/tick_portfolio_cli.py",
+        "sha256": "e93ca99a37993e2f626199d48174e1be16ad99da0aace3638bf3f0e60da09390"
+      },
+      {
+        "path": "tests/test_native_tick_portfolio.py",
+        "sha256": "358b546598e55924bfe46d29d83baa176d6da74cd5de7cb529b3ca0f9c4e6971"
+      },
+      {
+        "path": "tests/test_tick_portfolio_cli.py",
+        "sha256": "ce98f1949c3de78526f613727f669e1e6fe7b76b619acae3530697f5c0df4d31"
+      }
+    ],
+    "junit_sha256": "a54024885245b2283ddd20dfa7616a2a72333dbbfa45c67b319c9a0a48612ec2",
+    "tdd_red": "Seven initial missing-module cases; stale unrelated quote prevented a risk-reducing close; report accepted integer instead of Decimal; missing CLI and additive schemas reproduced before the corresponding implementation",
+    "structure_map": "Fresh checkout map scoped to native_tick_portfolio.py: zero structural findings; existing Python/outer-interface layout reused",
+    "boundary_checker": "Unavailable: existing architecture declaration is prose and lacks the required clean-architecture block; manually reviewed imports against the declared inward domain boundary",
+    "review": "Local five-axis self-review: source snapshots before execution; fixed trusted registry bindings; original timestamp age checks; shared balance admission and fresh FX conversion; canonical quotes before prior-history decisions; explicit per-currency fee cash; amount/source-fill/total verification; bounded immutable export; reused native bridge/source ledger; independent critical acceptance pending",
+    "full_suite": "Not run: known uncertain candidate-worker custody from 0084/0088 must remain preserved; focused native/research/archive regressions only",
+    "secrets_scan": "passed"
+  },
+  "rollback": "Revert this increment commit to remove the new command and portfolio model; no database migration or existing archive repair is required. Retained exports are inert diagnostic evidence and should be preserved. The shared fill helper default is unchanged.",
+  "observations": {
+    "trusted_usd_fixture_native_orders": 6,
+    "trusted_usd_fixture_fees_usd": "0.60",
+    "trusted_usd_fixture_net_pnl_usd": "-10.6050",
+    "trusted_jpy_fixture_gross_pnl_quote": "-500.250",
+    "trusted_jpy_fixture_fee_usd": "0.30",
+    "native_runtime": "1.221.0",
+    "promotion_allowed": false
+  },
+  "limits": [
+    "Historical asynchronous event replay uses a declared +1ns decision priority, not measured network latency; source/fill timestamps remain original microseconds",
+    "Registered trusted builtins only; no proposed candidate source/SDK/test imported or compiled on host",
+    "One-times gross USD notional against observed native balance is not maintenance margin, liquidation, financing or production collateral allocation",
+    "All exposure and final quotes must satisfy original source-age policy; active reduction may proceed using its own fresh quote while unrelated quotes are stale",
+    "JPY gross cash uses signed final USDJPY conversion; USD fees remain separate. Native balance is observed, not independently reconstructed multi-currency equity",
+    "Retained verifier checks source/fill cash and amounts; does not rerun strategy targets, reconstruct historical admission, attest native balance or source custody",
+    "99 prior schemas and existing synchronized bar replay remain unchanged; two additive schemas and one distinct packaged command",
+    "No actual broker SDK, terminal, credentials, paid provider, remote push, promotion or live capital exercised",
+    "Uncertain candidate-worker custody, browser launch refusal, user .agents and skills-lock files remain preserved",
+    "Independent critical/native/isolated acceptance and full release gates remain pending; all P00-P13 incomplete"
+  ]
+}
