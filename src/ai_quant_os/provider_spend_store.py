@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from ai_quant_os.audit_chain import AuditChain
 from ai_quant_os.contracts import _require_aware
+from ai_quant_os.jev_spend_policy import JevInputSpendPolicy
 from ai_quant_os.provider_spend_policy import ProviderSpendPolicy, bounded_integer, encode
 
 
@@ -26,7 +27,7 @@ class ProviderSpendStore:
         self.pin = self.path.with_suffix(self.path.suffix + ".pin.json")
         created = not self.path.exists() and not self.pin.exists()
         if created:
-            if type(policy) is not ProviderSpendPolicy:
+            if type(policy) not in (ProviderSpendPolicy, JevInputSpendPolicy):
                 raise ValueError("Original spending policy required")
             self.path.parent.mkdir(parents=True, exist_ok=True)
             anchor = {
@@ -120,7 +121,9 @@ class ProviderSpendStore:
         if integrity.legacy_event_count:
             raise ValueError("Unaudited spending archive")
         raw = db.execute("SELECT body FROM spend_policy WHERE singleton=1").fetchone()[0]
-        policy = ProviderSpendPolicy.decode(raw)
+        value = json.loads(raw)
+        policy_type = JevInputSpendPolicy if "accounting" in value else ProviderSpendPolicy
+        policy = policy_type.decode(raw)
         if raw != policy.encode() or policy.fingerprint != self.anchor["policy_sha256"]:
             raise ValueError("Spending policy pin mismatch")
         audits = {
@@ -170,9 +173,9 @@ class ProviderSpendStore:
                     )
                     or type(record["request_sha256"]) is not str
                     or not re.fullmatch("[a-f0-9]{64}", record["request_sha256"])
-                    or not bounded_integer(record["input_tokens"])
-                    or not bounded_integer(record["max_output_tokens"], 8192)
-                    or record["max_output_tokens"] < 128
+                    or not policy.valid_reservation(
+                        record["input_tokens"], record["max_output_tokens"]
+                    )
                 ):
                     raise ValueError("Invalid spending reservation fields")
                 reservations[identity] = record
@@ -190,12 +193,8 @@ class ProviderSpendStore:
         return policy, reservations, usage, last, integrity.head_hash
 
     @staticmethod
-    def _breached(reservations, usage):
-        return any(
-            row["input_tokens"] > reservations[key]["input_tokens"]
-            or row["output_tokens"] > reservations[key]["max_output_tokens"]
-            for key, row in usage.items()
-        )
+    def _breached(policy, reservations, usage):
+        return any(policy.exceeded(reservations[key], row) for key, row in usage.items())
 
     @staticmethod
     def _totals(policy, reservations, usage, agent_id, now):
@@ -207,8 +206,8 @@ class ProviderSpendStore:
             inputs = report["input_tokens"] if report else row["input_tokens"]
             outputs = report["output_tokens"] if report else row["max_output_tokens"]
             tokens, money = (
-                inputs + outputs,
-                inputs * policy.input_nano_usd + outputs * policy.output_nano_usd,
+                policy.tokens(inputs, outputs),
+                policy.money(inputs, outputs),
             )
             pending += int(report is None)
             # Unknown older charges remain reserved in every later period until settled.
@@ -237,23 +236,20 @@ class ProviderSpendStore:
             policy, reservations, usage, last, _ = self._verified(db)
             if last is not None and now < last:
                 raise ValueError("Spending clock moved backwards")
-            if self._breached(reservations, usage):
+            if self._breached(policy, reservations, usage):
                 raise PermissionError("Provider spending breach unresolved")
             if (
                 model != policy.model
                 or agent_id not in {rule.agent_id for rule in policy.rules}
-                or not bounded_integer(input_tokens)
-                or not bounded_integer(max_output_tokens, 8192)
+                or not policy.valid_reservation(input_tokens, max_output_tokens)
             ):
                 raise ValueError("Invalid spending admission")
             rule = next(rule for rule in policy.rules if rule.agent_id == agent_id)
             daily, monthly, daily_money, monthly_money, _ = self._totals(
                 policy, reservations, usage, agent_id, now
             )
-            tokens = input_tokens + max_output_tokens
-            money = (
-                input_tokens * policy.input_nano_usd + max_output_tokens * policy.output_nano_usd
-            )
+            tokens = policy.tokens(input_tokens, max_output_tokens)
+            money = policy.money(input_tokens, max_output_tokens)
             if (
                 daily + tokens > rule.daily_tokens - rule.daily_token_reserve
                 or monthly + tokens > rule.monthly_tokens - rule.monthly_token_reserve
@@ -282,7 +278,7 @@ class ProviderSpendStore:
         now = _utc(now)
         with closing(self._connection()) as db, db:
             db.execute("BEGIN IMMEDIATE")
-            _, reservations, usage, last, _ = self._verified(db)
+            policy, reservations, usage, last, _ = self._verified(db)
             if (
                 reservation_id not in reservations
                 or not bounded_integer(input_tokens)
@@ -310,7 +306,7 @@ class ProviderSpendStore:
                     ),
                 )
             _, reservations, usage, _, _ = self._verified(db)
-            breach = self._breached(reservations, usage)
+            breach = self._breached(policy, reservations, usage)
         if breach:
             raise PermissionError("Provider spending breach retained")
 
@@ -335,13 +331,12 @@ class ProviderSpendStore:
                         monthly_nano_usd=monthly_money,
                         pending_count=pending,
                         unsettled_tokens=sum(
-                            row["input_tokens"] + row["max_output_tokens"]
+                            policy.tokens(row["input_tokens"], row["max_output_tokens"])
                             for key, row in reservations.items()
                             if row["agent_id"] == rule.agent_id and key not in usage
                         ),
                         unsettled_nano_usd=sum(
-                            row["input_tokens"] * policy.input_nano_usd
-                            + row["max_output_tokens"] * policy.output_nano_usd
+                            policy.money(row["input_tokens"], row["max_output_tokens"])
                             for key, row in reservations.items()
                             if row["agent_id"] == rule.agent_id and key not in usage
                         ),
@@ -368,11 +363,11 @@ class ProviderSpendStore:
                     )
                 )
             return dict(
-                state="BREACHED" if self._breached(reservations, usage) else "ENFORCED",
+                state="BREACHED" if self._breached(policy, reservations, usage) else "ENFORCED",
                 day=now.date().isoformat(),
                 month=now.date().isoformat()[:7],
                 model=policy.model,
-                accounting="PROVIDER_REPORTED_USAGE_AT_DECLARED_RATE_CEILING",
+                accounting=policy.accounting,
                 policy_sha256=policy.fingerprint,
                 head_hash=head,
                 agents=agents,

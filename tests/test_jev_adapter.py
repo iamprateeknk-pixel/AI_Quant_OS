@@ -184,7 +184,11 @@ def test_redirects_and_response_body_limits_are_rejected_without_retries():
         asyncio.run(huge.classify(world(), "EURUSD"))
 
 
-def test_environment_is_disabled_by_default_and_rejects_partial_or_alias_configuration(monkeypatch):
+def test_environment_is_disabled_by_default_and_rejects_partial_or_alias_configuration(
+    monkeypatch, tmp_path
+):
+    from test_jev_spend_admission import policy
+
     monkeypatch.delenv("AI_QUANT_JEV_ENABLED", raising=False)
     monkeypatch.setenv("AI_QUANT_JEV_API_KEY", "fixture-only-key")
     assert jev_from_environment() is None
@@ -196,6 +200,11 @@ def test_environment_is_disabled_by_default_and_rejects_partial_or_alias_configu
     with pytest.raises(ValueError):
         jev_from_environment()
     monkeypatch.setenv("AI_QUANT_JEV_MODEL", MODEL)
+    policy_path = tmp_path / "policy.json"
+    policy_path.write_bytes(policy().encode())
+    monkeypatch.setenv("AI_QUANT_JEV_SPEND_PATH", str(tmp_path / "jev.db"))
+    monkeypatch.setenv("AI_QUANT_JEV_SPEND_POLICY", str(policy_path))
+    monkeypatch.setenv("AI_QUANT_CLASSIFY_OWNER", "A02@0.2.0")
     adapter = jev_from_environment()
     assert adapter.provider_version == MODEL
     assert "fixture-only-key" not in repr(adapter)

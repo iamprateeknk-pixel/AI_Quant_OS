@@ -4,6 +4,20 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Jev billable-input spending admission increment
+
+- Added a distinct immutable eighteen-role input-token/declared-rate policy for
+  the reviewed Jev 1.13 contract. Each request reserves the rounded-up published
+  context maximum; free outputs remain reported usage with zero billable weight.
+- Reused the pinned audited ledger's concurrency/restart/unknown-outcome handling,
+  bound route ownership, and rechecked permission/source after durable reservation.
+  Rejected answers still charge matching usage; above-bound input reports latch a
+  breach. Environment activation requires persistent spending custody.
+- Actual context-to-billable-usage correspondence, account pricing/invoices,
+  shared all-provider ceilings/Costs, recovery spending, throughput, browser and
+  independent acceptance remain pending. See JEV_SPENDING_HANDOFF.md, ADR 0137
+  and evaluation 0137. All P00–P13 remain incomplete.
+
 ## Protected review spending Cost Center increment
 
 - Costs now reads configured review token/declared-rate capacity through the private

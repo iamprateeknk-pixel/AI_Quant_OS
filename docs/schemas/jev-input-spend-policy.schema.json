@@ -1,0 +1,404 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JevInputSpendPolicy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "model",
+    "input_nano_usd",
+    "output_nano_usd",
+    "rate_reference",
+    "rules",
+    "accounting",
+    "input_reservation_ceiling"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "model": {
+      "const": "jev-1.13.0"
+    },
+    "input_nano_usd": {
+      "type": "integer",
+      "minimum": 42,
+      "maximum": 1000000000
+    },
+    "output_nano_usd": {
+      "type": "integer",
+      "const": 0
+    },
+    "rate_reference": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[^\\x00-\\x1f]+$"
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "agent_id",
+          "daily_tokens",
+          "monthly_tokens",
+          "daily_token_reserve",
+          "monthly_token_reserve",
+          "daily_nano_usd",
+          "monthly_nano_usd",
+          "daily_money_reserve",
+          "monthly_money_reserve"
+        ],
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "enum": [
+              "A01",
+              "A02",
+              "A03",
+              "A04",
+              "A05",
+              "A06",
+              "A07",
+              "A08",
+              "A09",
+              "A10",
+              "A11",
+              "A12",
+              "A13",
+              "A14",
+              "A15",
+              "A16",
+              "A17",
+              "A18"
+            ]
+          },
+          "daily_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000
+          },
+          "monthly_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000
+          },
+          "daily_token_reserve": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000
+          },
+          "monthly_token_reserve": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000
+          },
+          "daily_nano_usd": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000000000
+          },
+          "monthly_nano_usd": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000000000
+          },
+          "daily_money_reserve": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000000000
+          },
+          "monthly_money_reserve": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000000000
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A01"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A02"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A03"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A04"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A05"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A06"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A07"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A08"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A09"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A10"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A11"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A12"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A13"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A14"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A15"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A16"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A17"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "agent_id": {
+                "const": "A18"
+              }
+            },
+            "required": [
+              "agent_id"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "accounting": {
+      "const": "JEV_INPUT_ONLY_AT_DECLARED_RATE_CEILING"
+    },
+    "input_reservation_ceiling": {
+      "type": "integer",
+      "const": 65536
+    }
+  },
+  "description": "Billable input-only limits for the reviewed Jev 1.13 contract; runtime also checks quota/reserve inequalities."
+}

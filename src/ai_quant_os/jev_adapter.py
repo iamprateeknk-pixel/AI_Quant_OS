@@ -5,7 +5,10 @@ import json
 import os
 import re
 from dataclasses import asdict
+from datetime import datetime, timezone
 from decimal import Decimal
+from hashlib import sha256
+from pathlib import Path
 from threading import Lock
 from time import monotonic
 from typing import Annotated, Callable, Literal
@@ -14,6 +17,9 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from ai_quant_os.decision_gateway import Classification, ClassificationCandidate
+from ai_quant_os.jev_spend_policy import JEV_ACCOUNTING, JEV_INPUT_CEILING, JevInputSpendPolicy
+from ai_quant_os.provider_call_admission import ProviderOwner, provider_owner
+from ai_quant_os.provider_spend_store import ProviderSpendStore
 from ai_quant_os.world_state import WorldState
 
 ENDPOINT = "https://api.typesafe.ai/v1/systemone"
@@ -24,6 +30,15 @@ CRITERIA = {
     "UNKNOWN": "Missing, stale or insufficient evidence to distinguish the other regimes.",
 }
 Probability = Annotated[Decimal, Field(ge=0, le=1, allow_inf_nan=False)]
+
+
+def _unique_response_fields(pairs):
+    fields = {}
+    for key, value in pairs:
+        if key in fields:
+            raise ValueError("Duplicate Jev response field")
+        fields[key] = value
+    return fields
 
 
 class ChoiceAnswer(BaseModel):
@@ -46,8 +61,16 @@ class ChoiceAnswer(BaseModel):
 
 class TokenUsage(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    input_tokens: int = Field(ge=0, strict=True)
-    output_tokens: int = Field(ge=0, strict=True)
+    input_tokens: int = Field(ge=0, le=10**9, strict=True)
+    output_tokens: int = Field(ge=0, le=10**9, strict=True)
+
+
+class JevUsageEnvelope(BaseModel):
+    """Read bounded native usage independently of answer acceptance."""
+
+    model_config = ConfigDict(extra="ignore")
+    model: str = Field(min_length=1, max_length=64)
+    usage: TokenUsage
 
 
 class JevResponse(BaseModel):
@@ -73,6 +96,9 @@ class JevClassifier:
         max_response_bytes: int = 65536,
         transport: httpx.AsyncBaseTransport | None = None,
         monotonic_clock: Callable[[], float] = monotonic,
+        spend_store: ProviderSpendStore | None = None,
+        spend_owner: ProviderOwner | None = None,
+        utc_clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     ) -> None:
         if not api_key or len(api_key) > 4096 or any(char.isspace() for char in api_key):
             raise ValueError("Invalid Jev credential configuration")
@@ -85,6 +111,15 @@ class JevClassifier:
         if not 1 <= max_request_bytes <= 1000000 or not 1 <= max_response_bytes <= 1000000:
             raise ValueError("Invalid Jev payload limits")
         self.provider_version = model
+        if (spend_store is None) != (spend_owner is None) or (
+            spend_owner is not None and type(spend_owner) is not ProviderOwner
+        ):
+            raise ValueError("Jev spending ledger requires a declared typed owner")
+        self._spend_store, self.spend_owner, self._utc_clock = spend_store, spend_owner, utc_clock
+        if spend_store is not None:
+            retained = spend_store.status(utc_clock())
+            if retained["model"] != model or retained["accounting"] != JEV_ACCOUNTING:
+                raise ValueError("Jev spending model or accounting mismatch")
         self._api_key = SecretStr(api_key)
         self._timeout = timeout_seconds
         self._transport = transport
@@ -111,7 +146,7 @@ class JevClassifier:
                 if self._open_until
                 else "CLOSED"
             )
-            return {
+            state = {
                 "provider_id": self.provider_id,
                 "provider_version": self.provider_version,
                 "request_count": self._requests,
@@ -125,6 +160,39 @@ class JevClassifier:
                 if self._provider_confidence is not None
                 else None,
             }
+        return {**state, "spending": self.spending_status()}
+
+    def spending_status(self) -> dict[str, object]:
+        if self._spend_store is None:
+            return {
+                "state": "NOT_CONFIGURED",
+                "input_token_budget_enforced": False,
+                "total_token_budget_enforced": False,
+                "declared_rate_budget_enforced": False,
+                "invoice_verified": False,
+            }
+        try:
+            retained = self._spend_store.status(self._utc_clock())
+            owner = next(
+                row for row in retained["agents"] if row["agent_id"] == self.spend_owner.agent_id
+            )
+            return {
+                "state": retained["state"],
+                "accounting": retained["accounting"],
+                "input_token_budget_enforced": True,
+                "total_token_budget_enforced": False,
+                "declared_rate_budget_enforced": True,
+                "invoice_verified": False,
+                "input_reservation_ceiling": JEV_INPUT_CEILING,
+                "owner": f"{self.spend_owner.agent_id}@{self.spend_owner.agent_version}",
+                "policy_sha256": retained["policy_sha256"],
+                "head_hash": retained["head_hash"],
+                "day": retained["day"],
+                "month": retained["month"],
+                "counters": owner,
+            }
+        except Exception:
+            return {"state": "UNAVAILABLE", "invoice_verified": False}
 
     def _reserve(self) -> int:
         with self._lock:
@@ -147,10 +215,10 @@ class JevClassifier:
                     self._open_until = self._clock() + self._cooldown
                     self._generation += 1
 
-    def _record_usage(self, result: JevResponse) -> None:
+    def _record_usage(self, usage: TokenUsage) -> None:
         with self._lock:
-            self._input_tokens += result.usage.input_tokens
-            self._output_tokens += result.usage.output_tokens
+            self._input_tokens += usage.input_tokens
+            self._output_tokens += usage.output_tokens
             self._usage_reports += 1
 
     def _succeeded(self, generation: int, result: JevResponse) -> None:
@@ -162,6 +230,19 @@ class JevClassifier:
                 self._probe = False
 
     async def classify(self, snapshot: WorldState, instrument_id: str) -> ClassificationCandidate:
+        return await self.classify_with_admission(snapshot, instrument_id, lambda: None)
+
+    def _check_admission(self, snapshot: WorldState, guard: Callable[[], None]) -> None:
+        guard()
+        if (
+            self._spend_store is not None
+            and not snapshot.as_of <= self._utc_clock() < snapshot.valid_until
+        ):
+            raise ValueError("Jev source unavailable or expired")
+
+    async def classify_with_admission(
+        self, snapshot: WorldState, instrument_id: str, guard: Callable[[], None]
+    ) -> ClassificationCandidate:
         item = next(
             (row for row in snapshot.instruments if row.instrument_id == instrument_id), None
         )
@@ -189,8 +270,26 @@ class JevClassifier:
         raw = json.dumps(body, default=str, separators=(",", ":")).encode()
         if len(raw) > self._max_request_bytes:
             raise ValueError("Jev request exceeds payload limit")
+        self._check_admission(snapshot, guard)
         generation = self._reserve()
         try:
+            reservation = None
+            if self._spend_store is not None:
+                retained = await asyncio.to_thread(self._spend_store.status, self._utc_clock())
+                if retained["state"] != "ENFORCED":
+                    raise PermissionError("Jev spending unavailable")
+                self._check_admission(snapshot, guard)
+                reservation = await asyncio.to_thread(
+                    self._spend_store.reserve,
+                    agent_id=self.spend_owner.agent_id,
+                    agent_version=self.spend_owner.agent_version,
+                    model=self.provider_version,
+                    request_sha256=sha256(raw).hexdigest(),
+                    input_tokens=JEV_INPUT_CEILING,
+                    max_output_tokens=0,
+                    now=self._utc_clock(),
+                )
+            self._check_admission(snapshot, guard)
             async with httpx.AsyncClient(
                 timeout=self._timeout,
                 follow_redirects=False,
@@ -216,8 +315,20 @@ class JevClassifier:
                         if len(chunks) + len(chunk) > self._max_response_bytes:
                             raise ValueError("Jev response exceeds payload limit")
                         chunks.extend(chunk)
+            # Ambiguous native usage cannot release an original worst-case hold.
+            json.loads(bytes(chunks), object_pairs_hook=_unique_response_fields)
+            envelope = JevUsageEnvelope.model_validate_json(bytes(chunks))
+            self._record_usage(envelope.usage)
+            if reservation is not None and envelope.model == self.provider_version:
+                await asyncio.to_thread(
+                    self._spend_store.settle,
+                    reservation,
+                    input_tokens=envelope.usage.input_tokens,
+                    output_tokens=envelope.usage.output_tokens,
+                    now=self._utc_clock(),
+                )
+            self._check_admission(snapshot, guard)
             result = JevResponse.model_validate_json(bytes(chunks))
-            self._record_usage(result)
             if result.model != self.provider_version or set(result.answers) != {"regime"}:
                 raise ValueError("Jev model or question identity changed")
             answer = result.answers["regime"]
@@ -252,4 +363,22 @@ def jev_from_environment() -> JevClassifier | None:
     model = os.getenv("AI_QUANT_JEV_MODEL")
     if not key or not model:
         raise ValueError("Enabled Jev requires server credential and pinned model configuration")
-    return JevClassifier(api_key=key, model=model)
+    if model != "jev-1.13.0":
+        raise ValueError("Enabled Jev requires the reviewed pinned model contract")
+    path = os.getenv("AI_QUANT_JEV_SPEND_PATH")
+    if not path:
+        raise ValueError("Enabled Jev requires persistent spending admission")
+    owner = provider_owner(None, "AI_QUANT_CLASSIFY_OWNER")
+    if owner is None:
+        raise ValueError("Configured Jev spending requires a declared classification owner")
+    policy = None
+    policy_path = os.getenv("AI_QUANT_JEV_SPEND_POLICY")
+    if policy_path:
+        with Path(policy_path).open("rb") as source:
+            policy = JevInputSpendPolicy.decode(source.read(65537))
+    return JevClassifier(
+        api_key=key,
+        model=model,
+        spend_store=ProviderSpendStore(Path(path), policy),
+        spend_owner=owner,
+    )

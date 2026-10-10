@@ -16,6 +16,32 @@ def bounded_integer(value: object, maximum: int = 10**9) -> bool:
     return type(value) is int and 0 <= value <= maximum
 
 
+def decode_spend_fields(raw: bytes) -> dict:
+    if type(raw) is not bytes or len(raw) > 65536:
+        raise ValueError("Spending policy exceeds capacity")
+
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate spending policy field")
+            result[key] = value
+        return result
+
+    value = json.loads(raw, object_pairs_hook=unique)
+    if (
+        type(value) is not dict
+        or value.pop("schema_version", None) != "1.0"
+        or type(value.get("rules")) is not list
+    ):
+        raise ValueError("Invalid spending policy")
+    try:
+        value["rules"] = tuple(SpendRule(**row) for row in value["rules"])
+    except (TypeError, KeyError):
+        raise ValueError("Invalid spending policy fields") from None
+    return value
+
+
 @dataclass(frozen=True)
 class SpendRule:
     agent_id: str
@@ -68,6 +94,25 @@ class ProviderSpendPolicy:
     rate_reference: str
     rules: tuple[SpendRule, ...]
 
+    @property
+    def accounting(self) -> str:
+        return "PROVIDER_REPORTED_USAGE_AT_DECLARED_RATE_CEILING"
+
+    def valid_reservation(self, inputs: object, outputs: object) -> bool:
+        return bounded_integer(inputs) and bounded_integer(outputs, 8192) and outputs >= 128
+
+    def tokens(self, inputs: int, outputs: int) -> int:
+        return inputs + outputs
+
+    def money(self, inputs: int, outputs: int) -> int:
+        return inputs * self.input_nano_usd + outputs * self.output_nano_usd
+
+    def exceeded(self, reserved: dict, reported: dict) -> bool:
+        return (
+            reported["input_tokens"] > reserved["input_tokens"]
+            or reported["output_tokens"] > reserved["max_output_tokens"]
+        )
+
     def __post_init__(self) -> None:
         if (
             type(self.model) is not str
@@ -95,26 +140,8 @@ class ProviderSpendPolicy:
 
     @classmethod
     def decode(cls, raw: bytes) -> "ProviderSpendPolicy":
-        if type(raw) is not bytes or len(raw) > 65536:
-            raise ValueError("Spending policy exceeds capacity")
-
-        def unique(pairs):
-            result = {}
-            for key, value in pairs:
-                if key in result:
-                    raise ValueError("Duplicate spending policy field")
-                result[key] = value
-            return result
-
-        value = json.loads(raw, object_pairs_hook=unique)
-        if (
-            type(value) is not dict
-            or value.pop("schema_version", None) != "1.0"
-            or type(value.get("rules")) is not list
-        ):
-            raise ValueError("Invalid spending policy")
+        value = decode_spend_fields(raw)
         try:
-            value["rules"] = tuple(SpendRule(**row) for row in value["rules"])
             return cls(**value)
         except (TypeError, KeyError):
             raise ValueError("Invalid spending policy fields") from None

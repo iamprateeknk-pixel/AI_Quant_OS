@@ -1,0 +1,174 @@
+{
+  "increment": "0137",
+  "date": "2026-10-10",
+  "base_commit": "88145655d71ca1712d118a3f22bf8d6ff2ac8a60",
+  "feature": "Durable Jev billable-input context-bound admission with native usage settlement and route permission rechecks",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0137",
+    "backend_tests": 278,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "75.386",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 104,
+    "additive_schemas": 1,
+    "old_openai_ledger_compatibility": "Original prior-source ledger reopened with identical counters, policy fingerprint and audit head",
+    "frontend": "Unchanged; tests/build not rerun in this backend increment",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "697ece3df6dc1479f76355508b3ada6e0f1fdea19b43ec8ddbcd870a927e8d0e"
+      },
+      {
+        "path": "README.md",
+        "sha256": "a3cafe2f46aae287ef2838181f282b1c93869e1f560be23a0873640f6b7bbd72"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "49673b9b45960f0e7ea16addba02b0fcc1082997409418169d2e3198ed9309a9"
+      },
+      {
+        "path": "docs/JEV_SPENDING_HANDOFF.md",
+        "sha256": "f77def7c2a57599d873c50c824b4c8f0fd992a8467c15f89fb3b2a723dada959"
+      },
+      {
+        "path": "docs/adr/0137-jev-input-spending-admission.md",
+        "sha256": "c1cf2c2d6518c76fdb78efc119dce4241e38ba90b6d43e425f255e8fb3d54726"
+      },
+      {
+        "path": "docs/schemas/jev-input-spend-policy.schema.json",
+        "sha256": "60cfdd294b198334e29164f399b35f2f68f49dd5c640b2c209b6be95244b8edf"
+      },
+      {
+        "path": "src/ai_quant_os/jev_adapter.py",
+        "sha256": "ffd76c771a050463ad9d5d73b3b5b1c957860cffa22853274d92f745ef7292e9"
+      },
+      {
+        "path": "src/ai_quant_os/jev_spend_policy.py",
+        "sha256": "01d09fecfd8ec03b34728bea1e21866683ea175b988066ce0964d991f3cecf7e"
+      },
+      {
+        "path": "src/ai_quant_os/provider_call_admission.py",
+        "sha256": "81d63b792675a0424a38c3e51ee9de6603b89fa0e21335c9135441984ac7c9e8"
+      },
+      {
+        "path": "src/ai_quant_os/provider_spend_policy.py",
+        "sha256": "8228e1a1ff6cf0f8b4777cbcc853585709ae5759099762912626eebdbf87d9c5"
+      },
+      {
+        "path": "src/ai_quant_os/provider_spend_store.py",
+        "sha256": "997c46a968f055d34a95534f2053ba33a74c37eb1dff05ff4341e6d91abceac9"
+      },
+      {
+        "path": "tests/test_jev_adapter.py",
+        "sha256": "2f8b0729ff1eeb57ab9a1033a03e36615f3bb4156af8fc231d1c09cdbc0ae65d"
+      },
+      {
+        "path": "tests/test_jev_spend_admission.py",
+        "sha256": "2fc5aee8e2d3754821b1ddf7ef8e656956c3805bb6a2745d26bfc6cc19bf7203"
+      }
+    ],
+    "logs": [
+      {
+        "path": "data-local/jev-spending-0137.xml",
+        "sha256": "d3beeab52faae5c65555df0a464c5022f1bf57599498642e78314bfc5fc558b6"
+      },
+      {
+        "path": "data-local/jev-spending-0137-backend.log",
+        "sha256": "4b4e367b7f92f27092f0ef9aabde45562992438dc31957afc18c10f2dc89e43c"
+      },
+      {
+        "path": "data-local/jev-spending-0137-ruff.log",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "path": "data-local/jev-spending-0137-format.log",
+        "sha256": "9fa2e30088122b883ebbf1c300359d4a0c9d09c988b20631e8625a40425a9723"
+      },
+      {
+        "path": "data-local/jev-spending-0137-openai-compatibility.json",
+        "sha256": "0bdb63772bf68bd92f559cd03d60437906ef99991b4b64af1c6cc1c75beef286"
+      },
+      {
+        "path": "data-local/jev-spending-0137-red.xml",
+        "sha256": "efed5c69edd225f9ba9a6072ef06c61f1f3068d99e6b6a89c3f2496586d299f4"
+      },
+      {
+        "path": "data-local/jev-spending-0137-green.xml",
+        "sha256": "3d6368902aaaeb0c3e2de0cb21429201edd515768dc5010bb36357a39eace853"
+      },
+      {
+        "path": "data-local/jev-spending-0137-focused.xml",
+        "sha256": "9fb79c0091145525fae7b53f15a9e68df57e6a67263ed614143dde4be6127d2e"
+      }
+    ],
+    "staged_secret_scan": "passed"
+  },
+  "development_failures_preserved": [
+    "Initial red: missing Jev policy interface",
+    "First focused implementation: 45 passed, existing environment test failed because new activation requires spending configuration; updated fixture supplies full original policy/ledger/owner"
+  ],
+  "external_contract_sources": [
+    {
+      "url": "https://docs.typesafe.ai/api",
+      "observed_on": "2026-10-10",
+      "supports": "Single evaluation request, Choice answers, native model and usage fields"
+    },
+    {
+      "url": "https://docs.typesafe.ai/models",
+      "observed_on": "2026-10-10",
+      "supports": "Reviewed jev-1.13.0 published context limits and input-only pricing"
+    }
+  ],
+  "accounting": {
+    "model": "jev-1.13.0",
+    "input_reservation_ceiling": 65536,
+    "output_rate": 0,
+    "minimum_declared_input_nano_usd": 42,
+    "meaning": "Billable input-only counts at operator-declared rate ceiling; conservative published-context bound; not total tokens or invoice"
+  },
+  "review": {
+    "correctness": "Concrete policy dispatch preserves old OpenAI records; input-only settlement and full unknown holds tested",
+    "architecture": "Adapter owns HTTP/authenticated dispatch; concrete immutable policies own accounting; original store owns transactions/audit; deterministic domain imports unchanged",
+    "security": "Bounded unique native fields, exact owner/model binding, permission/freshness rechecks, unavailable custody denies effects; no credential values or local paths in provider status",
+    "performance": "Blocking SQLite admission/settlement off event loop; full journal validation remains bounded but throughput/large journals pending"
+  },
+  "not_exercised": [
+    "Credentialed provider requests or payments",
+    "Broker SDK, terminal or live capital",
+    "Candidate source/SDK/tests on host",
+    "Browser launch under earlier refusal",
+    "Unknown Docker workers or custody cleanup",
+    "Remote push or promotion"
+  ],
+  "remaining": [
+    "Actual published context to billable internal overhead correspondence",
+    "Current account pricing/surcharges, invoices and credentialed model acceptance",
+    "Shared all-provider/model monetary and token limits and Costs projection",
+    "Recovery spending, retention/migration and large-journal throughput",
+    "Browser/visual and independent review",
+    "All P00-P13 release gates"
+  ]
+}

@@ -139,10 +139,20 @@ class AdmittedClassifier:
     def __init__(self, provider: FastClassifier, admission: ProviderCallAdmission):
         self._provider, self._admission = provider, admission
         self.provider_id, self.provider_version = provider.provider_id, provider.provider_version
+        spend_owner = getattr(provider, "spend_owner", None)
+        if spend_owner is not None:
+            admission.require_owner(spend_owner)
 
     async def classify(self, snapshot: WorldState, instrument_id: str) -> object:
         await self._admission.reserve(self._provider, snapshot, instrument_id)
-        result = await self._provider.classify(snapshot, instrument_id)
+        guarded = getattr(self._provider, "classify_with_admission", None)
+        result = (
+            await guarded(
+                snapshot, instrument_id, lambda: self._admission.check(snapshot, instrument_id)
+            )
+            if callable(guarded)
+            else await self._provider.classify(snapshot, instrument_id)
+        )
         self._admission.check(snapshot, instrument_id)
         return result
 

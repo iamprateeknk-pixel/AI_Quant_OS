@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-10: Reserve the reviewed Jev whole-input context ceiling in a distinct immutable input-only policy before provider I/O. Preserve the shared store's original OpenAI accounting, bind spending/route owners, retain unknown holds and charge matching native usage before answer acceptance. Outputs are free reported data; total-token/invoice and external bound correspondence are not certified. Full aggregate governance and independent acceptance remain open. See ADR 0137.
+
 - 2026-10-10: Show verified configured review spending via an additive private read, authorized before/after observation. Keep call and spending ledgers separate, preserve exact nanodollar strings, expose unsettled holds/declared ceilings and withhold unavailable rows. Full refresh reads a new snapshot; no provider, quota reset or recovery effect belongs to this view. Browser, billing/all-model and independent acceptance remain pending. See ADR 0136.
 
 - 2026-10-10: Reserve official input-count plus bounded output in immutable per-role token/declared-rate ceilings before OpenAI generation. Retain unknown holds across restart/UTC rollover, charge rejected content and latch above-bound reports. Bind spending/route owners and recheck permission/source after preflight. Environment activation requires persistent custody; actual prices, other providers, recovery spending and independent acceptance remain pending. See ADR 0135.
