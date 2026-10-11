@@ -1227,3 +1227,12 @@ paper orders/HALT. Counts remain volatile and disabled/unavailable sources retur
 503. Native Prometheus ingestion, scraper/Grafana deployment, alerts, production
 load/latency, independent/browser acceptance and all full P00–P13 gates remain open.
 See PAPER_HTTP_METRICS_HANDOFF.md and ADR/evaluation 0151.
+
+# Development increment 0152 — pinned native Prometheus ingestion
+
+Pins upstream native Prometheus/promtool 3.15.0 with bounded local private-header
+scrapes and an explicit foreground runbook. Native parsing and actual paper API
+ingestion verify original SDK count/buckets, revoked scrape failures, retained
+range history and unaffected HALT. Original handles stop without unknown cleanup.
+Grafana/alerts/service credentials/Linux/production acceptance, independent/browser
+review and all full P00–P13 gates remain open. See PROMETHEUS_HANDOFF.md and 0152.

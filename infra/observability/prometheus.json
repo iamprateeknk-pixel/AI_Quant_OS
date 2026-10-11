@@ -1,0 +1,29 @@
+{
+  "global": {
+    "scrape_interval": "15s",
+    "scrape_timeout": "3s"
+  },
+  "scrape_configs": [
+    {
+      "job_name": "paper_http",
+      "metrics_path": "/api/v1/observability/metrics",
+      "scheme": "http",
+      "follow_redirects": false,
+      "enable_http2": false,
+      "proxy_from_environment": false,
+      "body_size_limit": "1MB",
+      "sample_limit": 4096,
+      "label_limit": 7,
+      "http_headers": {
+        "X-Operator-Token": {
+          "files": ["operator-token"]
+        }
+      },
+      "static_configs": [
+        {
+          "targets": ["127.0.0.1:8000"]
+        }
+      ]
+    }
+  ]
+}

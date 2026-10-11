@@ -1,0 +1,188 @@
+{
+  "increment": "0152",
+  "date": "2026-10-11",
+  "base_commit": "5faac8d229090487d206d72101d820044566315b",
+  "feature": "Pinned native Prometheus/promtool and actual protected original paper SDK metric ingestion",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0152-release",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "94a3eaeb8cb2bd1a525f88072c75ed3881b2c0140cad2a1b1ec9478d222b083e"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "b4f4c05e4b4d9accfa8cf85280a5ff29a51e52f80c66f960bacb84049627b17e"
+      },
+      {
+        "path": "docs/PROMETHEUS_HANDOFF.md",
+        "sha256": "fdb0942e6c460d911f44b4299ba9ae11ab8c07a49bbfb90f7a00c1a4aa78995b"
+      },
+      {
+        "path": "docs/adr/0152-pinned-native-prometheus.md",
+        "sha256": "6b6682b0b315fa1ac3275e0d7ec9a49cb72f016c06e247c118c754fca4211569"
+      },
+      {
+        "path": "infra/observability/prometheus-release.json",
+        "sha256": "e09164ff3ac2d4fb7a74987f75aef0dd2a420d5a51621a578d249605e2c5ffa6"
+      },
+      {
+        "path": "infra/observability/prometheus.json",
+        "sha256": "d3efbf786e72bc3f2011782ca1e7318719ce510f31a60be11869a36d2a11b860"
+      },
+      {
+        "path": "tests/test_prometheus_deployment.py",
+        "sha256": "e632b9cdb40cfe1f66407c94bfbbcbf76c3bf4e8e9d93b743cf57fbc6b257015"
+      }
+    ],
+    "backend_tests": 419,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "67.782",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py",
+      "tests/test_collector_console_fixture.py",
+      "tests/test_paper_trace_context.py",
+      "tests/test_paper_http_metrics.py",
+      "tests/test_prometheus_deployment.py"
+    ],
+    "checks": {
+      "backend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0152-release-fresh-backend.log",
+        "scope": [
+          "tests/test_provider_spend.py",
+          "tests/test_openai_spend_admission.py",
+          "tests/test_openai_reviewer.py",
+          "tests/test_provider_call_admission.py",
+          "tests/test_agent_call_budgets.py",
+          "tests/test_context_call_budgets.py",
+          "tests/test_jev_adapter.py",
+          "tests/test_decision_gateway.py",
+          "tests/test_deep_review.py",
+          "tests/test_api.py",
+          "tests/test_currency_risk.py",
+          "tests/test_event_risk.py",
+          "tests/test_operator_controls.py",
+          "tests/test_operator_sessions.py",
+          "tests/test_local_runtime.py",
+          "tests/test_audit_integrity.py",
+          "tests/test_provider_spend_api.py",
+          "tests/test_jev_spend_admission.py",
+          "tests/test_shared_provider_spend.py",
+          "tests/test_shared_spend_api.py",
+          "tests/test_paper_telemetry.py",
+          "tests/test_dependency_locks.py",
+          "tests/test_trace_export_queue.py",
+          "tests/test_tracing_status_api.py",
+          "tests/test_agent_telemetry.py",
+          "tests/test_agent_runs.py",
+          "tests/test_tracing_console_fixture.py",
+          "tests/test_agent_trace_binding.py",
+          "tests/test_agent_trace_binding_api.py",
+          "tests/test_agent_trace_console_fixture.py",
+          "tests/test_collector_deployment.py",
+          "tests/test_collector_trace_api.py",
+          "tests/test_collector_console_fixture.py",
+          "tests/test_paper_trace_context.py",
+          "tests/test_paper_http_metrics.py",
+          "tests/test_prometheus_deployment.py"
+        ]
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0152-release-fresh-ruff.log",
+        "scope": [
+          "ruff",
+          "check",
+          "tests/test_prometheus_deployment.py"
+        ]
+      },
+      "format": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0152-release-fresh-format.log",
+        "scope": [
+          "ruff",
+          "format",
+          "--check",
+          "tests/test_prometheus_deployment.py"
+        ]
+      }
+    },
+    "junit_sha256": "4173a6bc04bb5887c016fb0116dff22498fb4b9c3b7f20209ac25aee378f65fb",
+    "native_release": {
+      "version": "3.15.0",
+      "platform": "windows_amd64",
+      "source": "https://github.com/prometheus/prometheus/releases/download/v3.15.0/prometheus-3.15.0.windows-amd64.zip",
+      "archive_sha256": "5d333b385557d9adc2ff015d13da9809baccc52fb800a82d1e5c94b79258f87e",
+      "archive_bytes": 114650144,
+      "executables": [
+        {
+          "name": "prometheus.exe",
+          "sha256": "c19135130c94e17aa02520ba40c3c8a35727653cd2c667b6a12f9a18313df7ac",
+          "bytes": 145763328
+        },
+        {
+          "name": "promtool.exe",
+          "sha256": "b02a6d8726533fbf59d40fad83646105429b6ed2f1b928f9d44659c67a83659b",
+          "bytes": 120436736
+        }
+      ],
+      "trust": "GitHub release API asset digest matched; no independent signature attestation"
+    },
+    "native_red": "Initial absent explicit tool location skipped two tests (not acceptance); admitted missing pin/config failed two fixture setups. First native live scrape failed; retained diagnostic proves seven labels exceeded the original limit of five. Limit corrected based on actual upstream error. Diagnostic test indentation collection error corrected; all previous reports retained.",
+    "native_format": "Actual promtool 3.15.0 check metrics passes original SDK output with default lint enabled; check config passes original copied config/private header file; both executables hashes/version verified.",
+    "native_ingestion": "One original Prometheus process on fresh loopback port ingests one actual owned Uvicorn app. Original quote, accepted order and replay run through actual HTTP on that same server. SDK request count=2 and +Inf bucket=2 queried in native PromQL. Configuration output omits credential; lifecycle reload returns403. Changed header file makes source401/up0; range query retains original count2. Original order count remains exactly1 before/after successful HALT while monitoring is down. Original Prometheus/Uvicorn handles observed terminal.",
+    "source_bounds": "Fixed local target/path, header-file credential, 15s/3s intervals, no redirects/HTTP2/environment proxy/remote write/alerts, 1MB body,4096 samples,7 labels including upstream additions. Native tests override only fresh local target/interval for owned fixture.",
+    "prior_check": "First fresh staged 419 check passed; strengthened integration to use actual same-server order/replay and explicit single-order inventory. Final fresh staging/test retains exact executable test source; no original process restarted solely for a timeout.",
+    "prior_schemas_unchanged": 111,
+    "unchanged_source_identity": "All runtime, frontend, schema and requirements files LF-identical original archive/root/fresh. No application dependency/schema/runtime/frontend change. Prior0151 backend native wheel and0149 frontend121 tests/build evidence retained, not rerun.",
+    "structure": "Existing ignored structure map refreshed; new test/config placement manually reviewed. Original prose architecture checker declaration remains unsupported; no new domain imports/runtime modules.",
+    "review": "Local five-axis review: native official pin/hash/version before execution; fixed bounded authenticated source, runtime/service flags only in explicit runbook/test, credential omission check, current failed scrape distinct from retained range samples, original owned handle cleanup. No Docker/process-global reset/remote write/admin/lifecycle or candidate execution. Independent review pending.",
+    "full_suite": "Not run; preserve uncertain0084/0088 original candidate custody. Scope trusted SDK/collector/nativePrometheus/API/provider/audit/risk/HALT/session/launcher/lock tests only.",
+    "browser": "Not attempted; previous launch refusal retained. Native API/query evidence is not browser/visual/accessibility acceptance.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings",
+    "upstream_release_metadata_sha256": "1ae966b0a9350913044389f016adcfbc5191ea8176a9a0e630ecc9c5a680a34c",
+    "secret_scan_correction": "Initial redacted scan flagged the public release API metadata digest because its field name resembled an API key. Preserved original scan report/log and renamed only the verification field; no suppression or runtime/test/config change."
+  },
+  "rollback": "Revert additive pins/config/test/runbook. Stop only original admitted foreground process, retaining TSDB/logs. No migration, source/collector/journal deletion, order retry or queue reset.",
+  "limits": [
+    "All full P00-P13 gates remain incomplete.",
+    "GitHub asset digest/native local test evidence does not provide independent signature, production process/filesystem custody, complete durable tracing or trading authority.",
+    "Windows foreground source only; Grafana dashboards/provisioning, justified alerts/runbooks, service/credential lifecycle/Linux/retention/load/latency and independent/browser acceptance remain pending.",
+    "Prometheus local query interface is unauthenticated and loopback-only by required launch flags; trusted local OS process scope, not production network authorization.",
+    "No Docker mutation, proposed candidate execution, paid provider/broker/live capital, remote push or promotion; user .agents/ and skills-lock.json untouched."
+  ]
+}

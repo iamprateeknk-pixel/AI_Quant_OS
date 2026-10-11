@@ -1,0 +1,20 @@
+{
+  "version": "3.15.0",
+  "platform": "windows_amd64",
+  "source": "https://github.com/prometheus/prometheus/releases/download/v3.15.0/prometheus-3.15.0.windows-amd64.zip",
+  "archive_sha256": "5d333b385557d9adc2ff015d13da9809baccc52fb800a82d1e5c94b79258f87e",
+  "archive_bytes": 114650144,
+  "executables": [
+    {
+      "name": "prometheus.exe",
+      "sha256": "c19135130c94e17aa02520ba40c3c8a35727653cd2c667b6a12f9a18313df7ac",
+      "bytes": 145763328
+    },
+    {
+      "name": "promtool.exe",
+      "sha256": "b02a6d8726533fbf59d40fad83646105429b6ed2f1b928f9d44659c67a83659b",
+      "bytes": 120436736
+    }
+  ],
+  "trust": "GitHub release API asset digest matched; no independent signature attestation"
+}
