@@ -5,7 +5,7 @@ from contextvars import ContextVar
 import os
 import re
 from threading import RLock
-from time import monotonic
+from time import monotonic, monotonic_ns
 from uuid import uuid4
 from importlib.metadata import version
 
@@ -105,6 +105,7 @@ class PaperTelemetry:
         self._closing = False
         self._lock = RLock()
         self._active_span = ContextVar("paper_owned_span", default=None)
+        self._metrics = None
         if exporter is None:
             return
         from opentelemetry.sdk.resources import Resource
@@ -134,6 +135,12 @@ class PaperTelemetry:
         self._processor = TraceExportQueue(exporter, lock=self._lock)
         self._provider.add_span_processor(self._processor)
         self._tracer = self._provider.get_tracer("ai_quant_os.paper", "1.0")
+        try:
+            from ai_quant_os.paper_http_metrics import PaperHttpMetrics
+
+            self._metrics = PaperHttpMetrics()
+        except Exception:
+            self._note_error()
 
     @contextmanager
     def span(self, name, *, root=False):
@@ -234,10 +241,25 @@ class PaperTelemetry:
     def flush(self, timeout_millis=3000):
         return self._processor.force_flush(timeout_millis) if self._processor else True
 
+    def record_http(self, route, method, status, elapsed_ns, failed):
+        if self._metrics:
+            try:
+                self._metrics.record(route, method, status, elapsed_ns, failed)
+            except Exception:
+                self._note_error()
+
+    def metrics_text(self):
+        return self._metrics.render() if self._metrics else None
+
     def close(self):
         with self._lock:
             was_closing = self._closing
             self._closing = True
+        if self._metrics:
+            try:
+                self._metrics.close()
+            except Exception:
+                self._note_error()
         if self._provider:
             if was_closing:
                 self._processor.shutdown()
@@ -323,6 +345,10 @@ class PaperTraceMiddleware:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
         with self.telemetry.span("paper.http", root=True) as span:
+            started = monotonic_ns()
+            status = None
+            complete = False
+            failed = False
             method = scope.get("method")
             span.set(
                 "http.request.method",
@@ -330,7 +356,9 @@ class PaperTraceMiddleware:
             )
 
             async def observe(message):
+                nonlocal status, complete
                 if message["type"] == "http.response.start":
+                    status = message["status"]
                     route = scope.get("route")
                     span.set("http.route", getattr(route, "path", "UNMATCHED"))
                     span.set("http.response.status_code", message["status"])
@@ -343,5 +371,19 @@ class PaperTraceMiddleware:
                             ],
                         }
                 await send(message)
+                if message["type"] == "http.response.body" and not message.get("more_body", False):
+                    complete = True
 
-            await self.app(scope, receive, observe)
+            try:
+                await self.app(scope, receive, observe)
+            except BaseException:
+                failed = True
+                raise
+            finally:
+                self.telemetry.record_http(
+                    getattr(scope.get("route"), "path", "UNMATCHED"),
+                    method,
+                    status,
+                    monotonic_ns() - started,
+                    failed or not complete,
+                )

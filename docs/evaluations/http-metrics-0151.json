@@ -1,0 +1,208 @@
+{
+  "increment": "0151",
+  "date": "2026-10-11",
+  "base_commit": "8688b8a62aa2e017cf55e88faf70d64891011058",
+  "feature": "Owned native OTel cumulative HTTP histogram/failure metrics and protected Prometheus text read",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0151-release",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "c69482cab8e23f74825fda10711d17a3fb52609af588a750482e9b76f8ba3491"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "d70fe00e9b992f2bc38c2128528bfc95b6e4c58699f6bff1dddc2ac84a3334ed"
+      },
+      {
+        "path": "docs/PAPER_HTTP_METRICS_HANDOFF.md",
+        "sha256": "15c5155c109d5ad0fe70d38a9a81cbc646c3f33259011f2b228d625142e15511"
+      },
+      {
+        "path": "docs/adr/0151-native-paper-http-metrics.md",
+        "sha256": "ca28b1209d1c267f5b64da4dc15a2e2130ebb9bbdedb7fcc3446f092a705a996"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "4629f6a8f3167f5bc41f98d76443fae075977df4882f6aabc255d05c0c7548fa"
+      },
+      {
+        "path": "src/ai_quant_os/paper_http_metrics.py",
+        "sha256": "ea5e4b89ed11f9dd3e57a95d0edb2906031c5a7663098aba4d9ac6efd9afe7c7"
+      },
+      {
+        "path": "src/ai_quant_os/paper_metrics_api.py",
+        "sha256": "1cdcbea10cc78c6159115b845d8553b5431ca11d44a4d7fd52e9a91a64bc9d8f"
+      },
+      {
+        "path": "src/ai_quant_os/paper_telemetry.py",
+        "sha256": "84991e6d315f09e1a5b916652e9abd8a70a4a0b7ecb0c86472b704f9ab88de95"
+      },
+      {
+        "path": "tests/test_paper_http_metrics.py",
+        "sha256": "41741276202c506b964c68353b3dcd53a23181edfbb44821eb4892518307dc16"
+      }
+    ],
+    "backend_tests": 417,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "59.195",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py",
+      "tests/test_collector_console_fixture.py",
+      "tests/test_paper_trace_context.py",
+      "tests/test_paper_http_metrics.py"
+    ],
+    "red_regressions": {
+      "tests": 6,
+      "failures": 6,
+      "xml_sha256": "63b08273824ae433a3a14f3d885307ab0b076a75c22a6b29d1a95f9902ebb7a7"
+    },
+    "first_fixture_correction": "Initial native integration produced two HALT rejections because fixture requests lacked the already required command identifier. Original failing XML retained; test request corrected, no control implementation altered.",
+    "prior_staged_check": "416 trusted checks and package build passed before naming clarification and an additional incomplete-stream regression. Original checkout/index/results preserved. Final executable source is separately staged/tested at 417 checks.",
+    "junit_sha256": "951d783fdb004f224040722210fe4840b1463eaa67a0c2aaea2a59c6616c04dc",
+    "checks": {
+      "backend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\http-metrics-0151-release-fresh-backend.log",
+        "scope": [
+          "tests/test_provider_spend.py",
+          "tests/test_openai_spend_admission.py",
+          "tests/test_openai_reviewer.py",
+          "tests/test_provider_call_admission.py",
+          "tests/test_agent_call_budgets.py",
+          "tests/test_context_call_budgets.py",
+          "tests/test_jev_adapter.py",
+          "tests/test_decision_gateway.py",
+          "tests/test_deep_review.py",
+          "tests/test_api.py",
+          "tests/test_currency_risk.py",
+          "tests/test_event_risk.py",
+          "tests/test_operator_controls.py",
+          "tests/test_operator_sessions.py",
+          "tests/test_local_runtime.py",
+          "tests/test_audit_integrity.py",
+          "tests/test_provider_spend_api.py",
+          "tests/test_jev_spend_admission.py",
+          "tests/test_shared_provider_spend.py",
+          "tests/test_shared_spend_api.py",
+          "tests/test_paper_telemetry.py",
+          "tests/test_dependency_locks.py",
+          "tests/test_trace_export_queue.py",
+          "tests/test_tracing_status_api.py",
+          "tests/test_agent_telemetry.py",
+          "tests/test_agent_runs.py",
+          "tests/test_tracing_console_fixture.py",
+          "tests/test_agent_trace_binding.py",
+          "tests/test_agent_trace_binding_api.py",
+          "tests/test_agent_trace_console_fixture.py",
+          "tests/test_collector_deployment.py",
+          "tests/test_collector_trace_api.py",
+          "tests/test_collector_console_fixture.py",
+          "tests/test_paper_trace_context.py",
+          "tests/test_paper_http_metrics.py"
+        ]
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\http-metrics-0151-release-fresh-ruff.log",
+        "scope": [
+          "ruff",
+          "check",
+          "src/ai_quant_os/paper_telemetry.py",
+          "src/ai_quant_os/paper_http_metrics.py",
+          "src/ai_quant_os/paper_metrics_api.py",
+          "src/ai_quant_os/api.py",
+          "tests/test_paper_http_metrics.py"
+        ]
+      },
+      "format": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\http-metrics-0151-release-fresh-format.log",
+        "scope": [
+          "ruff",
+          "format",
+          "--check",
+          "src/ai_quant_os/paper_telemetry.py",
+          "src/ai_quant_os/paper_http_metrics.py",
+          "src/ai_quant_os/paper_metrics_api.py",
+          "src/ai_quant_os/api.py",
+          "tests/test_paper_http_metrics.py"
+        ]
+      },
+      "wheel": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\http-metrics-0151-release-fresh-wheel.log",
+        "scope": [
+          "pip",
+          "--isolated",
+          "wheel",
+          "--no-index",
+          "--no-deps",
+          "--no-build-isolation",
+          "--wheel-dir",
+          "D:\\AI_Quant_OS\\data-local\\http-metrics-0151-release-dist",
+          "."
+        ]
+      }
+    },
+    "wheel": {
+      "path": "D:\\AI_Quant_OS\\data-local\\http-metrics-0151-release-dist\\ai_quant_os-0.1.0-py3-none-any.whl",
+      "sha256": "970e4ff0d0e431e138ac25592a9e07a101e732a3eef910062c61b73a8b7f6623",
+      "identity": "Every packaged runtime file equals tested fresh source; all changed runtime files additionally equal original staged bytes."
+    },
+    "preserved_prior_schemas": 111,
+    "dependencies": "Both hash locks unchanged; no install or dependency update; pinned installed SDK/API 1.45.0 public metrics APIs inspected.",
+    "frontend": "All tracked frontend files unchanged and LF-identical original/fresh/root; 0149 frontend 121 tests/production build evidence retained, not rerun.",
+    "metrics": "Actual native SDK MeterProvider/InMemoryMetricReader/Histogram/Counter, explicit cumulative temporality/resource/view/buckets and AlwaysOff exemplars. No global SDK installation, new worker, remote export or trace collector change.",
+    "native_checks": "Exact histogram count/sum and cumulative bucket boundaries/+Inf; repeated scrape inventory; 300 distinct combinations conserve 300 counts in 129 series; 100 concurrent records conserve 100 counts/50 failures. Actual order/replay requests, private omissions, unauthorized zero reads, native session revocation, disabled/broken scrapes, record failures preserving accepted orders, exception/cancellation and incomplete terminal body checked. Existing upstream native collector/risk/HALT/session/agent/audit/queue/source tests also pass.",
+    "bounds": "128 original complete label triples plus at most 36 overflow triples, retaining method/status_class and total observations; 11 finite histogram boundaries plus +Inf; response <=1 MiB, strict safe integer inventory/finite nonnegative sums. Route detail explicitly lost after capacity; UNKNOWN status never inferred successful.",
+    "auth": "Existing private operator token/session checked before source and after read. Fixed protected GET/no-store; disabled/closed/incoherent/broken source returns 503 without zero samples or raw errors.",
+    "structure": "Generated existing ignored structure map, changed owner scoped inspection has zero naming findings after clarification. Existing prose architecture has no machine-readable block; SDK owners/HTTP composition manually reviewed, pure domain imports unchanged.",
+    "review": "Local five-axis review: existing owner lifecycle delegates to one coherent SDK metrics owner; selected finite labels, exemplar/resource privacy, original record/collection lock, cumulative integer integrity and no persistence/worker/global SDK mutation. Independent review and production latency acceptance remain pending.",
+    "full_suite": "Not run: preserve uncertain original 0084/0088 candidate custody. Scoped trusted SDK/collector/API/provider/audit/risk/HALT/session/launcher/locks only.",
+    "prometheus": "Official exposition format reviewed; native Prometheus parser/ingestion and separately admitted scraper/Grafana not run or claimed.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings",
+    "browser": "Not attempted; prior policy refusal retained; no browser visual/a11y acceptance claim.",
+    "secret_scan_correction": "Initial redacted metadata scan classified API-named filename-to-hash map entries as generic API keys. Original report/log retained. Changed evidence layout to explicit path/sha256 fields, no ignore/rule exception or executable-source change."
+  },
+  "rollback": "Revert native metrics owner, protected route/API wiring and telemetry middleware/lifecycle delegation. No migration, collector deletion, journal rewrite, resets/retries or runtime replacement.",
+  "limits": [
+    "All P00-P13 full acceptance gates remain incomplete.",
+    "Volatile finished ASGI observations do not certify service health, trading correctness, complete distributed lineage or durable delivery; restart begins a new inventory.",
+    "Native Prometheus ingestion/scraper/Grafana/services/justified alerts, load/latency, independent review and browser acceptance pending.",
+    "No Docker mutation, candidate execution, paid provider/broker/live capital, remote push or promotion. User untracked .agents/ and skills-lock.json untouched."
+  ]
+}

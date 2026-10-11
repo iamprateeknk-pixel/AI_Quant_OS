@@ -1216,3 +1216,14 @@ Native regression checks reproduce the original misattribution and verify
 exception restoration. No journal/schema/dependency or trading behavior change.
 Distributed/full causal tracing, production acceptance, independent review,
 browser acceptance and every full P00–P13 gate remain open. See ADR/evaluation 0150.
+
+# Development increment 0151 — native paper HTTP metrics
+
+Adds owned cumulative OTel HTTP duration buckets and ASGI failure counters from
+actual paper request lifecycles, exposed through a protected uncached Prometheus
+read. Fixed labels, bounded overflow and disabled exemplars omit private inputs.
+Native SDK/API/concurrency/authentication/revocation/error checks preserve original
+paper orders/HALT. Counts remain volatile and disabled/unavailable sources return
+503. Native Prometheus ingestion, scraper/Grafana deployment, alerts, production
+load/latency, independent/browser acceptance and all full P00–P13 gates remain open.
+See PAPER_HTTP_METRICS_HANDOFF.md and ADR/evaluation 0151.
