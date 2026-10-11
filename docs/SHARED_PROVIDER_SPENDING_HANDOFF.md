@@ -55,20 +55,34 @@ Admission applies to the one explicitly selected book. Separate configured books
 remain separate budgets; independent deployment/configuration custody is pending.
 Replacing an original policy, rate or inventory is rejected.
 
-## Observations and console limitation
+## Protected observations and Costs
 
-One verified observation can expose aggregate role counters and selected model
-role counters/accounting/fingerprint under the same audit head. Sanitized adapter
-status publishes the configured owner's two counter rows. Credentials, rate
-references and local paths are not published. Unavailable custody withholds
-counters and denies generation.
+Increment 0139 adds `GET /api/v1/providers/shared-spending`. Authorization is
+checked before and after observation. One original read transaction verifies the
+journal and captures all eighteen aggregate rows and one to eight complete model
+groups under the same head. Configured sources and owners are bound around that
+read; separate paths, incomplete configuration, changed bindings or unavailable
+custody withhold combined counters. Reading leaves the original head unchanged.
+Credentials, local paths, rate references and request hashes are not published.
 
-The protected review-spending endpoint and Costs panel retain their standalone
-OpenAI schema. That old contract withholds a shared book as unavailable because
-it cannot label mixed accounting correctly. No shared counters are relabeled as
-one OpenAI model, and duplicate adapter observations are not summed. The typed
-shared-book observation and Costs presentation remain development work. No
-frontend file changed in this increment.
+The typed observation enforces native model accounting and exact aggregate sums.
+Integer money is serialized as canonical strings. Costs displays one aggregate
+pair of tables and expandable model tables, owners, UTC periods and original
+identity/fingerprints. Jev input-only and OpenAI input/output counting are labeled.
+Unknown full reservations and breach evidence remain visible. BigInt formatting
+retains exact nanodollar amounts, including values above JavaScript number precision.
+
+The original review-spending endpoint/schema remains unchanged. A verified shared
+panel suppresses its standalone presentation to avoid duplicate book capacity.
+Other shared states retain the standalone panel where available. Logical call
+accounting is separate and never summed into this book. The server uses a fixed
+private endpoint, session cookie, no-store, redirect rejection, timeout and bounded
+256 KiB response; other protected reads retain their existing bounds.
+
+The view is a point-in-time snapshot with an explicit native GET refresh. It does
+not renew a live lease or perform provider calls, reserve spending, retries,
+refunds, migration or reset. Browser acceptance is pending under the preserved
+prior launch refusal. See ADR 0139 and evaluation 0139.
 
 ## Verification and remaining work
 
@@ -83,7 +97,7 @@ shared-budget failure. Existing provider/API/role/context/control regressions ru
 against fresh staged source with old schemas preserved.
 
 Actual billing and Jev billable overhead-bound correspondence remain open, as do
-platform allocation, additional families, shared Costs, recovery spending,
+platform allocation, additional families, realtime Costs, recovery spending,
 migration/retention, large-journal throughput/latency, deployment custody, browser
 and independent acceptance. Unknown Docker custody remains untouched. All P00–P13
 remain incomplete. See ADR 0138 and evaluation 0138.

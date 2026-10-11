@@ -171,6 +171,10 @@ class OpenAIReviewer:
     def spending_observation(self, now: datetime) -> dict[str, object] | None:
         return self._spend_store.status(now) if self._spend_store is not None else None
 
+    @property
+    def spending_store(self) -> ProviderSpendStore | None:
+        return self._spend_store
+
     async def _response(self, raw: bytes, endpoint: str) -> bytes:
         async with httpx.AsyncClient(
             timeout=self._timeout,

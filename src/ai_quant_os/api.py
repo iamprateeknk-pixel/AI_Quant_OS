@@ -77,6 +77,7 @@ from ai_quant_os.context_checkpoints import ContextCheckpoint
 from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
 from ai_quant_os.openai_reviewer import OpenAIReviewer, reviewer_from_environment
 from ai_quant_os.provider_spend_api import install_spending_routes
+from ai_quant_os.shared_spend_api import SpendingSource, install_shared_spending_routes
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -2016,6 +2017,16 @@ def create_app(
     install_spending_routes(
         app,
         configured_reviewer if isinstance(configured_reviewer, OpenAIReviewer) else None,
+        require_operator,
+        current_time,
+    )
+    install_shared_spending_routes(
+        app,
+        tuple(
+            SpendingSource(provider)
+            for provider in (configured_reviewer, configured_classifier)
+            if isinstance(provider, (OpenAIReviewer, JevClassifier))
+        ),
         require_operator,
         current_time,
     )

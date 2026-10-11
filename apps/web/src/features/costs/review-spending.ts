@@ -12,7 +12,7 @@ export function formatNanoUSD(value:string):string{
  if(!money(value))throw new Error("Invalid exact amount");
  const amount=BigInt(value),scale=BigInt(1000000000);return `$${amount/scale}.${(amount%scale).toString().padStart(9,"0")}`;
 }
-function counters(v:unknown,enforced:boolean):SpendCounters|null{
+export function parseSpendCounters(v:unknown,enforced:boolean):SpendCounters|null{
  if(!record(v)||typeof v.agent_id!=="string"||!/^A(0[1-9]|1[0-8])$/.test(v.agent_id)||!integer(v.pending_count,20000))return null;
  if(tokenFields.some(key=>!integer(v[key],key.endsWith("tokens")?40000000000000:1000000000))||moneyFields.some(key=>!money(v[key])))return null;
  const row={agent_id:v.agent_id,pending_count:v.pending_count,...Object.fromEntries([...tokenFields,...moneyFields].map(key=>[key,v[key]]))} as SpendCounters;
@@ -36,6 +36,6 @@ export function parseReviewSpending(v:unknown):ReviewSpending|null{
  }
  if(typeof v.day!=="string"||v.day!==v.observed_at.slice(0,10)||v.month!==v.day.slice(0,7)||typeof v.model!=="string"||v.model.length>128||!/^gpt-[a-z0-9.-]+-\d{4}-\d{2}-\d{2}$/.test(v.model)||typeof v.policy_sha256!=="string"||!/^[a-f0-9]{64}$/.test(v.policy_sha256)||typeof v.head_hash!=="string"||!/^[a-f0-9]{64}$/.test(v.head_hash)||v.agents.length!==18)return null;
  const agents:SpendCounters[]=[];
- for(const input of v.agents){const row=counters(input,v.state==="ENFORCED");if(!row||agents.some(other=>other.agent_id===row.agent_id))return null;agents.push(row);}
+ for(const input of v.agents){const row=parseSpendCounters(input,v.state==="ENFORCED");if(!row||agents.some(other=>other.agent_id===row.agent_id))return null;agents.push(row);}
  return {...base,day:v.day,month:v.month as string,model:v.model,policy_sha256:v.policy_sha256,head_hash:v.head_hash,agents:agents.sort((a,b)=>a.agent_id.localeCompare(b.agent_id))};
 }

@@ -12,8 +12,10 @@ const fixture=JSON.parse(readFileSync(new URL('./fixtures/review-spending.json',
 async function modules(){
  const path=new URL('../src/features/costs/review-spending.ts',import.meta.url);assert(existsSync(path),'Protected spending parser must exist');
  const url=compile(readFileSync(path,'utf8')),parser=await import(url);
+ const tablePath=new URL('../src/features/costs/spending-tables.tsx',import.meta.url);
+ const tableURL=compile(readFileSync(tablePath,'utf8').replace('from "./review-spending"',`from "${url}"`),true);
  const panelPath=new URL('../src/features/costs/review-spending-panel.tsx',import.meta.url);assert(existsSync(panelPath),'Spending panel must exist');
- return {...parser,...await import(compile(readFileSync(panelPath,'utf8').replace('from "./review-spending"',`from "${url}"`).replace('"next/link"',JSON.stringify(pathToFileURL(require.resolve('next/link')).href)),true))};
+ return {...parser,...await import(compile(readFileSync(panelPath,'utf8').replace('from "./review-spending"',`from "${url}"`).replace('from "./spending-tables"',`from "${tableURL}"`).replace('"next/link"',JSON.stringify(pathToFileURL(require.resolve('next/link')).href)),true))};
 }
 test('native protected observation preserves all exact limits and unsettled values without private fields',async()=>{
  const m=await modules();assert.deepEqual(m.parseReviewSpending({...fixture,credential:'private',agents:fixture.agents.map(row=>({...row,path:'private'}))}),fixture);

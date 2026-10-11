@@ -4,7 +4,7 @@ import { sectionDetails, type SectionKey } from "@/lib/navigation";
 import { WorldStatePanel } from "@/features/world-state/world-state-panel";
 import { AuditIntegrityPanel } from "@/features/audit/audit-integrity-panel";
 import { OperatorConsole } from "@/features/operator-session/operator-console";
-import { readBrokerCapabilities, readDemoSyncHealth, readDemoPortfolio, readSessions, readCallBudget, readReviewSpending, readDossiers, readGenomes, readHealth, readStrategies, sessionStatus } from "@/features/operator-session/server";
+import { readBrokerCapabilities, readDemoSyncHealth, readDemoPortfolio, readSessions, readCallBudget, readReviewSpending, readSharedSpending, readDossiers, readGenomes, readHealth, readStrategies, sessionStatus } from "@/features/operator-session/server";
 import { publicSession } from "@/features/operator-session/boundary";
 import { InstrumentPositionsPanel } from "@/features/portfolio/instrument-positions-panel";
 import { CurrencyExposurePanel } from "@/features/portfolio/currency-exposure-panel";
@@ -18,7 +18,7 @@ import { DossierPanel } from "@/features/research/dossier-panel";
 import { StrategyArchivePanel } from "@/features/strategies/archive-panel";
 import { SessionAdminPanel } from "@/features/operator-session/session-admin-panel";
 import { CallBudgetPanel } from "@/features/costs/call-budget-panel";
-import { ReviewSpendingPanel } from "@/features/costs/review-spending-panel";
+import { SpendingPanels } from "@/features/costs/shared-spending-panel";
 
 function isSection(value: string): value is SectionKey {
   return Object.prototype.hasOwnProperty.call(sectionDetails, value);
@@ -44,7 +44,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
   const dossiers = section === "research" ? await readDossiers(offset, head) : null;
   const genomes = section === "evolution" ? await readGenomes(offset, head) : null;
   const strategies = section === "strategies" ? await readStrategies(offset, head) : null;
-  const costReads = section === "costs" ? await Promise.all([readCallBudget(),readReviewSpending()]) : null;
+  const costReads = section === "costs" ? await Promise.all([readCallBudget(),readReviewSpending(),readSharedSpending()]) : null;
   const sessions = section === "settings" ? await readSessions() : null;
   const demoPortfolio = section === "portfolio" ? await readDemoPortfolio() : null;
   return <div className="page-content">
@@ -56,7 +56,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
     {health && <HealthPanel statusResult={health[0]} timelineResult={health[1]} observedAt={new Date().toISOString()} />}
     {genomes && <GenomePanel result={genomes} />}
     {strategies && <StrategyArchivePanel result={strategies} />}
-    {costReads && <ReviewSpendingPanel result={costReads[1]} />}
+    {costReads && <SpendingPanels reviewResult={costReads[1]} sharedResult={costReads[2]} />}
     {costReads && <CallBudgetPanel result={costReads[0]} />}
     {sessions && <SessionAdminPanel result={sessions} />}
     {dossiers && <DossierPanel result={dossiers} />}

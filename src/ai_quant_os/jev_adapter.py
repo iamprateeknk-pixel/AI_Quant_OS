@@ -204,6 +204,10 @@ class JevClassifier:
         except Exception:
             return {"state": "UNAVAILABLE", "invoice_verified": False}
 
+    @property
+    def spending_store(self) -> ProviderSpendStore | None:
+        return self._spend_store
+
     def _reserve(self) -> int:
         with self._lock:
             if self._requests >= self._max_requests:

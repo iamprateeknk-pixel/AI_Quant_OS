@@ -1,0 +1,212 @@
+{
+  "increment": "0139",
+  "date": "2026-10-11",
+  "base_commit": "42191ea328b95a81cf53c59deb6c2d88607d999c",
+  "feature": "Protected original shared spending Costs snapshot with exact aggregate counters, native model drilldowns and source binding",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0139-release",
+    "backend_tested_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0139",
+    "identical_backend_source_files": 641,
+    "backend_tests": 308,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "81.826",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 106,
+    "additive_schemas": 1,
+    "frontend": {
+      "tests": 101,
+      "pass": 101,
+      "fail": 0,
+      "skipped": 0,
+      "next_production_build": "passed",
+      "scoped_eslint": "passed",
+      "identity_file_count": 114,
+      "identity": "All tracked frontend normalized LF bytes match root, index and fresh checkout; tests/build ran in locked installed root workspace",
+      "browser_acceptance": "Pending; prior launch refusal preserved, no alternate launch attempted"
+    },
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "66ec81e9e760f49a30dcca74488318ba9f37a12baface2e58139c3090da58541"
+      },
+      {
+        "path": "README.md",
+        "sha256": "edee8d043271319e71f7765fe0e1f0fd888ab3d76ff7ce07ac6e7fc5a98b1249"
+      },
+      {
+        "path": "apps/web/src/app/[section]/page.tsx",
+        "sha256": "199a534ee533c246ff7325096c362bf5b728dd56d036a16af815af2d00db404d"
+      },
+      {
+        "path": "apps/web/src/features/costs/review-spending-panel.tsx",
+        "sha256": "402c5488311013230fb8cd39034939ad99fc6ae9b27c3aac82c27078f00059d4"
+      },
+      {
+        "path": "apps/web/src/features/costs/review-spending.ts",
+        "sha256": "3db374d5d0a37b7e0a0d52532d924bb7dfaff26f668a61ae56bbd1ab6289b56b"
+      },
+      {
+        "path": "apps/web/src/features/costs/shared-spending-panel.tsx",
+        "sha256": "146c9287afa14fb84edb14990f07884a52b440526d4d73d9d4203f0df60cbbf7"
+      },
+      {
+        "path": "apps/web/src/features/costs/shared-spending.ts",
+        "sha256": "171dd4a71001bc69a6d608678e76d21ad178eae3a96f415d073269e35daf4740"
+      },
+      {
+        "path": "apps/web/src/features/costs/spending-tables.tsx",
+        "sha256": "53378df5435dfc4971cb0d2f2e276a92eacfa04cc78780dbc8b859dd60df838b"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/boundary.ts",
+        "sha256": "5408e93c526a8d0b497b7ff69cd18980bd65602e8a1ef7a2f148b4b943025d1a"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/server.ts",
+        "sha256": "191fe1469a207a001a4f416ce63da7ca90e333d8a9a39df7b7e1237168746d4d"
+      },
+      {
+        "path": "apps/web/tests/fixtures/shared-spending.json",
+        "sha256": "14ac4f8c100973bc631af44b143b77e76d4336043cf6a15ffe108677ec445e9c"
+      },
+      {
+        "path": "apps/web/tests/operator-boundary.test.mjs",
+        "sha256": "a1a64cc50ae04fe5763c9ddb12ddaa1b4fac578381a36da91d9dbae951be2f2c"
+      },
+      {
+        "path": "apps/web/tests/review-spending.test.mjs",
+        "sha256": "a2c2c7e568c94e70f3a3158ed36e86ef015bf6496611ecf86d438663385a4250"
+      },
+      {
+        "path": "apps/web/tests/shared-spending-server.test.mjs",
+        "sha256": "682cfcc52a3cd7c87f0c42f28b19e9fb90d4b31e73652f458791038342776e6e"
+      },
+      {
+        "path": "apps/web/tests/shared-spending.test.mjs",
+        "sha256": "482ecdc6c5eb0c7b020c16e0b814a25b36bd25aa6748dc98d62e2fb006f7a980"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "d3aca84f3f96136e7b66b790714cd00d8e3f18ac41f8755bd20f7030976d8234"
+      },
+      {
+        "path": "docs/SHARED_PROVIDER_SPENDING_HANDOFF.md",
+        "sha256": "77ce125f72eb9cc7e7bbce323f5d18fb3285721143093abd262902dbe10a3b3a"
+      },
+      {
+        "path": "docs/adr/0139-shared-spending-cost-center.md",
+        "sha256": "af48feb1901466ab6aa576f5db8bde34e43a74c1d61d03a7c7b9e312b4a5c702"
+      },
+      {
+        "path": "docs/schemas/shared-spend-observation.schema.json",
+        "sha256": "12765e478e6e01f0326df20c304b0c5964f7bfeddc2d628bd23b598d840fc7de"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "fe466ab0c315a92ace3aafd9e2a5df98388c92875289fcc80e837a70d53f5763"
+      },
+      {
+        "path": "src/ai_quant_os/jev_adapter.py",
+        "sha256": "b358e6f94277cf809fa32dd892067f023d85f6c5d24030ab9a3e68cf9866ef75"
+      },
+      {
+        "path": "src/ai_quant_os/openai_reviewer.py",
+        "sha256": "c0db5addbaab1c773358ed4553f273f282c4a20d22e3a57f7af4717a0c7182a8"
+      },
+      {
+        "path": "src/ai_quant_os/provider_spend_store.py",
+        "sha256": "09e03a585dbbd467cabf7df228d31b68588de2bab949d8cca27f57bf36017153"
+      },
+      {
+        "path": "src/ai_quant_os/shared_spend_api.py",
+        "sha256": "15ce3eaae0bae00066b85aa4de1545be0ed00801a565057765f80aecedddcd3e"
+      },
+      {
+        "path": "tests/test_shared_spend_api.py",
+        "sha256": "cc5152654d642e8da555c4f32509e873148e082d73d7e4da1f27d7c327d75b62"
+      }
+    ],
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "16b915d8200218237fc4acdc221010db19b6dce4b170e60238d21f69cd652db8"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "f57152af69ed696672a20f7a07dc500ce85005053092505a680768f611957e48"
+      },
+      {
+        "check": "schema",
+        "sha256": "52061fadccd7c7d811a33dd3988304bc06830b979cf737e2dceaeb2d7bf0cfad"
+      },
+      {
+        "check": "frontend",
+        "sha256": "185edb0a38c411a9ac97038b34d751af43e41423d7b7daa9e00eb914e9eeac78"
+      },
+      {
+        "check": "eslint",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "check": "build",
+        "sha256": "3f49e2c08e90f4aa97d09cd21b2befe7e7df18eca511a98df0addcd7fbc3d7e5"
+      }
+    ],
+    "junit_sha256": "da3ddd152ed8438c341172c8e7477931e4cb66fcd79c69b02d0306dee7e37658",
+    "schema": "Generated additive schema equals actual model_json_schema; Draft202012Validator checks schema and native protected fixture; all 106 prior schemas byte-identical",
+    "native_api": "Actual create_app/TestClient shared ledger read under one transaction and original head; eighteen aggregate rows and all one-to-eight model groups; unknown holds and native breach counters; no provider HTTP; head unchanged; missing/separate/incomplete/corrupt/source-changed states withhold combined data; actual operator-session revocation during read returns 401",
+    "fixture": "Native response equals frontend fixture except random original book_id/head_hash",
+    "server_boundary": "No cookie prevents upstream read; fixed private path/header, no-store/redirect error/abort timeout, 256 KiB shared read bound; existing review read rejects above 128 KiB; 401 requires sign-in",
+    "presentation": "Actual React server rendering: aggregate once, two native model drilldowns, exact BigInt nanoUSD strings, explicit UTC observation/unknown holds/accounting/breach, native GET refresh and no duplicate legacy panel. Precision fixture is a synthetic wire boundary check, not an actual price/invoice certificate.",
+    "development_observations": [
+      "Initial backend missing-module red retained in shared-costs-0139-red.xml; original focused native backend run passed 13 tests before incomplete-route coverage was added",
+      "Preserved initial full web run: 100 passed, one prior hard-ceiling assertion failed; final test checks new hard ceiling and explicit smaller caller bounds",
+      "Server regression returned UNAVAILABLE even for a small response because readJson rejected requested 256 KiB maximum; hard ceiling updated, caller-specific older bounds preserved and verified"
+    ],
+    "initial_frontend_log_sha256": "596d9233742bfb22471733fe5ebd25a25c7f157d54b64cf6ecaf558262df17c1",
+    "server_red_log_sha256": "8eb17ed3b55576ea11ee0b7099c4327d094beca1e3ffa296c743bff14ee964f5",
+    "review": "Local five-axis review: canonical store captures original journal once; HTTP projection validates all sums/models/roles and exact amounts; outer API/UI imports only, domain unchanged; authorization before/after and source rebinding checks; bounded inventory/private response; shared tables reused with legacy captions preserved; no new dependency or mutation route",
+    "boundary_checker": "Architecture declaration remains prose; outer adapter/API/UI imports manually reviewed, deterministic domain modules unchanged",
+    "full_suite": "Not run: preserve uncertain candidate-worker custody from 0084/0088; focused backend regressions and all frontend Node tests only",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Revert 0139 protected projection and Costs changes, retaining original 0138 book/pins/holds. No database or old wire-schema migration or reset.",
+  "limits": [
+    "All P00-P13 remain incomplete; full-system and independent critical acceptance pending",
+    "Explicit refresh snapshot; realtime cost subscription and atomic combination of separate call ledgers pending",
+    "Platform-wide allocation, additional provider families, compute/data costs, recovery spending, actual prices/invoices and Jev billable-overhead correspondence pending",
+    "Deployment custody, migration/retention and large-journal throughput pending",
+    "Browser refresh/navigation/focus/accessibility/overflow/visual acceptance pending under preserved refusal",
+    "No real provider payment, broker SDK, proposed candidate execution, remote push, promotion or live capital used",
+    "Unknown worker custody and untracked user skill files preserved"
+  ]
+}

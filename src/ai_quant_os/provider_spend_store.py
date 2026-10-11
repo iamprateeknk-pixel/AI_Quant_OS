@@ -408,3 +408,37 @@ class ProviderSpendStore:
                     model_agents=self._agent_rows(contract, selected, usage, now),
                 )
             return state
+
+    def shared_observation(self, now: datetime) -> dict[str, object] | None:
+        """Capture all model and aggregate counters in one original read transaction."""
+        now = _utc(now)
+        with closing(self._connection()) as db:
+            db.execute("BEGIN")
+            policy, reservations, usage, last, head = self._verified(db)
+            if last is not None and now < last:
+                raise ValueError("Spending clock moved backwards")
+            if type(policy) is not SharedSpendPolicy:
+                return None
+            models = []
+            for contract in policy.models:
+                selected = {
+                    key: row for key, row in reservations.items() if row["model"] == contract.model
+                }
+                models.append(
+                    {
+                        "model": contract.model,
+                        "accounting": contract.accounting,
+                        "policy_sha256": contract.fingerprint,
+                        "agents": self._agent_rows(contract, selected, usage, now),
+                    }
+                )
+            return {
+                "state": "BREACHED" if self._breached(policy, reservations, usage) else "ENFORCED",
+                "book_id": self.anchor["budget_id"],
+                "day": now.date().isoformat(),
+                "month": now.date().isoformat()[:7],
+                "policy_sha256": policy.fingerprint,
+                "head_hash": head,
+                "agents": self._agent_rows(policy, reservations, usage, now),
+                "models": models,
+            }

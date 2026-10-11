@@ -141,7 +141,7 @@ Built-in backtests now include validated configuration and immutable source prov
 
 ## Shared provider spending
 
-Jev and OpenAI can use one immutable spending book with eighteen aggregate role budgets and individual pinned model limits. Point both `AI_QUANT_JEV_SPEND_PATH` and `AI_QUANT_REVIEW_SPEND_PATH` at the same original book and supply its shared policy for first creation. Reservations check both quota levels atomically; unknown charges survive restart, and a retained breach stops the whole book. Model accounting remains distinct. Standalone books still work; no migration/reset is implied. Shared Costs presentation and external billing acceptance remain pending. See [shared spending handoff](docs/SHARED_PROVIDER_SPENDING_HANDOFF.md).
+Jev and OpenAI can use one immutable spending book with eighteen aggregate role budgets and individual pinned model limits. Point both `AI_QUANT_JEV_SPEND_PATH` and `AI_QUANT_REVIEW_SPEND_PATH` at the same original book and supply its shared policy for first creation. Reservations check both quota levels atomically; unknown charges survive restart, and a retained breach stops the whole book. Model accounting remains distinct. Standalone books still work; no migration/reset is implied. Costs now shows one protected aggregate snapshot with model drilldowns, exact declared USD amounts and explicit unavailable states. Realtime costs and external billing acceptance remain pending. See [shared spending handoff](docs/SHARED_PROVIDER_SPENDING_HANDOFF.md).
 
 ## Local research validation
 

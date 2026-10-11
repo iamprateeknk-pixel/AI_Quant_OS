@@ -50,5 +50,9 @@ test('protected record reads can be bounded above the smaller credential body li
   await assert.rejects(boundary.readJson(request()));
   assert.equal((await boundary.readJson(request(), 8192)).records.length, 5000);
   await assert.rejects(boundary.readJson(request(), 4999));
-  await assert.rejects(boundary.readJson(request(), 131073));
+  assert.equal((await boundary.readJson(request(), 262144)).records.length, 5000);
+  await assert.rejects(boundary.readJson(request(), 262145));
+  const large = () => new Request('http://local', { method: 'POST', body: JSON.stringify({ records: 'x'.repeat(140000) }) });
+  await assert.rejects(boundary.readJson(large(), 131072));
+  assert.equal((await boundary.readJson(large(), 262144)).records.length, 140000);
 });

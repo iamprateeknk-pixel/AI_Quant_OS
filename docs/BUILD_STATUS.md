@@ -4,6 +4,19 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Shared spending Cost Center increment
+
+- Costs now shows one protected original shared-book snapshot: eighteen aggregate
+  roles, per-model drilldowns, configured owners, UTC periods, immutable policy
+  fingerprints and journal head. Usage sums and exact nanodollar amounts are
+  checked before presentation. Shared capacity is displayed once.
+- Missing, separate, incomplete or corrupt books withhold combined capacity.
+  Authentication is checked before and after reading. Standalone review and
+  separate logical call accounting remain supported; refresh has no provider effect.
+- Realtime costs, platform allocations, other families, actual billing, recovery
+  spending, retention/migration, independent and browser acceptance remain pending.
+  See ADR 0139 and evaluation 0139. All P00–P13 remain incomplete.
+
 ## Shared provider/model spending admission increment
 
 - Added one immutable original book with eighteen aggregate role rules and a

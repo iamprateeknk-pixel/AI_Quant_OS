@@ -104,11 +104,11 @@ export async function readHealth(resource: "status" | "incidents", offset = 0, h
   return protectedRead(path);
 }
 
-async function protectedRead(path: string, distinguishMissing = false): Promise<ProtectedRead> {
+async function protectedRead(path: string, distinguishMissing = false, maxBytes = 131072): Promise<ProtectedRead> {
   try {
     const token = (await cookies()).get(COOKIE)?.value;
     if (!token) return { ok: false, reason: "SIGN_IN" };
-    const response = await upstream(path, "GET", { "X-Operator-Session": token }, undefined, 131072);
+    const response = await upstream(path, "GET", { "X-Operator-Session": token }, undefined, maxBytes);
     if (response.status === 401) return { ok: false, reason: "SIGN_IN" };
     if (response.status === 409) return { ok: false, reason: "CHANGED" };
     if (response.status === 404 && distinguishMissing) return {ok:false,reason:"NOT_FOUND"};
@@ -144,6 +144,10 @@ export async function readCallBudget(): Promise<ProtectedRead> {
 
 export async function readReviewSpending(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/providers/review-spending");
+}
+
+export async function readSharedSpending(): Promise<ProtectedRead> {
+  return protectedRead("/api/v1/providers/shared-spending", false, 262144);
 }
 
 export async function readGraphRuns(after = "", head?: string): Promise<ProtectedRead> {
