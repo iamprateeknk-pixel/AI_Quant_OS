@@ -1,0 +1,134 @@
+{
+  "increment": "0142",
+  "date": "2026-10-11",
+  "base_commit": "2c2837607878f3aea459bc24b40710028b6e7725",
+  "feature": "Protected trace diagnostics console with exact selected inventory, original worker state and independent archived graph evidence",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0142",
+    "backend_tests": 30,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "12.942",
+    "backend_scope": [
+      "tests/test_paper_telemetry.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_tracing_console_fixture.py"
+    ],
+    "frontend_tests": 108,
+    "frontend_failures": 0,
+    "production_next_build": "passed including TypeScript",
+    "scoped_eslint": "passed",
+    "ruff": "passed",
+    "format_check": "passed",
+    "schema_native_fixtures": "passed exact generated schema and Draft202012Validator",
+    "prior_schemas_unchanged": 108,
+    "additive_schemas": 0,
+    "frontend_identity": {
+      "tracked_files": 119,
+      "evidence": "All tracked frontend root/index/fresh checkout identical after LF normalization; frontend tests and Next build run against root installed dependencies"
+    },
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "9f5586852ecee840ee25e334c24d454ae74259bffd4ff708e20cf43c5f382519"
+      },
+      {
+        "path": "README.md",
+        "sha256": "8624434f786ec4735fa4fa4643d8d73adf14d2a35289aec3b34ed43b92cb9473"
+      },
+      {
+        "path": "apps/web/src/app/traces/page.tsx",
+        "sha256": "f964043cf2f7bf2063b145d814185f06521b5ce46da00d4f37defb971436849c"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/server.ts",
+        "sha256": "528b9a20dbfa0eb3fe9afa158b537b7ebee4e7a97b74ac519eb638b36bad4998"
+      },
+      {
+        "path": "apps/web/src/features/traces/tracing-status-panel.tsx",
+        "sha256": "860af069b20cb8724e8c0ca5ba9aabdfae0882f039894acb08ebf08e3518934b"
+      },
+      {
+        "path": "apps/web/src/features/traces/tracing-status.ts",
+        "sha256": "b2d30cfee3aed5e5aa33bb479491a59ab7725a9b4ef5edb34149adbef7aaaa4d"
+      },
+      {
+        "path": "apps/web/tests/fixtures/tracing-status.json",
+        "sha256": "a75aca59ab41e8c80f77cc2d48db4232d3b8aa724a5a9a18f38e511fbb042734"
+      },
+      {
+        "path": "apps/web/tests/tracing-status-server.test.mjs",
+        "sha256": "78948f9a6f3b6f1f349a45bd33366cd7ba3a77465ab7ad108aa16caa39595133"
+      },
+      {
+        "path": "apps/web/tests/tracing-status.test.mjs",
+        "sha256": "1909c2b18e002453205bfbffd6c00281fa97ce994d5032bb43a20d88fe0a7611"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "1f8676e290895c0af8b28494939e8ddbc795f10513ce66a0981cec5537b89770"
+      },
+      {
+        "path": "docs/TRACING_DIAGNOSTICS_HANDOFF.md",
+        "sha256": "f05006dab5f5e35cbe93084ce31e83187bc89aa0616bb735edc996a4b9e8701d"
+      },
+      {
+        "path": "docs/adr/0142-protected-trace-diagnostics-console.md",
+        "sha256": "521ab4860cbf62daaa427e4de8e3258cbe9c4a25211655c9b5a437c6ec5559a6"
+      },
+      {
+        "path": "tests/test_tracing_console_fixture.py",
+        "sha256": "81b037bbcb6ef83e05d442523c4bf2f3ddc90c6025593478efc227af7652ddb1"
+      }
+    ],
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "cc2f1f60efe1e88ee85699ba13e3c9b8ac5b54fcc1febaecb7f2d790f4767c8f"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "7688ae71c60af2e4266827abb3678cc2145655f587daf33dfa649dbac2c619c3"
+      },
+      {
+        "check": "schema",
+        "sha256": "1ad876404d841b855a10e912a0333b7e218ef65527657684eb05f26744c545ba"
+      },
+      {
+        "check": "frontend",
+        "sha256": "9a8e038538241374928445d191b72689a6ea667e497a3247a68b905464f7075b"
+      },
+      {
+        "check": "eslint",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "check": "build",
+        "sha256": "a714c2f08f891a2b49e414a2fc95f12bc7afedb60bdcccaf322143fd472de8a5"
+      }
+    ],
+    "junit_sha256": "4f0d76e225d67c005434396f789979ef7563e417217c0ddd1653f69809a97df0",
+    "native_fixture": "Actual SDK 1.45.0 and protected API RUNNING/STOPPED/DISABLED; unauthorized request returns 401 and produces an actual HTTP root span. Flush original risk and unauthorized spans, read two finished/two acknowledged; flush status request then close original worker and observe three acknowledged and STOPPED. Generated UUID alone normalized to fixture value.",
+    "server_read": "Actual transpiled Next private boundary tested with missing cookie, forwarded private session, fixed endpoint, no-store, refused redirect, AbortSignal deadline, 4096-byte limit, 401 and thrown network error. No browser credential or dynamic destination.",
+    "parser_markup": "Selected fields strip credential/endpoint extras; exact BigInt inventory and batch/liveness/date checks; disabled/unavailable contain no inferred zero counts; coherent stopping/failed scenarios and malformed observations; native React static markup semantic caption/headers/time/details/native GET refresh and Risk Center sign-in.",
+    "tdd": "Missing native fixture failed before generation. Seven frontend checks failed before parser/panel/fixed read, then passed. Native fixture explicitly flushes before shutdown to avoid scheduling-dependent pending outcome.",
+    "review": "Local five-axis source review: traces owns parser/presentation; original private server boundary owns credentials and bounded reads; page concurrently reads independent diagnostics/archive sources. Fixed metadata and nullable complete state validation, semantic table and expandable provenance reuse existing styles. Backend runtime/domain and both locks unchanged. Independent review pending.",
+    "browser": "Not run: prior 0096 browser launch refusal preserved. SSR and production build do not prove browser layout, focus, overflow, responsive/theme or accessibility acceptance.",
+    "full_suite": "Not run; preserve uncertain 0084/0088 candidate custody. Current 30 native SDK/API regressions plus all 108 frontend tests; broader 349 backend proof remains in immutable 0141 evidence.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Revert 0142 console read/panel only. Original protected status, queue/runtime, paper journals, controls and prior schemas remain unchanged.",
+  "limits": [
+    "All P00-P13 remain incomplete; independent release acceptance pending",
+    "Browser validation and actual production collector/Grafana deployment/alerts pending",
+    "Full causal market/agent/risk/order/fill lineage, audit/span binding and metrics/log correlation pending",
+    "Counts are volatile per original runtime; exporter acknowledgement is not independent durable delivery. Read does not flush/retry/reset or grant capital authority.",
+    "No browser retry, live provider/broker/candidate, remote push/promotion or uncertain custody reset. User untracked skill files retained."
+  ]
+}

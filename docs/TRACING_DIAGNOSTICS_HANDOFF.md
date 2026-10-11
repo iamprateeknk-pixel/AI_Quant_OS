@@ -82,7 +82,31 @@ new drops without restarting. Actual local OTLP decode, original order/replay/HA
 secret suppression, source failure, session revocation and schema checks are also
 covered. See evaluation 0141 and ADR 0141.
 
-Mission Control diagnostic presentation, calibrated alerts, collector/Grafana
+## Console presentation
+
+Increment 0142 adds a protected server-rendered diagnostic panel on `/traces`.
+The fixed Next server read forwards only the private session, rejects redirects,
+uses no-store and a three-second timeout, and limits the response to 4096 bytes.
+An allowlisted parser validates the inventory with exact BigInt arithmetic,
+batch bounds, worker state and UTC read time before displaying any counts.
+Malformed, disabled and unavailable sources infer no zero counters.
+
+The panel shows eight original outcome/batch counts, separate recording errors,
+worker liveness, read time and expandable original runtime/exporter metadata.
+Warnings identify dropped, unconfirmed and failed recording work. A native GET
+refresh requests a later snapshot; it cannot flush/retry/reset/restart export.
+Archived graph evidence and export observations are fetched concurrently and
+retain independent state. Existing archive pagination and detail views remain.
+
+Native fixture tests compare actual protected API snapshots and SDK-ended spans
+in RUNNING, STOPPED and DISABLED states. Only generated runtime UUIDs are normalized.
+Explicit fixture flush before close makes terminal counts deterministic. Other
+failure/stopping scenarios exercise the public parser/markup contract. Full Node
+regressions and a production Next build verify source behavior; actual browser
+rendering, focus, overflow, responsive/theme and accessibility acceptance are
+pending because the earlier browser launch refusal is preserved.
+
+Calibrated alerts, collector/Grafana
 deployment, protected trace search, durable audit/span binding, complete cross-
 request market/agent/risk/order/fill lineage, metrics/log correlation, production
 sampling/load/drop/latency acceptance and independent critical/release review

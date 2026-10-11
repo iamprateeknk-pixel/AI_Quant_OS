@@ -169,4 +169,4 @@ With persistent paper storage and operator configuration, `AI_QUANT_DAILY_EVIDEN
 
 ## Paper telemetry
 
-Optional OpenTelemetry SDK traces now cover HTTP and the real paper market/risk/order path with bounded local OTLP export. Instrumentation is disabled by default and cannot authorize or alter orders. A protected status endpoint now reports exact volatile queue outcomes and original worker liveness. Full causal lineage, diagnostic console presentation, collector/Grafana deployment and independent acceptance remain pending. See [paper telemetry handoff](docs/PAPER_TELEMETRY_HANDOFF.md).
+Optional OpenTelemetry SDK traces now cover HTTP and the real paper market/risk/order path with bounded local OTLP export. Instrumentation is disabled by default and cannot authorize or alter orders. A protected status endpoint and Traces console panel report exact volatile queue outcomes and original worker liveness. Full causal lineage, collector/Grafana deployment, browser acceptance and independent acceptance remain pending. See [paper telemetry handoff](docs/PAPER_TELEMETRY_HANDOFF.md).
