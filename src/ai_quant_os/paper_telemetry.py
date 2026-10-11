@@ -14,15 +14,28 @@ import httpx
 
 
 class PaperSpan:
-    def __init__(self, span=None, on_failure=lambda: None):
+    def __init__(self, span=None, on_failure=lambda: None, *, owner=None):
         self._span = span
         self._on_failure = on_failure
+        self._owner = owner
 
     @property
     def trace_id(self):
+        context = self.context
+        return context["sdk_trace_id"] if context else None
+
+    @property
+    def context(self):
         try:
             context = self._span.get_span_context() if self._span else None
-            return format(context.trace_id, "032x") if context and context.is_valid else None
+            return (
+                {
+                    "sdk_trace_id": format(context.trace_id, "032x"),
+                    "sdk_span_id": format(context.span_id, "016x"),
+                }
+                if context and context.is_valid
+                else None
+            )
         except Exception:
             self._on_failure()
             return None
@@ -156,7 +169,7 @@ class PaperTelemetry:
                 with self._lock:
                     self._instrumentation_errors += 1
         try:
-            yield PaperSpan(native, self._note_error)
+            yield PaperSpan(native, self._note_error, owner=self)
         except BaseException:
             if native:
                 try:
@@ -176,6 +189,17 @@ class PaperTelemetry:
     def _note_error(self):
         with self._lock:
             self._instrumentation_errors += 1
+
+    def binding_context(self, span: PaperSpan) -> dict[str, str] | None:
+        with self._lock:
+            if self._provider is None or span._owner is not self:
+                return None
+            context = span.context
+            return (
+                {"runtime_id": self._runtime_id, "sdk_version": self._sdk_version, **context}
+                if context
+                else None
+            )
 
     def state(self):
         with self._lock:

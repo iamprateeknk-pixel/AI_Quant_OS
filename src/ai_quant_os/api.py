@@ -84,6 +84,7 @@ from ai_quant_os.paper_telemetry import (
     telemetry_from_environment,
 )
 from ai_quant_os.tracing_status_api import install_tracing_status_routes
+from ai_quant_os.agent_trace_binding import make_agent_trace_binding
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -1065,7 +1066,13 @@ def create_app(
             with configured_telemetry.span("paper.agent.archive") as span:
                 span.set("ai_quant.agent.envelope_id", run.run_id)
                 verify_run_snapshot(run, snapshot)
-                state_store.record_agent_run(run)
+                trace_binding = make_agent_trace_binding(
+                    run, configured_telemetry.binding_context(span)
+                )
+                if trace_binding is None:
+                    state_store.record_agent_run(run)
+                else:
+                    state_store.record_agent_run(run, trace_binding=trace_binding)
         except (ValueError, sqlite3.Error) as error:
             raise HTTPException(status_code=503, detail="Agent run storage unavailable") from error
         try:

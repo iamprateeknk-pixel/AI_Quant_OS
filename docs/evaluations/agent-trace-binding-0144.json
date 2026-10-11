@@ -1,0 +1,162 @@
+{
+  "increment": "0144",
+  "date": "2026-10-11",
+  "base_commit": "ff5c9d2539506897848454128a84b9574e39925c",
+  "feature": "Atomically retained original advisory-run to owned SDK archive context binding with immutable audited commitments",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0144-release",
+    "backend_tests": 379,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "100.505",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py"
+    ],
+    "ruff": "passed including entire changed state store",
+    "format_check": "passed for new model/repository/API/telemetry/tests and extracted three changed/new state methods; unrelated legacy formatting preserved, no whole-state-file format claim",
+    "prior_schemas_unchanged": 108,
+    "additive_schemas": 1,
+    "schema": "Exact actual model schema and native binding checked with Draft202012Validator",
+    "wheel": {
+      "path": "D:\\AI_Quant_OS\\data-local\\agent-trace-binding-0144-release-dist\\ai_quant_os-0.1.0-py3-none-any.whl",
+      "sha256": "efbd3db6d3029504cd4f9d57678eb6d7d20574fdf48a567addf2f30ef13c4f1a",
+      "verification": "Native no-isolation/no-dependency wheel build; all five changed runtime modules byte-identical to tested checkout; not installed/deployed"
+    },
+    "dependencies": "Both existing hash locks unchanged HEAD/index/root/fresh; no dependency changes or Linux runtime verification",
+    "frontend": {
+      "unchanged_tracked_files": 119,
+      "identity": "HEAD/index/root/fresh LF equality",
+      "tests_build": "Not rerun; no frontend changes. Prior 0142 full 108-test/production-build evidence retained."
+    },
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "f713b9b1cf8e37982551ae1df91c869f43baaed0c1ff743ef0bc2602b1dcc0fb"
+      },
+      {
+        "path": "docs/AGENT_TRACE_BINDING_HANDOFF.md",
+        "sha256": "1c3ab25b9d51607540ac6ada955534a48f8d25cdb18e8547070b0f9860c6ee19"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "24ad3fe009cc55e808b85509f868ba8037d24cde24690af79784a0b3271916ff"
+      },
+      {
+        "path": "docs/adr/0144-atomic-original-agent-sdk-binding.md",
+        "sha256": "bc025277dc5813eaa81a840f6552b20f666e4a60a71badd0feecab2b455c2602"
+      },
+      {
+        "path": "docs/schemas/agent-trace-binding.schema.json",
+        "sha256": "336141b62e82a6fbed1ec15a97ba7e2e2d449aa30ebf50aaf223180eac489ff7"
+      },
+      {
+        "path": "src/ai_quant_os/agent_trace_binding.py",
+        "sha256": "7fe4efe67a9780e904ffd170e0364986c4102ed5ac6ff125fcd55f962c6d9777"
+      },
+      {
+        "path": "src/ai_quant_os/agent_trace_binding_repository.py",
+        "sha256": "b02e26b312d44c2cc73dcedbeee444565b4c7e058389286eaffd6bff696f2e00"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "4f87b8b04f5925513b5daab7a92c1871f759c4bbb64ea6f2701eaa37180663a9"
+      },
+      {
+        "path": "src/ai_quant_os/paper_state_store.py",
+        "sha256": "1e89f1d8d2d577333b77e44fe956217c7624a1d9a048c828013df60c577faa32"
+      },
+      {
+        "path": "src/ai_quant_os/paper_telemetry.py",
+        "sha256": "b0d6b377ad9aa1a8193455f3bd64b262c297d372a1c18031a34be56804f4b96f"
+      },
+      {
+        "path": "tests/test_agent_trace_binding.py",
+        "sha256": "a55a5b281df7ab0adbe170ee5ad42d4568583818508745a655414a45f24113ee"
+      }
+    ],
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "1c49507a9549ab7dad29dd35ff7e3609eb885053639e81d0b3112f0c668f8b9e"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "c6054335d9571c0c59ef2b8af5223d2f5d56a9db5aba43b6f39217add8928601"
+      },
+      {
+        "check": "state-method-format",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "check": "wheel",
+        "sha256": "0b03d4b501948ca50968eb395ead76dc610cdfb16ea7cd3fb06641e246cd7e6a"
+      }
+    ],
+    "junit_sha256": "9564b9c16662242f284f5a1b4364542f6c2b068f4e103e2e1bda63a1a0e2473c",
+    "red_proofs": [
+      {
+        "path": "agent-trace-binding-0144-red.xml",
+        "sha256": "c262a99a8d7699512f8022e8766838744140f5f9e51a1833178837c43e8b8b9a"
+      },
+      {
+        "path": "agent-trace-binding-0144-schema-red.xml",
+        "sha256": "1bc05704833b5c4caf09824beac257255a4faec91624a184d5733d2f38412b27"
+      },
+      {
+        "path": "agent-trace-binding-0144-public-red.xml",
+        "sha256": "d392ce315de56ccb230add93c7fd0d926c335bf19530ce31073b06099d70e43d"
+      }
+    ],
+    "native_source": "Actual SDK 1.45.0 archive context matches original HTTP response trace ID, native archive span ID, original runtime and canonical retained agent-run bytes. Persisted/reopened link equal. Foreign runtime refused; original observed identity remains readable after owned worker shutdown without delivery claim.",
+    "atomicity": "SQLite trigger failures on trace row insertion and its audit append roll back run, binding and both audit events. Native API write fault returns existing sanitized 503 with zero run/link rows; actual HALT acknowledgement/state remain available.",
+    "integrity": "Exact retry preserves original binding/head, default old-caller retry retains existing link. Different context and later legacy-run backfill denied. Changed rows with recomputed digest and removed rows are withheld by both link and original run readers; run hash mismatch denied before write.",
+    "failure_boundary": "Actual failed SDK exporter yields unconfirmed spans while original binding persists with delivery_verified=false; existing disabled/broken span creation, timeout/provider/admission/HALT tests included. Provider doubles and native trusted SDK only; no live provider/broker/candidate.",
+    "privacy": "Native privacy test first exposed SDK trace/span IDs through legacy public audit; event changed to UUID/run-hash/binding commitment only. Final actual public API omits original SDK IDs; binding body excludes task/world/rationale/credentials/error text. Detailed protected lookup remains pending.",
+    "compatibility": "Original fresh run found two old persistence wrappers rejecting the new optional keyword when telemetry disabled (377 passed/2 failed). No test weakened: disabled/missing context retains original one-argument call; 48 focused decision/review/binding checks passed afterward. Original failing checkout/XML/logs preserved; final release checkout reverified.",
+    "packaging_tool": "The optional build module is absent in the locked runtime; first package attempt failed before building. Used existing isolated pip wheel with no-index/no-deps/no-build-isolation; no package installation or dependency mutation. Original missing-tool log preserved.",
+    "review": "Local five-axis review: typed immutable context value, bounded one-per-original-run repository under owning SQLite transaction and complete original audit validation; source runtime owns PaperSpan, no global/remote context. Existing domain, envelope, original run repository/audit algorithm unchanged. All unrelated state methods and constructor body except new repo initialization byte-identical. Independent review pending.",
+    "boundary_checker": "Existing architecture declaration is prose unsupported by checker; changed imports manually reviewed and deterministic domain unchanged.",
+    "full_suite": "Not run; preserve uncertain 0084/0088 candidate custody. Scoped provider/spend/quotas/advisory/audit/SDK/API/risk/control/session/launcher/lock tests only.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Disable capture or revert new writer while retaining table/rows/audit events and original heads. Older readers can ignore additions but cannot certify binding integrity. No deletion, reset or inferred historical correlation.",
+  "limits": [
+    "All P00-P13 incomplete; independent critical/release acceptance pending",
+    "Local binding observes active archive SDK context, not successful response, complete trace or exporter delivery; in-memory store retains only existing lifetime, configured persistent SQLite retains across restart.",
+    "Protected HTTP lookup/search and console presentation of retained SDK binding remain pending.",
+    "Risk/order/fill and other role/graph binding, complete causal lineage, collector/Grafana/alerts and production acceptance remain pending.",
+    "Browser refusal, uncertain candidate/Docker custody and user untracked skills preserved. No remote push/promotion or live capital/provider/broker/candidate execution."
+  ]
+}

@@ -9,6 +9,8 @@ from ai_quant_os.risk import SafetyState
 from ai_quant_os.audit_chain import AuditChain, AuditIntegrity
 from ai_quant_os.agent_runs import AgentRun
 from ai_quant_os.agent_run_repository import AgentRunRepository
+from ai_quant_os.agent_trace_binding import AgentTraceBinding
+from ai_quant_os.agent_trace_binding_repository import AgentTraceBindingRepository
 from ai_quant_os.context_checkpoints import ContextCheckpoint
 from ai_quant_os.context_checkpoint_repository import ContextCheckpointRepository
 
@@ -76,6 +78,7 @@ class PaperStateStore:
 
             self._audit_chain.initialize()
             self._agent_runs = AgentRunRepository(self._connection)
+            self._agent_trace_bindings = AgentTraceBindingRepository(self._connection)
             self._context_checkpoints = ContextCheckpointRepository(self._connection)
 
     def safety_state(self) -> SafetyState:
@@ -283,20 +286,38 @@ class PaperStateStore:
             self._connection.execute("BEGIN IMMEDIATE")
             self._audit_chain.append(key, event)
 
-    def record_agent_run(self, run: AgentRun) -> bool:
+    def record_agent_run(
+        self, run: AgentRun, *, trace_binding: AgentTraceBinding | None = None
+    ) -> bool:
         run = AgentRun.model_validate_json(run.model_dump_json())
+        if trace_binding is not None:
+            trace_binding = AgentTraceBinding.model_validate_json(trace_binding.model_dump_json())
+            trace_binding.require_run(run)
         with self._lock, self._connection:
             self._connection.execute("BEGIN IMMEDIATE")
             self._audit_chain.require_valid()
+            self._agent_trace_bindings.get(run.run_id, self._agent_runs.get(run.run_id))
             inserted = self._agent_runs.put(run)
             self._audit_chain.append(f"classification:{run.run_id}", run.audit_event())
+            if trace_binding is not None:
+                self._agent_trace_bindings.put(trace_binding, run, inserted_run=inserted)
+                self._audit_chain.append(f"agent-trace:{run.run_id}", trace_binding.audit_event())
             return inserted
 
     def agent_run(self, run_id: str) -> AgentRun | None:
         with self._lock, self._connection:
             self._connection.execute("BEGIN")
             self._audit_chain.require_valid()
-            return self._agent_runs.get(run_id)
+            run = self._agent_runs.get(run_id)
+            self._agent_trace_bindings.get(run_id, run)
+            return run
+
+
+    def agent_trace_binding(self, run_id: str) -> AgentTraceBinding | None:
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN")
+            self._audit_chain.require_valid()
+            return self._agent_trace_bindings.get(run_id, self._agent_runs.get(run_id))
 
     def record_context_checkpoint(self, checkpoint: ContextCheckpoint) -> bool:
         checkpoint = ContextCheckpoint.model_validate_json(checkpoint.model_dump_json())

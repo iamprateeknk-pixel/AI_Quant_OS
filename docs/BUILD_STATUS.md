@@ -6,6 +6,12 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
 
 ## Advisory agent trace stages increment
 
+- Increment 0144 atomically retains the actual archive SDK context with the
+  original agent-run bytes and audit commitment. Exact retry preserves original
+  context; corruption and late binding are withheld. The public audit exposes
+  commitments without SDK identifiers. Protected lookup/display remain pending.
+  See AGENT_TRACE_BINDING_HANDOFF.md, ADR 0144 and evaluation 0144.
+
 - Increment 0143 adds native SDK market/classification/review/archive stages
   and provider invocation children after original logical quota admission.
   Original advisory UUIDs and fixed route/review outcomes are allowlisted;
