@@ -83,6 +83,7 @@ from ai_quant_os.paper_telemetry import (
     PaperTraceMiddleware,
     telemetry_from_environment,
 )
+from ai_quant_os.tracing_status_api import install_tracing_status_routes
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -2061,6 +2062,7 @@ def create_app(
         require_operator,
         current_time,
     )
+    install_tracing_status_routes(app, configured_telemetry, require_operator, current_time)
     install_evolution_routes(
         app,
         evolution_workspace

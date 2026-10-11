@@ -50,26 +50,29 @@ including in-memory and failed service startup paths. Injected telemetry remains
 the caller's responsibility; flush and close it explicitly. Runtime instances are
 for one application lifetime. The default creates no SDK export worker.
 
-## Bounded, lossy export
+## Bounded, observed export
 
-The SDK batch worker has a 512-span queue and 32-span batches. Only this worker
-performs transport I/O. The official encoder produces actual OTLP protobuf.
-Transport is one attempt, no retries/proxies/redirects/ambient credentials, with
-two-second operation timeouts and an elapsed response deadline. Batches are capped
-at 256 KiB; acknowledgement is capped at 4 KiB. Invalid/partial acknowledgements
-and non-200 responses count as export failures without retaining/logging response
-text. One in-flight operation may finish after the response deadline because socket
-timeouts are inactivity bounds. Long-lived streaming requests finish their span
-when the request ends.
+Increment 0141 replaces opaque SDK batching with the owned public SpanProcessor
+implementation. It preserves 512 pending spans and 32-span batches while counting
+exact acknowledged, unconfirmed, dropped, pending and in-flight inventory under
+one lock. Only the original worker performs I/O. The official encoder and bounded
+local transport remain unchanged: 256 KiB batches, 4 KiB acknowledgements, no
+retries/proxies/redirects/ambient credentials or remote error text. Inactivity
+socket timeouts are not a strict total export deadline.
 
-`app.state.paper_telemetry.state()` exposes enabled state and failed **batches**;
-it is not a delivered-span count. A full SDK queue can drop spans. `flush()` asks
-the SDK to flush and is an administrative operation, not part of order handling;
-its timeout argument is subject to the pinned SDK's implementation. `close()`
-stops new observations and drops pending queued exports while allowing the
-bounded in-flight local operation to finish. This telemetry is not a durable audit
-journal or release certificate. Export failures, queue saturation and broken span
-creation cannot weaken deterministic decisions, disable controls or alter receipts.
+`GET /api/v1/observability/tracing` exposes protected original runtime observations
+with pre/post authorization. It withholds disabled or incoherent counters. Read
+and response time are distinct from the current HTTP request's later span end.
+Exporter acknowledgement is not durable delivery; partial acknowledgement keeps
+the whole batch unconfirmed. Counts are volatile and never reconcile a restart.
+
+Flush now waits against a monotonic deadline. Shutdown records pending drops and
+waits at most three seconds on the original worker; timeout retains STOPPING and
+its identity/in-flight custody. Only actual handle termination means STOPPED.
+Worker faults retain FAILED and never restart. Existing `state()` keeps its
+original shape; use the typed observation for actual worker state. See
+TRACING_DIAGNOSTICS_HANDOFF.md and ADR 0141. No trace read resets, refunds or
+weakens original risk/order/control behavior.
 
 ## Evidence and remaining work
 
@@ -79,8 +82,8 @@ local protobuf decode, rejection of partial acceptance, blocked worker/full queu
 with accepted orders, and original owner cleanup. All test collector threads and
 sockets are owned and joined. See evaluation 0140 and ADR 0140.
 
-Collector deployment/attestation, Grafana dashboards/alerts, protected diagnostic
-status, persistent audit-to-trace references, cross-request market/agent/fill
+Collector deployment/attestation, Grafana dashboards/alerts, diagnostic Mission Control
+presentation, persistent audit-to-trace references, cross-request market/agent/fill
 lineage, agent/provider spans, metrics/log correlation, production sampling and
 load/drop/latency acceptance, independent critical review and every full release
 gate remain pending. Unknown Docker custody and prior browser refusal are preserved.

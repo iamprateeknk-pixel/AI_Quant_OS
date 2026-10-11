@@ -1,0 +1,264 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "accounting": {
+      "const": "VOLATILE_FINISHED_SDK_SPANS",
+      "default": "VOLATILE_FINISHED_SDK_SPANS",
+      "title": "Accounting",
+      "type": "string"
+    },
+    "durable": {
+      "const": false,
+      "default": false,
+      "title": "Durable",
+      "type": "boolean"
+    },
+    "delivery_verified": {
+      "const": false,
+      "default": false,
+      "title": "Delivery Verified",
+      "type": "boolean"
+    },
+    "runtime_state": {
+      "enum": [
+        "DISABLED",
+        "RUNNING",
+        "STOPPING",
+        "STOPPED",
+        "FAILED",
+        "UNAVAILABLE"
+      ],
+      "title": "Runtime State",
+      "type": "string"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "runtime_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{32}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Runtime Id"
+    },
+    "sdk_version": {
+      "anyOf": [
+        {
+          "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sdk Version"
+    },
+    "exporter_kind": {
+      "anyOf": [
+        {
+          "enum": [
+            "LOCAL_OTLP_PROTOBUF",
+            "INJECTED"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Exporter Kind"
+    },
+    "worker_alive": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Worker Alive"
+    },
+    "queue_capacity": {
+      "anyOf": [
+        {
+          "const": 512,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Queue Capacity"
+    },
+    "batch_capacity": {
+      "anyOf": [
+        {
+          "const": 32,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Batch Capacity"
+    },
+    "observed_spans": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observed Spans"
+    },
+    "acknowledged_spans": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Acknowledged Spans"
+    },
+    "unconfirmed_spans": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Unconfirmed Spans"
+    },
+    "dropped_spans": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dropped Spans"
+    },
+    "pending_spans": {
+      "anyOf": [
+        {
+          "maximum": 512,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pending Spans"
+    },
+    "inflight_spans": {
+      "anyOf": [
+        {
+          "maximum": 32,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Inflight Spans"
+    },
+    "acknowledged_batches": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Acknowledged Batches"
+    },
+    "failed_batches": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failed Batches"
+    },
+    "instrumentation_errors": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Instrumentation Errors"
+    }
+  },
+  "required": [
+    "runtime_state",
+    "observed_at"
+  ],
+  "title": "TracingObservation",
+  "type": "object"
+}

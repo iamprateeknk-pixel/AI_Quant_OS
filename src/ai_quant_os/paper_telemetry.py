@@ -3,16 +3,20 @@
 from contextlib import contextmanager
 import os
 import re
-from threading import Lock
+from threading import RLock
 from time import monotonic
+from uuid import uuid4
+from importlib.metadata import version
+
 from urllib.parse import urlsplit
 
 import httpx
 
 
 class PaperSpan:
-    def __init__(self, span=None):
+    def __init__(self, span=None, on_failure=lambda: None):
         self._span = span
+        self._on_failure = on_failure
 
     @property
     def trace_id(self):
@@ -20,6 +24,7 @@ class PaperSpan:
             context = self._span.get_span_context() if self._span else None
             return format(context.trace_id, "032x") if context and context.is_valid else None
         except Exception:
+            self._on_failure()
             return None
 
     def set(self, key, value):
@@ -53,50 +58,32 @@ class PaperSpan:
             try:
                 self._span.set_attribute(key, value)
             except Exception:
-                pass
+                self._on_failure()
 
 
 class PaperTelemetry:
     def __init__(self, *, exporter=None):
         self._provider = None
         self._tracer = None
-        self._failures = 0
+        self._processor = None
+        self._runtime_id = None
+        self._sdk_version = None
+        self._exporter_kind = None
+        self._instrumentation_errors = 0
         self._closing = False
-        self._lock = Lock()
+        self._lock = RLock()
         if exporter is None:
             return
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import SpanLimits, TracerProvider
-        from opentelemetry.sdk.trace.export import (
-            BatchSpanProcessor,
-            SpanExporter,
-            SpanExportResult,
-        )
         from opentelemetry.sdk.trace.sampling import ALWAYS_ON
+        from ai_quant_os.trace_export_queue import TraceExportQueue
 
-        owner = self
-
-        class SafeExporter(SpanExporter):
-            def export(self, spans):
-                with owner._lock:
-                    if owner._closing:
-                        return SpanExportResult.FAILURE
-                try:
-                    result = exporter.export(spans)
-                    if result == SpanExportResult.SUCCESS:
-                        return result
-                except Exception:
-                    pass
-                with owner._lock:
-                    owner._failures += 1
-                return SpanExportResult.FAILURE
-
-            def shutdown(self):
-                try:
-                    exporter.shutdown()
-                except Exception:
-                    pass
-
+        self._runtime_id = uuid4().hex
+        self._sdk_version = version("opentelemetry-sdk")
+        self._exporter_kind = (
+            "LOCAL_OTLP_PROTOBUF" if type(exporter) is LocalOtlpExporter else "INJECTED"
+        )
         self._provider = TracerProvider(
             resource=Resource(
                 {
@@ -111,15 +98,8 @@ class PaperTelemetry:
                 max_attributes=8, max_events=0, max_links=0, max_attribute_length=256
             ),
         )
-        self._provider.add_span_processor(
-            BatchSpanProcessor(
-                SafeExporter(),
-                max_queue_size=512,
-                max_export_batch_size=32,
-                schedule_delay_millis=1000,
-                export_timeout_millis=3000,
-            )
-        )
+        self._processor = TraceExportQueue(exporter, lock=self._lock)
+        self._provider.add_span_processor(self._processor)
         self._tracer = self._provider.get_tracer("ai_quant_os.paper", "1.0")
 
     @contextmanager
@@ -150,9 +130,10 @@ class PaperTelemetry:
                 native = candidate.__enter__()
                 manager = candidate
             except Exception:
-                pass
+                with self._lock:
+                    self._instrumentation_errors += 1
         try:
-            yield PaperSpan(native)
+            yield PaperSpan(native, self._note_error)
         except BaseException:
             if native:
                 try:
@@ -160,38 +141,56 @@ class PaperTelemetry:
 
                     native.set_status(Status(StatusCode.ERROR, "Paper operation failed"))
                 except Exception:
-                    pass
+                    self._note_error()
             raise
         finally:
             if manager:
                 try:
                     manager.__exit__(None, None, None)
                 except Exception:
-                    pass
+                    self._note_error()
+
+    def _note_error(self):
+        with self._lock:
+            self._instrumentation_errors += 1
 
     def state(self):
         with self._lock:
             return {
                 "enabled": self._provider is not None and not self._closing,
-                "export_failures": self._failures,
+                "export_failures": self._processor.snapshot()["failed_batches"]
+                if self._processor
+                else 0,
             }
 
-    def flush(self):
-        try:
-            return self._provider.force_flush(timeout_millis=3000) if self._provider else True
-        except Exception:
-            return False
+    def diagnostics(self):
+        with self._lock:
+            if self._processor is None:
+                return {"runtime_state": "DISABLED"}
+            return {
+                **self._processor.snapshot(),
+                "runtime_id": self._runtime_id,
+                "sdk_version": self._sdk_version,
+                "exporter_kind": self._exporter_kind,
+                "instrumentation_errors": self._instrumentation_errors,
+            }
+
+    def flush(self, timeout_millis=3000):
+        return self._processor.force_flush(timeout_millis) if self._processor else True
 
     def close(self):
         with self._lock:
-            if self._closing:
-                return
+            was_closing = self._closing
             self._closing = True
         if self._provider:
-            try:
-                self._provider.shutdown()
-            except Exception:
-                pass
+            if was_closing:
+                self._processor.shutdown()
+            else:
+                try:
+                    self._provider.shutdown()
+                except Exception:
+                    self._note_error()
+                    self._processor.shutdown()
 
 
 class LocalOtlpExporter:
@@ -200,8 +199,8 @@ class LocalOtlpExporter:
         if (
             parsed.scheme != "http"
             or parsed.hostname != "127.0.0.1"
-            or parsed.username
-            or parsed.password
+            or parsed.username is not None
+            or parsed.password is not None
             or parsed.path != "/v1/traces"
             or parsed.query
             or parsed.fragment

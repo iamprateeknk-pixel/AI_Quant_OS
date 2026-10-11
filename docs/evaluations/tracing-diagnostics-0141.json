@@ -1,0 +1,139 @@
+{
+  "increment": "0141",
+  "date": "2026-10-11",
+  "base_commit": "23dfaebfcea6b911be99ee94962fddc0953cc5ff",
+  "feature": "Exact volatile finished SDK span accounting, original trace worker custody and protected coherent diagnostic reads",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0141-final",
+    "backend_tests": 349,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "92.342",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 107,
+    "additive_schemas": 1,
+    "dependencies": "Both hash locks unchanged against HEAD/index/root/fresh checkout; no dependency changes. Prior 0140 installed-version and lock-resolution evidence retained, not rerun.",
+    "frontend": {
+      "tracked_files_unchanged": 114,
+      "identity": "HEAD/index/root/fresh checkout equality after LF normalization of working copies",
+      "tests_build": "Not rerun; no frontend changes. Prior 0139 evidence retained."
+    },
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "89181041ff91dc3bd9d0fc4553b62a2ed5dde86e407b2c2e0b04d5ac7b830290"
+      },
+      {
+        "path": "README.md",
+        "sha256": "b21bfa448082f03d4337efc3170e4257f5fcad0804df3e91973fb944a05fb3d7"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "5ea2dcf51a476f59934c609f647277e4441c82ddee283114b2a66e09326272a5"
+      },
+      {
+        "path": "docs/PAPER_TELEMETRY_HANDOFF.md",
+        "sha256": "97a6b75a86737b4af3a5c68b7e2abcea30e085c7b46fde8e2c14f287485f2d86"
+      },
+      {
+        "path": "docs/TRACING_DIAGNOSTICS_HANDOFF.md",
+        "sha256": "c05e21341974afc42904856a465448e5c8ff12bcbca8953448abb65e1d76ffda"
+      },
+      {
+        "path": "docs/adr/0141-observed-trace-queue-custody.md",
+        "sha256": "04b374240604444dbec082688284be78f99c1e79f340c4a531b45dca4a582cfc"
+      },
+      {
+        "path": "docs/schemas/tracing-observation.schema.json",
+        "sha256": "1dd2ca52e431b6ff820a2c5286b2fb0c28bbdb4ec2b389fb68ab91addeb105ea"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "db047d46e071b31ebc713455e4a46e61765dea66f4cdd886b15ffd7c1b20a339"
+      },
+      {
+        "path": "src/ai_quant_os/paper_telemetry.py",
+        "sha256": "856d4b65c42f6b89042c5d8ffa0dc977e00adfde463ba4d1109953c4f619a26e"
+      },
+      {
+        "path": "src/ai_quant_os/trace_export_queue.py",
+        "sha256": "bc4c40ed1dc50f32e3aefe427221c22b6e17856d4841053343a851fbe8d38950"
+      },
+      {
+        "path": "src/ai_quant_os/tracing_status_api.py",
+        "sha256": "bfbc313b6a1a9e1ca0d04cbea9018947b6e7f091a3b3a99cf9f981abd5bc93f5"
+      },
+      {
+        "path": "tests/test_trace_export_queue.py",
+        "sha256": "a8f35af81bef9a619ef21720493b6745fd2c0ba7c4bbf92cd444367bfe611353"
+      },
+      {
+        "path": "tests/test_tracing_status_api.py",
+        "sha256": "0ac8b090f01a8c516cf41d514b5719fde2d5382f95a2f23da72ada0c7561c4d9"
+      }
+    ],
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "b2e87781856e3b1e7930804dc0c93d45812c60d61090559008cce1e2a59faaaa"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "f57152af69ed696672a20f7a07dc500ce85005053092505a680768f611957e48"
+      }
+    ],
+    "junit_sha256": "e8d33b22baa550e918949328ad77cfa8688757b69c42990a9dae57970deca0b0",
+    "native_sdk": "Actual SDK 1.45.0 SpanProcessor subclass and SDK-ended spans, no synthetic on_end invocation: 632 finished = 32 in-flight + 512 pending + 88 dropped; after release 544 acknowledged + 88 dropped under original runtime ID.",
+    "failure_boundary": "Native exporter exception becomes unconfirmed whole batch without secret logs. SystemExit yields original-worker FAILED, retained outcomes and subsequent drops without restart. Span creation errors counted separately. Existing native HTTP/order/replay/HALT, local protobuf transport and partial acknowledgement tests included.",
+    "lifecycle": "One millisecond monotonic flush times out with unchanged original inventory; shutdown timeout retains live original handle/ID as STOPPING, queued spans dropped; release and repeated close observe same worker STOPPED. No foreign SDK private fields inspected.",
+    "protected_read": "Actual API auth rejection, session revocation during capture, original SDK runtime counters without read-triggered flush, no-store, malformed inventory withheld as empty UNAVAILABLE; disabled contains no inferred zero counts. Broken status source does not disable actual HALT control.",
+    "tdd": "Missing diagnostics and schema failures retained. Empty local URL userinfo @ and :@ each failed before is-not-None guard and passed after fix; red XML SHA256 0525f79bccfab39cfb69e1d3b2825fc66df5c47c417cbce95581dd05c58cee65",
+    "debugging": "Initial duck processor omitted installed SDK ending lifecycle hook; native tests failed, fixed by inheriting public SpanProcessor base. Original failing and intermediate 347-test checkout/logs preserved; final 349-test proof includes URL guard change.",
+    "review": "Local five-axis review: isolated queue owns short locked memory admission and sole export worker, same RLock protects coherent snapshot, strict typed protected API validates conservation/batches/liveness, dependencies point from HTTP/SDK infrastructure toward unchanged domain. No decision authority/global provider/retries/reset added. Independent review remains pending.",
+    "boundary_checker": "Existing architecture declaration is prose, unsupported by checker; new module imports manually reviewed and deterministic domain files proven unchanged.",
+    "full_suite": "Not run; uncertain 0084/0088 candidate custody preserved. Scoped provider/spending/SDK/API/risk/control/session/audit/launcher/lock regressions only.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Disable telemetry or revert 0141 to 0140 SDK batching; keep original journals and any live original worker evidence. No migration or reset.",
+  "limits": [
+    "All P00-P13 incomplete; this is development evidence, not independent release acceptance.",
+    "Mission Control diagnostic presentation and calibrated alerts remain pending.",
+    "Collector/Grafana deployment, protected trace search, full causal market/agent/risk/order/fill lineage, persistent audit binding, metrics/log correlation remain pending.",
+    "Counts are volatile per original runtime and cover finished SDK spans only. Exporter SUCCESS is not independent durable delivery; partial receipt counts whole batch unconfirmed.",
+    "Shutdown deliberately drops pending spans and retains any in-flight original worker. No restart/reset/retry or historical loss reconciliation.",
+    "Production load/sampling/performance/delivery acceptance and Linux runtime verification pending.",
+    "Browser refusal, uncertain Docker/candidate custody and user untracked skill files preserved. No remote push, live provider/broker/capital or candidate execution."
+  ]
+}

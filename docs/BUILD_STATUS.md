@@ -4,6 +4,18 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Protected trace queue accounting increment
+
+- Added exact volatile SDK span inventory for acknowledgements, unconfirmed exports,
+  queue drops, pending and in-flight spans. Bounded producer callbacks preserve
+  deterministic risk/order/control behavior under exporter failure and saturation.
+- Original worker and runtime identity are retained across flush/shutdown timeout;
+  actual worker termination is required for STOPPED. Faults never restart the worker.
+  Typed status is protected before/after reading and withholds incoherent sources.
+- Diagnostic UI, calibrated alerts, full causal lineage, collector/Grafana deployment,
+  production/independent acceptance and all P00–P13 remain incomplete. See
+  TRACING_DIAGNOSTICS_HANDOFF.md, ADR 0141 and evaluation 0141.
+
 ## Owned paper OpenTelemetry increment
 
 - Added actual optional SDK HTTP roots and child market/risk/order/replay/recovery
