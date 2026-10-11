@@ -114,3 +114,12 @@ trace/span/runtime metadata and the observed local prefix. Graph execution IDs
 remain a separate archive. Missing or unavailable evidence invents no context.
 This does not supply a durable span store, collector search or delivery proof.
 Browser acceptance and full P00–P13 completion remain pending.
+# Saved span console added in 0149
+
+The advisory binding panel links its exact original SDK trace ID to a separate
+`sdk` lookup on Traces, with prefetch disabled. The saved span panel shows selected
+original span/parent IDs, exact nanosecond durations and observed file prefixes.
+Advisory UUIDs, SDK trace IDs and graph IDs remain distinct namespaces. Missing
+parents remain visible; no audited authenticity, complete history or successful
+delivery is inferred from a local collector read. No SDK export retry/flush or
+trading mutation is exposed. Full causal links and release acceptance remain open.

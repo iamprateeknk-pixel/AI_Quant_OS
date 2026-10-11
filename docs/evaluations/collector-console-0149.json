@@ -1,0 +1,195 @@
+{
+  "increment": "0149",
+  "date": "2026-10-11",
+  "base_commit": "f7341370737571b8126e5c5d04375589747db321",
+  "feature": "Saved SDK span lookup/table, original advisory SDK link and scoped native Next read states on Traces",
+  "verification": {
+    "fresh_staged_backend_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0149-release",
+    "backend_tests": 402,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "59.489",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py",
+      "tests/test_collector_console_fixture.py"
+    ],
+    "frontend_tests": 121,
+    "frontend_failures": 0,
+    "production_build": "passed native Next 16.3.6 build and TypeScript",
+    "eslint": "passed all changed/new frontend source",
+    "ruff": "passed new native fixture test",
+    "format_check": "passed new native fixture test",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "4a2b3571bec40eece956836daf7eb7449fcf87b02e503a3d36869c8575c41d9e"
+      },
+      {
+        "path": ".gitattributes",
+        "sha256": "f4adfa2c03e8d7eda115fb1fbde5005887f05a4913f0bbaf9b807ddfcd9b3eb5"
+      },
+      {
+        "path": "apps/web/src/app/globals.css",
+        "sha256": "5d9a3ba8eb320ef89110f4fe93b9e3cc89da96103d1ec4164e778b784fd3b480"
+      },
+      {
+        "path": "apps/web/src/app/traces/error.tsx",
+        "sha256": "134cdbefcba8df9cc8240922838e61e2fc509eba1cc7e515b20d8bb6d869e09e"
+      },
+      {
+        "path": "apps/web/src/app/traces/loading.tsx",
+        "sha256": "f06c448d67ec5b0c928f0a6f9f6152b68501f55a620d0a1ebf7e23455fa64d70"
+      },
+      {
+        "path": "apps/web/src/app/traces/page.tsx",
+        "sha256": "8b9a83c6f71b136336ebda774be4e9648fecd169c5f176c989a774a2e4f2e3ed"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/server.ts",
+        "sha256": "094407f25789d2d2b2a98b60c6fad07334f302172427b3d2d87fd7710de590be"
+      },
+      {
+        "path": "apps/web/src/features/traces/agent-trace-lookup-panel.tsx",
+        "sha256": "bcb8ed5ed1856f87c846d73fe1adc1209e669b600ffa90c3a2af632e4771b723"
+      },
+      {
+        "path": "apps/web/src/features/traces/collector-trace-panel.tsx",
+        "sha256": "3a59107e85be524e1fb84912ceb170560ad57d5582b6ebe27eb2607eb1b514e1"
+      },
+      {
+        "path": "apps/web/src/features/traces/collector-trace.ts",
+        "sha256": "edacf6b440bd4b58478a66d2ee8acb4829a9d03ee48cd3aea05ecdbc854cd5db"
+      },
+      {
+        "path": "apps/web/tests/agent-trace-lookup.test.mjs",
+        "sha256": "efb14bdcbaa6322d95dc53834e727ca091a8eb5c109151ad77b10f25a0041c96"
+      },
+      {
+        "path": "apps/web/tests/collector-trace.test.mjs",
+        "sha256": "33f2f830da83b4fbd8dbc21fe8c2fdcc8ce726ba1c28bd6c799272ae91044c49"
+      },
+      {
+        "path": "apps/web/tests/fixtures/collector-trace.json",
+        "sha256": "b2c8b84ea82ddadfa1e4cd631a91ed23852a0ce81ab0d027027415240d561ca5"
+      },
+      {
+        "path": "docs/AGENT_TRACE_BINDING_HANDOFF.md",
+        "sha256": "ec24799347b5e9b99976c15cae1d97e961a1d40d76f7d441744544503941bf4c"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "fd871e3fe5595454dd4dbe6a7e7116ec3c2a8de9110885c4db491fc96fac576a"
+      },
+      {
+        "path": "docs/adr/0149-saved-collector-spans-console.md",
+        "sha256": "4e9f6e85d028059b15b75d1cf2e1cb6864dee05ad97f5180dace86ccd0464891"
+      },
+      {
+        "path": "tests/fixtures/collector-trace-native.jsonl",
+        "sha256": "3d299ba06ceaa39006bc5cc5092127a5cac3d50d9cf9903fa5c5f23adb234f67"
+      },
+      {
+        "path": "tests/test_collector_console_fixture.py",
+        "sha256": "09213f55b7f88c80c443157981d7b782c13ce514f1dcef347426193fb43f1eec"
+      }
+    ],
+    "unchanged_backend_runtime_files": 305,
+    "unchanged_schemas": 111,
+    "tracked_frontend_files": 128,
+    "frontend_identity": "All tracked frontend source LF-identical root/fresh; changed files root/index/fresh equal. Commands use original installed locked dependencies in root apps/web.",
+    "documentation_only_after_verification": [
+      "docs/adr/0149-saved-collector-spans-console.md"
+    ],
+    "documentation_note": "Only ADR sentence formatting corrected after runtime verification; original tested checkout/index preserved. Executable sources, CSS, tests and native fixture unchanged.",
+    "dependencies": "Backend runtime, both existing hash locks and all published schemas unchanged; no new package/install or backend wheel rerun. Prior 0148 wheel evidence retained.",
+    "native_fixture": "Actual protected 0148 API response read from original seven-span native Collector Contrib/paper application output. Original source bytes retained; independent fixture read at fixed recorded UTC clock equals every response field, without ID/time normalization. Existing actual native collector application integration rerun in backend scope.",
+    "native_fixture_bytes": {
+      "sha256": "3d299ba06ceaa39006bc5cc5092127a5cac3d50d9cf9903fa5c5f23adb234f67",
+      "bytes": 3408,
+      "selected_spans": 4
+    },
+    "checkout_conversion": "Meaningful Git filter check first showed default Windows checkout conversion altered native byte count/hash. Explicit -text attribute now proves original root/index/checkout-filter/fresh byte equality, retaining original proof rather than recomputing fixture hash.",
+    "private_reader": "Canonical nonzero SDK ID before cookie/network access; fixed protected server path/private session/no-store/redirect rejection/three-second timeout and explicit 256 KiB limit. Invalid input and missing session perform no source request; oversize response withholds spans.",
+    "parser": "Exact requested trace, fixed false flags, UTC read time/calendar validation, <=128 spans, <=4 prefixes, strict ordinal/byte/hash bounds, selected safe enums/UUIDs/route templates, decimal nanosecond strings <=signed64 and exact BigInt ordering/duration. Duplicate/self/cyclic parentage rejected; absent parents preserved; extra fields stripped.",
+    "presentation": "Actual React server rendering checks semantic span table/caption/row headings, exact durations, explicit absent-parent notice, source-prefix disclosure and empty/disabled/unavailable/sign-in states without invented rows. Actual Traces page composition sends only exact SDK query and rejects repeated SDK query without reading.",
+    "lookup_styles": "Scoped shared trace lookup styles declare 44-pixel input/button targets, 16-pixel input font, theme tokens, wrapping widths and visible focus outlines. No browser size/contrast/overflow measurement claimed.",
+    "advisory_link": "Original protected binding SDK trace ID links to separate sdk query; prefetch disabled. No namespace equivalence with advisory UUID or graph ID and no audited authenticity/completeness/delivery inferred.",
+    "next_boundaries": "Read installed loading/error guides and actual 16.3.6 ErrorInfo/handler. Scoped loading infers no outcome; client error renders/logs no raw error and uses actual installed retry callback to refetch/re-render. Direct component callback test confirms only supplied read callback invoked.",
+    "red_proof": {
+      "path": "D:\\AI_Quant_OS\\data-local\\collector-console-0149-red.log",
+      "sha256": "4b864dd7410e3cb97acf408b4c23a112ba433795eaec948f9f528a7c5b04a0dd",
+      "failures": 4
+    },
+    "junit_sha256": "0dfa7e5866e70e8ca9dc3af3d23f3c7fc291abe2c08f0180d3649b5c31c79045",
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "e7bf7feadc9b5b670ddd11e1805b069d28f31f67ccebf3f3016015e3e733b68a"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "7688ae71c60af2e4266827abb3678cc2145655f587daf33dfa649dbac2c619c3"
+      },
+      {
+        "check": "frontend",
+        "sha256": "86a456be2caff99163ba48eebbf2b8fafc19f67ef643f0259bed1ff104da4e8b"
+      },
+      {
+        "check": "eslint",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "check": "build",
+        "sha256": "a951c0e9641dd8b96199b8567d53f3419e29a0b18b9a5fa590579bed4d971fb4"
+      }
+    ],
+    "review": "Local correctness/readability/architecture/security/performance review: feature-owned selected parser and server-rendered panel; finite private server read, native GET form, non-prefetched link and existing wrapping/table-scroll styles; exact BigInt values and missing ancestry semantics. No client SDK/token/control mutation. Existing backend/domain unchanged. Independent review pending.",
+    "browser": "Not attempted; prior launch refusal preserved. Server rendering/component callback/native Next build are not browser/a11y/visual acceptance.",
+    "full_suite": "Not run; scoped native trusted SDK/collector/API/provider/spending/quotas/audit/risk/HALT/session/launcher/locks only; uncertain 0084/0088 candidate custody preserved.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Revert additive frontend parser/panel/reader/page/link/boundaries and native fixture/test/attribute additions. Retain collector files, SDK outcomes/bindings and audit heads; no reset/flush/retry/trading mutation.",
+  "limits": [
+    "All P00-P13 remain incomplete; independent release acceptance pending.",
+    "Local selected span/prefix observations do not certify delivery, completeness, atomic audit history or independent authenticity; missing parents/history remain explicit.",
+    "Indexed/full span search, full other role/order/fill causal links, Linux/service/Grafana/metrics/alerts and load/latency acceptance remain pending.",
+    "Browser visual/accessibility acceptance not performed; prior refusal preserved.",
+    "No Docker mutation, remote push/promotion, paid provider/broker/live-capital/candidate execution; user untracked skills preserved."
+  ]
+}

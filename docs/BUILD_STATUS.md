@@ -1196,3 +1196,13 @@ bounds, schema, revocation, original append/rewrite behavior and HALT are checke
 All authority/completeness flags remain false. Console span display/indexing,
 full causal tracing, Linux/Grafana/service/independent/browser acceptance and all
 P00–P13 full gates remain open. See ADR/evaluation 0148.
+# Development increment 0149 — saved collector span console
+
+Traces now reads an explicit SDK trace ID and shows recorded step/span/parent IDs,
+exact nanosecond durations, safe saved values and captured file prefixes. Advisory
+context links its original SDK identity. Missing ancestry and unconfirmed/expired
+history are explicit; no complete-trace/delivery/audit authenticity is inferred.
+Selected parser/private reader, native response fixture, page wiring, scoped Next
+loading/error behavior, full frontend tests and production build are checked.
+Browser/visual/accessibility acceptance, indexed/full causal search and all full
+P00–P13 gates remain pending. See ADR/evaluation 0149.

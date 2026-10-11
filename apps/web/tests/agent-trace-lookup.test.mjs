@@ -69,6 +69,7 @@ test("Traces page wires exact advisory identity separately from graph pagination
   .replace(/^import .*operator-session\/server.*;$/m,'const {readAgentTraceBinding,readGraphRuns,readTracingStatus}=globalThis.lookupPageReads;')
   .replace(/^import .*trace-panels.*;$/m,'const GraphRunListPanel=()=>null;')
   .replace(/^import .*tracing-status-panel.*;$/m,'const TracingStatusPanel=()=>null;')
+  .replace(/^import .*collector-trace-panel.*;$/m,'const CollectorTracePanel=()=>null;')
   .replace('"@/features/traces/agent-trace-lookup-panel"',JSON.stringify(panel));
  const calls=[],old=globalThis.lookupPageReads;
  try{
