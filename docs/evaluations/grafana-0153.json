@@ -1,0 +1,332 @@
+{
+  "increment": "0153",
+  "date": "2026-10-12",
+  "base_commit": "7a76a069ba564cb5aead2e69497de12892b20860",
+  "feature": "Pinned original native Grafana OSS paper HTTP observation dashboard",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0153-final",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "5fe9bbda2c15ee57fbe8c09df1ed7536a725e6125eb5b699fdecc751ef193605"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "626a8f8c83a21a5f87aaeced9baf7d3aa2ba4fa74cadd14bf0ee25c11824e734"
+      },
+      {
+        "path": "docs/GRAFANA_HANDOFF.md",
+        "sha256": "cadee88cd6457ec27a0ccbbe94bfcbcbf3334e11de42b2e2898c4c697cd8a152"
+      },
+      {
+        "path": "docs/adr/0153-pinned-native-grafana.md",
+        "sha256": "572d119b1d370c61142f73454c3bfac8f3f4c272a3c11af7a9ee95232f7fd6ef"
+      },
+      {
+        "path": "infra/observability/grafana-release.json",
+        "sha256": "b7df6196a608e4fc12cba101f98ef4104f600e724856f6a9c9a59555564eb3ad"
+      },
+      {
+        "path": "infra/observability/grafana/dashboards/paper-http.json",
+        "sha256": "def172ab718220dc9be96679423e216d337070efb1f661312d5b4b231d463e3f"
+      },
+      {
+        "path": "infra/observability/grafana/grafana.ini",
+        "sha256": "a57cb9a3c0cdcdb05c56b620492b5a363a9498f666a28a5f454ab87a2f483476"
+      },
+      {
+        "path": "infra/observability/grafana/provisioning/dashboards/paper.yaml",
+        "sha256": "66cfeb26f195e299c03760b4c89f0422bd7d438479ed09b150048d6b42f4cb19"
+      },
+      {
+        "path": "infra/observability/grafana/provisioning/datasources/paper.yaml",
+        "sha256": "6091ca2613a61443595bf75ab42930a91baf23c0f85a2428627f833ffa3768f0"
+      },
+      {
+        "path": "tests/test_grafana_deployment.py",
+        "sha256": "dc624bc8972d049c5957db724592b1689bf3bef71213bf44194fe5b85d800442"
+      }
+    ],
+    "backend_tests": 422,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "109.202",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py",
+      "tests/test_collector_console_fixture.py",
+      "tests/test_paper_trace_context.py",
+      "tests/test_paper_http_metrics.py",
+      "tests/test_prometheus_deployment.py",
+      "tests/test_grafana_deployment.py"
+    ],
+    "checks": {
+      "backend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0153-final-fresh-backend.log",
+        "scope": [
+          "tests/test_provider_spend.py",
+          "tests/test_openai_spend_admission.py",
+          "tests/test_openai_reviewer.py",
+          "tests/test_provider_call_admission.py",
+          "tests/test_agent_call_budgets.py",
+          "tests/test_context_call_budgets.py",
+          "tests/test_jev_adapter.py",
+          "tests/test_decision_gateway.py",
+          "tests/test_deep_review.py",
+          "tests/test_api.py",
+          "tests/test_currency_risk.py",
+          "tests/test_event_risk.py",
+          "tests/test_operator_controls.py",
+          "tests/test_operator_sessions.py",
+          "tests/test_local_runtime.py",
+          "tests/test_audit_integrity.py",
+          "tests/test_provider_spend_api.py",
+          "tests/test_jev_spend_admission.py",
+          "tests/test_shared_provider_spend.py",
+          "tests/test_shared_spend_api.py",
+          "tests/test_paper_telemetry.py",
+          "tests/test_dependency_locks.py",
+          "tests/test_trace_export_queue.py",
+          "tests/test_tracing_status_api.py",
+          "tests/test_agent_telemetry.py",
+          "tests/test_agent_runs.py",
+          "tests/test_tracing_console_fixture.py",
+          "tests/test_agent_trace_binding.py",
+          "tests/test_agent_trace_binding_api.py",
+          "tests/test_agent_trace_console_fixture.py",
+          "tests/test_collector_deployment.py",
+          "tests/test_collector_trace_api.py",
+          "tests/test_collector_console_fixture.py",
+          "tests/test_paper_trace_context.py",
+          "tests/test_paper_http_metrics.py",
+          "tests/test_prometheus_deployment.py",
+          "tests/test_grafana_deployment.py"
+        ],
+        "log_sha256": "1ef9686a2059ae99a18a567d6fd53b8bb3f55de4c21f17db6463e984b0c5b93b"
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0153-final-fresh-ruff.log",
+        "scope": [
+          "ruff",
+          "check",
+          "tests/test_grafana_deployment.py"
+        ],
+        "log_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      "format": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0153-final-fresh-format.log",
+        "scope": [
+          "ruff",
+          "format",
+          "--check",
+          "tests/test_grafana_deployment.py"
+        ],
+        "log_sha256": "7688ae71c60af2e4266827abb3678cc2145655f587daf33dfa649dbac2c619c3"
+      }
+    },
+    "junit_sha256": "0f8c0117c2fcd3d35b0c8cff6a9ea1d9b94fa2900e27feaf70fe064404aab66a",
+    "native_release": {
+      "version": "13.2.3",
+      "platform": "windows_amd64",
+      "source": "https://dl.grafana.com/grafana/release/13.2.3/grafana_13.2.3_36482603486_windows_amd64.tar.gz",
+      "checksum_source": "https://grafana.com/grafana/download/13.2.3?edition=oss&platform=windows",
+      "archive_sha256": "dafe883a7c15543c6d6710b868eb8b4053353441ce7ceacf150942b8de3960f0",
+      "archive_bytes": 465775092,
+      "members": 15051,
+      "regular_files": 13361,
+      "tree_sha256": "f31e96275b205973dc00d0f83a208d5279da925a44c675623e66af4c57ec1864",
+      "tree_bytes": 1391283958,
+      "executable_sha256": "05659593ca8dc6d1b0a9fffc72636a598b44c2b30506f5c18ccf8d11f55fc227",
+      "trust": "Official download-page archive checksum matched; every regular distribution member retained and hashed; no independent signature/custody attestation"
+    },
+    "upstream_release_metadata_sha256": "93b8021a999b2fde281d8a0e86ffa78ed77370ce44685ec3f423eb9aa0db842a",
+    "upstream_download_page_sha256": "3f77e0bf331700ec7269c9e3c639a5027f70021f8940bb69ba112c7f9167ee5a",
+    "original_observation": {
+      "path": "D:\\AI_Quant_OS\\data-local\\prometheus-0153-final-fresh-fixtures\\test_native_grafana_auth_provi0\\grafana-observation.json",
+      "sha256": "820c77ee5924482bfbe3bae45a63d9d67c36b0ffd7d62b1ae81a1e48ff34f85e",
+      "version": "13.2.3",
+      "provisioned_uid": "paper-http-observations",
+      "original_order_requests": 2,
+      "native_query_frame": {
+        "results": {
+          "A": {
+            "status": 200,
+            "frames": [
+              {
+                "schema": {
+                  "refId": "A",
+                  "meta": {
+                    "type": "numeric-multi",
+                    "typeVersion": [
+                      0,
+                      1
+                    ],
+                    "custom": {
+                      "calculatedMinStep": 1000,
+                      "resultType": "vector"
+                    },
+                    "executedQueryString": "Expr: ai_quant_paper_http_duration_seconds_count{method=\"POST\",route=\"/api/v1/paper/intents\",status_class=\"2xx\",job=\"paper_http\"}\nStep: 1s"
+                  },
+                  "fields": [
+                    {
+                      "name": "Time",
+                      "type": "time",
+                      "typeInfo": {
+                        "frame": "time.Time"
+                      },
+                      "config": {
+                        "interval": 1000
+                      }
+                    },
+                    {
+                      "name": "ai_quant_paper_http_duration_seconds_count",
+                      "type": "number",
+                      "typeInfo": {
+                        "frame": "float64"
+                      },
+                      "labels": {
+                        "__name__": "ai_quant_paper_http_duration_seconds_count",
+                        "instance": "127.0.0.1:53175",
+                        "job": "paper_http",
+                        "method": "POST",
+                        "route": "/api/v1/paper/intents",
+                        "status_class": "2xx"
+                      },
+                      "config": {
+                        "displayNameFromDS": "ai_quant_paper_http_duration_seconds_count{instance=\"127.0.0.1:53175\", job=\"paper_http\", method=\"POST\", route=\"/api/v1/paper/intents\", status_class=\"2xx\"}"
+                      }
+                    }
+                  ]
+                },
+                "data": {
+                  "values": [
+                    [
+                      1791744399246
+                    ],
+                    [
+                      2
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "gated_failure_query_frame": {
+        "results": {
+          "A": {
+            "status": 200,
+            "frames": [
+              {
+                "schema": {
+                  "refId": "A",
+                  "meta": {
+                    "typeVersion": [
+                      0,
+                      0
+                    ],
+                    "custom": {
+                      "calculatedMinStep": 1000
+                    },
+                    "executedQueryString": "Expr: sum(rate(ai_quant_paper_http_duration_seconds_count{job=\"paper_http\"}[5m])) and on() (min(up{job=\"paper_http\"}) == 1)\nStep: 1s"
+                  },
+                  "fields": []
+                },
+                "data": {
+                  "values": []
+                }
+              }
+            ]
+          }
+        }
+      },
+      "rejected_scrape_observed": true,
+      "halt": "HALT",
+      "browser_verified": false
+    },
+    "terminal_original_job_handles": [
+      {
+        "path": "D:\\AI_Quant_OS\\data-local\\prometheus-0153-final-fresh-fixtures\\test_native_grafana_auth_provi0\\grafana-terminal.json",
+        "sha256": "b7f3a1fd09bf628a8e6daaca4d23a113699885504d4cba95687037b86efca699",
+        "captured_owned_process_handles": 6,
+        "all_observed_terminal": true
+      },
+      {
+        "path": "D:\\AI_Quant_OS\\data-local\\prometheus-0153-final-fresh-fixtures\\test_native_grafana_auth_provi0\\prometheus-terminal.json",
+        "sha256": "c735f12709f56956e0580a7498982b02c90c8180abd7be0a17316e4961ad42c6",
+        "captured_owned_process_handles": 2,
+        "all_observed_terminal": true
+      },
+      {
+        "path": "D:\\AI_Quant_OS\\data-local\\prometheus-0153-final-fresh-fixtures\\test_native_grafana_refuses_mi0\\missing-bootstrap-terminal.json",
+        "sha256": "7edae2995506e87b8a486397f08d53a9e6d8b39a16023bb4cad5ae10713d6f5b",
+        "captured_owned_process_handles": 1,
+        "all_observed_terminal": true
+      },
+      {
+        "path": "D:\\AI_Quant_OS\\data-local\\prometheus-0153-final-fresh-fixtures\\test_native_grafana_refuses_mi1\\missing-bootstrap-terminal.json",
+        "sha256": "7edae2995506e87b8a486397f08d53a9e6d8b39a16023bb4cad5ae10713d6f5b",
+        "captured_owned_process_handles": 1,
+        "all_observed_terminal": true
+      }
+    ],
+    "native_red": "Missing pin setup errors; initial native integration failed on absent private data directory parent. Startup capture exposed that native SQLite cannot create the parent. Earlier assertions used a historical query end timestamp, then assumed native empty-field frames contained a numeric column. Corrected test uses a fresh timestamp after observing up0 and accepts empty/null numeric samples only. First staged422-test run passed; its style gate caught fixture import argument shadowing, resolved through the existing pytest request. All original failed reports/fixtures retained. Whole-package cold read was observed to completion without replacement.",
+    "native_ingestion": "Actual original Uvicorn quote/accepted order/replay produces two SDK observations and one order. Native Prometheus ingestion, Grafana datasource proxy and native plugin frames preserve count2. Anonymous board/source requests401; actual private-file bootstrap omission refused. Provisioned board/source immutable; native administrator save400. Applied settings and returned payloads omit private credentials. Failed scrape up0 preserves range history2 but actual current board rate expression returns missing data without a zero fallback. Original order remains1; HALT succeeds while monitoring is down.",
+    "source_identity": {
+      "staged_files_identical": 10,
+      "unchanged_runtime_frontend_schemas_requirements_files": 550,
+      "prior_schemas_unchanged": 111
+    },
+    "structure": "Additive infra configuration/test/docs; existing domain/runtime modules unchanged. Existing OwnedProcess reused for suspended-before-job-assignment lifetime. Native wrapper and plugin workers inherit the original job. Exact original job-member handles captured and observed terminal; all logs/data retained. Ignored structural map refreshed, imports/layers manually reviewed; original prose checker is unsupported.",
+    "review": "Local five-axis review: native checksum/tree/version; authenticated loopback/source provisioning; private bootstrap/output omission; current-vs-historical query semantics/no zero; controlled fixed datasource; owned handle cleanup; full package checks before/after group. No hot-path app changes, dependency upgrades, production service install or process-global cleanup. Independent review pending.",
+    "full_suite": "Not run; preserve uncertain0084/0088 candidate custody. Scoped trusted telemetry/nativeCollector/Prometheus/Grafana/API/provider/audit/risk/HALT/session/launcher/lock tests only.",
+    "prior_build": "Runtime/frontend/requirements and111 schemas unchanged; prior0151 native backend wheel and0149 frontend121 tests/build evidence retained, not rerun.",
+    "browser": "Not attempted; prior browser launch refusal preserved. Actual HTTP/native frame evidence does not prove rendered UI, visual/accessibility acceptance.",
+    "scan_verdict": "Gitleaks8.30.1 redacted staged patch, exit0/zero findings; exact patch and report retained locally.",
+    "scan_metadata_correction": "Final added scan description triggered a generic key rule on the description field label. Retained redacted finding and renamed the metadata label; no suppression or executable/config change."
+  },
+  "rollback": "Revert additive pins/config/provisioning/board/tests/runbook. Close only exact original admitted process/job including owned plugins, retain data/logs; no app migration, source/collector/journal reset, retry or service install.",
+  "limits": [
+    "All full P00-P13 gates remain incomplete.",
+    "Initial local paper HTTP observation board only; other platform/queue/trace/log/risk dashboards, justified alerts/runbooks and full causal/durable indexed tracing pending.",
+    "Official archive checksum/complete tree and native local tests are not independent signature/process/filesystem custody attestation or production deployment acceptance.",
+    "Private ACLs/account lifecycle/viewer roles/TLS/network/service/Linux/resource/load/retention and independent/browser acceptance pending.",
+    "Local Prometheus query interface remains unauthenticated loopback-only by required original launch flags; trusted local OS process boundary.",
+    "No Docker mutation, candidate execution, paid provider/broker/live capital, remote push/promotion; user .agents/ and skills-lock.json untouched."
+  ]
+}

@@ -1236,3 +1236,14 @@ ingestion verify original SDK count/buckets, revoked scrape failures, retained
 range history and unaffected HALT. Original handles stop without unknown cleanup.
 Grafana/alerts/service credentials/Linux/production acceptance, independent/browser
 review and all full P00–P13 gates remain open. See PROMETHEUS_HANDOFF.md and 0152.
+
+# Development increment 0153 — native Grafana paper HTTP board
+
+Pins full upstream Grafana OSS 13.2.3 Windows distribution and provides private
+bootstrap, authenticated loopback configuration and fixed source/file board.
+Native API checks cover original metrics, authenticated provisioning/query frames,
+failed scrape visibility, private value omission and independent paper HALT.
+Exact known original job-member handles are observed terminal. No browser render
+or full platform dashboard/alert/service acceptance is inferred. Other required
+views, roles/credentials, Linux/resource/custody/production/independent/browser and
+all full P00–P13 gates remain open. See GRAFANA_HANDOFF.md and ADR/evaluation 0153.

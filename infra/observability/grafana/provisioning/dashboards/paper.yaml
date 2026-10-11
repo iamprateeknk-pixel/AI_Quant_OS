@@ -1,0 +1,12 @@
+apiVersion: 1
+providers:
+  - name: paper-http-observations
+    orgId: 1
+    folder: Paper Observability
+    folderUid: paper-observability
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: ${AI_QUANT_GRAFANA_DASHBOARDS}

@@ -1,0 +1,14 @@
+{
+  "version": "13.2.3",
+  "platform": "windows_amd64",
+  "source": "https://dl.grafana.com/grafana/release/13.2.3/grafana_13.2.3_36482603486_windows_amd64.tar.gz",
+  "checksum_source": "https://grafana.com/grafana/download/13.2.3?edition=oss&platform=windows",
+  "archive_sha256": "dafe883a7c15543c6d6710b868eb8b4053353441ce7ceacf150942b8de3960f0",
+  "archive_bytes": 465775092,
+  "members": 15051,
+  "regular_files": 13361,
+  "tree_sha256": "f31e96275b205973dc00d0f83a208d5279da925a44c675623e66af4c57ec1864",
+  "tree_bytes": 1391283958,
+  "executable_sha256": "05659593ca8dc6d1b0a9fffc72636a598b44c2b30506f5c18ccf8d11f55fc227",
+  "trust": "Official download-page archive checksum matched; every regular distribution member retained and hashed; no independent signature/custody attestation"
+}
