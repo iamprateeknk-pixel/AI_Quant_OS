@@ -14,6 +14,7 @@ from ai_quant_os.audit_chain import AuditChain
 from ai_quant_os.contracts import _require_aware
 from ai_quant_os.jev_spend_policy import JevInputSpendPolicy
 from ai_quant_os.provider_spend_policy import ProviderSpendPolicy, bounded_integer, encode
+from ai_quant_os.shared_spend_policy import SharedSpendPolicy, decode_spending_policy
 
 
 def _utc(now: datetime) -> datetime:
@@ -22,12 +23,12 @@ def _utc(now: datetime) -> datetime:
 
 
 class ProviderSpendStore:
-    def __init__(self, path: Path, policy: ProviderSpendPolicy | None) -> None:
+    def __init__(self, path: Path, policy: ProviderSpendPolicy | SharedSpendPolicy | None) -> None:
         self.path = Path(path).resolve()
         self.pin = self.path.with_suffix(self.path.suffix + ".pin.json")
         created = not self.path.exists() and not self.pin.exists()
         if created:
-            if type(policy) not in (ProviderSpendPolicy, JevInputSpendPolicy):
+            if type(policy) not in (ProviderSpendPolicy, JevInputSpendPolicy, SharedSpendPolicy):
                 raise ValueError("Original spending policy required")
             self.path.parent.mkdir(parents=True, exist_ok=True)
             anchor = {
@@ -121,9 +122,7 @@ class ProviderSpendStore:
         if integrity.legacy_event_count:
             raise ValueError("Unaudited spending archive")
         raw = db.execute("SELECT body FROM spend_policy WHERE singleton=1").fetchone()[0]
-        value = json.loads(raw)
-        policy_type = JevInputSpendPolicy if "accounting" in value else ProviderSpendPolicy
-        policy = policy_type.decode(raw)
+        policy = decode_spending_policy(raw)
         if raw != policy.encode() or policy.fingerprint != self.anchor["policy_sha256"]:
             raise ValueError("Spending policy pin mismatch")
         audits = {
@@ -153,6 +152,7 @@ class ProviderSpendStore:
             if type(identity) is not str or not re.fullmatch("[a-f0-9]{32}", identity):
                 raise ValueError("Invalid spending reservation")
             if key == "reserve:" + identity:
+                contract = policy.contract(record.get("model"))
                 if (
                     set(record)
                     != {
@@ -166,14 +166,13 @@ class ProviderSpendStore:
                         "max_output_tokens",
                     }
                     or record["agent_id"] not in roles
-                    or record["model"] != policy.model
                     or type(record["agent_version"]) is not str
                     or not re.fullmatch(
                         r"(?:0|[1-9]\d{0,5})(?:\.(?:0|[1-9]\d{0,5})){2}", record["agent_version"]
                     )
                     or type(record["request_sha256"]) is not str
                     or not re.fullmatch("[a-f0-9]{64}", record["request_sha256"])
-                    or not policy.valid_reservation(
+                    or not contract.valid_reservation(
                         record["input_tokens"], record["max_output_tokens"]
                     )
                 ):
@@ -194,7 +193,10 @@ class ProviderSpendStore:
 
     @staticmethod
     def _breached(policy, reservations, usage):
-        return any(policy.exceeded(reservations[key], row) for key, row in usage.items())
+        return any(
+            policy.contract(reservations[key]["model"]).exceeded(reservations[key], row)
+            for key, row in usage.items()
+        )
 
     @staticmethod
     def _totals(policy, reservations, usage, agent_id, now):
@@ -203,11 +205,12 @@ class ProviderSpendStore:
             if row["agent_id"] != agent_id:
                 continue
             report = usage.get(key)
+            contract = policy.contract(row["model"])
             inputs = report["input_tokens"] if report else row["input_tokens"]
             outputs = report["output_tokens"] if report else row["max_output_tokens"]
             tokens, money = (
-                policy.tokens(inputs, outputs),
-                policy.money(inputs, outputs),
+                contract.tokens(inputs, outputs),
+                contract.money(inputs, outputs),
             )
             pending += int(report is None)
             # Unknown older charges remain reserved in every later period until settled.
@@ -238,25 +241,17 @@ class ProviderSpendStore:
                 raise ValueError("Spending clock moved backwards")
             if self._breached(policy, reservations, usage):
                 raise PermissionError("Provider spending breach unresolved")
-            if (
-                model != policy.model
-                or agent_id not in {rule.agent_id for rule in policy.rules}
-                or not policy.valid_reservation(input_tokens, max_output_tokens)
-            ):
+            contract = policy.contract(model)
+            if agent_id not in {
+                rule.agent_id for rule in policy.rules
+            } or not contract.valid_reservation(input_tokens, max_output_tokens):
                 raise ValueError("Invalid spending admission")
-            rule = next(rule for rule in policy.rules if rule.agent_id == agent_id)
-            daily, monthly, daily_money, monthly_money, _ = self._totals(
-                policy, reservations, usage, agent_id, now
-            )
-            tokens = policy.tokens(input_tokens, max_output_tokens)
-            money = policy.money(input_tokens, max_output_tokens)
-            if (
-                daily + tokens > rule.daily_tokens - rule.daily_token_reserve
-                or monthly + tokens > rule.monthly_tokens - rule.monthly_token_reserve
-                or daily_money + money > rule.daily_nano_usd - rule.daily_money_reserve
-                or monthly_money + money > rule.monthly_nano_usd - rule.monthly_money_reserve
-            ):
-                raise PermissionError("Provider spending budget exhausted")
+            tokens = contract.tokens(input_tokens, max_output_tokens)
+            money = contract.money(input_tokens, max_output_tokens)
+            self._require_capacity(policy, reservations, usage, agent_id, now, tokens, money)
+            if type(policy) is SharedSpendPolicy:
+                selected = {key: row for key, row in reservations.items() if row["model"] == model}
+                self._require_capacity(contract, selected, usage, agent_id, now, tokens, money)
             identity = uuid4().hex
             record = dict(
                 reservation_id=identity,
@@ -310,59 +305,81 @@ class ProviderSpendStore:
         if breach:
             raise PermissionError("Provider spending breach retained")
 
-    def status(self, now: datetime) -> dict[str, object]:
+    @classmethod
+    def _require_capacity(cls, policy, reservations, usage, agent_id, now, tokens, money):
+        rule = next(rule for rule in policy.rules if rule.agent_id == agent_id)
+        daily, monthly, daily_money, monthly_money, _ = cls._totals(
+            policy, reservations, usage, agent_id, now
+        )
+        if (
+            daily + tokens > rule.daily_tokens - rule.daily_token_reserve
+            or monthly + tokens > rule.monthly_tokens - rule.monthly_token_reserve
+            or daily_money + money > rule.daily_nano_usd - rule.daily_money_reserve
+            or monthly_money + money > rule.monthly_nano_usd - rule.monthly_money_reserve
+        ):
+            raise PermissionError("Provider spending budget exhausted")
+
+    @classmethod
+    def _agent_rows(cls, policy, reservations, usage, now):
+        agents = []
+        for rule in policy.rules:
+            daily, monthly, daily_money, monthly_money, pending = cls._totals(
+                policy, reservations, usage, rule.agent_id, now
+            )
+            agents.append(
+                dict(
+                    agent_id=rule.agent_id,
+                    daily_tokens=daily,
+                    monthly_tokens=monthly,
+                    daily_nano_usd=daily_money,
+                    monthly_nano_usd=monthly_money,
+                    pending_count=pending,
+                    unsettled_tokens=sum(
+                        policy.contract(row["model"]).tokens(
+                            row["input_tokens"], row["max_output_tokens"]
+                        )
+                        for key, row in reservations.items()
+                        if row["agent_id"] == rule.agent_id and key not in usage
+                    ),
+                    unsettled_nano_usd=sum(
+                        policy.contract(row["model"]).money(
+                            row["input_tokens"], row["max_output_tokens"]
+                        )
+                        for key, row in reservations.items()
+                        if row["agent_id"] == rule.agent_id and key not in usage
+                    ),
+                    daily_token_limit=rule.daily_tokens,
+                    monthly_token_limit=rule.monthly_tokens,
+                    daily_money_limit=rule.daily_nano_usd,
+                    monthly_money_limit=rule.monthly_nano_usd,
+                    daily_token_remaining=max(
+                        0, rule.daily_tokens - rule.daily_token_reserve - daily
+                    ),
+                    monthly_token_remaining=max(
+                        0, rule.monthly_tokens - rule.monthly_token_reserve - monthly
+                    ),
+                    daily_money_remaining=max(
+                        0, rule.daily_nano_usd - rule.daily_money_reserve - daily_money
+                    ),
+                    monthly_money_remaining=max(
+                        0, rule.monthly_nano_usd - rule.monthly_money_reserve - monthly_money
+                    ),
+                    daily_token_reserve=rule.daily_token_reserve,
+                    monthly_token_reserve=rule.monthly_token_reserve,
+                    daily_money_reserve=rule.daily_money_reserve,
+                    monthly_money_reserve=rule.monthly_money_reserve,
+                )
+            )
+        return agents
+
+    def status(self, now: datetime, *, model: str | None = None) -> dict[str, object]:
         now = _utc(now)
         with closing(self._connection()) as db:
             db.execute("BEGIN")
             policy, reservations, usage, last, head = self._verified(db)
             if last is not None and now < last:
                 raise ValueError("Spending clock moved backwards")
-            agents = []
-            for rule in policy.rules:
-                daily, monthly, daily_money, monthly_money, pending = self._totals(
-                    policy, reservations, usage, rule.agent_id, now
-                )
-                agents.append(
-                    dict(
-                        agent_id=rule.agent_id,
-                        daily_tokens=daily,
-                        monthly_tokens=monthly,
-                        daily_nano_usd=daily_money,
-                        monthly_nano_usd=monthly_money,
-                        pending_count=pending,
-                        unsettled_tokens=sum(
-                            policy.tokens(row["input_tokens"], row["max_output_tokens"])
-                            for key, row in reservations.items()
-                            if row["agent_id"] == rule.agent_id and key not in usage
-                        ),
-                        unsettled_nano_usd=sum(
-                            policy.money(row["input_tokens"], row["max_output_tokens"])
-                            for key, row in reservations.items()
-                            if row["agent_id"] == rule.agent_id and key not in usage
-                        ),
-                        daily_token_limit=rule.daily_tokens,
-                        monthly_token_limit=rule.monthly_tokens,
-                        daily_money_limit=rule.daily_nano_usd,
-                        monthly_money_limit=rule.monthly_nano_usd,
-                        daily_token_remaining=max(
-                            0, rule.daily_tokens - rule.daily_token_reserve - daily
-                        ),
-                        monthly_token_remaining=max(
-                            0, rule.monthly_tokens - rule.monthly_token_reserve - monthly
-                        ),
-                        daily_money_remaining=max(
-                            0, rule.daily_nano_usd - rule.daily_money_reserve - daily_money
-                        ),
-                        monthly_money_remaining=max(
-                            0, rule.monthly_nano_usd - rule.monthly_money_reserve - monthly_money
-                        ),
-                        daily_token_reserve=rule.daily_token_reserve,
-                        monthly_token_reserve=rule.monthly_token_reserve,
-                        daily_money_reserve=rule.daily_money_reserve,
-                        monthly_money_reserve=rule.monthly_money_reserve,
-                    )
-                )
-            return dict(
+            state = dict(
                 state="BREACHED" if self._breached(policy, reservations, usage) else "ENFORCED",
                 day=now.date().isoformat(),
                 month=now.date().isoformat()[:7],
@@ -370,5 +387,24 @@ class ProviderSpendStore:
                 accounting=policy.accounting,
                 policy_sha256=policy.fingerprint,
                 head_hash=head,
-                agents=agents,
+                agents=self._agent_rows(policy, reservations, usage, now),
             )
+            if type(policy) is SharedSpendPolicy:
+                state["models"] = [
+                    {
+                        "model": row.model,
+                        "accounting": row.accounting,
+                        "policy_sha256": row.fingerprint,
+                    }
+                    for row in policy.models
+                ]
+            if model is not None:
+                contract = policy.contract(model)
+                selected = {key: row for key, row in reservations.items() if row["model"] == model}
+                state.update(
+                    admitted_model=contract.model,
+                    model_accounting=contract.accounting,
+                    model_policy_sha256=contract.fingerprint,
+                    model_agents=self._agent_rows(contract, selected, usage, now),
+                )
+            return state

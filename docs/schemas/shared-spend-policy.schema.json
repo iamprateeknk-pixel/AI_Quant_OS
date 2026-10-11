@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SharedSpendPolicy",
+  "type": "object",
+  "additionalProperties": false,
+  "description": "Aggregate role ceilings and one to eight immutable pinned model policies; runtime also enforces unique model IDs, policy byte capacity and quota/reserve inequalities.",
+  "required": [
+    "schema_version",
+    "accounting",
+    "rules",
+    "models"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "accounting": {
+      "const": "SHARED_MODEL_COUNTED_TOKENS_AT_DECLARED_RATE_CEILING"
+    },
+    "rules": {
+      "$ref": "provider-spend-policy.schema.json#/properties/rules"
+    },
+    "models": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "provider-spend-policy.schema.json"
+          },
+          {
+            "$ref": "jev-input-spend-policy.schema.json"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -139,6 +139,10 @@ Built-in backtests now include validated configuration and immutable source prov
 
 `moving-average-directional` adds native short positions and complete bar reversals with a separate source binding and replay model. It is connected to research 1.0, candidate comparisons and forward shadow diagnostics. See [directional handoff](docs/DIRECTIONAL_BACKTEST_HANDOFF.md) for commands, retained examples and pending statistical policies.
 
+## Shared provider spending
+
+Jev and OpenAI can use one immutable spending book with eighteen aggregate role budgets and individual pinned model limits. Point both `AI_QUANT_JEV_SPEND_PATH` and `AI_QUANT_REVIEW_SPEND_PATH` at the same original book and supply its shared policy for first creation. Reservations check both quota levels atomically; unknown charges survive restart, and a retained breach stops the whole book. Model accounting remains distinct. Standalone books still work; no migration/reset is implied. Shared Costs presentation and external billing acceptance remain pending. See [shared spending handoff](docs/SHARED_PROVIDER_SPENDING_HANDOFF.md).
+
 ## Local research validation
 
 The archived-data research runner performs native walk-forward, held-out and cost-stress evaluation with immutable experiment lineage. Reports retain pending gates and cannot authorize promotion. See [research handoff](docs/RESEARCH_HANDOFF.md) for the synthetic verification example and remaining P08 work.

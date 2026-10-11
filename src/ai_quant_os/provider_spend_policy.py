@@ -94,6 +94,11 @@ class ProviderSpendPolicy:
     rate_reference: str
     rules: tuple[SpendRule, ...]
 
+    def contract(self, model: str) -> "ProviderSpendPolicy":
+        if type(model) is not str or model != self.model:
+            raise ValueError("Model is outside the original spending policy")
+        return self
+
     @property
     def accounting(self) -> str:
         return "PROVIDER_REPORTED_USAGE_AT_DECLARED_RATE_CEILING"

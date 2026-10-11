@@ -1,0 +1,176 @@
+{
+  "increment": "0138",
+  "date": "2026-10-11",
+  "base_commit": "87ead1439db8bf269b58c4a0116e515323cda04a",
+  "feature": "One immutable aggregate eighteen-role spending book with atomic per-model admission across pinned Jev and OpenAI policies",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0138",
+    "backend_tests": 294,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "88.378",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 105,
+    "additive_schemas": 1,
+    "legacy_compatibility": "Both prior-source standalone books reopened under updated source with identical confirmed and unknown counters, policy fingerprints and audit heads",
+    "frontend": "Unchanged; tests/build not rerun in this backend increment",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "23d398e2ae360b14650d0eefa6e650ae9c0fc3ba1affef6d42ae2849849457cf"
+      },
+      {
+        "path": "README.md",
+        "sha256": "1ca049ee3b00b9135f1b4fc66677314c47d054f85ed78ff6887357ff18dc5423"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "87d186c4975fd9a973df7291b324338be9618cb62bd2accd06439aacc41acacc"
+      },
+      {
+        "path": "docs/SHARED_PROVIDER_SPENDING_HANDOFF.md",
+        "sha256": "58c26c2bcfd5e4fbf54864bcaa52d40165e973e08d4bd90a8675ac8500002896"
+      },
+      {
+        "path": "docs/adr/0138-shared-provider-spending.md",
+        "sha256": "f0a8557e65287db66b403df8eb483ffc7b18aa8987048a752dbe2739071667a5"
+      },
+      {
+        "path": "docs/schemas/shared-spend-policy.schema.json",
+        "sha256": "cb28692be873f2e4bff6ff00d60923b0ef66aed03b8d4797ca4048dd0652f7ed"
+      },
+      {
+        "path": "src/ai_quant_os/jev_adapter.py",
+        "sha256": "1f129d38d6ea7d77d27af91381b4d7cd2bd090c9a8ad1e4c34046c07de40e122"
+      },
+      {
+        "path": "src/ai_quant_os/openai_reviewer.py",
+        "sha256": "5658fcc747d09044dcac92b4568f2fe2d289b9f7d5a38feb2ac31f01019a91ef"
+      },
+      {
+        "path": "src/ai_quant_os/provider_spend_policy.py",
+        "sha256": "ec7d504b39ca8c76839a4c2b1f5c617ee43c9d25702ee88a4853bc414060c027"
+      },
+      {
+        "path": "src/ai_quant_os/provider_spend_store.py",
+        "sha256": "b01da25496ea4a5f645c148fb5799f1d9e5d55c7386e0a1c582807736dac092f"
+      },
+      {
+        "path": "src/ai_quant_os/shared_spend_policy.py",
+        "sha256": "d493d459e3cce47a3131c1f5917df5a34b0a11e0111ffa77b5ac3228fa48653e"
+      },
+      {
+        "path": "tests/test_shared_provider_spend.py",
+        "sha256": "85ab1775faca15e19c4498c4d63e986ca5178891e84b315f365118fcea0a5522"
+      }
+    ],
+    "logs": [
+      {
+        "path": "data-local/shared-spending-0138.xml",
+        "sha256": "82e97c762bdb171b03301b3d383cb3d1423ddeb6c3deef402e70c64cbe69026a"
+      },
+      {
+        "path": "data-local/shared-spending-0138-backend.log",
+        "sha256": "30a81fc21cdaa46f512028c54972903bcec0e240f3e01568df8015e87dba76d3"
+      },
+      {
+        "path": "data-local/shared-spending-0138-ruff.log",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "path": "data-local/shared-spending-0138-format.log",
+        "sha256": "f57152af69ed696672a20f7a07dc500ce85005053092505a680768f611957e48"
+      },
+      {
+        "path": "data-local/shared-spending-0138-compatibility.json",
+        "sha256": "759a65eb15f0e733f43309c938d9a1b9d9ea3f3bd26e9654e18a1860b944ba7e"
+      },
+      {
+        "path": "data-local/shared-spending-0138-red.xml",
+        "sha256": "c919d0d52a7d3e10b7bf9477a2a4be720c243731e98ceb11d83c0a2584173712"
+      },
+      {
+        "path": "data-local/shared-spending-0138-focused.xml",
+        "sha256": "1bf5fdbe2513f0c21fdcefe533035dd8fae09d7b1d5c04462051fe5daff5f550"
+      },
+      {
+        "path": "data-local/shared-spending-0138-local.xml",
+        "sha256": "a4d223689b2a80cf71316ad3a031da0c34d7b24fd085c385c1e32b70a2300703"
+      },
+      {
+        "path": "data-local/shared-spending-0138-native-api.xml",
+        "sha256": "56fe0f2d1c637027d592eccefd6304bc8b78f077b459138e417f3f0b94af10bb"
+      }
+    ],
+    "staged_secret_scan": "passed"
+  },
+  "accounting": {
+    "inventory_maximum": 8,
+    "role_count": 18,
+    "counted_tokens": "Sum of each original model policy counted tokens; Jev input-only, OpenAI input plus output",
+    "monetary_units": "Exact declared USD nanodollar ceilings",
+    "transaction": "Aggregate and selected model role ceilings checked in the same original BEGIN IMMEDIATE reservation",
+    "invoice_verified": false,
+    "platform_wide_ceiling": false,
+    "recovery_spending_enabled": false
+  },
+  "observed_native_paths": [
+    "Two real HTTP adapters on separate reopened connections to one original shared book",
+    "Pending OpenAI generation hold blocks Jev before transport; matching native usage settles before independently admitted Jev request",
+    "Native API shared budget/pin failure retains quantitative fallback, FAILED deep review, NO_NEW_RISK and zero orders",
+    "Environment loaders reopen the same original shared custody without provider calls"
+  ],
+  "review": {
+    "correctness": "Native policy dispatch, model/aggregate quotas, versions, rate differences, protected reserves, unknown rollover, concurrency and book-wide breach verified",
+    "architecture": "Concrete immutable policies own accounting; store owns custody and transactions; adapters retain their own HTTP/source/permission boundaries; unchanged deterministic domain imports",
+    "security": "Original policy/inventory/pin binding and bounded unique JSON; selected model metadata verified, no path/rate reference/credential in adapter status",
+    "performance": "SQLite remains off the event loop; model inventory bounded to eight and full audit bounded; large-journal throughput/latency unverified"
+  },
+  "development_observations": [
+    "Initial red: missing shared policy module",
+    "Focused shared admission 66 passed; expanded shared/schema 14 passed; native API scope 16 passed",
+    "Local lint found an imported fixture name shadowed by a test loop variable; renamed fixture import before fresh staged verification",
+    "First verification helper referenced a not-yet-written current evidence file; corrected only helper input to prior evidence before tests started",
+    "Long tool observation resumed through original confirmed exec/shell handles; formatter and test both returned terminal success, no observation-based restart"
+  ],
+  "not_exercised": [
+    "Credentialed provider requests or payments",
+    "Broker SDK, terminal or live capital",
+    "Candidate source/SDK/tests on host",
+    "Browser launch under earlier refusal",
+    "Unknown Docker worker or custody cleanup",
+    "Remote push or promotion"
+  ],
+  "remaining": [
+    "Typed shared-book Costs observation/presentation; legacy standalone view withholds mixed accounting",
+    "Overall platform allocation and additional model families",
+    "Actual billing/price/invoice acceptance and Jev billable overhead bound correspondence",
+    "Recovery spending, custody/migration/retention, large-journal throughput/latency",
+    "Independent deployment/configuration custody",
+    "Browser/visual and independent release acceptance",
+    "All P00-P13"
+  ]
+}

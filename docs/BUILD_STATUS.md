@@ -4,6 +4,21 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Shared provider/model spending admission increment
+
+- Added one immutable original book with eighteen aggregate role rules and a
+  bounded inventory of pinned model policies. One transaction enforces aggregate
+  and individual model token/declared-rate ceilings across versions/providers.
+- Wired both real adapters/environment loaders to the shared book, preserving
+  native accounting, owner/source/permission checks and usage settlement. Unknown
+  holds carry across UTC/restart; one model breach denies the whole book. Both
+  counter levels share a verified head.
+- Shared Costs, platform allocation, additional families, recovery spending,
+  migration/retention/throughput, deployment custody, actual billing and independent/
+  browser acceptance remain pending. Standalone Costs stays supported; its old
+  schema withholds mixed shared accounting. See SHARED_PROVIDER_SPENDING_HANDOFF.md,
+  ADR 0138 and evaluation 0138. All P00–P13 remain incomplete.
+
 ## Jev billable-input spending admission increment
 
 - Added a distinct immutable eighteen-role input-token/declared-rate policy for

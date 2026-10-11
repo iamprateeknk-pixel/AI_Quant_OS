@@ -20,8 +20,8 @@ from ai_quant_os.decision_gateway import AgentEnvelope, Classification, require_
 from ai_quant_os.deep_review import ReviewCandidate
 from ai_quant_os.provider_attempts import ProviderAttempts
 from ai_quant_os.provider_call_admission import ProviderOwner, provider_owner
-from ai_quant_os.provider_spend_policy import ProviderSpendPolicy
 from ai_quant_os.provider_spend_store import ProviderSpendStore
+from ai_quant_os.shared_spend_policy import decode_spending_policy
 from ai_quant_os.world_state import WorldState
 
 ENDPOINT = "https://api.openai.com/v1/responses"
@@ -113,8 +113,10 @@ class OpenAIReviewer:
         ):
             raise ValueError("Spending ledger requires a declared typed owner")
         self._spend_store, self.spend_owner, self._utc_clock = spend_store, spend_owner, utc_clock
-        if spend_store is not None and spend_store.status(utc_clock())["model"] != model:
-            raise ValueError("Reviewer spending model mismatch")
+        if spend_store is not None:
+            retained = spend_store.status(utc_clock(), model=model)
+            if retained["model_accounting"] != "PROVIDER_REPORTED_USAGE_AT_DECLARED_RATE_CEILING":
+                raise ValueError("Reviewer spending model or accounting mismatch")
         self._attempts = ProviderAttempts(
             max_requests=max_requests,
             failure_threshold=failure_threshold,
@@ -138,18 +140,25 @@ class OpenAIReviewer:
                 "declared_rate_budget_enforced": False,
             }
         try:
-            state = self._spend_store.status(self._utc_clock())
+            state = self._spend_store.status(self._utc_clock(), model=self.provider_version)
             row = next(
                 row for row in state["agents"] if row["agent_id"] == self.spend_owner.agent_id
+            )
+            model_row = next(
+                row for row in state["model_agents"] if row["agent_id"] == self.spend_owner.agent_id
             )
             return {
                 "state": state["state"],
                 "token_budget_enforced": state["state"] == "ENFORCED",
                 "declared_rate_budget_enforced": state["state"] == "ENFORCED",
                 "accounting": state["accounting"],
+                "admitted_model": state["admitted_model"],
+                "model_accounting": state["model_accounting"],
+                "model_policy_sha256": state["model_policy_sha256"],
                 "policy_sha256": state["policy_sha256"],
                 "head_hash": state["head_hash"],
                 "owner": f"{self.spend_owner.agent_id}@{self.spend_owner.agent_version}",
+                "model_counters": model_row,
                 **row,
             }
         except (ValueError, OSError, sqlite3.Error, TypeError, KeyError):
@@ -370,7 +379,7 @@ def reviewer_from_environment() -> OpenAIReviewer | None:
     policy = None
     if policy_path:
         with Path(policy_path).open("rb") as source:
-            policy = ProviderSpendPolicy.decode(source.read(65537))
+            policy = decode_spending_policy(source.read(65537))
     spend_store = ProviderSpendStore(Path(path), policy)
     return OpenAIReviewer(
         api_key=key, model=model, spend_store=spend_store, spend_owner=spend_owner

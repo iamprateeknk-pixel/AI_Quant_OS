@@ -17,9 +17,10 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from ai_quant_os.decision_gateway import Classification, ClassificationCandidate
-from ai_quant_os.jev_spend_policy import JEV_ACCOUNTING, JEV_INPUT_CEILING, JevInputSpendPolicy
+from ai_quant_os.jev_spend_policy import JEV_ACCOUNTING, JEV_INPUT_CEILING
 from ai_quant_os.provider_call_admission import ProviderOwner, provider_owner
 from ai_quant_os.provider_spend_store import ProviderSpendStore
+from ai_quant_os.shared_spend_policy import decode_spending_policy
 from ai_quant_os.world_state import WorldState
 
 ENDPOINT = "https://api.typesafe.ai/v1/systemone"
@@ -117,8 +118,8 @@ class JevClassifier:
             raise ValueError("Jev spending ledger requires a declared typed owner")
         self._spend_store, self.spend_owner, self._utc_clock = spend_store, spend_owner, utc_clock
         if spend_store is not None:
-            retained = spend_store.status(utc_clock())
-            if retained["model"] != model or retained["accounting"] != JEV_ACCOUNTING:
+            retained = spend_store.status(utc_clock(), model=model)
+            if retained["model_accounting"] != JEV_ACCOUNTING:
                 raise ValueError("Jev spending model or accounting mismatch")
         self._api_key = SecretStr(api_key)
         self._timeout = timeout_seconds
@@ -172,13 +173,21 @@ class JevClassifier:
                 "invoice_verified": False,
             }
         try:
-            retained = self._spend_store.status(self._utc_clock())
+            retained = self._spend_store.status(self._utc_clock(), model=self.provider_version)
             owner = next(
                 row for row in retained["agents"] if row["agent_id"] == self.spend_owner.agent_id
+            )
+            model_owner = next(
+                row
+                for row in retained["model_agents"]
+                if row["agent_id"] == self.spend_owner.agent_id
             )
             return {
                 "state": retained["state"],
                 "accounting": retained["accounting"],
+                "admitted_model": retained["admitted_model"],
+                "model_accounting": retained["model_accounting"],
+                "model_policy_sha256": retained["model_policy_sha256"],
                 "input_token_budget_enforced": True,
                 "total_token_budget_enforced": False,
                 "declared_rate_budget_enforced": True,
@@ -190,6 +199,7 @@ class JevClassifier:
                 "day": retained["day"],
                 "month": retained["month"],
                 "counters": owner,
+                "model_counters": model_owner,
             }
         except Exception:
             return {"state": "UNAVAILABLE", "invoice_verified": False}
@@ -375,7 +385,7 @@ def jev_from_environment() -> JevClassifier | None:
     policy_path = os.getenv("AI_QUANT_JEV_SPEND_POLICY")
     if policy_path:
         with Path(policy_path).open("rb") as source:
-            policy = JevInputSpendPolicy.decode(source.read(65537))
+            policy = decode_spending_policy(source.read(65537))
     return JevClassifier(
         api_key=key,
         model=model,

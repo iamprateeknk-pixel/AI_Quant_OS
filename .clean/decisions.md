@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-11: Pin aggregate eighteen-role ceilings and a bounded original model-policy inventory in one audited spending book. Resolve each reservation's accounting and check model/aggregate capacities atomically across versions/providers; retain unknown holds and global breach denial. Preserve old schemas and observe both counter levels under one head. Shared Costs, platform allocation, migration and independent acceptance remain open. See ADR 0138.
+
 - 2026-10-10: Reserve the reviewed Jev whole-input context ceiling in a distinct immutable input-only policy before provider I/O. Preserve the shared store's original OpenAI accounting, bind spending/route owners, retain unknown holds and charge matching native usage before answer acceptance. Outputs are free reported data; total-token/invoice and external bound correspondence are not certified. Full aggregate governance and independent acceptance remain open. See ADR 0137.
 
 - 2026-10-10: Show verified configured review spending via an additive private read, authorized before/after observation. Keep call and spending ledgers separate, preserve exact nanodollar strings, expose unsettled holds/declared ceilings and withhold unavailable rows. Full refresh reads a new snapshot; no provider, quota reset or recovery effect belongs to this view. Browser, billing/all-model and independent acceptance remain pending. See ADR 0136.
