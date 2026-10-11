@@ -78,6 +78,11 @@ from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
 from ai_quant_os.openai_reviewer import OpenAIReviewer, reviewer_from_environment
 from ai_quant_os.provider_spend_api import install_spending_routes
 from ai_quant_os.shared_spend_api import SpendingSource, install_shared_spending_routes
+from ai_quant_os.paper_telemetry import (
+    PaperTelemetry,
+    PaperTraceMiddleware,
+    telemetry_from_environment,
+)
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -279,6 +284,7 @@ def create_app(
     temporal_recovery_target: str | None = None,
     health_watchdog_enabled: bool | None = None,
     demo_sync_state_dir: Path | None = None,
+    telemetry: PaperTelemetry | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -464,7 +470,7 @@ def create_app(
         )
 
     @asynccontextmanager
-    async def lifespan(application: FastAPI):
+    async def service_lifespan(application: FastAPI):
         application.state.graph_runtime = None
         if configured_path is None:
             yield
@@ -580,7 +586,19 @@ def create_app(
                 application.state.graph_runtime = None
                 application.state.recovery_runtime = None
 
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):
+        try:
+            async with service_lifespan(application):
+                yield
+        finally:
+            if telemetry is None:
+                await asyncio.to_thread(configured_telemetry.close)
+
+    configured_telemetry = telemetry if telemetry is not None else telemetry_from_environment()
     app = FastAPI(title="AI Quant OS Paper Control API", version="0.1.0", lifespan=lifespan)
+    app.add_middleware(PaperTraceMiddleware, telemetry=configured_telemetry)
+    app.state.paper_telemetry = configured_telemetry
     app.state.graph_runtime = None
     app.state.daily_task = None
     app.state.recovery_runtime = None
@@ -1693,18 +1711,24 @@ def create_app(
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         if previous is not None:
+            with configured_telemetry.span("paper.order.replay") as span:
+                span.set("ai_quant.order.id", previous.order_id)
+                span.set("ai_quant.order.status", previous.status)
             if previous.status == "PENDING":
                 quote = quotes.get(intent.instrument_id)
                 if quote is None:
                     raise HTTPException(status_code=409, detail="No paper market quote")
                 try:
-                    previous = execution.recover_pending(
-                        intent,
-                        idempotency_key=idempotency_key,
-                        market=quote,
-                        now=current_time(),
-                        currency_context=currency_context(quote),
-                    )
+                    with configured_telemetry.span("paper.order.recover") as span:
+                        previous = execution.recover_pending(
+                            intent,
+                            idempotency_key=idempotency_key,
+                            market=quote,
+                            now=current_time(),
+                            currency_context=currency_context(quote),
+                        )
+                        span.set("ai_quant.order.id", previous.order_id)
+                        span.set("ai_quant.order.status", previous.status)
                 except ValueError as error:
                     raise HTTPException(status_code=409, detail=str(error)) from error
                 if previous.status == "ACCEPTED":
@@ -1717,19 +1741,26 @@ def create_app(
                         },
                     )
             return _order_view(previous)
-        quote = quotes.get(intent.instrument_id)
+        with configured_telemetry.span("paper.market.snapshot"):
+            quote = quotes.get(intent.instrument_id)
         if quote is None:
             raise HTTPException(status_code=409, detail="No paper market quote")
         now = current_time()
         try:
-            decision = risk.evaluate(
-                intent,
-                quote,
-                now=now,
-                portfolio=execution.exposure_for(intent.instrument_id),
-                currency_context=currency_context(quote),
-            )
-            order = execution.submit(intent, decision, idempotency_key=idempotency_key, now=now)
+            with configured_telemetry.span("paper.risk.evaluate") as span:
+                decision = risk.evaluate(
+                    intent,
+                    quote,
+                    now=now,
+                    portfolio=execution.exposure_for(intent.instrument_id),
+                    currency_context=currency_context(quote),
+                )
+                span.set("ai_quant.risk.decision", decision.decision)
+            with configured_telemetry.span("paper.order.submit") as span:
+                order = execution.submit(intent, decision, idempotency_key=idempotency_key, now=now)
+                if order is not None:
+                    span.set("ai_quant.order.id", order.order_id)
+                    span.set("ai_quant.order.status", order.status)
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         if order is None:

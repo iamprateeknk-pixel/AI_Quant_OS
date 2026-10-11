@@ -1,0 +1,183 @@
+{
+  "increment": "0140",
+  "date": "2026-10-11",
+  "base_commit": "4ab31c32fe0ed7bf22483a6630783536215690d5",
+  "feature": "Owned optional native OpenTelemetry SDK spans across paper HTTP, market, risk, order, replay and recovery with bounded local OTLP protobuf export",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0140-final",
+    "backend_tests": 335,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "89.445",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "dependency_lock_resolution": "Both supported profiles checked with pinned uv 0.11.29 and binary-only hashes",
+    "new_distribution_pins": {
+      "windows": {
+        "opentelemetry-exporter-otlp-proto-common": "1.45.0",
+        "opentelemetry-proto": "1.45.0",
+        "opentelemetry-sdk": "1.45.0",
+        "opentelemetry-semantic-conventions": "0.66b0"
+      },
+      "linux": {
+        "opentelemetry-exporter-otlp-proto-common": "1.45.0",
+        "opentelemetry-proto": "1.45.0",
+        "opentelemetry-sdk": "1.45.0",
+        "opentelemetry-semantic-conventions": "0.66b0"
+      }
+    },
+    "old_dependency_pins": "All previous Windows/Linux names and versions unchanged",
+    "pip_check": "passed",
+    "windows_metadata": "Every installed distribution declared in Windows lock matches pinned version",
+    "linux_runtime": "Not run; profile resolution only",
+    "prior_schemas_unchanged": 107,
+    "additive_schemas": 0,
+    "frontend": "All tracked frontend files identical to HEAD/index; no frontend tests/build rerun, prior 0139 evidence retained",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "d5342862fd388aa4e6d75acb9b82e53afd80b5cbf20b41e94d0b7cacf5521794"
+      },
+      {
+        "path": "README.md",
+        "sha256": "f9966dc17c1eda1b6922281eced60755d977b69a61b2fc4b3cc9f08fff3eef98"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "335000940a10f2468b4d30eb0821fcf95f71e48021d98f3f39a1f21a5a5ee455"
+      },
+      {
+        "path": "docs/DEPENDENCY_LOCK_HANDOFF.md",
+        "sha256": "6a8a4cc0cab9a8b7beca3deeac31d0767547bc03d4a93d463adb14e5e413cd17"
+      },
+      {
+        "path": "docs/PAPER_TELEMETRY_HANDOFF.md",
+        "sha256": "2f783f78f1ee72b8c55dbf5c1040f435c0e49533a5fa466251efe328b93f128d"
+      },
+      {
+        "path": "docs/adr/0140-owned-paper-opentelemetry.md",
+        "sha256": "1fc67e07ed5db7e989d3203e4c71e3bdc16fe3f637c847cad3e63fa9adc4139a"
+      },
+      {
+        "path": "pyproject.toml",
+        "sha256": "760898b0155d99584f217a27afa3c8a9031302be2d4436d76a568b495bde1a0f"
+      },
+      {
+        "path": "requirements/linux-py311.lock",
+        "sha256": "5cf1250a7781206ca9ae174104d1d061af79a1510dbc218ae64ee6b64310ee08"
+      },
+      {
+        "path": "requirements/windows-py311.lock",
+        "sha256": "9b8ec13ae4177e0d8fc8b1a9673e4dd0a5959edaf146a625bfacc21055a6767d"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "dc99f488c1179822f42bf0a30d79a00c58aa3b7d7ee7c688124d9e81226988d2"
+      },
+      {
+        "path": "src/ai_quant_os/local_runtime.py",
+        "sha256": "82f4a615262bb93c01acdc1613a9db3686b62a7fe866c84c8e037851c25c9523"
+      },
+      {
+        "path": "src/ai_quant_os/paper_telemetry.py",
+        "sha256": "91e5ab7666d19b03af621ba5825fd22137aa6efac2373e09ffd0493cdfd21f12"
+      },
+      {
+        "path": "tests/test_local_runtime.py",
+        "sha256": "5edb0f28fcdeaca5e9d1649a533e21fa550a6754611353155b4fadc412c3aef3"
+      },
+      {
+        "path": "tests/test_paper_telemetry.py",
+        "sha256": "5ce07630780d1672cd518b4853b5eb0eab469a88aab4d9766f4eb798bda4e27d"
+      }
+    ],
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "06891ecd4df80cba965956cdc1c6bb08b395ce26af0046f8559352bfffa281f8"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "c6054335d9571c0c59ef2b8af5223d2f5d56a9db5aba43b6f39217add8928601"
+      },
+      {
+        "check": "dependency-locks",
+        "sha256": "9a986e9fe27f524593e3773835e1e036e48bb2fb40fc499f52792796549b78ba"
+      },
+      {
+        "check": "pip-check",
+        "sha256": "672aec65a45bed50e70229c70934a7eebf0462595c459b83023027645d57cccf"
+      },
+      {
+        "check": "native-metadata",
+        "sha256": "31da7d06f72e4c86ab9371ec1f84943928de4f0b92224f698d94940f826a2a69"
+      }
+    ],
+    "junit_sha256": "05839e4577ce4f0abfa1cadd113f063aeb753bb4df9066654f3a846cc0a13eae",
+    "native_sdk": "Actual 1.45.0 provider/in-memory exporter spans: fresh HTTP roots, private response trace ID, real parent/child context through async ASGI and sync FastAPI threadpool, native approved order/replay and HALT with zero orders, fixed exception status without secret message/stack/events",
+    "native_transport": "Actual exclusively owned loopback HTTP server receives official OTLP protobuf; decoder verifies native SDK spans and explicit resource; ambient resource/header fields absent; owned server socket/thread shutdown and join verified",
+    "failure_boundary": "Blocked exporter and full native queue still permit native order; failing exporter or span-start cannot affect receipts/risk; failed batches observed without secret exception logs; partial acknowledgements are failures; invalid credentialed/remote exporter targets refused before runtime starts",
+    "lifecycle": "Owned in-memory API runtime closes on lifespan exit; caller-injected runtime remains explicit caller ownership. Cleanup wraps all service lifespans including graph-startup failure paths by construction; independently fault-injected graph startup not tested",
+    "tdd": "Initial missing telemetry module reproduced; missing local launcher forwarding and remote endpoint admission reproduced; native HALT attribute omission reproduced before fixing enum. Red XML retained in ignored evidence",
+    "debugging": [
+      "Initial owner cleanup test used wrong status route, then exposed early in-memory lifespan yield/return; cleanup moved to outer lifespan wrapper",
+      "Partial acceptance mock had already-consumed content; replaced with native ByteStream fixture after bounded raw streaming was selected",
+      "Initial vendor HTTP transport dependency exploration added eight task-owned packages; final direct bounded transport needs only four additions, unused task-installed packages removed; final profiles and pip check verified"
+    ],
+    "review": "Local five-axis review: outer API middleware and telemetry own infrastructure; original domain modules unchanged; explicit provider ownership, SDK batch bounds, no global provider/context adoption, strict local transport, allowlisted attributes and fixed exception handling; original receipt/audit behavior checked; actual pinned SDK signatures/encoder inspected; no extra retries or decision authority",
+    "structure_map": "Ran clean-code map_structure.py for src/ai_quant_os; log retained",
+    "boundary_checker": "Existing .clean architecture remains prose without machine declaration; checker result retained, deterministic domain imports manually reviewed",
+    "full_suite": "Not run: preserve uncertain candidate-worker custody from 0084/0088; focused backend API/provider/quota/context/risk/control/session/audit/launcher/lock regressions only",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings",
+    "wheel": {
+      "result": "Built local wheel without dependency resolution/isolation; packaged telemetry source matches index and both optional SDK/encoder pins present in METADATA",
+      "sha256": "0cddcbba7b87f42c76f0da9150bc105e43b9e3c3c16addd1afa307700f0d344a",
+      "log_sha256": "0335be80ec7446e2cc0e865b32a926416b250901bff9e1a166a7e6cdf53f07d4"
+    }
+  },
+  "rollback": "Set AI_QUANT_OTEL_ENABLED=0 or revert 0140 instrumentation and dependency extra. Original durable paper journals/orders and all prior schemas remain unchanged; no migration/down or quota reset.",
+  "limits": [
+    "All P00-P13 remain incomplete; independent critical review and complete release acceptance pending",
+    "Collector/Grafana deployment, dashboards/alerts, protected diagnostic status and production resource attestation pending",
+    "Full cross-request market/agent/risk/order/fill lineage and persistent audit-to-trace references pending",
+    "Agent/provider spans, metrics/log correlation, production sampling, throughput/latency/drop acceptance pending",
+    "Bounded telemetry queue is lossy; failed batch count is not delivered span count; shutdown deliberately drops queued export work",
+    "SDK administrative force_flush timeout behavior and in-flight socket inactivity deadlines do not certify strict end-to-end export/shutdown latency",
+    "No actual Linux worker, real provider/broker/candidate, live credential/capital, browser launch, remote push or promotion used",
+    "Unknown worker custody and untracked user skill files preserved"
+  ],
+  "references": [
+    "https://opentelemetry.io/docs/languages/python/instrumentation/",
+    "https://opentelemetry-python.readthedocs.io/en/latest/sdk/trace.html",
+    "https://pypi.org/project/opentelemetry-sdk/1.45.0/"
+  ]
+}

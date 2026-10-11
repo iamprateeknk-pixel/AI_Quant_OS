@@ -70,6 +70,32 @@ def test_custom_web_port_sets_the_exact_operator_origin(tmp_path):
     assert frontend.get("AI_QUANT_WEB_ORIGIN") == "http://127.0.0.1:28101"
 
 
+def test_explicit_local_telemetry_reaches_only_backend_without_ambient_fields(tmp_path):
+    backend, frontend = (
+        runtime()
+        .LocalSettings(Path.cwd(), tmp_path)
+        .environments(
+            {
+                "AI_QUANT_OTEL_ENABLED": "1",
+                "AI_QUANT_OTEL_ENDPOINT": "http://127.0.0.1:4318/v1/traces",
+                "OTEL_RESOURCE_ATTRIBUTES": "private.secret=value",
+                "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=private",
+            }
+        )
+    )
+    assert backend["AI_QUANT_OTEL_ENABLED"] == "1"
+    assert backend["AI_QUANT_OTEL_ENDPOINT"] == "http://127.0.0.1:4318/v1/traces"
+    assert "AI_QUANT_OTEL_ENABLED" not in frontend and "AI_QUANT_OTEL_ENDPOINT" not in frontend
+    assert "OTEL_RESOURCE_ATTRIBUTES" not in backend and "OTEL_EXPORTER_OTLP_HEADERS" not in backend
+
+
+def test_remote_local_launcher_telemetry_is_refused_before_children(tmp_path):
+    with pytest.raises(ValueError):
+        runtime().LocalSettings(Path.cwd(), tmp_path).environments(
+            {"AI_QUANT_OTEL_ENABLED": "1", "AI_QUANT_OTEL_ENDPOINT": "https://remote/v1/traces"}
+        )
+
+
 def wait_file(path):
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:

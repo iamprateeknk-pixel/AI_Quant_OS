@@ -2,7 +2,7 @@
 
 The application now retains separate hash locks for CPython 3.11 on Windows amd64
 and Linux x86_64 with glibc 2.35 or newer. Both include every declared extra
-(`dev`, `data`, `trading`, `recovery`) and the build requirements for the local
+(`dev`, `data`, `trading`, `recovery`, `observability`) and the build requirements for the local
 package. Other Python versions and architectures are not covered by these locks.
 The isolated repair-image dependency profile remains separate and unchanged.
 

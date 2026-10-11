@@ -84,6 +84,16 @@ class LocalSettings:
         }
         if inherited.get("AI_QUANT_OPERATOR_TOKEN"):
             backend["AI_QUANT_OPERATOR_TOKEN"] = inherited["AI_QUANT_OPERATOR_TOKEN"]
+        telemetry_enabled = inherited.get("AI_QUANT_OTEL_ENABLED", "0")
+        if telemetry_enabled not in {"0", "1"}:
+            raise ValueError("Explicit OTel enable flag required")
+        backend["AI_QUANT_OTEL_ENABLED"] = telemetry_enabled
+        if telemetry_enabled == "1":
+            from ai_quant_os.paper_telemetry import LocalOtlpExporter
+
+            endpoint = inherited.get("AI_QUANT_OTEL_ENDPOINT", "http://127.0.0.1:4318/v1/traces")
+            LocalOtlpExporter(endpoint)
+            backend["AI_QUANT_OTEL_ENDPOINT"] = endpoint
         frontend = {
             **base,
             "AI_QUANT_API_URL": f"http://127.0.0.1:{self.api_port}",

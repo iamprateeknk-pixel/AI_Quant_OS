@@ -166,3 +166,7 @@ New paper orders retain their initial approved quotes before dispatch. A protect
 Protected paper evidence routes now capture immutable ledger/quote checkpoints and publish UTC daily cash-plus-inventory reports with retained opening positions and explicit missing marks. See [daily evidence handoff](docs/DAILY_EVIDENCE_HANDOFF.md).
 
 With persistent paper storage and operator configuration, `AI_QUANT_DAILY_EVIDENCE_ENABLED=1` enables a local UTC boundary capture/publication worker. Verified status records published, missed and failed days without backfilling prices. See [daily scheduler handoff](docs/DAILY_SCHEDULER_HANDOFF.md).
+
+## Paper telemetry
+
+Optional OpenTelemetry SDK traces now cover HTTP and the real paper market/risk/order path with bounded local OTLP export. Instrumentation is disabled by default and cannot authorize or alter orders. Full causal lineage, collector/Grafana deployment and independent acceptance remain pending. See [paper telemetry handoff](docs/PAPER_TELEMETRY_HANDOFF.md).

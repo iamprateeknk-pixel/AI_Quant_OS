@@ -4,6 +4,19 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Owned paper OpenTelemetry increment
+
+- Added actual optional SDK HTTP roots and child market/risk/order/replay/recovery
+  spans, with a generated response trace header and explicit secret-free fields.
+  Native SDK and local OTLP protobuf tests retain original order/safety behavior.
+- Export runs on a bounded background queue with local-only transport; exporter
+  failures and saturation cannot disable deterministic risk or controls. Both
+  dependency profiles add the pinned SDK/encoder; existing pins and schemas remain.
+- Collector/Grafana deployment, complete causal agent/market/fill lineage, protected
+  diagnostics, metrics/log correlation, performance/drop and independent acceptance
+  remain pending. See PAPER_TELEMETRY_HANDOFF.md, ADR 0140 and evaluation 0140.
+  All P00–P13 remain incomplete.
+
 ## Shared spending Cost Center increment
 
 - Costs now shows one protected original shared-book snapshot: eighteen aggregate
