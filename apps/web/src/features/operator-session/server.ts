@@ -164,6 +164,11 @@ export async function readGraphTrace(runId: string): Promise<ProtectedRead> {
   return protectedRead(`/api/v1/agents/graph-runs/${encodeURIComponent(runId)}/trace`, true);
 }
 
+export async function readAgentTraceBinding(runId: string): Promise<ProtectedRead> {
+  if (typeof runId !== "string" || !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(runId)) return {ok:false,reason:"INVALID_TRACE"};
+  return protectedRead(`/api/v1/observability/agent-runs/${runId}/trace-binding`, false, 4096);
+}
+
 export async function readStrategies(offset = 0, head?: string): Promise<ProtectedRead> {
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000 || (head !== undefined && !/^[a-f0-9]{64}$/.test(head)) || (offset > 0 && head === undefined)) return {ok:false,reason:"INVALID_PAGE"};
   return protectedRead(`/api/v1/research/strategies/page?limit=10&offset=${offset}${head ? `&head=${head}` : ""}`);

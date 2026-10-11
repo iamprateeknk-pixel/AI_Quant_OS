@@ -33,7 +33,7 @@ The new audited event includes the original run UUID/hash and the complete bindi
 bytes commitment. SDK trace/span IDs, runtime and version are omitted from that
 event because the existing legacy audit endpoint is public. The actual binding
 is available through the store's verified reader and the protected exact-run
-lookup described below. Console integration remains pending.
+lookup described below. Console lookup is added in 0146.
 
 Exact same-binding retries are idempotent. Existing caller retries without a
 binding preserve any original link. A different context cannot replace it, and
@@ -81,7 +81,7 @@ capture, unchanged head, no inferred context in missing states, corrupt-row
 withholding and actual HALT after a lookup fault. Source-date/identity and strict
 head/count corruption cases also withdraw the entire observation. Schema and
 broader regressions are documented in evaluation 0145 and ADR 0145. No browser
-or frontend source was changed; detailed console lookup remains pending.
+or frontend source was changed in 0145; console lookup is added in 0146.
 
 ## Verification and remaining scope
 
@@ -98,8 +98,19 @@ envelope/repository remain unchanged. Existing state-store legacy formatting is
 preserved; newly added methods are formatted locally. See evaluation 0144.
 
 Rollback retains the new table and audit evidence. Older readers can ignore it
-but cannot certify its binding integrity. Detailed search and console
-presentation, other role/graph and risk/order/fill binding, complete causal lineage,
+but cannot certify its binding integrity. Detailed span search,
+other role/graph and risk/order/fill binding, complete causal lineage,
 collector/Grafana/alerts, production/independent acceptance and all P00–P13 remain
 incomplete. Browser refusal and uncertain original candidate/Docker custody are
 preserved.
+# Console lookup added in 0146
+
+The Traces page accepts the original advisory classification run UUID in a
+native GET form. Its server-only protected reader validates the path before
+access, keeps the operator session private and bounds the response to 4096 bytes.
+The selected parser requires the exact requested UUID, coherent missing states,
+nonzero SDK context and UTC microsecond order. The panel shows retained original
+trace/span/runtime metadata and the observed local prefix. Graph execution IDs
+remain a separate archive. Missing or unavailable evidence invents no context.
+This does not supply a durable span store, collector search or delivery proof.
+Browser acceptance and full P00–P13 completion remain pending.

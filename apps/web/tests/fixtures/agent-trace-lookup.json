@@ -1,0 +1,62 @@
+{
+  "available": {
+    "schema_version": "1.0",
+    "mode": "PAPER",
+    "delivery_verified": false,
+    "independently_attested": false,
+    "run_id": "bb87d243-a3e0-4426-9c6b-1d22f8a55cda",
+    "observed_at": "2026-10-11T00:00:00Z",
+    "state": "AVAILABLE",
+    "source_head": "890931127cf88d14c33e9b96a39a1db89f9957da12b10d55c436b1552231719a",
+    "source_event_count": 2,
+    "binding": {
+      "schema_version": "1.0",
+      "mode": "PAPER",
+      "kind": "OBSERVED_ARCHIVE_SDK_CONTEXT",
+      "delivery_verified": false,
+      "run_id": "bb87d243-a3e0-4426-9c6b-1d22f8a55cda",
+      "run_sha256": "f05f36df51b30439bbd6d9123c93f56a9342e807e300705319577ce3d2103fa0",
+      "runtime_id": "6487f294f0c24e46ad49af5ed161fc98",
+      "sdk_version": "1.45.0",
+      "sdk_trace_id": "57181e0136d89188b96d1d7d8c8837c6",
+      "sdk_span_id": "ecb1c4200f6d8ec4",
+      "recorded_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  "not_recorded": {
+    "schema_version": "1.0",
+    "mode": "PAPER",
+    "delivery_verified": false,
+    "independently_attested": false,
+    "run_id": "e375e591-b3df-4eef-a219-71c3c74e7201",
+    "observed_at": "2026-10-11T00:00:00Z",
+    "state": "NOT_RECORDED",
+    "source_head": "74d8c81e8eac8d2ae0d45c1c0dd80e1ef1c820062a460045bf7512c86ced599d",
+    "source_event_count": 3,
+    "binding": null
+  },
+  "not_found": {
+    "schema_version": "1.0",
+    "mode": "PAPER",
+    "delivery_verified": false,
+    "independently_attested": false,
+    "run_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "observed_at": "2026-10-11T00:00:00Z",
+    "state": "NOT_FOUND",
+    "source_head": "74d8c81e8eac8d2ae0d45c1c0dd80e1ef1c820062a460045bf7512c86ced599d",
+    "source_event_count": 3,
+    "binding": null
+  },
+  "unavailable": {
+    "schema_version": "1.0",
+    "mode": "PAPER",
+    "delivery_verified": false,
+    "independently_attested": false,
+    "run_id": "bb87d243-a3e0-4426-9c6b-1d22f8a55cda",
+    "observed_at": "2026-10-11T00:00:00Z",
+    "state": "UNAVAILABLE",
+    "source_head": null,
+    "source_event_count": null,
+    "binding": null
+  }
+}

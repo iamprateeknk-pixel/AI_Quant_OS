@@ -9,13 +9,13 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
 - Increment 0145 adds protected exact-run SDK context lookup under one original
   audit prefix and pre/post authorization. Missing/corrupt/future sources withhold
   context and typed unavailable states infer no counts. No read resets or flushes
-  observations. Console lookup/search and full release acceptance remain pending;
+  observations. Console lookup is added in 0146; span search and full release acceptance remain pending;
   see ADR 0145 and evaluation 0145.
 
 - Increment 0144 atomically retains the actual archive SDK context with the
   original agent-run bytes and audit commitment. Exact retry preserves original
   context; corruption and late binding are withheld. The public audit exposes
-  commitments without SDK identifiers. Lookup is added in 0145; display remains pending.
+  commitments without SDK identifiers. Lookup is added in 0145 and console display in 0146.
   See AGENT_TRACE_BINDING_HANDOFF.md, ADR 0144 and evaluation 0144.
 
 - Increment 0143 adds native SDK market/classification/review/archive stages
@@ -1167,3 +1167,12 @@ The recorded-tick runner now snapshots and validates source rows before engine c
 ## Increment 0131 — complete native realized-position history
 
 Corrects missing earlier closed P&L caused by native netting cache reuse across bar and recorded-tick runners. Retained closed events plus current open realized amounts must match fill-derived closure inventory and native account balance. Duplicate/missing/altered observations are refused. Original schemas, source/fill/cash models and archived evidence remain unchanged; four separately corrected baselines are additive. Original cache-only counterfactual parents are not silently adopted and correctly fail reproducibility. Native rounding reconstruction, source attestation, async tick portfolios, margin/liquidation, isolated/full-native acceptance, independent review and P03/P13/full-system acceptance remain pending. See NATIVE_REALIZED_HISTORY_HANDOFF.md and ADR 0131.
+# Development increment 0146 — advisory trace lookup console
+
+Added a protected server-rendered advisory UUID lookup to Traces, selected strict
+metadata parsing and explicit empty/missing/sign-in/unavailable states. Retained
+SDK context and local audit prefix are shown separately from volatile export
+diagnostics and archived graph run IDs. Native source fixture, focused rendering,
+private reader, full frontend tests and production build evidence are recorded in
+`docs/evaluations/agent-trace-console-0146.json`. Browser acceptance, collector
+search, other causal links, independent review and all P00–P13 remain incomplete.

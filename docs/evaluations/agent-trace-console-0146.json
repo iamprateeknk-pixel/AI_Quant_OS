@@ -1,0 +1,138 @@
+{
+  "increment": "0146",
+  "date": "2026-10-11",
+  "base_commit": "2b0692ff422b9fb007eecec741f699d788b5fbcf",
+  "feature": "Protected server-rendered exact original advisory-run trace context lookup on Traces",
+  "verification": {
+    "backend_tests": 46,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "20.790",
+    "backend_scope": [
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_operator_sessions.py"
+    ],
+    "frontend_tests": 114,
+    "frontend_failures": 0,
+    "production_build": "passed native Next 16.3.6 build and TypeScript",
+    "eslint": "passed changed frontend source",
+    "ruff": "passed new native fixture test",
+    "format_check": "passed new native fixture test",
+    "tested_backend_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0146",
+    "frontend_identity": "All tracked frontend source LF-identical root/fresh; all staged runtime/test files equal root/index/fresh. Frontend commands use original installed locked dependencies in root apps/web.",
+    "documentation_only_after_verification": [
+      "docs/BUILD_STATUS.md",
+      "docs/AGENT_TRACE_BINDING_HANDOFF.md"
+    ],
+    "documentation_note": "Only historical pending-display descriptions corrected after testing. Original checkout/index preserved; executable source/tests/fixtures unchanged.",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "e50c2ea145a17bc9622c12572ffe7916007941af76c3d5709033985b526eacda"
+      },
+      {
+        "path": "apps/web/src/app/traces/page.tsx",
+        "sha256": "b76b967852d54efcae20a469f60c2bd56bf87e624f0a5eea46d2afd1d443143f"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/server.ts",
+        "sha256": "c89b9cd52daaee2c630414105fb5d960c905a458fc788790ce33f92d8a061fcc"
+      },
+      {
+        "path": "apps/web/src/features/traces/agent-trace-lookup-panel.tsx",
+        "sha256": "5de74ed7bda51ed656859a977b5eaaeb50f2418a879cfe7c44c883df99d84eb8"
+      },
+      {
+        "path": "apps/web/src/features/traces/agent-trace-lookup.ts",
+        "sha256": "918b8548f4d864c0ca8ce40ff8ecb42a68c4c3bff6507ee111a69bf9e5db3f76"
+      },
+      {
+        "path": "apps/web/tests/agent-trace-lookup.test.mjs",
+        "sha256": "7f4e7278d94f5da067de6eda574552127756bbcf7abe81aa90ec55a1f3f86870"
+      },
+      {
+        "path": "apps/web/tests/fixtures/agent-trace-lookup.json",
+        "sha256": "0c734f190251bd1dae025b48f628ccbb1db9ac0d01a0989c7c38d825fe777fe5"
+      },
+      {
+        "path": "docs/AGENT_TRACE_BINDING_HANDOFF.md",
+        "sha256": "2c50a9945e81cc13de388ca0865c23c1325815ac2597628bc3b7a9abbe204d52"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "1a84c30a3a93590b04a9a5aa32834ff8279a55f36a90dc6a83aece4a4d2a23fb"
+      },
+      {
+        "path": "docs/adr/0146-advisory-trace-console-lookup.md",
+        "sha256": "36e8efffe77f6e43d564ccf664633a0eccd58c1372ce1bfb3d29d169fdcdfca1"
+      },
+      {
+        "path": "tests/test_agent_trace_console_fixture.py",
+        "sha256": "1756eefa1802a16cc20f1f6b2b95233020c21416518067ebb5c27378875e2939"
+      }
+    ],
+    "unchanged_backend_runtime_files": 302,
+    "unchanged_schemas": 110,
+    "tracked_frontend_files": 123,
+    "dependencies": "Both hash locks and backend runtime unchanged; no new dependencies or installation",
+    "schema": "Native SDK/persistence fixtures and actual published model checked with Draft202012Validator; original response schema unchanged",
+    "native_source": "Actual owned SDK archive span captured through public context factory, atomically persisted under original journal. Returned SDK trace ID matches original owned span before fixture normalization. Four typed states retained; only random IDs/content commitments normalized during independent fixture comparisons.",
+    "private_reader": "Canonical advisory UUID validated before cookie/network access; fixed protected path; private session header; no-store/redirect rejection/3-second timeout; payload limited 4096 bytes; auth failure and oversize read withhold context.",
+    "parser": "Exact requested advisory UUID, UTC calendar validity and microsecond time ordering; nonzero trace/span/runtime IDs; safe exact event count; fixed false authority flags and coherent missing states. Selected metadata strips extra task/rationale/credential fields.",
+    "presentation": "Actual React server rendering checks semantic label/GET form/time/state notices/private payload omission/sign-in route. Actual Traces page composition passes exact advisory ID, rejects repeated query without source access and leaves blank lookup unqueried. Graph archive IDs explicitly separate.",
+    "red_proof": {
+      "path": "D:\\AI_Quant_OS\\data-local\\agent-trace-console-0146-red.log",
+      "sha256": "643ff5db07d93c7ae55a898dae81821291b132901a8bafe8b89a632078585ba8",
+      "failures": 4
+    },
+    "junit_sha256": "5a504e6379975621c4314d4e37e748ee59c5741f7423f0e29beb1386547cd8ec",
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "ea9570934bdb9e5f16f979b7299c76877b0f9c877ab9fa3d4b656735803bbc0b"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "7688ae71c60af2e4266827abb3678cc2145655f587daf33dfa649dbac2c619c3"
+      },
+      {
+        "check": "schema",
+        "sha256": "1ad876404d841b855a10e912a0333b7e218ef65527657684eb05f26744c545ba"
+      },
+      {
+        "check": "frontend",
+        "sha256": "544bddbb5857818317701e63d75c491b8ce39cdf9f485dacb47e7ab99dcf5034"
+      },
+      {
+        "check": "eslint",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "check": "build",
+        "sha256": "4cbe7f07346f7a0aa8481da83a8d87e70b178d32002326e2f159786ebf00b21b"
+      }
+    ],
+    "fixture_preparation": "Initial application fixture temporary-directory cleanup was refused by Windows for open SQLite handles; no candidate execution occurred. Its directory preserved. Second preparation caught an invalid copied run UUID violating nested envelope provenance; validator retained. Final fixture uses two valid original gateway runs and direct owned SDK/journal; original failing fixture XML preserved.",
+    "review": "Local correctness/readability/architecture/security/performance review: feature-owned selected parser/panel, server-only private read, request-time page composition, existing semantic/wrapping styles and finite response budget. No client SDK/token or control mutation. Backend/domain unchanged. Independent review pending.",
+    "browser": "Not attempted; prior launch refusal preserved. Server rendering, tests and build do not constitute browser acceptance.",
+    "full_suite": "Not run; uncertain 0084/0088 candidate/Docker custody preserved; scoped backend/native trusted SDK only.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Revert additive frontend lookup/parser/panel and new fixture/test while retaining original backend bindings/audit heads; no deletion, flush, retry or historical inference.",
+  "limits": [
+    "All P00-P13 remain incomplete; independent and browser release acceptance pending.",
+    "Saved SDK context does not prove exporter delivery, complete trace, current collector health or ongoing authorization.",
+    "Durable SDK span store/search, collector/Grafana/alerts and other role/order/fill causal links remain pending.",
+    "No remote push/promotion, paid provider/broker/live-capital/candidate execution; user untracked skills preserved."
+  ]
+}
