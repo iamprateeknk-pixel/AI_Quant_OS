@@ -1,0 +1,149 @@
+{
+  "increment": "0145",
+  "date": "2026-10-11",
+  "base_commit": "62aa58f4079ec4791ddb5865f6771e2300bd650b",
+  "feature": "Protected exact original advisory-run SDK context lookup under one verified local audit snapshot",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0145-final",
+    "backend_tests": 387,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "105.456",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py"
+    ],
+    "ruff": "passed including entire changed state store",
+    "format_check": "passed new API/model/test and API wiring; new state method checked as extracted class fragment; unrelated legacy formatting preserved",
+    "prior_schemas_unchanged": 109,
+    "additive_schemas": 1,
+    "schema": "Exact actual response model schema and Draft202012Validator checked",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "16b838d23b5d1d1216d6df58d083f2b6b825a42c0bd688412fbd32e76c933be6"
+      },
+      {
+        "path": "docs/AGENT_TRACE_BINDING_HANDOFF.md",
+        "sha256": "4f084c34b5792b3ce6a7980eeb52f50e84a37aae4a666e85a2ce551771d42b48"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "9def23fd99eb187f3f8c10907352fb26cf69825221503e05e61d740b78e95009"
+      },
+      {
+        "path": "docs/adr/0145-protected-original-agent-context-lookup.md",
+        "sha256": "e518b63be5b16c5cf0bb1a34d2e2118927475fb58fab548420423be19b8194f4"
+      },
+      {
+        "path": "docs/schemas/agent-trace-observation.schema.json",
+        "sha256": "7ac587b83e3d6d49d95cadc322ab591a6a3ad713a5f2d93e084dcb2ea0afd47c"
+      },
+      {
+        "path": "src/ai_quant_os/agent_trace_binding_api.py",
+        "sha256": "48a4909a67ea8618f8cf0f89ebd9fb635fd85fe548d7896d3968cc3bb7b5ab7b"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "b16ba6fc80ddca0a30176518a81751750297414d279539611af10a0810dc4536"
+      },
+      {
+        "path": "src/ai_quant_os/paper_state_store.py",
+        "sha256": "3ecea06ea169ee50e2370510f5e02e7317882fe4cd7c3f20a57b10958e875a66"
+      },
+      {
+        "path": "tests/test_agent_trace_binding_api.py",
+        "sha256": "e160e764a8f2d69f0e4ff226ab1679893d456125484fdf3e438ccd253c4d46b7"
+      }
+    ],
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "1723ec2c8decd1eed8038b5e95fb350ad0592aae4d7f1fdcc9ee7851ea8d43dd"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "81e0708af79a682467b0ecbd3453a0a33cfcbbe2812201b4d4f405f78ded2976"
+      },
+      {
+        "check": "state-method-format",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "check": "wheel",
+        "sha256": "8d9e9415236b6e4213e9d14ec326ddb8ad6d16b6aecbbca02862f1185f00bf77"
+      }
+    ],
+    "junit_sha256": "e6b2c80fa869de585c6c1dad74ee0070646234c8ef09b67db21bedbc5f27bcec",
+    "red_proofs": [
+      {
+        "path": "agent-trace-lookup-0145-red.xml",
+        "sha256": "3e02c73fb32da74cbdbcc8948e9b36e965d97531d39406b31677c07c809bb9f2"
+      },
+      {
+        "path": "agent-trace-lookup-0145-clock-red.xml",
+        "sha256": "1a3d090699dcb4c0456fe57f9b81d6c2e3f105fc5a449715851e6673efa5cdf9"
+      }
+    ],
+    "wheel": {
+      "path": "D:\\AI_Quant_OS\\data-local\\agent-trace-lookup-0145-final-dist\\ai_quant_os-0.1.0-py3-none-any.whl",
+      "sha256": "d2acbf393646af28993ab632ae281109d575152f9d2e7c003d34b19a27546fe9",
+      "verification": "Existing isolated pip, no index/dependencies/build isolation; all three changed runtime modules byte-identical to tested checkout; not installed or deployed"
+    },
+    "frontend": {
+      "unchanged_tracked_files": 119,
+      "identity": "HEAD/index/root/fresh LF equality",
+      "tests_build": "Not rerun; no frontend changes. Prior 0142 108-test/production-build evidence retained."
+    },
+    "dependencies": "Both locks unchanged HEAD/index/root/fresh; no installations, dependency changes or Linux runtime claim",
+    "authorization": "Native API denies unauthorized lookup before any source read. Actual session revoked during capture returns 401 withholding entire binding/head. Authorized response is no-store.",
+    "source": "Native SDK/API archive binding retrieved by exact original advisory UUID; parent, binding and audit head read under original lock and one SQLite BEGIN snapshot, checked again before return. Native head unchanged after read.",
+    "missing_states": "Legacy parent without binding NOT_RECORDED; unknown canonical UUID NOT_FOUND; malformed UUID 422; corruption/deleted retained bound row/source error UNAVAILABLE with no inferred context/head/count.",
+    "clock": "Meaningful regression first failed when pre-read timestamp predated a row obtained after a blocked read. Final callable clock captured after snapshot retrieval; still-future parent or binding rejected.",
+    "privacy": "Selected binding metadata only; task/world/evidence/rationale/raw source errors omitted. Local prefix is not independent attestation. delivery_verified and independently_attested fixed false.",
+    "controls": "Actual HALT acknowledgement/state preserved; lookup cannot append, replace, backfill, flush, reset or change controls.",
+    "review": "Local correctness/readability/architecture/security/performance review: canonical bounded path, selected immutable typed response, pre/post authorization, coherent original snapshot, conservative unavailable response. All old state methods including constructor byte-identical; domain, original models/repositories/audit and telemetry unchanged. No new dependency or global SDK access. Independent review pending.",
+    "boundary_checker": "Existing prose architecture declaration unsupported by checker; changed infrastructure imports manually reviewed, domain unchanged.",
+    "full_suite": "Not run; uncertain 0084/0088 candidate custody preserved. Scoped native backend tests only; no candidate execution or live provider/broker.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Revert additive reader/route/schema without altering original bindings, audit events or heads. No data cleanup or historical inferred correlation.",
+  "limits": [
+    "All P00-P13 remain incomplete; independent release acceptance pending.",
+    "AVAILABLE means retained SDK context under the observed local prefix, not current collector health, current permission lease, exporter delivery or a complete trace.",
+    "Console lookup/search, other role/order/fill links, durable SDK span store, collector/Grafana/alerts and full causal tracing remain pending.",
+    "Browser refusal and uncertain candidate/Docker custody preserved; frontend/browser acceptance not claimed. No remote push, promotion, live capital or external paid execution."
+  ]
+}

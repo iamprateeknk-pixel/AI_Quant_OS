@@ -1,0 +1,171 @@
+{
+  "$defs": {
+    "AgentTraceBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "mode": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        },
+        "kind": {
+          "const": "OBSERVED_ARCHIVE_SDK_CONTEXT",
+          "default": "OBSERVED_ARCHIVE_SDK_CONTEXT",
+          "title": "Kind",
+          "type": "string"
+        },
+        "delivery_verified": {
+          "const": false,
+          "default": false,
+          "title": "Delivery Verified",
+          "type": "boolean"
+        },
+        "run_id": {
+          "pattern": "^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "run_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Run Sha256",
+          "type": "string"
+        },
+        "runtime_id": {
+          "pattern": "^[a-f0-9]{32}$",
+          "title": "Runtime Id",
+          "type": "string"
+        },
+        "sdk_version": {
+          "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$",
+          "title": "Sdk Version",
+          "type": "string"
+        },
+        "sdk_trace_id": {
+          "pattern": "^[a-f0-9]{32}$",
+          "title": "Sdk Trace Id",
+          "type": "string"
+        },
+        "sdk_span_id": {
+          "pattern": "^[a-f0-9]{16}$",
+          "title": "Sdk Span Id",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "run_sha256",
+        "runtime_id",
+        "sdk_version",
+        "sdk_trace_id",
+        "sdk_span_id",
+        "recorded_at"
+      ],
+      "title": "AgentTraceBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "delivery_verified": {
+      "const": false,
+      "default": false,
+      "title": "Delivery Verified",
+      "type": "boolean"
+    },
+    "independently_attested": {
+      "const": false,
+      "default": false,
+      "title": "Independently Attested",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "AVAILABLE",
+        "NOT_RECORDED",
+        "NOT_FOUND",
+        "UNAVAILABLE"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "source_head": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Head"
+    },
+    "source_event_count": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Event Count"
+    },
+    "binding": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AgentTraceBinding"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "run_id",
+    "observed_at",
+    "state"
+  ],
+  "title": "AgentTraceObservation",
+  "type": "object"
+}

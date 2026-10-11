@@ -32,8 +32,8 @@ retain only their existing lifetime.
 The new audited event includes the original run UUID/hash and the complete binding
 bytes commitment. SDK trace/span IDs, runtime and version are omitted from that
 event because the existing legacy audit endpoint is public. The actual binding
-is available through the store's verified reader; protected HTTP lookup and
-console integration remain pending.
+is available through the store's verified reader and the protected exact-run
+lookup described below. Console integration remains pending.
 
 Exact same-binding retries are idempotent. Existing caller retries without a
 binding preserve any original link. A different context cannot replace it, and
@@ -51,6 +51,38 @@ the API returns its existing sanitized storage 503. It does not disable Risk,
 change quotas or create orders. Native HALT remains available. No partial archive
 success, retry, reset or reconstructed custody is inferred.
 
+## Protected exact-run lookup — increment 0145
+
+`GET /api/v1/observability/agent-runs/{run_id}/trace-binding` accepts one canonical
+lowercase advisory-run UUID. Existing operator token/session authorization is
+required before source access and rechecked after capture. Revocation withholds
+the entire result. Successful typed responses use Cache-Control: no-store.
+
+The original state store captures parent run, binding and complete verified audit
+prefix under one lock/SQLite BEGIN snapshot. It checks the same prefix again before
+returning. UTC read time is captured after the source read, avoiding a timestamp
+that predates evidence committed while waiting for the source lock. The response
+includes requested UUID, local source head/
+count and available binding only; task/world/evidence/rationale never cross this
+boundary. No source path, raw error, original credential or collector endpoint is
+returned. Parent/binding models and requested identity are revalidated.
+
+AVAILABLE means verified retained context in that prefix, not an available SDK
+trace/collector or current agent permission. NOT_RECORDED identifies a verified
+original run without a recorded link; NOT_FOUND identifies no original run in the
+captured prefix. Both have no binding. Corrupt/malformed/future-dated evidence is
+UNAVAILABLE with no binding/head/count. The local prefix is point-in-time evidence,
+not an independent immutable attestation or health lease. Delivery verification
+and independent attestation are always false.
+
+The read never resets/backfills/retries/flushes SDK work. Actual SDK/API tests prove
+original context/prefix matching, auth before source access, revocation during
+capture, unchanged head, no inferred context in missing states, corrupt-row
+withholding and actual HALT after a lookup fault. Source-date/identity and strict
+head/count corruption cases also withdraw the entire observation. Schema and
+broader regressions are documented in evaluation 0145 and ADR 0145. No browser
+or frontend source was changed; detailed console lookup remains pending.
+
 ## Verification and remaining scope
 
 Native SDK/API tests match actual response trace header, SDK archive span ID,
@@ -66,7 +98,7 @@ envelope/repository remain unchanged. Existing state-store legacy formatting is
 preserved; newly added methods are formatted locally. See evaluation 0144.
 
 Rollback retains the new table and audit evidence. Older readers can ignore it
-but cannot certify its binding integrity. Protected lookup/search and console
+but cannot certify its binding integrity. Detailed search and console
 presentation, other role/graph and risk/order/fill binding, complete causal lineage,
 collector/Grafana/alerts, production/independent acceptance and all P00–P13 remain
 incomplete. Browser refusal and uncertain original candidate/Docker custody are

@@ -319,6 +319,18 @@ class PaperStateStore:
             self._audit_chain.require_valid()
             return self._agent_trace_bindings.get(run_id, self._agent_runs.get(run_id))
 
+    def agent_trace_observation(
+        self, run_id: str
+    ) -> tuple[AgentRun | None, AgentTraceBinding | None, AuditIntegrity]:
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN")
+            head = self._audit_chain.require_valid()
+            run = self._agent_runs.get(run_id)
+            binding = self._agent_trace_bindings.get(run_id, run)
+            if self._audit_chain.require_valid() != head:
+                raise ValueError("Original audit prefix changed during lookup")
+            return run, binding, head
+
     def record_context_checkpoint(self, checkpoint: ContextCheckpoint) -> bool:
         checkpoint = ContextCheckpoint.model_validate_json(checkpoint.model_dump_json())
         with self._lock, self._connection:
