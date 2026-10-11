@@ -1206,3 +1206,13 @@ Selected parser/private reader, native response fixture, page wiring, scoped Nex
 loading/error behavior, full frontend tests and production build are checked.
 Browser/visual/accessibility acceptance, indexed/full causal search and all full
 P00–P13 gates remain pending. See ADR/evaluation 0149.
+
+# Development increment 0150 — owned runtime parent context
+
+Corrects ambient SDK parent adoption by making each paper tracing runtime own
+its active native parent. Foreign/remote or another runtime's context cannot
+replace it; parallel tasks and propagated threads keep exact original ancestry.
+Native regression checks reproduce the original misattribution and verify
+exception restoration. No journal/schema/dependency or trading behavior change.
+Distributed/full causal tracing, production acceptance, independent review,
+browser acceptance and every full P00–P13 gate remain open. See ADR/evaluation 0150.

@@ -1,6 +1,7 @@
 """Owned, optional OTel paper observations; telemetry cannot grant authority."""
 
 from contextlib import contextmanager
+from contextvars import ContextVar
 import os
 import re
 from threading import RLock
@@ -103,6 +104,7 @@ class PaperTelemetry:
         self._instrumentation_errors = 0
         self._closing = False
         self._lock = RLock()
+        self._active_span = ContextVar("paper_owned_span", default=None)
         if exporter is None:
             return
         from opentelemetry.sdk.resources import Resource
@@ -154,10 +156,15 @@ class PaperTelemetry:
             try:
                 from opentelemetry.context import Context
                 from opentelemetry.trace import SpanKind
+                from opentelemetry.trace import set_span_in_context
+
+                # A child may inherit only this runtime's context, never ambient SDK state.
+                parent = None if root else self._active_span.get()
+                context = set_span_in_context(parent, Context()) if parent else Context()
 
                 candidate = self._tracer.start_as_current_span(
                     name,
-                    context=Context() if root else None,
+                    context=context,
                     kind=SpanKind.SERVER if root else SpanKind.INTERNAL,
                     record_exception=False,
                     set_status_on_exception=False,
@@ -168,6 +175,7 @@ class PaperTelemetry:
             except Exception:
                 with self._lock:
                     self._instrumentation_errors += 1
+        token = self._active_span.set(native)
         try:
             yield PaperSpan(native, self._note_error, owner=self)
         except BaseException:
@@ -180,6 +188,7 @@ class PaperTelemetry:
                     self._note_error()
             raise
         finally:
+            self._active_span.reset(token)
             if manager:
                 try:
                     manager.__exit__(None, None, None)

@@ -1,0 +1,168 @@
+{
+  "increment": "0150",
+  "date": "2026-10-11",
+  "base_commit": "ab687a1057b409ecba54901ee95b19cbf63b56ac",
+  "feature": "Original runtime-owned SDK parent isolation across nested runtimes, ambient spans and native async/thread context",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0150",
+    "source_hashes": {
+      ".clean/decisions.md": "5316551acfbfdf2e1d093ff5aa6efda4724b0dd4fbfdfa62af1d1a670f8ca0f4",
+      "docs/BUILD_STATUS.md": "dbff51dc3860694f76975e89394eebb33597ffecc6f706d84c889159e7151b1f",
+      "docs/PAPER_TELEMETRY_HANDOFF.md": "8aa5633d3ac9cd0caf506bd54d4883928bc8864f2cddf1940a886ebb0e98aac8",
+      "docs/adr/0150-owned-sdk-parent-context.md": "b5bd2f0c6069e7229e11527a30e35bd957f564c9555576d2288257b69452bd18",
+      "src/ai_quant_os/paper_telemetry.py": "fcaad4f513b0e57f6a16c8eb0e0088c8d8df92b2a4e35b9c6b964eef0c17a2b8",
+      "tests/test_paper_trace_context.py": "fdddc7c33e94e22ba2119d2dad9103521d8129443473ac7a008a703ce55ff2ee"
+    },
+    "backend_tests": 407,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "62.111",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py",
+      "tests/test_collector_console_fixture.py",
+      "tests/test_paper_trace_context.py"
+    ],
+    "red_regressions": {
+      "tests": 5,
+      "failures": 3,
+      "passed": 2,
+      "xml_sha256": "0a347615c479df8dacccc441bff329c8899b3742b5fde5d46e93d824dac4d7ad"
+    },
+    "focused_green": {
+      "tests": 26,
+      "xml_sha256": "52ad2e0dc0f5d7019dab3085f976f9b8543b654575bdf17f04da341069f95787"
+    },
+    "junit_sha256": "3ac33ea33d488b1d2b922be4a674db6704be2397aa00e3a6bb30669e8572ab36",
+    "checks": {
+      "backend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\trace-context-0150-fresh-backend.log",
+        "scope": [
+          "tests/test_provider_spend.py",
+          "tests/test_openai_spend_admission.py",
+          "tests/test_openai_reviewer.py",
+          "tests/test_provider_call_admission.py",
+          "tests/test_agent_call_budgets.py",
+          "tests/test_context_call_budgets.py",
+          "tests/test_jev_adapter.py",
+          "tests/test_decision_gateway.py",
+          "tests/test_deep_review.py",
+          "tests/test_api.py",
+          "tests/test_currency_risk.py",
+          "tests/test_event_risk.py",
+          "tests/test_operator_controls.py",
+          "tests/test_operator_sessions.py",
+          "tests/test_local_runtime.py",
+          "tests/test_audit_integrity.py",
+          "tests/test_provider_spend_api.py",
+          "tests/test_jev_spend_admission.py",
+          "tests/test_shared_provider_spend.py",
+          "tests/test_shared_spend_api.py",
+          "tests/test_paper_telemetry.py",
+          "tests/test_dependency_locks.py",
+          "tests/test_trace_export_queue.py",
+          "tests/test_tracing_status_api.py",
+          "tests/test_agent_telemetry.py",
+          "tests/test_agent_runs.py",
+          "tests/test_tracing_console_fixture.py",
+          "tests/test_agent_trace_binding.py",
+          "tests/test_agent_trace_binding_api.py",
+          "tests/test_agent_trace_console_fixture.py",
+          "tests/test_collector_deployment.py",
+          "tests/test_collector_trace_api.py",
+          "tests/test_collector_console_fixture.py",
+          "tests/test_paper_trace_context.py"
+        ]
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\trace-context-0150-fresh-ruff.log",
+        "scope": [
+          "ruff",
+          "check",
+          "src/ai_quant_os/paper_telemetry.py",
+          "tests/test_paper_trace_context.py"
+        ]
+      },
+      "format": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\trace-context-0150-fresh-format.log",
+        "scope": [
+          "ruff",
+          "format",
+          "--check",
+          "src/ai_quant_os/paper_telemetry.py",
+          "tests/test_paper_trace_context.py"
+        ]
+      },
+      "wheel": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\trace-context-0150-fresh-wheel.log",
+        "scope": [
+          "pip",
+          "--isolated",
+          "wheel",
+          "--no-index",
+          "--no-deps",
+          "--no-build-isolation",
+          "--wheel-dir",
+          "D:\\AI_Quant_OS\\data-local\\trace-context-0150-dist",
+          "."
+        ]
+      }
+    },
+    "wheel": {
+      "path": "D:\\AI_Quant_OS\\data-local\\trace-context-0150-dist\\ai_quant_os-0.1.0-py3-none-any.whl",
+      "sha256": "8c03f4b017f0b16e5c0177af56bfc4622a2cda26ba637fb873f90490a748a2f4",
+      "identity": "Every packaged runtime file exactly equals tested fresh source; changed runtime file also equals staged bytes."
+    },
+    "preserved_prior_schemas": 111,
+    "dependencies": "Both hash locks unchanged; no package/dependency installation or pins changed. Uses installed public OTel SDK/API 1.45.0 source.",
+    "frontend": "All tracked frontend files unchanged and LF-identical original/fresh/root; prior 0149 frontend 121 tests and production build evidence retained, not rerun.",
+    "parentage": "Three actual SDK failures reproduced ambient foreign parent adoption, another runtime parent adoption and owned parent substitution. Five native tests verify isolation, exact native parent IDs, concurrent task context, asyncio.to_thread, exception restoration and fresh later standalone steps. Existing native upstream Collector Contrib, original paper/API, agents, queues, binding/audit, risk/HALT/session tests pass.",
+    "structure": "Mapped changed runtime; zero scoped findings. Existing prose architecture has no supported machine block; checker reports unsupported declaration. Changed imports manually reviewed as SDK boundary only; pure domain modules unchanged.",
+    "review": "Local five-axis review: one instance ContextVar, explicit empty SDK context, public pinned API, original token restoration and no global mutation. No new I/O, attributes, credentials, queue lifecycle, domain imports, persisted format, API or authority changes. Independent review pending.",
+    "full_suite": "Not run: uncertain original 0084/0088 candidate custody retained. Scoped trusted SDK/collector/API/provider/audit/risk/HALT/session/launcher/lock tests only.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings",
+    "browser": "Not attempted; prior policy refusal retained; no visual/a11y acceptance claim."
+  },
+  "rollback": "Revert this original SDK parent construction; no schema migration, collector deletion, journal rewrite, resets, retries or automatic runtime replacement. Optional tracing remains disabled by default.",
+  "limits": [
+    "All P00-P13 full gates remain incomplete.",
+    "Arbitrary new threads/processes and distributed cross-request causal lineage require explicit original context propagation; no completeness/delivery/authenticity inferred.",
+    "Independent review, production load/latency, indexed full span search, Linux/services/Grafana/metrics/logs/alerts and browser acceptance remain pending.",
+    "No Docker mutation, candidate execution, paid provider/broker/live capital, remote push or promotion. User untracked .agents/ and skills-lock.json untouched."
+  ]
+}

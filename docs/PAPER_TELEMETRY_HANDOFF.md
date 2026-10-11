@@ -89,6 +89,18 @@ load/drop/latency acceptance, independent critical review and every full release
 gate remain pending. Unknown Docker custody and prior browser refusal are preserved.
 No real provider, broker, candidate, credential or capital was used.
 
+## Runtime parent isolation — increment 0150
+
+Internal SDK steps now inherit only the original `PaperTelemetry` instance's
+Python context. Foreign active spans and other owned runtimes cannot substitute
+parents. Explicit HTTP roots still start fresh; native task context and
+`asyncio.to_thread` preserve exact original parentage across concurrent work.
+Normal and exceptional exit restore the previous parent; later standalone steps
+start fresh. Arbitrary new threads and processes require explicit context
+propagation and are not silently joined. Three native regressions reproduced the
+earlier ambient-parent adoption. See ADR/evaluation 0150. Span attributes, queues,
+transport, journals, domain behavior, schemas and dependency pins are unchanged.
+
 References reviewed on 2026-10-11:
 [official instrumentation](https://opentelemetry.io/docs/languages/python/instrumentation/),
 [SDK tracing](https://opentelemetry-python.readthedocs.io/en/latest/sdk/trace.html),
