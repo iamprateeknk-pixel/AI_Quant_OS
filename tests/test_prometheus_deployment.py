@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib
 import json
 import os
+import shutil
 import socket
 import subprocess
 import threading
@@ -62,6 +63,9 @@ def test_actual_promtool_checks_original_sdk_metrics_and_private_scrape_config(
         assert not config.get("remote_write") and not config.get("alerting")
         path = tmp_path / "prometheus.json"
         path.write_text(json.dumps(config))
+        shutil.copyfile(
+            CONFIG.parent / "paper-http-alerts.json", tmp_path / "paper-http-alerts.json"
+        )
         (tmp_path / "operator-token").write_text("fixture-monitor-token")
         result = subprocess.run(
             [str(native_tools / "promtool.exe"), "check", "config", str(path)],
@@ -89,10 +93,15 @@ def test_actual_prometheus_ingests_sdk_buckets_and_reports_revoked_scrape_withou
     with socket.socket() as reservation:
         reservation.bind(("127.0.0.1", 0))
         prom_port = reservation.getsockname()[1]
-    config["global"] = {"scrape_interval": "1s", "scrape_timeout": "500ms"}
+    config["global"] = {
+        "scrape_interval": "1s",
+        "scrape_timeout": "500ms",
+        "evaluation_interval": "1s",
+    }
     config["scrape_configs"][0]["static_configs"] = [{"targets": [f"127.0.0.1:{port}"]}]
     config_path = tmp_path / "prometheus.json"
     config_path.write_text(json.dumps(config))
+    shutil.copyfile(CONFIG.parent / "paper-http-alerts.json", tmp_path / "paper-http-alerts.json")
     token_file = tmp_path / "operator-token"
     token_file.write_text("fixture-monitor-token")
     process = None
@@ -184,6 +193,24 @@ def test_actual_prometheus_ingests_sdk_buckets_and_reports_revoked_scrape_withou
                 assert client.post(base + "/-/reload").status_code == 403
                 token_file.write_text("revoked-fixture-token")
                 query('up{job="paper_http"}', 0)
+                deadline = time.monotonic() + 10
+                while True:
+                    assert process.poll() is None
+                    response = client.get(base + "/api/v1/rules", params={"type": "alert"})
+                    assert response.status_code == 200
+                    rules = response.json()["data"]["groups"][0]["rules"]
+                    observed = {rule["name"]: rule for rule in rules}
+                    if observed["PaperHttpScrapeFailed"]["state"] == "pending":
+                        assert observed["PaperHttpScrapeMissing"]["state"] == "inactive"
+                        assert all(
+                            rule["health"] == "ok" and rule["duration"] == 120 for rule in rules
+                        )
+                        (tmp_path / "native-alert-observation.json").write_text(
+                            json.dumps(response.json())
+                        )
+                        break
+                    assert time.monotonic() < deadline, "Original alert evaluation deadline"
+                    time.sleep(0.1)
                 targets = client.get(base + "/api/v1/targets").json()["data"]["activeTargets"]
                 assert len(targets) == 1 and targets[0]["health"] == "down"
                 assert "401" in targets[0]["lastError"]

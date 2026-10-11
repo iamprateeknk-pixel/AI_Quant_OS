@@ -1,0 +1,29 @@
+{
+  "groups": [
+    {
+      "name": "paper-http-monitoring",
+      "rules": [
+        {
+          "alert": "PaperHttpScrapeFailed",
+          "expr": "up{job=\"paper_http\"} == 0",
+          "for": "2m",
+          "labels": {"severity": "warning"},
+          "annotations": {
+            "summary": "Paper HTTP metrics scrape failed",
+            "runbook_path": "docs/runbooks/paper-http-monitoring.md#scrape-failed"
+          }
+        },
+        {
+          "alert": "PaperHttpScrapeMissing",
+          "expr": "absent(up{job=\"paper_http\"})",
+          "for": "2m",
+          "labels": {"severity": "warning"},
+          "annotations": {
+            "summary": "Paper HTTP metrics scrape observation missing",
+            "runbook_path": "docs/runbooks/paper-http-monitoring.md#scrape-missing"
+          }
+        }
+      ]
+    }
+  ]
+}

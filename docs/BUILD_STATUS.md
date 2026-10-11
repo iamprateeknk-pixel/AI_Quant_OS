@@ -1247,3 +1247,13 @@ Exact known original job-member handles are observed terminal. No browser render
 or full platform dashboard/alert/service acceptance is inferred. Other required
 views, roles/credentials, Linux/resource/custody/production/independent/browser and
 all full P00â€“P13 gates remain open. See GRAFANA_HANDOFF.md and ADR/evaluation 0153.
+
+# Development increment 0154 — local paper monitoring incident rules
+
+Native Prometheus evaluates separate sustained failed/missing scrape warnings
+with two-minute holds and checked-out runbook references. Native rule timing,
+stale markers, recovery and unrelated-job tests plus actual pending-rule state
+prove local observation behavior. Existing authenticated ingestion, Grafana and
+HALT remain in the staged verification scope. External delivery, durable incident
+acknowledgement, engine health coverage, production/independent/browser and all
+full P00–P13 gates remain open. See the paper HTTP monitoring runbook and0154.

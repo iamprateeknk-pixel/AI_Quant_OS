@@ -262,6 +262,9 @@ def test_native_grafana_auth_provisioning_query_and_source_failure(
             {"targets": [f"127.0.0.1:{paper_port}"]}
         ]
         (tmp_path / "prometheus.json").write_text(json.dumps(prom_config))
+        shutil.copyfile(
+            ROOT / "infra/observability/paper-http-alerts.json", tmp_path / "paper-http-alerts.json"
+        )
         token_file = tmp_path / "operator-token"
         token_file.write_text("fixture-grafana-paper")
         prom = OwnedProcess(

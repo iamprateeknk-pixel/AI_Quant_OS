@@ -17,7 +17,8 @@ count. No remote write, dynamic discovery, alert delivery or extra target exists
 ## Explicit per-user foreground admission
 
 Prepare a new private per-user monitoring directory outside tracked source. Copy
-the configuration there and provide its `operator-token` file privately using the
+the configuration and its referenced `paper-http-alerts.json` there and provide
+its `operator-token` file privately using the
 existing backend operator token. The backend must have optional tracing enabled
 and still bind only to loopback. Do not commit the file, put token bytes in command
 arguments, or send them to the UI. File ACLs and credential rotation are the
@@ -57,6 +58,18 @@ older samples; they do not prove a healthy current source. Counter/rate/latency
 queries in PAPER_HTTP_METRICS_HANDOFF.md apply to this admitted source. Metrics
 remain volatile at the app; TSDB retention does not certify an audit ledger or
 complete causal lineage. Collector trace files are a separate observation source.
+
+## Local incident rule evaluation — increment 0154
+
+The configuration evaluates `paper-http-alerts.json` every 15 seconds. Sustained
+failed scrapes and missing source observations have separate warning rules with
+two-minute holds. Native rule tests cover exact hold timing, short failures,
+recovery, unrelated jobs and stale markers; an actual revoked scrape also
+produces a healthy pending rule in the original native server. These are local
+observation alerts, without Alertmanager/notification or automatic control.
+Annotations refer to [the checked-out runbook](runbooks/paper-http-monitoring.md)
+by repository path; no served runbook URL is assumed. See its detection/engine
+failure/acknowledgement limits before interpreting an inactive alert as recovery.
 
 ## Evidence and remaining work
 

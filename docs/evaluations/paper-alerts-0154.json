@@ -1,0 +1,203 @@
+{
+  "increment": "0154",
+  "date": "2026-10-12",
+  "base_commit": "982d80db98d92c92d238c6e9125a70c4c16bbb22",
+  "feature": "Native local paper HTTP monitoring incident rules and linked recovery runbook",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0154-final",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "05fd1d89a02a683d90125b5f4eecdc7009db87bae23e56efeba61b08a63dcc41"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "5e1a553041c47ad3876eaea9049c2c93907fc70981660fe76c5665fa4c1565c3"
+      },
+      {
+        "path": "docs/PROMETHEUS_HANDOFF.md",
+        "sha256": "b732cdd1e4beb3e7942424969f34b9c323cb0ce11b3873c2ab57da4670aa4283"
+      },
+      {
+        "path": "docs/adr/0154-paper-monitoring-alerts.md",
+        "sha256": "99e8f7724abdb303c8933ff717e2e61fa9194a93685cc7422ab37884b501a5c3"
+      },
+      {
+        "path": "docs/runbooks/paper-http-monitoring.md",
+        "sha256": "7864794b345229e68a7ab51485092fb25e1687d99ac54103d2c7094f0e0c4757"
+      },
+      {
+        "path": "infra/observability/paper-http-alerts.json",
+        "sha256": "7301bf69d5d86d8bf98dae759afb74e3aa59b668a31cd1478781336d3eead32b"
+      },
+      {
+        "path": "infra/observability/prometheus.json",
+        "sha256": "b4213a55cdafd5f4d8412a8a40b57cee978c64161564d1c6fc6db01c2b580cc3"
+      },
+      {
+        "path": "tests/test_grafana_deployment.py",
+        "sha256": "48c6c71bc455847cd0544fe1160c9fd274fc9c96a319cf0007c3ddf6b591130c"
+      },
+      {
+        "path": "tests/test_paper_http_alerts.py",
+        "sha256": "bf15299f02e3258ec99611a1aabed1678cce2b2b9dd88ea33a08c6f16e845d7f"
+      },
+      {
+        "path": "tests/test_prometheus_deployment.py",
+        "sha256": "4ab0da26da33cd2bc31a9cce22a74706053a1c2ef0688793be8a0feed49284c2"
+      }
+    ],
+    "backend_tests": 423,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "111.274",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py",
+      "tests/test_collector_console_fixture.py",
+      "tests/test_paper_trace_context.py",
+      "tests/test_paper_http_metrics.py",
+      "tests/test_prometheus_deployment.py",
+      "tests/test_grafana_deployment.py",
+      "tests/test_paper_http_alerts.py"
+    ],
+    "checks": {
+      "backend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0154-final-fresh-backend.log",
+        "scope": [
+          "tests/test_provider_spend.py",
+          "tests/test_openai_spend_admission.py",
+          "tests/test_openai_reviewer.py",
+          "tests/test_provider_call_admission.py",
+          "tests/test_agent_call_budgets.py",
+          "tests/test_context_call_budgets.py",
+          "tests/test_jev_adapter.py",
+          "tests/test_decision_gateway.py",
+          "tests/test_deep_review.py",
+          "tests/test_api.py",
+          "tests/test_currency_risk.py",
+          "tests/test_event_risk.py",
+          "tests/test_operator_controls.py",
+          "tests/test_operator_sessions.py",
+          "tests/test_local_runtime.py",
+          "tests/test_audit_integrity.py",
+          "tests/test_provider_spend_api.py",
+          "tests/test_jev_spend_admission.py",
+          "tests/test_shared_provider_spend.py",
+          "tests/test_shared_spend_api.py",
+          "tests/test_paper_telemetry.py",
+          "tests/test_dependency_locks.py",
+          "tests/test_trace_export_queue.py",
+          "tests/test_tracing_status_api.py",
+          "tests/test_agent_telemetry.py",
+          "tests/test_agent_runs.py",
+          "tests/test_tracing_console_fixture.py",
+          "tests/test_agent_trace_binding.py",
+          "tests/test_agent_trace_binding_api.py",
+          "tests/test_agent_trace_console_fixture.py",
+          "tests/test_collector_deployment.py",
+          "tests/test_collector_trace_api.py",
+          "tests/test_collector_console_fixture.py",
+          "tests/test_paper_trace_context.py",
+          "tests/test_paper_http_metrics.py",
+          "tests/test_prometheus_deployment.py",
+          "tests/test_grafana_deployment.py",
+          "tests/test_paper_http_alerts.py"
+        ],
+        "log_sha256": "0cd5b86a99ddf8bf3b96f4d8172923585154faa38c1faed02ff9c1a5c1d4faed"
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0154-final-fresh-ruff.log",
+        "scope": [
+          "ruff",
+          "check",
+          "tests/test_grafana_deployment.py",
+          "tests/test_prometheus_deployment.py",
+          "tests/test_paper_http_alerts.py"
+        ],
+        "log_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      "format": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0154-final-fresh-format.log",
+        "scope": [
+          "ruff",
+          "format",
+          "--check",
+          "tests/test_grafana_deployment.py",
+          "tests/test_prometheus_deployment.py",
+          "tests/test_paper_http_alerts.py"
+        ],
+        "log_sha256": "81e0708af79a682467b0ecbd3453a0a33cfcbbe2812201b4d4f405f78ded2976"
+      }
+    },
+    "junit_sha256": "083abb1c77f0ceac2a1f2191d23b8d42a8d75d0328eca49f2aaa665c238c436d",
+    "native_rule_cases": {
+      "path": "D:\\AI_Quant_OS\\data-local\\prometheus-0154-final-fresh-fixtures\\test_native_promtool_alert_hol0\\cases.json",
+      "sha256": "bdb79789e6914b80189877dc03be4cc013089ee070089c0ac2510de7804a91f3",
+      "groups": 4,
+      "engine": "Pinned native promtool3.15.0; actual production expressions and two-minute hold; exact timing/short outage/recovery/missing/unrelated job/stale marker cases"
+    },
+    "original_engine_observation": {
+      "path": "D:\\AI_Quant_OS\\data-local\\prometheus-0154-final-fresh-fixtures\\test_actual_prometheus_ingests0\\native-alert-observation.json",
+      "sha256": "b8b6b08a06c941438689c675748878799f922046e8d5ece0289aaf168975928c",
+      "failure_state": "pending",
+      "missing_state": "inactive",
+      "health": "ok",
+      "hold_seconds": 120
+    },
+    "native_red": "Original new temporal test failed on missing production rule file; retained red report. Native three-test focused green run passed after adding rules/config/copying referenced source. Final staged acceptance also includes Grafana and existing trusted SDK/API/risk/HALT controls.",
+    "identity": {
+      "prior_schemas_unchanged": 111,
+      "unchanged_runtime_frontend_schemas_requirements_files": 550
+    },
+    "actual_ingestion": "Original authorized paper HTTP order/replay and native Prometheus ingest remain authoritative. Revoked source becomes up0; original rule API evaluates actual failed expression as pending while missing rule inactive with healthy evaluations and unmodified120-second holds. Existing metric history, exactly one original order and HALT assertions preserved. Original native process handle and backend thread observed terminal. Native Grafana group still verifies original metrics/provisioning/authentication/no current zero fallback and closes exact original job/plugin handles.",
+    "review": "Local five-axis review: two fixed source observation rules only, no invented trading latency/error SLO or control actions; original policy/auth/data path unchanged; copied referenced rule artifact validated by native promtool; native temporal semantics and original runtime rule state; runbook diagnostics/credential privacy/no retry/no unknown cleanup/independent safety closure; no hot-path/dependency/application module change. Independent review pending.",
+    "build": "No runtime/frontend/dependency/schema change; retained prior0151 native wheel and0149 frontend tests/build. Scoped423 trusted tests; full candidate suite not run because uncertain0084/0088 custody persists.",
+    "browser": "Not attempted; prior launch refusal preserved, no UI/render/a11y acceptance.",
+    "scan_verdict": "passed; Gitleaks8.30.1 exact staged patch, redacted report, zero findings; local report/log retained"
+  },
+  "rollback": "Revert rules and rule_files/evaluation configuration plus fixtures/runbook/docs. Stop only known original owned engine, preserve TSDB/logs; no order-state migration/reset/retry or new dependency.",
+  "limits": [
+    "All full P00-P13 gates remain incomplete.",
+    "Only local paper metrics observation incidents; platformwide alerts/consoles/full causal traces and incident policy acceptance pending.",
+    "No Alertmanager/external notification/paging receiver/automatic action or durable incident acknowledgement. Original rule state can reset on restart and auto-clear on source recovery.",
+    "Prometheus cannot evaluate its own stopped engine; external engine-health monitor needed. Missing alerts depend on lookback/stale markers and actual evaluations, not maximum outage timing.",
+    "Two-minute hold is development noise filtering, not an independently justified trading SLO.",
+    "Private roles/credentials/network/service/Linux/resource/load/retention/custody and independent/browser review pending.",
+    "No candidate/Docker mutation, paid/broker/live-capital access or remote push; user .agents/ and skills-lock.json untouched."
+  ]
+}
