@@ -93,3 +93,14 @@ References reviewed on 2026-10-11:
 [official instrumentation](https://opentelemetry.io/docs/languages/python/instrumentation/),
 [SDK tracing](https://opentelemetry-python.readthedocs.io/en/latest/sdk/trace.html),
 [pinned SDK release](https://pypi.org/project/opentelemetry-sdk/1.45.0/).
+# Native local collector added in 0147
+
+`infra/observability/` now provides a pinned Collector Contrib 0.162.0 Windows
+development configuration and runbook. Actual paper order/replay spans were sent
+through its native OTLP HTTP receiver into rotating JSON files. Original SDK IDs,
+parentage and omitted private input were verified; original file bytes survived
+collector termination and a separately admitted restart. Collector outage left
+paper orders functional and original SDK outcomes unconfirmed. No Docker state,
+application dependency or disabled launch default changed. Alpha file exporter,
+local-process trust, retention and lack of independent/power-loss guarantees are
+explicit. Linux/service/Grafana/search/full release acceptance remain pending.

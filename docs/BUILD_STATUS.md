@@ -1176,3 +1176,13 @@ diagnostics and archived graph run IDs. Native source fixture, focused rendering
 private reader, full frontend tests and production build evidence are recorded in
 `docs/evaluations/agent-trace-console-0146.json`. Browser acceptance, collector
 search, other causal links, independent review and all P00–P13 remain incomplete.
+# Development increment 0147 — pinned native local trace collector
+
+Added Collector Contrib 0.162.0 configuration, exact Windows archive/executable
+pins and an explicit runbook. Native checks export actual paper market/risk/order/
+replay spans, verify source identity/parentage/privacy and file survival across
+observed termination/restart, and preserve unconfirmed outcomes during collector
+outage. Only local HTTP traces, bounded memory/request/file retention are enabled.
+No Docker state was touched. The upstream file exporter is alpha; Linux/service
+deployment, protected span search, Grafana/metrics/alerts, independent acceptance
+and all full P00–P13 gates remain incomplete. See ADR/evaluation 0147.

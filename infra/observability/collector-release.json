@@ -1,0 +1,9 @@
+{
+  "version": "0.162.0",
+  "platform": "windows_amd64",
+  "source": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.162.0/otelcol-contrib_0.162.0_windows_amd64.tar.gz",
+  "archive_sha256": "b371829181e89947a1a6570b8b6c38c20d85e2d215b76bf042f89b365b9e5c3d",
+  "archive_bytes": 103260318,
+  "executable_sha256": "f8f69bd67025f29353b44440069046ca5bdb50cbbfcd6f359d465f0fe84e436e",
+  "trust": "GitHub release API asset digest matched; no independent signature attestation"
+}

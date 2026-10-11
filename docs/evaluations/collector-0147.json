@@ -1,0 +1,155 @@
+{
+  "increment": "0147",
+  "date": "2026-10-11",
+  "base_commit": "bd42eb3d46796a6ee8f84b57373ab52634edf6ca",
+  "feature": "Pinned upstream local Windows Collector Contrib with native paper application OTLP/file acceptance, retention and outage evidence",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0147",
+    "backend_tests": 391,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "115.916",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py"
+    ],
+    "ruff": "passed new deployment test",
+    "format_check": "passed new deployment test",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "9260572214bec5f824d6bae76fc2a9d3e288e005da109de86ed83f0c34e1b111"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "1151d5e683cf611c15a8870c99af8fbb30fa223dce5fc4601a7dfd6e5fef0ad8"
+      },
+      {
+        "path": "docs/PAPER_TELEMETRY_HANDOFF.md",
+        "sha256": "f08c5807d08a0468057b6d74c717ac7ddd4086dab51a9c98452599bfdb5c157c"
+      },
+      {
+        "path": "docs/adr/0147-pinned-local-native-collector.md",
+        "sha256": "79454b2d20790e64ef51c2172e69ddbbeb14b522adcc87144c60231795b9e7fe"
+      },
+      {
+        "path": "infra/observability/README.md",
+        "sha256": "7b97ba0813701385ee3c965ad83ff1d9c2f2e27ec872b78d25040c7653871a90"
+      },
+      {
+        "path": "infra/observability/collector-release.json",
+        "sha256": "27863f000cdfeff11ad2c2ef1c8b894eb91efde26526759067f8b03075861c56"
+      },
+      {
+        "path": "infra/observability/collector.json",
+        "sha256": "bb640460c80752395182ffe10be6e2d0a8d567364c494537e338278c4b45ae6d"
+      },
+      {
+        "path": "tests/test_collector_deployment.py",
+        "sha256": "3b327148765922fe193e7c4ff0428aa1e9f394a677c10ebf08c9359a8806dc07"
+      }
+    ],
+    "unchanged_backend_runtime_files": 302,
+    "unchanged_schemas": 110,
+    "unchanged_frontend_files": 123,
+    "dependencies": "Both hash locks and all backend/frontend runtime source unchanged; no application install or dependency mutation",
+    "frontend": "Not rerun; no frontend changes. Prior 0146 114 tests and production build retained; all tracked files HEAD archive/root/fresh LF-identical.",
+    "release": {
+      "version": "0.162.0",
+      "platform": "windows_amd64",
+      "source": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.162.0/otelcol-contrib_0.162.0_windows_amd64.tar.gz",
+      "archive_sha256": "b371829181e89947a1a6570b8b6c38c20d85e2d215b76bf042f89b365b9e5c3d",
+      "archive_bytes": 103260318,
+      "executable_sha256": "f8f69bd67025f29353b44440069046ca5bdb50cbbfcd6f359d465f0fe84e436e",
+      "trust": "GitHub release API asset digest matched; no independent signature attestation"
+    },
+    "release_asset_digest": "Actual official GitHub release API SHA-256 and byte length match downloaded archive; one regular executable extracted, exact executable hash pinned before execution; no independent signature attestation.",
+    "native_cli": "Actual pinned --version reports 0.162.0 and native validate accepts exact configuration with explicit local trace-file path.",
+    "native_application": "Actual FastAPI paper quote/intents/replay from existing trusted native fixture; actual SDK LocalOtlpExporter protobuf through actual upstream HTTP receiver to actual file exporter. Accepted paper order response trace ID equals retained trace ID; market/risk/submit are children of original HTTP root; replay is a distinct trace/span.",
+    "retained_file": {
+      "path": "D:\\AI_Quant_OS\\data-local\\collector-0147-fresh-fixtures\\test_native_sdk_export_is_reta0\\traces.jsonl",
+      "sha256": "9697f157e81d17e21103c17dde99eed76df2d94495e7ca2756814c22c2a2061c",
+      "bytes": 3408,
+      "spans": 7
+    },
+    "privacy": "Native retained lines omit original private intent/strategy/token/world/evidence values; application SDK allowlist unchanged. This does not sanitize arbitrary local clients; receiver/files remain local trusted-process observations.",
+    "bounds": "Native 262145-byte request rejected with pinned OTLP HTTP 400 and exact http: request body too large error. Configuration validates loopback only, trace-only pipeline, memory limiter and rotating file limits. Memory-pressure/rollover/load acceptance not exercised.",
+    "custody": "Original Popen handle observed live before each readiness probe and terminal after wait. Only original owned handle terminated. File bytes survived termination and a separate collector admitted only after original terminal state; second owned handle also terminal. No unknown process, Docker/candidate custody or SDK worker reset.",
+    "outage": "Same original SDK runtime continues actual accepted paper orders after collector termination. Seven previous spans stay acknowledged; seven outage spans stay unconfirmed. Later separately admitted collector cannot retry/relabel original outcomes; original retained file bytes unchanged.",
+    "red_proofs": [
+      {
+        "path": "D:\\AI_Quant_OS\\data-local\\collector-0147-red.xml",
+        "sha256": "2f5e60bc09c34d8cf0a20480bee517d8b18117a5e860e2bdddf01dbcabc9f5c7",
+        "failures": 1
+      },
+      {
+        "path": "D:\\AI_Quant_OS\\data-local\\collector-0147-outage.xml",
+        "sha256": "8d3422a37ef180e456bf7d1aae969941eeec579f54457a008165dbc6aef5c47c",
+        "failures": 1
+      }
+    ],
+    "native_status_correction": "Size probe first expected HTTP 413. Pinned upstream readAndCloseBody emits HTTP 400 for read errors. Final assertion requires both native status and exact body-limit error; no generic parse rejection or weaker existing test substituted.",
+    "junit_sha256": "badbaa507f15deeebea77d495509de40fd06a6822203a4ca6d30c6acf9a3031e",
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "d2d6d67d180d753722d1bce47606930b61a0c3ba1067dd085355e884deb1b847"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "7688ae71c60af2e4266827abb3678cc2145655f587daf33dfa649dbac2c619c3"
+      }
+    ],
+    "review": "Local five-axis review: upstream executable exact pin, trace-only private local receiver, finite body/memory/retention configuration, alpha file exporter limitation explicit, native real application flow and original process custody. No app/domain/API/SDK/audit changes. Independent review pending.",
+    "full_suite": "Not run; scoped native trusted SDK/API/provider/spending/quotas/audit/risk/HALT/session/launcher/locks only; preserve uncertain 0084/0088 candidate custody.",
+    "browser": "Not attempted; prior launch refusal preserved. No UI or browser acceptance claim.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Stop only explicitly owned collector; revert additive configuration/manifest/runbook/test. Retain trace files and all original SDK counters, bindings and audit heads. No global service uninstall/delete/reset/retry.",
+  "sources": [
+    "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.162.0",
+    "https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.162.0/exporter/fileexporter/README.md",
+    "https://github.com/open-telemetry/opentelemetry-collector/blob/v0.162.0/receiver/otlpreceiver/otlphttp.go"
+  ],
+  "limits": [
+    "All P00-P13 remain incomplete; independent release acceptance pending.",
+    "Local Windows per-user collector only; Linux/service deployment, authentication/network authorization and independent signature attestation pending.",
+    "File exporter is upstream alpha; rotation/retention may remove spans. No tamper/power-loss/fsync/complete-delivery certification.",
+    "Protected durable span search, collector/Grafana dashboards/alerts, metrics/log correlation, other role/order/fill complete causal lineage and load/latency/rotation acceptance remain pending.",
+    "No Docker mutation, remote push/promotion, paid provider/broker/live-capital/candidate execution; user untracked skills preserved."
+  ]
+}
