@@ -69,3 +69,21 @@ release gates remain open.
 Sources reviewed 2026-10-11: [release](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.162.0),
 [pinned file exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.162.0/exporter/fileexporter/README.md),
 [pinned receiver](https://github.com/open-telemetry/opentelemetry-collector/blob/v0.162.0/receiver/otlpreceiver/README.md).
+# Protected span observations added in 0148
+
+Set `AI_QUANT_COLLECTOR_TRACE_FILE` to the same private local active trace file in
+the backend's environment to admit operator reads. The SDK export enable flag is
+independent: previously retained files can be inspected while current SDK export
+is disabled. GET `/api/v1/observability/traces/{sdk_trace_id}` requires the existing
+operator token/session before and after capture. The canonical nonzero 32-hex ID
+comes from the paper response header or retained advisory binding; it is distinct
+from an advisory run UUID or graph execution ID. No caller chooses a file path.
+
+The selected response preserves original span/parent IDs and nanosecond strings
+plus safe enums. It includes captured prefix hashes/lengths, never paths, raw
+events/descriptions/errors or private input. RECORDED_SPANS and NOT_OBSERVED refer
+only to retained prefixes; they do not certify complete history/delivery. Reads
+are bounded, checked for original prefix rewrites and inventory changes, and
+withhold results if any source is ambiguous/unavailable. File prefixes are not an
+atomic multi-file journal or independently authentic. No reset/flush/retry is
+exposed. See ADR 0148; console span presentation remains pending.

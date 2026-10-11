@@ -1186,3 +1186,13 @@ outage. Only local HTTP traces, bounded memory/request/file retention are enable
 No Docker state was touched. The upstream file exporter is alpha; Linux/service
 deployment, protected span search, Grafana/metrics/alerts, independent acceptance
 and all full P00–P13 gates remain incomplete. See ADR/evaluation 0147.
+# Development increment 0148 — protected retained collector span reads
+
+Added selected typed SDK span observations through a protected pre/post-authorized
+read of configured original local collector prefixes. Preserve exact IDs,
+nanosecond strings and parentage; duplicate/cyclic/malformed/changed/over-budget
+sources withhold all results. Native upstream collector/API integration, input
+bounds, schema, revocation, original append/rewrite behavior and HALT are checked.
+All authority/completeness flags remain false. Console span display/indexing,
+full causal tracing, Linux/Grafana/service/independent/browser acceptance and all
+P00–P13 full gates remain open. See ADR/evaluation 0148.

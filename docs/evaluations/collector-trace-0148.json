@@ -1,0 +1,154 @@
+{
+  "increment": "0148",
+  "date": "2026-10-11",
+  "base_commit": "1a861026f4d646a4a6ba028382d40cc95edb7057",
+  "feature": "Protected selected saved SDK spans from bounded original local collector file prefixes",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0148",
+    "backend_tests": 401,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "59.214",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py"
+    ],
+    "ruff": "passed all changed/new runtime and tests",
+    "format_check": "passed all changed/new runtime and tests",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "eb1286d06e45009578b6c022294d6c1f7eefe1a31163c9054850465ba545ea90"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "fa96a5962042a8c26a0c8bbcd52c6640494867c126823c1160333d8898b70a95"
+      },
+      {
+        "path": "docs/adr/0148-protected-collector-span-observations.md",
+        "sha256": "5f7ad96f257a9326e7ea26d39b4b145fe9c2d3682946f376cb022b3918038e95"
+      },
+      {
+        "path": "docs/schemas/collector-trace-observation.schema.json",
+        "sha256": "e67ca4c5d86d945b943a324893a2c66a99f9b919b00fb41491c2809999d28278"
+      },
+      {
+        "path": "infra/observability/README.md",
+        "sha256": "46bf09efacfa176d35afabe2d25f4e3c9a8425c94dd5d57ad91ef9fcc0351e4c"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "2c17a21ed40283ff45ad0418ec42aa38bf92e69ab75c50d7b2e6e87e279ddc18"
+      },
+      {
+        "path": "src/ai_quant_os/collector_trace.py",
+        "sha256": "38c6c99f8e758b5e85366a6f146a1260e6fdd6613f317f0410c9aed54736bee1"
+      },
+      {
+        "path": "src/ai_quant_os/collector_trace_api.py",
+        "sha256": "64a214eeb02791367a5a3ef98fdc02bbfe79a82a8d177a1967e5ba45b32fe862"
+      },
+      {
+        "path": "src/ai_quant_os/collector_trace_source.py",
+        "sha256": "8a2e66a9a4e0761cfb830421cd07c0e9d21caf50abd1d7200def08e1901d3f64"
+      },
+      {
+        "path": "tests/test_collector_deployment.py",
+        "sha256": "db0f3f4eabb1b327d5186fc4a7a4ffe51c7f58159468de8c53781e0dd84d2a40"
+      },
+      {
+        "path": "tests/test_collector_trace_api.py",
+        "sha256": "5bc7d494cd9c7759c800cbdeb3c88469a56f7bec45f203e7e8646587f955f7a1"
+      }
+    ],
+    "unchanged_backend_files": 301,
+    "prior_schemas_unchanged": 110,
+    "additive_schemas": 1,
+    "unchanged_frontend_files": 123,
+    "schema": "Exact actual CollectorTraceObservation model schema and actual protected response checked with Draft202012Validator",
+    "dependencies": "Both hash locks, existing domain/SDK/queues/state/journals/models/audit algorithms and pinned collector configuration/binary manifest unchanged; no package installation or dependency mutation",
+    "frontend": "Not rerun; all tracked files HEAD archive/root/fresh LF-identical. Prior 0146 114 tests/production build retained. Saved span console presentation remains pending.",
+    "wheel": {
+      "path": "D:\\AI_Quant_OS\\data-local\\collector-trace-0148-dist\\ai_quant_os-0.1.0-py3-none-any.whl",
+      "sha256": "069622903f086c3eb9587fde88b984a1d4a20c614348c3dbc08b9861b311d9f0",
+      "verification": "Native existing isolated pip no-index/no-deps/no-build-isolation; all four changed runtime modules byte-identical to fresh tested source; not installed/deployed"
+    },
+    "native_source": "Actual pinned Collector Contrib 0.162.0 receives actual SDK protobuf from original paper application order/market/risk/replay flow. New protected endpoint reads that actual retained file; selected four original accepted-trace span IDs exactly equal native stored IDs, preserving original parentage/privacy. Disabled read app adds no spans to source. Original collector/SDK custody and outage checks retained.",
+    "authorization": "Unauthorized and zero-ID requests perform no source read; canonical zero SDK ID rejected 422 before source. Actual operator session revoked during capture causes 401 withholding entire prefix/span response. No-store after pre/post auth.",
+    "source_prefix": "Read configured local active file plus at most three timestamped rotations; leaf regular-file check, bounded initial lengths, full original prefix SHA-256 then reread comparison, original file device/inode and size check, final inventory check. Append outside original captured prefix preserves original byte count/hash; rewrite/truncation withdraws all spans/prefixes. Per-file observations are not an atomic multi-file audit snapshot.",
+    "bounds": "1024 directory entries, four files <=32 MiB each, line <=1 MiB, <=128 selected spans and checked 2.5-second monotonic scan work. Sparse oversized file, exhausted checked deadline and >4 retention inventory withheld. Kernel I/O and production latency/memory/load not certified.",
+    "selection": "Exact paper service/resource/instrumentation and allowed SDK names, canonical nonzero IDs, exact nanosecond strings with ordering, safe UUIDs/enums/route templates/status. Duplicate JSON keys/nonfinite JSON/duplicate span IDs/self-cycles/cyclic parents/malformed records and unsupported source identity withheld. Missing parent IDs are preserved, never inferred.",
+    "privacy": "No raw file paths, environment values, task/world/evidence/credentials/events/status descriptions/error text; selected fields only. Raw source extra descriptions/events are omitted. Local users can forge/modify collector files; no independent authenticity inferred.",
+    "states": "DISABLED has no source; UNAVAILABLE withholds all metadata; NOT_OBSERVED means no match in scanned retained prefixes, not complete export history; RECORDED_SPANS is selected local evidence. delivery_verified, independently_attested and complete_trace fixed false.",
+    "safety": "Remote UNC source setting rejected at read time without accessing remote source or preventing app startup; actual HALT acknowledged. No reads append/reset/flush/retry or change risk/order/control authority.",
+    "red_proof": {
+      "path": "D:\\AI_Quant_OS\\data-local\\collector-trace-0148-red.xml",
+      "sha256": "c7d5973b99c6e76dac1afac514df83034d9f775b572ac5b7c79251b8277351ac",
+      "failures": 5
+    },
+    "installed_regex": "Additional guard initially used unsupported lookahead rejected by installed Pydantic Rust regex at collection; failure XML preserved. Canonical 32-hex field pattern plus explicit pre-read nonzero path guard verified, no dependency change.",
+    "junit_sha256": "e0b977a3cfe5d5a1acc3431f270a384e161c5629b5b244a248799a26ea7b35eb",
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "fb984a039f8849f1c16b0d9a8335ed2b29413faf1d66802bf1a26dbbac41ce1a"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "f57152af69ed696672a20f7a07dc500ce85005053092505a680768f611957e48"
+      },
+      {
+        "check": "wheel",
+        "sha256": "39e3f56bb067b90effe490906b8c2f447cc1feff0791d07076b5a4214afc4fcf"
+      }
+    ],
+    "review": "Local correctness/readability/architecture/security/performance review: selected immutable infrastructure value, separate original bounded file reader and protected HTTP composition. Existing inward domain imports unaffected; no raw source execution or global SDK access. Local source observations cannot grant authority or certify historical coverage. Independent review pending.",
+    "boundary_checker": "Existing prose architecture declaration unsupported by checker; all changed imports manually reviewed; deterministic domain and persisted algorithms unchanged.",
+    "full_suite": "Not run; scoped native trusted SDK/API/provider/spending/quotas/audit/risk/HALT/session/launcher/locks only, preserve uncertain 0084/0088 candidate custody.",
+    "browser": "Not attempted; prior launch refusal preserved. No UI/browser acceptance claim.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Revert additive DTO/file reader/route/API wiring/schema; retain collector files, SDK outcomes, bindings and audit heads. No deletion/restart/flush/retry/backfill or historical inferred correlation.",
+  "limits": [
+    "All P00-P13 remain incomplete; independent release acceptance pending.",
+    "Retained collector files are local untrusted observations, subject to alpha exporter behavior/retention and forgery. No atomic audit/delivery/complete trace/fsync/power-loss certification.",
+    "No original run/audit binding authenticity inferred from generic SDK trace lookup. Console span display, indexed/searchable history and complete other role/order/fill causal links remain pending.",
+    "Linux/service/Grafana/alerts/metrics/logs, production latency/load/rotation, independent and browser acceptance remain pending.",
+    "No Docker mutation, remote push/promotion, paid provider/broker/live-capital/candidate execution; user untracked skills preserved."
+  ]
+}

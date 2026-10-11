@@ -1,0 +1,333 @@
+{
+  "$defs": {
+    "CollectorFilePrefix": {
+      "additionalProperties": false,
+      "properties": {
+        "ordinal": {
+          "maximum": 3,
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "prefix_bytes": {
+          "maximum": 33554432,
+          "minimum": 0,
+          "title": "Prefix Bytes",
+          "type": "integer"
+        },
+        "prefix_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Prefix Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ordinal",
+        "prefix_bytes",
+        "prefix_sha256"
+      ],
+      "title": "CollectorFilePrefix",
+      "type": "object"
+    },
+    "CollectorSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "pattern": "^[a-f0-9]{32}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "span_id": {
+          "pattern": "^[a-f0-9]{16}$",
+          "title": "Span Id",
+          "type": "string"
+        },
+        "parent_span_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{16}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Span Id"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "start_ns": {
+          "pattern": "^[1-9][0-9]{0,18}$",
+          "title": "Start Ns",
+          "type": "string"
+        },
+        "end_ns": {
+          "pattern": "^[1-9][0-9]{0,18}$",
+          "title": "End Ns",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "UNSET",
+            "OK",
+            "ERROR"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "http_method": {
+          "anyOf": [
+            {
+              "enum": [
+                "GET",
+                "POST",
+                "DELETE",
+                "PUT",
+                "PATCH",
+                "OTHER"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Http Method"
+        },
+        "http_route": {
+          "anyOf": [
+            {
+              "pattern": "^(UNMATCHED|/api/v1/[A-Za-z0-9_/{}/.-]{1,240})$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Http Route"
+        },
+        "http_status": {
+          "anyOf": [
+            {
+              "maximum": 599,
+              "minimum": 100,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Http Status"
+        },
+        "risk_decision": {
+          "anyOf": [
+            {
+              "enum": [
+                "APPROVE",
+                "REJECT",
+                "HALT"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Risk Decision"
+        },
+        "order_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Order Id"
+        },
+        "order_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "PENDING",
+                "DISPATCHING",
+                "ACCEPTED",
+                "REJECTED",
+                "UNKNOWN",
+                "FILLED",
+                "PARTIALLY_FILLED"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Order Status"
+        },
+        "envelope_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Envelope Id"
+        },
+        "parent_envelope_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Envelope Id"
+        },
+        "agent_route": {
+          "anyOf": [
+            {
+              "enum": [
+                "DEEP_REVIEW",
+                "WAIT_FOR_DATA"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agent Route"
+        },
+        "review_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "COMPLETED",
+                "NOT_CONFIGURED",
+                "WAIT_FOR_DATA",
+                "BUSY",
+                "TIMEOUT",
+                "FAILED",
+                "INVALID"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Review Status"
+        }
+      },
+      "required": [
+        "trace_id",
+        "span_id",
+        "name",
+        "start_ns",
+        "end_ns",
+        "status"
+      ],
+      "title": "CollectorSpan",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "delivery_verified": {
+      "const": false,
+      "default": false,
+      "title": "Delivery Verified",
+      "type": "boolean"
+    },
+    "independently_attested": {
+      "const": false,
+      "default": false,
+      "title": "Independently Attested",
+      "type": "boolean"
+    },
+    "complete_trace": {
+      "const": false,
+      "default": false,
+      "title": "Complete Trace",
+      "type": "boolean"
+    },
+    "trace_id": {
+      "pattern": "^[a-f0-9]{32}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "RECORDED_SPANS",
+        "NOT_OBSERVED",
+        "DISABLED",
+        "UNAVAILABLE"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "spans": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CollectorSpan"
+      },
+      "maxItems": 128,
+      "title": "Spans",
+      "type": "array"
+    },
+    "files": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CollectorFilePrefix"
+      },
+      "maxItems": 4,
+      "title": "Files",
+      "type": "array"
+    }
+  },
+  "required": [
+    "trace_id",
+    "observed_at",
+    "state"
+  ],
+  "title": "CollectorTraceObservation",
+  "type": "object"
+}

@@ -160,6 +160,30 @@ def test_native_sdk_export_is_retained_after_owned_collector_termination(
                     b"private-evidence",
                 ]
             )
+            from fastapi.testclient import TestClient
+            from ai_quant_os.api import create_app
+
+            with TestClient(
+                create_app(
+                    operator_token="private-read-token",
+                    telemetry=PaperTelemetry(),
+                    collector_trace_file=output,
+                )
+            ) as client:
+                lookup_path = "/api/v1/observability/traces/" + response.headers["X-Paper-Trace-Id"]
+                assert client.get(lookup_path).status_code == 401
+                lookup = client.get(lookup_path, headers={"X-Operator-Token": "private-read-token"})
+                assert lookup.status_code == 200
+                observation = lookup.json()
+                assert observation["state"] == "RECORDED_SPANS" and len(observation["spans"]) == 4
+                assert (
+                    observation["delivery_verified"] is False
+                    and observation["complete_trace"] is False
+                )
+                assert {span["span_id"] for span in observation["spans"]} == {
+                    span["spanId"] for span in accepted
+                }
+                assert "private" not in lookup.text and "secret" not in lookup.text
             process.terminate()
             process.wait(timeout=30)
             assert process.poll() is not None
