@@ -4,6 +4,18 @@ Source: `AI_Quant_OS_Ultimate_Master_Blueprint_FINAL.docx` and the final executi
 
 The 156 unpacked execution-pack files were compared by SHA-256 with the supplied final ZIP during the health/quarantine increment; every file matched.
 
+## Advisory agent trace stages increment
+
+- Increment 0143 adds native SDK market/classification/review/archive stages
+  and provider invocation children after original logical quota admission.
+  Original advisory UUIDs and fixed route/review outcomes are allowlisted;
+  payloads and raw exceptions remain omitted. Disabled/broken telemetry cannot
+  bypass provider admission or disable safety. Native SDK/API tests use provider
+  doubles and preserve original archival, zero-order and HALT behavior.
+- Cross-request agent/risk/order/fill lineage, durable SDK trace binding, other
+  role missions, deployment and independent acceptance remain incomplete. See
+  ADVISORY_TRACE_HANDOFF.md, ADR 0143 and evaluation 0143.
+
 ## Protected trace queue accounting increment
 
 - Increment 0142 presents protected original queue observations on the Traces

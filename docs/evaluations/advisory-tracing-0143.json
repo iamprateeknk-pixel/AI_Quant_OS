@@ -1,0 +1,120 @@
+{
+  "increment": "0143",
+  "date": "2026-10-11",
+  "base_commit": "afa267c8a6c4ab2575254a7c8e711b5dbce02302",
+  "feature": "Native SDK advisory market/classification/review/archive stages and provider invocation after original quota admission",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0143",
+    "backend_tests": 368,
+    "failures": "Provider fixture exception produces fixed ERROR status without message/stack/events; original fallback and HALT remain. Actual timeout cancels original async provider task and finishes fixed-error span. Disabled telemetry and broken SDK span starts preserve completed provider/review/archive/zero-order/HALT.",
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "102.120",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py"
+    ],
+    "ruff": "passed",
+    "format_check": "passed",
+    "prior_schemas_unchanged": 108,
+    "additive_schemas": 0,
+    "dependencies": "Both hash locks unchanged HEAD/index/root/fresh checkout; existing SDK 1.45.0, no dependency additions.",
+    "frontend": {
+      "unchanged_tracked_files": 119,
+      "identity": "HEAD/index/root/fresh checkout equality after LF normalization",
+      "tests_build": "Not rerun; unchanged frontend. Retain 0142 full 108-test/production-build evidence."
+    },
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "1de3cbad2f8d576e5c9055930625d15e7ec7c79b4bdf4d78ff0f9e0d685f60fb"
+      },
+      {
+        "path": "docs/ADVISORY_TRACE_HANDOFF.md",
+        "sha256": "8e0122d5680e0e5de252541beaf6e79a599fecb5b704817316c12b05f01e82c5"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "3f09935e2b25d1cb7a72cbd3a21b3a2ee813cc80d6670d7e0e562a4015d0aacc"
+      },
+      {
+        "path": "docs/adr/0143-advisory-agent-trace-stages.md",
+        "sha256": "9c795f8184c2655c3da1e8634c547a7c1f422147df58f72bc8270a2a9dc2f3e0"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "35b21196ba5c7c689d29c4df8c9189bb1f05b78b24167ce0477d11516a5aae32"
+      },
+      {
+        "path": "src/ai_quant_os/paper_telemetry.py",
+        "sha256": "3c1a3547a3705f8765c6a6aaac07bd4c12185f9d585193147b3e056cb19c26d4"
+      },
+      {
+        "path": "src/ai_quant_os/provider_call_admission.py",
+        "sha256": "d3fd5eb408218e9608fcac80d9eb140819e63f32efdabd9612891a1834f5abab"
+      },
+      {
+        "path": "tests/test_agent_telemetry.py",
+        "sha256": "d1011f350a058c6fba1e1da15b5906e86fa1d5f76c54f659640f34d4bdb8db79"
+      }
+    ],
+    "logs": [
+      {
+        "check": "backend",
+        "sha256": "a96f69e180f9f4a9a971044cbf6faa9ab4d4769bb86edd996fae58177d173be7"
+      },
+      {
+        "check": "ruff",
+        "sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "check": "format",
+        "sha256": "55b5a2cb0bdd55641f1b6dad60805a4c29520e41d507781e75aa8ec8d6ed9a10"
+      }
+    ],
+    "junit_sha256": "30c0e905264a42566e32b992d2540bb579228b3c45382711bddf2c8cc6e37095",
+    "red_junit_sha256": "18d43d8fb38f24a3c5bce6b3491f547d9f5e9a2a9bbf4c24f8317f4d9cc17270",
+    "native_sdk": "Actual SDK 1.45.0 spans from original protected API: one HTTP root, four market/classification/review/archive children and two admitted provider-invocation grandchildren. Native context IDs and original advisory UUID fields match actual response and archived run; completed review and zero orders checked.",
+    "admission": "Actual durable logical call quotas and role owners; exhausted quota invokes no provider and creates no invocation spans while advisory fallback/archive/HALT remain available. Existing native adapter/spending/owner/expiry/post-call regressions included.",
+    "privacy": "Native span JSON excludes task/world references, rationale, token/control key/reason, arbitrary provider IDs and exception secrets. Only fixed names, route/status enums and original UUID envelope fields added.",
+    "providers": "New native SDK/API tests use fixture classifier/reviewer implementations, not real provider HTTP or credentials. Prior adapter MockTransport tests in scoped suite exercise trusted native adapter code without external calls.",
+    "tdd": "Three original native tests failed for missing stages/invocation/error span before implementation; six expanded tests passed afterward. No candidate SDK/source/test execution.",
+    "review": "Local five-axis review: composition root owns stage wiring; admitted adapters take a standard disabled context-manager factory and reserve before invocation; generic callback avoids SDK imports in provider admission. Existing domain/classifier/reviewer/envelope/repository files are unchanged. Deferred factory cannot run before request initialization; async await context and cancellation tested. Independent review pending.",
+    "boundary_checker": "Existing architecture declaration is prose unsupported by machine checker; changed imports manually reviewed. No SDK/infrastructure import enters deterministic domain.",
+    "full_suite": "Not run; preserve uncertain 0084/0088 candidate custody. Focused SDK, provider/spending/quotas, native API, advisory archive/audit, risk/controls/sessions/launcher/lock regressions only.",
+    "secrets_scan": "passed; Gitleaks 8.30.1 redacted staged patch, zero findings"
+  },
+  "rollback": "Revert 0143 stage/factory/allowlist additions only; original schemas, journals, runtime and quota counters require no migration/reset.",
+  "limits": [
+    "All P00-P13 incomplete; independent release/critical acceptance pending",
+    "Advisory UUID envelope IDs remain distinct from SDK trace IDs. No durable audit-to-SDK trace binding or complete cross-request market/agent/risk/order/fill lineage.",
+    "Provider invocation spans include guarded preflight/spend/circuit/post-call checks; not proof of real HTTP dispatch, accepted output, billing or delivery.",
+    "Other role/graph instrumentation, protected SDK search, production collector/Grafana/alerts and load/sampling/performance acceptance pending.",
+    "Browser refusal and uncertain candidate/Docker custody preserved; no remote push/promotion, live capital/provider/broker or untracked skill modification."
+  ]
+}

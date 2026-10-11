@@ -378,13 +378,21 @@ def create_app(
         clock=current_time,
     )
     decisions = DecisionGateway(
-        primary=AdmittedClassifier(configured_classifier, classification_admission)
+        primary=AdmittedClassifier(
+            configured_classifier,
+            classification_admission,
+            span=lambda: configured_telemetry.span("paper.provider.classify"),
+        )
         if configured_classifier is not None
         else None,
         clock=current_time,
     )
     deep_reviews = DeepReviewDispatcher(
-        reviewer=AdmittedReviewer(configured_reviewer, review_admission)
+        reviewer=AdmittedReviewer(
+            configured_reviewer,
+            review_admission,
+            span=lambda: configured_telemetry.span("paper.provider.review"),
+        )
         if configured_reviewer is not None
         else None,
         clock=current_time,
@@ -1028,13 +1036,21 @@ def create_app(
 
     @app.post("/api/v1/paper/decisions/classify", dependencies=[Depends(require_operator)])
     async def classify_world_state(payload: ClassificationInput) -> dict[str, object]:
-        snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
-        archive_snapshot(snapshot)
+        with configured_telemetry.span("paper.market.snapshot"):
+            snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
+            archive_snapshot(snapshot)
         try:
-            decision = await decisions.classify(
-                snapshot, instrument_id=payload.instrument_id, task_id=payload.task_id
-            )
-            review = await deep_reviews.dispatch(snapshot, decision)
+            with configured_telemetry.span("paper.agent.classify") as span:
+                decision = await decisions.classify(
+                    snapshot, instrument_id=payload.instrument_id, task_id=payload.task_id
+                )
+                span.set("ai_quant.agent.envelope_id", decision.trace_id)
+                span.set("ai_quant.agent.route", decision.output.next_route)
+            with configured_telemetry.span("paper.agent.review") as span:
+                span.set("ai_quant.agent.parent_envelope_id", decision.trace_id)
+                review = await deep_reviews.dispatch(snapshot, decision)
+                span.set("ai_quant.agent.envelope_id", review.trace_id)
+                span.set("ai_quant.review.status", review.output.status)
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         run = AgentRun(
@@ -1046,8 +1062,10 @@ def create_app(
             recorded_at=current_time(),
         )
         try:
-            verify_run_snapshot(run, snapshot)
-            state_store.record_agent_run(run)
+            with configured_telemetry.span("paper.agent.archive") as span:
+                span.set("ai_quant.agent.envelope_id", run.run_id)
+                verify_run_snapshot(run, snapshot)
+                state_store.record_agent_run(run)
         except (ValueError, sqlite3.Error) as error:
             raise HTTPException(status_code=503, detail="Agent run storage unavailable") from error
         try:

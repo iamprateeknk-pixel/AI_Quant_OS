@@ -50,7 +50,25 @@ class PaperSpan:
                 "FILLED",
                 "PARTIALLY_FILLED",
             }
-            or key == "ai_quant.order.id"
+            or key == "ai_quant.agent.route"
+            and value in {"DEEP_REVIEW", "WAIT_FOR_DATA"}
+            or key == "ai_quant.review.status"
+            and value
+            in {
+                "COMPLETED",
+                "NOT_CONFIGURED",
+                "WAIT_FOR_DATA",
+                "BUSY",
+                "TIMEOUT",
+                "FAILED",
+                "INVALID",
+            }
+            or key
+            in {
+                "ai_quant.order.id",
+                "ai_quant.agent.envelope_id",
+                "ai_quant.agent.parent_envelope_id",
+            }
             and isinstance(value, str)
             and re.fullmatch(r"[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}", value)
         )
@@ -111,6 +129,11 @@ class PaperTelemetry:
             "paper.order.submit",
             "paper.order.replay",
             "paper.order.recover",
+            "paper.agent.classify",
+            "paper.agent.review",
+            "paper.agent.archive",
+            "paper.provider.classify",
+            "paper.provider.review",
         }
         manager = None
         native = None

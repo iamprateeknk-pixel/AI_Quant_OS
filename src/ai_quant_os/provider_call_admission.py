@@ -1,6 +1,7 @@
 """Server-declared role ownership and durable call admission for legacy model routes."""
 
 import asyncio
+from contextlib import AbstractContextManager, nullcontext
 import os
 import re
 from dataclasses import asdict, dataclass
@@ -136,8 +137,15 @@ class ProviderCallAdmission:
 
 
 class AdmittedClassifier:
-    def __init__(self, provider: FastClassifier, admission: ProviderCallAdmission):
+    def __init__(
+        self,
+        provider: FastClassifier,
+        admission: ProviderCallAdmission,
+        *,
+        span: Callable[[], AbstractContextManager] = nullcontext,
+    ):
         self._provider, self._admission = provider, admission
+        self._span = span
         self.provider_id, self.provider_version = provider.provider_id, provider.provider_version
         spend_owner = getattr(provider, "spend_owner", None)
         if spend_owner is not None:
@@ -145,21 +153,29 @@ class AdmittedClassifier:
 
     async def classify(self, snapshot: WorldState, instrument_id: str) -> object:
         await self._admission.reserve(self._provider, snapshot, instrument_id)
-        guarded = getattr(self._provider, "classify_with_admission", None)
-        result = (
-            await guarded(
-                snapshot, instrument_id, lambda: self._admission.check(snapshot, instrument_id)
+        with self._span():
+            guarded = getattr(self._provider, "classify_with_admission", None)
+            result = (
+                await guarded(
+                    snapshot, instrument_id, lambda: self._admission.check(snapshot, instrument_id)
+                )
+                if callable(guarded)
+                else await self._provider.classify(snapshot, instrument_id)
             )
-            if callable(guarded)
-            else await self._provider.classify(snapshot, instrument_id)
-        )
-        self._admission.check(snapshot, instrument_id)
+            self._admission.check(snapshot, instrument_id)
         return result
 
 
 class AdmittedReviewer:
-    def __init__(self, provider: DeepReviewer, admission: ProviderCallAdmission):
+    def __init__(
+        self,
+        provider: DeepReviewer,
+        admission: ProviderCallAdmission,
+        *,
+        span: Callable[[], AbstractContextManager] = nullcontext,
+    ):
         self._provider, self._admission = provider, admission
+        self._span = span
         self.provider_id, self.provider_version = provider.provider_id, provider.provider_version
         spend_owner = getattr(provider, "spend_owner", None)
         if spend_owner is not None:
@@ -168,12 +184,15 @@ class AdmittedReviewer:
     async def review(self, snapshot: WorldState, decision: AgentEnvelope) -> object:
         instrument = decision.output.instrument_id
         await self._admission.reserve(self._provider, snapshot, instrument, decision)
-        guarded_review = getattr(self._provider, "review_with_admission", None)
-        if callable(guarded_review):
-            result = await guarded_review(
-                snapshot, decision, lambda: self._admission.check(snapshot, instrument, decision)
-            )
-        else:
-            result = await self._provider.review(snapshot, decision)
-        self._admission.check(snapshot, instrument, decision)
+        with self._span():
+            guarded_review = getattr(self._provider, "review_with_admission", None)
+            if callable(guarded_review):
+                result = await guarded_review(
+                    snapshot,
+                    decision,
+                    lambda: self._admission.check(snapshot, instrument, decision),
+                )
+            else:
+                result = await self._provider.review(snapshot, decision)
+            self._admission.check(snapshot, instrument, decision)
         return result
