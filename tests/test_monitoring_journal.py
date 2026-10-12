@@ -70,6 +70,67 @@ def test_original_episode_progression_gaps_and_review_do_not_imply_current_recov
     reopened.close()
 
 
+def test_rule_evaluation_source_unavailability_is_retained_without_claiming_process_exit(
+    tmp_path,
+):
+    store = journal()(tmp_path / "monitoring.sqlite3")
+    first = MonitoringObservation(observed_at=NOW, state="UNAVAILABLE")
+    history = store.record(first)
+    assert len(history.episodes) == 1
+    episode = history.episodes[0]
+    assert episode.rule_name == "MonitoringRuleEvaluationUnavailable"
+    assert episode.state == "PENDING"
+    assert episode.active_since == NOW
+    assert episode.runbook_path == "docs/runbooks/paper-http-monitoring.md#source-unavailable"
+
+    repeated = store.record(
+        MonitoringObservation(observed_at=NOW + timedelta(seconds=119), state="UNAVAILABLE")
+    )
+    assert repeated.episodes[0].state == "PENDING"
+    firing = store.record(
+        MonitoringObservation(observed_at=NOW + timedelta(seconds=120), state="UNAVAILABLE")
+    )
+    assert firing.episodes[0].state == "FIRING"
+    assert firing.episodes[0].episode_id == episode.episode_id
+
+    disabled = store.record(
+        MonitoringObservation(observed_at=NOW + timedelta(seconds=135), state="DISABLED")
+    )
+    assert disabled.episodes[0].state == "NOT_CURRENTLY_OBSERVED"
+    restored = store.record(observation("INACTIVE", offset=150))
+    assert restored.episodes[0].state == "OBSERVED_INACTIVE"
+    recurrence = store.record(
+        MonitoringObservation(observed_at=NOW + timedelta(seconds=165), state="UNAVAILABLE")
+    )
+    source_episodes = [
+        item
+        for item in recurrence.episodes
+        if item.rule_name == "MonitoringRuleEvaluationUnavailable"
+    ]
+    assert len(source_episodes) == 2
+    assert source_episodes[0].episode_id == episode.episode_id
+    assert source_episodes[0].state == "OBSERVED_INACTIVE"
+    assert source_episodes[1].episode_id != episode.episode_id
+    assert source_episodes[1].state == "PENDING"
+    store.close()
+    reopened = journal()(tmp_path / "monitoring.sqlite3")
+    assert reopened.history() == recurrence
+    reopened.close()
+
+
+def test_source_episode_identity_collision_refuses_duplicate_audit_event(tmp_path):
+    store = journal()(tmp_path / "monitoring.sqlite3")
+    outage = MonitoringObservation(observed_at=NOW, state="UNAVAILABLE")
+    first = store.record(outage)
+    recovered = store.record(observation("INACTIVE"))
+    assert recovered.episodes[0].state == "OBSERVED_INACTIVE"
+    with pytest.raises(ValueError, match="timestamp did not advance"):
+        store.record(outage)
+    assert store.history() == recovered
+    assert len(first.episodes) == 1
+    store.close()
+
+
 def test_cross_connection_original_ack_replay_conflicts_and_head_change(tmp_path):
     path = tmp_path / "monitoring.sqlite3"
     a = journal()(path)

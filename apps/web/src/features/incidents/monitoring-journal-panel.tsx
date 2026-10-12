@@ -73,12 +73,12 @@ export function MonitoringJournalPanel() {
    <caption>Original monitoring episodes, ordered by first observation</caption>
    <thead><tr><th scope="col">Rule</th><th scope="col">Recorded state</th><th scope="col">First observed, UTC</th><th scope="col">Active since, UTC</th><th scope="col">Review</th><th scope="col">Runbook</th></tr></thead>
    <tbody>{view.page.episodes.map(episode=><tr key={episode.episode_id}>
-    <th scope="row">{episode.rule_name==="PaperHttpScrapeFailed"?"Metrics scrape failed":"Metrics observation missing"}</th>
+    <th scope="row">{episode.rule_name==="PaperHttpScrapeFailed"?"Metrics scrape failed":episode.rule_name==="PaperHttpScrapeMissing"?"Metrics observation missing":"Rule evaluation source unavailable"}</th>
     <td>{label[episode.state]}</td>
     <td><time dateTime={episode.first_observed_at}>{episode.first_observed_at}</time></td>
     <td><time dateTime={episode.active_since}>{episode.active_since}</time></td>
     <td>{episode.acknowledgement?<span>Reviewed <time dateTime={episode.acknowledgement.acknowledged_at}>{episode.acknowledgement.acknowledged_at}</time>; control action not authorized.</span>:<button type="button" disabled={pending} aria-label={`Acknowledge review for ${episode.rule_name}`} onClick={()=>void acknowledge(episode)}>{pending?"Saving review…":"Acknowledge review"}</button>}</td>
-    <td><Link className="health-link" href={`/incidents/runbook#${episode.rule_name==="PaperHttpScrapeFailed"?"scrape-failed":"scrape-missing"}`} prefetch={false}>Open runbook</Link></td>
+    <td><Link className="health-link" href={`/incidents/runbook#${episode.rule_name==="PaperHttpScrapeFailed"?"scrape-failed":episode.rule_name==="PaperHttpScrapeMissing"?"scrape-missing":"source-unavailable"}`} prefetch={false}>Open runbook</Link></td>
    </tr>)}</tbody>
   </table></div>}
   {message&&<p role="status">{message}</p>}

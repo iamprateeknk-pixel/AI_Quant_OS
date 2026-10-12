@@ -65,6 +65,30 @@ Resolve after this exact source again yields fresh selectable observations, the
 rule evaluates healthily and is inactive. A present observation with `up == 0`
 requires the Scrape Failed procedure; presence alone is not successful ingestion.
 
+## Rule evaluation source unavailable
+
+`MonitoringRuleEvaluationUnavailable` records that the protected local request
+could not obtain a valid rule evaluation. One failed read opens a pending
+episode; repeated failed reads can mark it firing after the existing two-minute
+development hold. The episode identifies source unavailability only. It does
+not prove that the Prometheus process stopped: network, HTTP, parsing, timeout,
+or local configuration failures can produce the same observation. When the
+source is intentionally disabled or no longer readable, the episode becomes
+`NOT_CURRENTLY_OBSERVED` rather than resolved.
+
+1. Inspect the exact protected read time and verify whether the configured local
+   source is intentionally disabled. Do not expose private response bodies,
+   headers, tokens, or configuration.
+2. Follow Scrape Failed and Scrape Missing checks for the fixed local rules API,
+   process ownership, target and rule group. Preserve original process and
+   journal files before any approved maintenance.
+3. Use an independent local service supervisor or host monitor to determine
+   whether Prometheus is running. This journal has no process handle and does
+   not perform that independent check.
+4. Once a complete, valid fresh rules response is available, the stored episode
+   is marked observed inactive. That transition does not attest delivery,
+   metrics freshness beyond the selected observation, or paper trading safety.
+
 ## Reading and delivery limits
 
 The pinned native Prometheus exposes local alert state through `/api/v1/alerts`

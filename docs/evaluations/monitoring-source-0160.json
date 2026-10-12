@@ -1,0 +1,57 @@
+{
+  "increment": "0160",
+  "date": "2026-10-12",
+  "base_commit": "f2cfe0c5f01dd110a4f2502a7ee3657934a2967d",
+  "feature": "Persist local Prometheus rule-evaluation source unavailability as a separate monitoring episode",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0160-stage-v1",
+    "source_hashes": [
+      { "path": ".clean/decisions.md", "sha256": "95806a089ceda42d2d352c8b325e4a87b9150f96fee9a5ce9a2cfe6aec29bfc1" },
+      { "path": "apps/web/src/features/incidents/monitoring-journal-panel.tsx", "sha256": "683939cb78352cab939cb6deeb4fcad7116bf448dfae5a753326781c4adba3b9" },
+      { "path": "apps/web/src/features/incidents/monitoring-journal.ts", "sha256": "6b7544f9737a6703bbf2e9d1fae4f74ba3bd21960e9a32f79ba4dacf94df91b2" },
+      { "path": "apps/web/tests/monitoring-journal.test.mjs", "sha256": "fc3b3fbe5978d51c19ff8e208e4bb15407f939de463de9114bbc5b4315a732d1" },
+      { "path": "docs/BUILD_STATUS.md", "sha256": "775e70fd8482fc902ee69a0b25628294fbe4dd8c82d59ec9fcd1527dafb4632f" },
+      { "path": "docs/MONITORING_JOURNAL_HANDOFF.md", "sha256": "ff25181a54432389df54f888a2a15a8334f2e84622a8b7d8442aaf43fe4b845d" },
+      { "path": "docs/adr/0160-monitoring-source-unavailable-journal.md", "sha256": "69eb0bfc4fe3ce186500b4e03baec5325724ba4facc3c3d82256481249e1f19d" },
+      { "path": "docs/runbooks/paper-http-monitoring.md", "sha256": "e8433997a1506c40f187edea420de93f90d4c143328e9198ffd0f1ad00d456d5" },
+      { "path": "docs/schemas/monitoring-incident-journal-page-0160.schema.json", "sha256": "b1986ea593742f5056ddaf9d8e0b4dc31ae4302c35d17e8e200878f4e1f92fca" },
+      { "path": "src/ai_quant_os/monitoring_journal.py", "sha256": "f19997bbaa18765cbcd2675e5557988ba5db636f891ad7ca32ef46afd4cd0191" },
+      { "path": "src/ai_quant_os/monitoring_journal_api.py", "sha256": "913c8cd63ae87e63172b8458a73e95f91176d25918c6022bdd3b1d52414e96c1" },
+      { "path": "tests/test_monitoring_journal.py", "sha256": "7fb3a84ea4c3e0c1ce656021df73fe554b2e2c9455ddd835881bd00538f4ac63" },
+      { "path": "tests/test_monitoring_journal_api.py", "sha256": "d8521f9c121c088efcc8c70923c71c9bb94dfeb0f02f3cd7b559408494605589" }
+    ],
+    "web_tests": { "passed": 145, "failures": 0, "errors": 0, "skipped": 0, "fresh_staged_checkout": true },
+    "backend_tests": { "passed": 31, "failures": 0, "errors": 0, "skipped": 0, "fresh_staged_checkout": true },
+    "eslint": "passed for all changed frontend source and tests",
+    "typescript": "passed with --noEmit",
+    "next_production_build": "passed",
+    "ruff": "passed for changed backend source and tests; formatter check passed",
+    "wheel": {
+      "file": "ai_quant_os-0.1.0-py3-none-any.whl",
+      "bytes": 666928,
+      "sha256": "4d6d9be6a5cb85d28fd0cce0840341abf0be534eb688fedb2c8f69f7922919b2",
+      "python_modules_checked": 309,
+      "all_source_bytes_match_fresh_checkout": true
+    },
+    "gitleaks": {
+      "staged": true,
+      "findings": 0,
+      "redacted_report": "D:\\AI_Quant_OS\\data-local\\gitleaks-0160-staged-final.json",
+      "report_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "schema_identity": {
+      "prior_schema_json_files": 114,
+      "prior_schemas_changed": 0,
+      "new_schema_files": ["docs/schemas/monitoring-incident-journal-page-0160.schema.json"]
+    },
+    "staged_identity": "All 14 staged files were overlaid from the Git index into a fresh archive checkout and byte-compared.",
+    "limits": "Browser visual acceptance and independent Prometheus process liveness were not tested or claimed. The persisted status describes an unavailable/invalid rules read, not proof that the process stopped. Full backend suite and all remaining P00-P13 gates remain open. No external notification, paid provider, broker, live capital, remote push or promotion was used."
+  },
+  "rollback": "Revert the source-unavailability event handling, API rule-name projection, Incidents row label, additive schema, runbook and tests. Original scrape-rule episode records and receipts remain intact.",
+  "open_gates": [
+    "All P00-P13 phases remain incomplete.",
+    "Independent Prometheus engine liveness monitoring remains unimplemented.",
+    "External notification delivery, browser visual review and production custody remain pending.",
+    "The local journal remains a hash-chain integrity check, not independent custody proof."
+  ]
+}

@@ -33,3 +33,10 @@ test("monitoring history pagination and receipt authority are internally coheren
  assert.equal(parseMonitoringJournal({...page,next_offset:50}),null);
  assert.equal(parseMonitoringJournal({...page,episodes:[{...episode,first_observed_at:"2026-02-30T00:00:00Z"}]}),null);
 });
+
+test("rule evaluation source outage is selected without implying a stopped engine",async()=>{
+ const {parseMonitoringJournal}=await import(compile(source()));
+ const sourceEpisode={...episode,rule_name:"MonitoringRuleEvaluationUnavailable",first_observed_at:"2026-10-12T00:00:00+00:00",active_since:"2026-10-12T00:00:00+00:00",state:"PENDING",last_observed_at:"2026-10-12T00:00:00+00:00",runbook_path:"docs/runbooks/paper-http-monitoring.md#source-unavailable"};
+ assert.deepEqual(parseMonitoringJournal({...page,episodes:[sourceEpisode]}),{...page,episodes:[sourceEpisode]});
+ assert.equal(parseMonitoringJournal({...page,episodes:[{...sourceEpisode,runbook_path:"docs/runbooks/paper-http-monitoring.md#scrape-missing"}]}),null);
+});

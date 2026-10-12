@@ -39,7 +39,11 @@ class MonitoringAcknowledgementView(BaseModel):
 class MonitoringEpisodeView(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     episode_id: UUID
-    rule_name: Literal["PaperHttpScrapeFailed", "PaperHttpScrapeMissing"]
+    rule_name: Literal[
+        "PaperHttpScrapeFailed",
+        "PaperHttpScrapeMissing",
+        "MonitoringRuleEvaluationUnavailable",
+    ]
     first_observed_at: AwareDatetime
     active_since: AwareDatetime
     state: Literal[
@@ -53,6 +57,7 @@ class MonitoringEpisodeView(BaseModel):
     runbook_path: Literal[
         "docs/runbooks/paper-http-monitoring.md#scrape-failed",
         "docs/runbooks/paper-http-monitoring.md#scrape-missing",
+        "docs/runbooks/paper-http-monitoring.md#source-unavailable",
     ]
     acknowledgement: MonitoringAcknowledgementView | None
 

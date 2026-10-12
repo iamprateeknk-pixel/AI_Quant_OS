@@ -1302,3 +1302,16 @@ and explicitly grant no control authority. Web suite: 144 passed; focused journa
 API: 1 passed; ESLint, TypeScript, Next production build and scoped Ruff pass.
 Browser visual review, production custody and remaining P00-P13 gates remain
 open. See MONITORING_JOURNAL_HANDOFF.md, ADR 0159 and evaluation0159.
+
+# Development increment0160 - persist monitoring rule evaluation outages
+
+An unavailable protected local rules read now opens/updates a separate bounded
+journal episode; an intentionally disabled source marks an existing episode
+not currently observed. Repeated unavailable reads
+reach FIRING only after the existing 120-second development hold; a valid read
+records observed-inactive recovery, and later outages get a new identity. The
+UI explicitly labels source unavailability and links a runbook; this is not
+proof that Prometheus stopped and adds no control/notification authority.
+Focused backend: 31 passed; web: 145 passed; Next production build, TypeScript,
+ESLint and scoped Ruff pass. Browser/independent source process review and all
+remaining P00-P13 gates stay open. See ADR 0160 and evaluation0160.

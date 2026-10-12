@@ -15,6 +15,8 @@ from ai_quant_os.monitoring_alerts import MonitoringObservation, SPEC
 
 _JOURNAL_ID = "ai-quant-monitoring-journal-v1"
 _MAX_EVENTS = 8192
+_SOURCE_UNAVAILABLE = "MonitoringRuleEvaluationUnavailable"
+_SOURCE_RUNBOOK = "docs/runbooks/paper-http-monitoring.md#source-unavailable"
 
 
 class MonitoringJournalConflict(ValueError):
@@ -161,10 +163,10 @@ class MonitoringJournal:
                 observed = datetime.fromisoformat(event["last_observed_at"])
                 if (
                     key != "episode-open:" + str(identity)
-                    or name not in SPEC
+                    or (name not in SPEC and name != _SOURCE_UNAVAILABLE)
                     or identity != self._episode_id(name, active)
                     or event["state"] not in {"PENDING", "FIRING"}
-                    or event["runbook_path"] != SPEC[name][2]
+                    or event["runbook_path"] != (SPEC[name][2] if name in SPEC else _SOURCE_RUNBOOK)
                     or not all(self._utc(value) for value in (first, active, observed))
                     or active > first
                     or first > observed
@@ -290,6 +292,8 @@ class MonitoringJournal:
                     if rule.state != "INACTIVE":
                         desired[self._episode_id(rule.name, rule.active_since)] = rule
             for identity, episode in tuple(episodes.items()):
+                if episode.rule_name == _SOURCE_UNAVAILABLE:
+                    continue
                 rule = next(
                     (item for item in observation.rules if item.name == episode.rule_name), None
                 )
@@ -311,6 +315,51 @@ class MonitoringJournal:
                     state = "OBSERVED_REPLACED"
                 if state != episode.state:
                     self._append_state(identity, state, observation.observed_at)
+            episodes, _ = self._verified()
+            source_episodes = sorted(
+                (item for item in episodes.values() if item.rule_name == _SOURCE_UNAVAILABLE),
+                key=lambda item: (item.first_observed_at, str(item.episode_id)),
+            )
+            latest_source = source_episodes[-1] if source_episodes else None
+            if observation.state == "UNAVAILABLE":
+                if latest_source and latest_source.state in {"PENDING", "FIRING"}:
+                    state = (
+                        "FIRING"
+                        if (observation.observed_at - latest_source.active_since).total_seconds()
+                        >= 120
+                        else "PENDING"
+                    )
+                    if state != latest_source.state:
+                        self._append_state(latest_source.episode_id, state, observation.observed_at)
+                else:
+                    identity = self._episode_id(_SOURCE_UNAVAILABLE, observation.observed_at)
+                    if identity in episodes:
+                        raise ValueError("Monitoring source episode timestamp did not advance")
+                    if self._audit.require_valid().event_count >= self._capacity:
+                        raise ValueError("Monitoring journal capacity exceeded")
+                    self._audit.append(
+                        "episode-open:" + str(identity),
+                        {
+                            "action": "OBSERVATION_OPEN",
+                            "episode_id": str(identity),
+                            "rule_name": _SOURCE_UNAVAILABLE,
+                            "first_observed_at": observation.observed_at.isoformat(),
+                            "active_since": observation.observed_at.isoformat(),
+                            "state": "PENDING",
+                            "last_observed_at": observation.observed_at.isoformat(),
+                            "runbook_path": _SOURCE_RUNBOOK,
+                        },
+                    )
+            elif latest_source and latest_source.state not in {
+                "OBSERVED_INACTIVE",
+                "OBSERVED_REPLACED",
+            }:
+                state = (
+                    "OBSERVED_INACTIVE"
+                    if observation.state == "AVAILABLE"
+                    else "NOT_CURRENTLY_OBSERVED"
+                )
+                self._append_state(latest_source.episode_id, state, observation.observed_at)
             episodes, _ = self._verified()
             for identity, rule in desired.items():
                 if identity not in episodes:

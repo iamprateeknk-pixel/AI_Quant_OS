@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+import httpx
 
 from ai_quant_os.api import create_app
 from ai_quant_os.monitoring_alerts import MonitoringAlertSource, MonitoringObservation
@@ -55,7 +56,7 @@ def test_protected_history_and_acknowledgement_survive_app_restart(tmp_path):
         schema = json.loads(
             (
                 Path(__file__).resolve().parents[1]
-                / "docs/schemas/monitoring-incident-journal-page.schema.json"
+                / "docs/schemas/monitoring-incident-journal-page-0160.schema.json"
             ).read_text()
         )
         validator = Draft202012Validator(schema, format_checker=FormatChecker())
@@ -132,3 +133,46 @@ def test_protected_history_and_acknowledgement_survive_app_restart(tmp_path):
             "/api/v1/observability/incidents", headers={"X-Operator-Session": session}
         ).json()
         assert history["episodes"][0]["acknowledgement"]["control_authorized"] is False
+
+
+def test_unavailable_rule_evaluation_is_recorded_as_source_unavailable(tmp_path):
+    def fail_source(request):
+        raise httpx.ConnectError("private endpoint failure", request=request)
+
+    source = MonitoringAlertSource(
+        enabled=True,
+        clock=lambda: NOW,
+        transport=httpx.MockTransport(fail_source),
+    )
+    with TestClient(
+        create_app(
+            paper_db_path=tmp_path / "paper.sqlite3",
+            operator_token="fixture-token",
+            clock=lambda: NOW,
+            monitoring_alert_source=source,
+        )
+    ) as client:
+        session = client.post("/api/v1/operator/sessions", headers=HEADERS).json()["session_token"]
+        headers = {"X-Operator-Session": session}
+        observed = client.get("/api/v1/observability/alerts", headers=headers)
+        assert observed.status_code == 200
+        assert observed.json()["state"] == "UNAVAILABLE"
+        history = client.get("/api/v1/observability/incidents", headers=headers)
+        assert history.status_code == 200
+        payload = history.json()
+        assert payload["total"] == 1
+        episode = payload["episodes"][0]
+        assert episode["rule_name"] == "MonitoringRuleEvaluationUnavailable"
+        assert episode["state"] == "PENDING"
+        assert episode["runbook_path"].endswith("#source-unavailable")
+        receipt = client.post(
+            "/api/v1/observability/incidents/acknowledge",
+            headers=headers,
+            json={
+                "episode_id": episode["episode_id"],
+                "action_id": str(uuid4()),
+                "expected_head": payload["head_hash"],
+            },
+        )
+        assert receipt.status_code == 200
+        assert receipt.json()["control_authorized"] is False

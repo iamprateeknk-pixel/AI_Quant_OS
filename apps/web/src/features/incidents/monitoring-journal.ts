@@ -2,8 +2,8 @@ import {monitoringMicros} from "./monitoring-alerts";
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const uuid4=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const ruleNames=["PaperHttpScrapeFailed","PaperHttpScrapeMissing"] as const;
-const runbooks=["docs/runbooks/paper-http-monitoring.md#scrape-failed","docs/runbooks/paper-http-monitoring.md#scrape-missing"] as const;
+const ruleNames=["PaperHttpScrapeFailed","PaperHttpScrapeMissing","MonitoringRuleEvaluationUnavailable"] as const;
+const runbooks=["docs/runbooks/paper-http-monitoring.md#scrape-failed","docs/runbooks/paper-http-monitoring.md#scrape-missing","docs/runbooks/paper-http-monitoring.md#source-unavailable"] as const;
 const states=["PENDING","FIRING","NOT_CURRENTLY_OBSERVED","OBSERVED_INACTIVE","OBSERVED_REPLACED"] as const;
 type Receipt={schema_version:"1.0";mode:"PAPER";committed:true;control_authorized:false;action_id:string;episode_id:string;actor_session_id:string;acknowledged_at:string;source_head:string};
 export type MonitoringEpisode={episode_id:string;rule_name:typeof ruleNames[number];first_observed_at:string;active_since:string;state:typeof states[number];last_observed_at:string;runbook_path:typeof runbooks[number];acknowledgement:Receipt|null};
