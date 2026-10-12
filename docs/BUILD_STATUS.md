@@ -1371,3 +1371,14 @@ web test suite before the production build. Web tests: 151 passed; TypeScript
 and build passed. ESLint reported one unchanged unused-variable warning. The
 scanner is static; browser acceptance and remaining P00-P13 gates remain open.
 See ADR 0166 and BROWSER_NETWORK_BOUNDARY_HANDOFF.md.
+
+# Development increment 0167 - make the deterministic domain boundary enforceable
+
+Added a machine-readable boundary for the five deterministic domain modules named
+in `.clean/architecture.md`. The architecture test reads the declaration, checks
+all five files, and rejects common literal dynamic import forms as well as direct
+imports. The focused test suite passed 4/4 in a fresh archive checkout with the
+changed files overlaid. This closes the repeated manual-only check for that named
+slice. It does not classify the full package, detect runtime-constructed imports,
+or satisfy independent P00-P13 acceptance. No release authority is granted. See
+ADR 0167 and `ARCHITECTURE_BOUNDARY_HANDOFF.md`.

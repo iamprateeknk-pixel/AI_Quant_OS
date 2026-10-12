@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "layers": {
+    "domain": {
+      "modules": [
+        "src/ai_quant_os/contracts.py",
+        "src/ai_quant_os/market.py",
+        "src/ai_quant_os/portfolio.py",
+        "src/ai_quant_os/risk.py",
+        "src/ai_quant_os/backtest.py"
+      ],
+      "forbidden_import_prefixes": [
+        "fastapi",
+        "pydantic",
+        "aiosqlite",
+        "sqlalchemy",
+        "ai_quant_os.api",
+        "ai_quant_os.broker",
+        "ai_quant_os.execution",
+        "ai_quant_os.order_store",
+        "ai_quant_os.paper_state_store"
+      ]
+    }
+  }
+}

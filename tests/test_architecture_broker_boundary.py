@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
 
 
@@ -22,6 +23,14 @@ AGENT_AND_STRATEGY_SOURCES = (
     PACKAGE / "strategy_samples.py",
     PACKAGE / "directional_strategy.py",
     PACKAGE / "tick_strategy.py",
+)
+ARCHITECTURE = ROOT / ".clean" / "architecture.json"
+DOMAIN_SOURCES = (
+    PACKAGE / "contracts.py",
+    PACKAGE / "market.py",
+    PACKAGE / "portfolio.py",
+    PACKAGE / "risk.py",
+    PACKAGE / "backtest.py",
 )
 
 
@@ -107,3 +116,70 @@ def test_agent_and_strategy_sources_do_not_import_broker_execution_surfaces():
     }
     violations = {path: imports for path, imports in violations.items() if imports}
     assert not violations, f"Agent or strategy source crosses broker boundary: {violations}"
+
+
+def _import_names(tree: ast.AST) -> set[str]:
+    names: set[str] = set()
+    importlib_names: set[str] = set()
+    import_module_names: set[str] = set()
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            importlib_names.update(
+                alias.asname or alias.name for alias in node.names if alias.name == "importlib"
+            )
+        elif isinstance(node, ast.ImportFrom) and node.module == "importlib":
+            import_module_names.update(
+                alias.asname or alias.name for alias in node.names if alias.name == "import_module"
+            )
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names.add(node.module)
+        elif isinstance(node, ast.Call):
+            is_importlib = isinstance(node.func, ast.Attribute) and (
+                isinstance(node.func.value, ast.Name)
+                and node.func.value.id in importlib_names
+                and node.func.attr == "import_module"
+            )
+            is_dynamic = isinstance(node.func, ast.Name) and (
+                node.func.id == "__import__" or node.func.id in import_module_names
+            )
+            if (is_importlib or is_dynamic) and node.args:
+                value = node.args[0]
+                if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                    names.add(value.value)
+    return names
+
+
+def test_machine_readable_architecture_domain_boundary_is_enforced():
+    rules = json.loads(ARCHITECTURE.read_text(encoding="utf-8"))
+    assert rules["schema_version"] == "1.0"
+    domain = rules["layers"]["domain"]
+    assert {ROOT / path for path in domain["modules"]} == set(DOMAIN_SOURCES)
+    forbidden = tuple(domain["forbidden_import_prefixes"])
+    violations = {}
+    for path in DOMAIN_SOURCES:
+        imports = _import_names(ast.parse(path.read_text(encoding="utf-8")))
+        blocked = sorted(
+            name
+            for name in imports
+            if any(name == prefix or name.startswith(prefix + ".") for prefix in forbidden)
+        )
+        if blocked:
+            violations[path.relative_to(ROOT).as_posix()] = blocked
+    assert not violations, f"Domain imports cross declared architecture boundary: {violations}"
+
+
+def test_machine_readable_architecture_boundary_rejects_infrastructure_imports():
+    rules = json.loads(ARCHITECTURE.read_text(encoding="utf-8"))
+    forbidden = tuple(rules["layers"]["domain"]["forbidden_import_prefixes"])
+    source = ast.parse("import pydantic\nfrom ai_quant_os.execution import submit")
+    blocked = sorted(
+        name
+        for name in _import_names(source)
+        if any(name == prefix or name.startswith(prefix + ".") for prefix in forbidden)
+    )
+    assert blocked == ["ai_quant_os.execution", "pydantic"]
+    dynamic = ast.parse('from importlib import import_module as load\nload("pydantic")')
+    assert "pydantic" in _import_names(dynamic)

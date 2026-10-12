@@ -1,0 +1,24 @@
+{
+  "increment": "0167",
+  "scope": "Machine-readable import boundary for five named deterministic domain modules",
+  "checks": {
+    "isolated_archive_test": {
+      "command": "locked-windows-0055 python -m pytest -q tests/test_architecture_broker_boundary.py",
+      "result": "PASS",
+      "passed": 4
+    },
+    "source_coverage": [
+      "src/ai_quant_os/contracts.py",
+      "src/ai_quant_os/market.py",
+      "src/ai_quant_os/portfolio.py",
+      "src/ai_quant_os/risk.py",
+      "src/ai_quant_os/backtest.py"
+    ]
+  },
+  "limitations": [
+    "Only the five named domain files are classified by this declaration.",
+    "Literal dynamic import names are checked; runtime-constructed names are not.",
+    "Package-wide dependency direction and independent P00-P13 acceptance remain open."
+  ],
+  "release_authority": "NONE"
+}

@@ -7,3 +7,9 @@ The current package has three dependency levels:
 3. `api.py`: HTTP schemas, authorization boundary and composition root.
 
 Domain modules must not import FastAPI, Pydantic, broker SDKs, or infrastructure. The only broker route in this slice is the literal `PAPER`. A future external broker adapter requires an explicit contract and release-gate review.
+
+The machine-checked boundary for the five deterministic modules above is declared in
+`architecture.json`. `tests/test_architecture_broker_boundary.py` enforces those
+forbidden import roots, including literal `importlib` and `__import__` calls. The
+declaration covers this named domain slice; it does not claim complete package-wide
+layer classification or detect imports assembled dynamically at runtime.
