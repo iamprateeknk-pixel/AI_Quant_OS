@@ -83,3 +83,45 @@ def test_promotion_decision_schema_matches_runtime_model():
     Draft202012Validator.check_schema(schema)
     assert schema["properties"]["approved_by_policy"]["const"] is False
     assert schema["properties"]["decision"]["const"] == "WAIT_FOR_EVIDENCE"
+
+
+def test_completed_evaluation_references_are_nonempty_and_bounded():
+    base = {
+        "candidate_id": "candidate-1",
+        "current_champion_id": "champion-1",
+        "offline_eval": {
+            "status": "PASS",
+            "evidence_refs": ["x"],
+            "evaluated_at": NOW,
+        },
+        "replay_eval": PENDING,
+        "adversarial_eval": PENDING,
+        "shadow_eval": PENDING,
+        "canary_eval": PENDING,
+        "decision": "WAIT_FOR_EVIDENCE",
+        "rollback_target": "champion-1",
+        "created_at": NOW,
+    }
+    base["offline_eval"]["evidence_refs"] = [""]
+    with pytest.raises(ValidationError):
+        PromotionDecision.model_validate(base)
+    base["offline_eval"]["evidence_refs"] = ["x" * 513]
+    with pytest.raises(ValidationError):
+        PromotionDecision.model_validate(base)
+
+
+def test_pending_evaluation_reason_must_be_nonempty():
+    base = {
+        "candidate_id": "candidate-1",
+        "current_champion_id": None,
+        "offline_eval": {"status": "NOT_RUN", "reason": ""},
+        "replay_eval": PENDING,
+        "adversarial_eval": PENDING,
+        "shadow_eval": PENDING,
+        "canary_eval": PENDING,
+        "decision": "WAIT_FOR_EVIDENCE",
+        "rollback_target": None,
+        "created_at": NOW,
+    }
+    with pytest.raises(ValidationError):
+        PromotionDecision.model_validate(base)

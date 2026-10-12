@@ -1,17 +1,20 @@
 """Fail-closed versioned promotion evidence contract; no promotion authority."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictStr, model_validator
+
+
+EvidenceReference = Annotated[StrictStr, Field(min_length=1, max_length=512)]
 
 
 class PromotionEvaluation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     status: Literal["NOT_RUN", "UNAVAILABLE", "PASS", "FAIL"]
-    evidence_refs: tuple[StrictStr, ...] = Field(default=(), max_length=32)
+    evidence_refs: tuple[EvidenceReference, ...] = Field(default=(), max_length=32)
     evaluated_at: AwareDatetime | None = None
-    reason: StrictStr | None = Field(default=None, max_length=2000)
+    reason: Annotated[StrictStr, Field(min_length=1, max_length=2000)] | None = None
 
     @model_validator(mode="after")
     def require_evidence_for_completed_evaluation(self):

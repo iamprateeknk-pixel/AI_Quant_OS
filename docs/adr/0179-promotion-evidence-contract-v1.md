@@ -2,7 +2,7 @@
 
 ## Decision
 
-Publish a strict `PromotionDecision` v1.0 contract for candidate and champion identity, offline/replay/adversarial/shadow/canary evaluation evidence, decision, rollback target, policy approval, and timestamp. Completed evaluation states require timestamped evidence references. Pending or unavailable states require an explicit reason. The only permitted decision is `WAIT_FOR_EVIDENCE`, and `approved_by_policy` is fixed false.
+Publish a strict `PromotionDecision` v1.0 contract for candidate and champion identity, offline/replay/adversarial/shadow/canary evaluation evidence, decision, rollback target, policy approval, and timestamp. Completed evaluation states require timestamped evidence references (at most 32 references, each 1–512 characters). Pending or unavailable states require a non-empty explicit reason. The only permitted decision is `WAIT_FOR_EVIDENCE`, and `approved_by_policy` is fixed false.
 
 ## Consequences
 

@@ -133,3 +133,5 @@
 - 2026-10-12: Record credential surfaces and required owner approvals for staging/shadow, including identity, rotation, data-use, retention, and recovery. No secret values inspected or changed. See ADR 0181; production controls remain open.
 
 - 2026-10-12: Classify all inventoried Python modules as critical or supporting for local paper authority, enforced as a complete disjoint partition. Supporting modules remain reviewable for input/evidence/privacy/availability impact. See ADR 0182; architecture layering and transitive proof remain open.
+
+- 2026-10-12: Bound PromotionDecision evaluation evidence references to 32 non-empty strings of at most 512 characters per stage; schema and runtime model agree. See ADR 0179.

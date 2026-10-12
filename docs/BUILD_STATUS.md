@@ -1467,3 +1467,7 @@ Added a source-anchored inventory of operator/recovery, optional provider, demo,
 
 ### P00 package module criticality classification (2026-10-12)
 The architecture inventory now assigns all 323 Python package modules to disjoint critical or supporting groups. A parity test checks complete coverage and representative owners; 7 architecture-boundary tests passed in a fresh archive checkout. Supporting modules may still affect inputs, evidence, privacy, or availability; architecture layering and transitive call-graph proof remain open. See ADR 0182 and MODULE_CRITICALITY.md.
+
+
+### P11 promotion evidence reference bounds (2026-10-12)
+Tightened the PromotionDecision contract so completed evaluation references are non-empty, limited to 32 per stage, and at most 512 characters each. The promotion contract suite now passes 6 tests in an isolated archive checkout; schema parity includes the item bounds.
