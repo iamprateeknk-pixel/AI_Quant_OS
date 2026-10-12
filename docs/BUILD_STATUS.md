@@ -1352,3 +1352,12 @@ package-level imports and common dynamic import APIs. The scope is direct import
 it does not prove the complete indirect runtime call graph. Focused test: 2
 passed; Ruff and formatter checks passed. The other P00 acceptance items and all
 remaining P00-P13 gates remain open. See ADR 0164 and evaluation0164.
+
+# Development increment 0165 - P00 ownership and release guardrails
+
+Added a deterministic paper-control ownership map, measurable project Definition
+of Done, phase-promotion and rollback rules, and a P00 handoff. The map names
+current paper owners and explicitly records that no production/live release
+owner exists; live remains unauthorized. Documentation only; `git diff --check`
+passed. P00 acceptance and all remaining P00-P13 gates remain open. See ADR 0165,
+P00_GUARDRAILS_HANDOFF.md, and evaluation0165.

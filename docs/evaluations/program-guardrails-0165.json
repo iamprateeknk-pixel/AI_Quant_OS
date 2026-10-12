@@ -1,0 +1,15 @@
+{
+  "increment": "0165",
+  "date": "2026-10-12",
+  "base_commit": "de3a404",
+  "feature": "Record deterministic paper control owners and project completion/release/rollback rules",
+  "verification": {
+    "source_owner_identifiers": "checked against current implementation names",
+    "p00_p12_p13_requirements": "checked against supplied phase briefs and acceptance checklists",
+    "ci_secret_scan": "confirmed configured in .github/workflows/ci.yml",
+    "diff_check": "passed",
+    "runtime_tests": "not run; documentation-only change"
+  },
+  "limits": "This documents current ownership and release policy; it does not establish P00 acceptance, independent review, production identity, broker eligibility, P13 release evidence or live authorization.",
+  "rollback": "Revert the three policy documents, ownership map, ADR, handoff and build status entry. No runtime state or persistent data changed."
+}
