@@ -29,7 +29,7 @@ test('sequence regressions and unexpected epochs cannot replace accepted state',
  assert.equal(m.acceptRealtimeFrame(null,first,false),false);assert.equal(m.acceptRealtimeFrame(null,first,true),true);
 });
 test('stream proxy strips private fields, bounds events and releases upstream',async()=>{
- const m=await module(),proxyPath=new URL('../src/features/realtime/stream-proxy.ts',import.meta.url);assert(existsSync(proxyPath),'Realtime stream proxy must exist');
+  const proxyPath=new URL('../src/features/realtime/stream-proxy.ts',import.meta.url);assert(existsSync(proxyPath),'Realtime stream proxy must exist');
  const framesUrl=`data:text/javascript;base64,${Buffer.from(ts.transpileModule(readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')}`;
  const source=readFileSync(proxyPath,'utf8').replace('from "./frames"',`from "${framesUrl}"`);
  const proxy=await import(`data:text/javascript;base64,${Buffer.from(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')}`);
