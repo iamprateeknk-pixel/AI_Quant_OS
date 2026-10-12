@@ -157,3 +157,5 @@
 - 2026-10-13: Publish the existing PaperFill API response as a strict read-only v1 JSON Schema, validated against the PaperFill dataclass and actual API projection. No endpoint bytes or persistence behavior changed. See ADR 0191 and PAPER_FILLS_CONTRACT_HANDOFF.md.
 
 - 2026-10-13: Publish the existing PaperOrder response as a strict read-only v1 JSON Schema with explicit lifecycle states, PAPER routing, and optional broker reference; verify the real API projection. This adds no order authority or response bytes. See ADR 0192 and PAPER_ORDERS_CONTRACT_HANDOFF.md.
+
+- 2026-10-13: Publish the existing paper market quote response as a strict v1 JSON Schema and verify both fresh and stale actual API outputs. No response or execution behavior changed. See ADR 0193 and PAPER_MARKET_CONTRACT_HANDOFF.md.
