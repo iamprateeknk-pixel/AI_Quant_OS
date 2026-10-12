@@ -1463,3 +1463,7 @@ Documented the four environment tiers, authority limits, entry evidence, cost/se
 
 ### P00 secrets and compliance gates (2026-10-12)
 Added a source-anchored inventory of operator/recovery, optional provider, demo, connection, and integration-test credentials plus required staging/shadow reviews for identity, rotation, network, data rights, retention, and recovery. No environment values were read or changed. Production identity, secret management, compliance approvals, and independent review remain open; see ADR 0181 and SECRETS_AND_COMPLIANCE_GATES.md.
+
+
+### P00 package module criticality classification (2026-10-12)
+The architecture inventory now assigns all 323 Python package modules to disjoint critical or supporting groups. A parity test checks complete coverage and representative owners; 7 architecture-boundary tests passed in a fresh archive checkout. Supporting modules may still affect inputs, evidence, privacy, or availability; architecture layering and transitive call-graph proof remain open. See ADR 0182 and MODULE_CRITICALITY.md.

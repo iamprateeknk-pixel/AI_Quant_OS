@@ -7,6 +7,7 @@ Recorded deterministic ownership for current paper control actions, established 
 ## Files
 
 - `CONTROL_OWNERSHIP.md`
+- `MODULE_CRITICALITY.md` (complete package-module critical/supporting classification; architecture layering and transitive boundary proof remain open)
 - `DEFINITION_OF_DONE.md`
 - `RELEASE_AND_ROLLBACK.md`
 - `SECURITY_BOUNDARY.md` (initial authority map; full threat model and production identity work remain open)
@@ -27,7 +28,7 @@ None.
 ## Risks and open dependencies
 
 - Current ownership is local paper code ownership. It does not establish production identity, dual approval, broker eligibility, or live release authority.
-- The architecture import test covers direct imports in named agent and strategy source files; it is not an indirect runtime call-graph proof.
+- The architecture configuration now classifies every inventoried package module as critical or supporting. The import guard covers direct imports in discovered agent and strategy source files; it is not an indirect runtime call-graph proof.
 - P00 acceptance, staging/shadow evidence, independent critical-path review, and all remaining P00-P13 phase gates remain open.
 
 ## Rollback

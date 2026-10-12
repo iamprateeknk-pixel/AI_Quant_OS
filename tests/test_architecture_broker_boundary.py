@@ -215,3 +215,19 @@ def test_package_python_modules_are_explicitly_in_architecture_inventory():
         f"Architecture inventory mismatch; missing={sorted(discovered - declared)}, "
         f"stale={sorted(declared - discovered)}"
     )
+
+
+def test_every_package_module_has_an_explicit_criticality_classification():
+    rules = json.loads(ARCHITECTURE.read_text(encoding="utf-8"))
+    classification = rules["module_criticality"]
+    inventory = set(rules["package_module_inventory"])
+    critical = set(classification["critical_modules"])
+    supporting = set(classification["supporting_modules"])
+    assert critical.isdisjoint(supporting)
+    assert critical | supporting == inventory
+    assert classification["basis"]
+    assert {"src/ai_quant_os/risk.py", "src/ai_quant_os/execution.py"} <= critical
+    assert {
+        "src/ai_quant_os/strategy_selector_agent.py",
+        "src/ai_quant_os/adversarial_agent.py",
+    } <= supporting
