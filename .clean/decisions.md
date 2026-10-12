@@ -163,3 +163,5 @@
 - 2026-10-13: Publish strict schemas for the existing paper positions and currency portfolio reads; tests validate actual endpoint outputs while preserving null marks, FX valuation, and exposure. No runtime or persistence behavior changed. See ADR 0194 and PORTFOLIO_READ_CONTRACTS_HANDOFF.md.
 
 - 2026-10-13: Publish strict PAPER system-status and risk-read schemas with tests against actual safety-state, order-count, and instrument-scoped API responses. This does not change control authority. See ADR 0195 and SAFETY_RISK_CONTRACT_HANDOFF.md.
+
+- 2026-10-13: Enforce exact safety and EURUSD risk API projections in the browser, rejecting unsupported safety states, negative counts/ceilings, malformed quantities, unknown fields and instrument mismatch. Full web suite and production build pass. See ADR 0196 and RISK_READ_UI_HANDOFF.md.
