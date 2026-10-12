@@ -137,3 +137,5 @@
 - 2026-10-12: Bound PromotionDecision evaluation evidence references to 32 non-empty strings of at most 512 characters per stage; schema and runtime model agree. See ADR 0179.
 
 - 2026-10-12: Assign each inventoried module to one primary layer and enforce five static dependency boundaries. A temporary agent-to-control import was rejected by the test. Transitive call-graph and complete architecture acceptance remain open. See ADR 0183.
+
+- 2026-10-12: Add a protected BrokerHealth read and paper observation table to Mission Control. The UI preserves unknown/unassessed evidence and withholds unsupported scores; broker execution authority is unchanged. Full web regression and production build pass; visual browser acceptance remains open. See ADR 0184 and BROKER_HEALTH_UI_HANDOFF.md.

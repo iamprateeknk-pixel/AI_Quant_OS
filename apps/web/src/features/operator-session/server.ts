@@ -131,6 +131,10 @@ export async function readBrokerCapabilities(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/brokers/capabilities");
 }
 
+export async function readBrokerHealth(): Promise<ProtectedRead> {
+  return protectedRead("/api/v1/brokers/health");
+}
+
 export async function readDemoSyncHealth(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/brokers/demo-sync/health");
 }
