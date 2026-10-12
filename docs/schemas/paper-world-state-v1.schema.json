@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:paper-world-state:1.0",
+  "title": "Paper World State v1.0",
+  "description": "Bounded simulated FX world-state observation. This contract carries no trading authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "mode",
+    "world_state_version",
+    "as_of",
+    "valid_until",
+    "status",
+    "instruments",
+    "currency_twins",
+    "policy_version",
+    "source"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "mode": { "const": "PAPER" },
+    "world_state_version": { "type": "string", "pattern": "^world:[a-f0-9]{64}$" },
+    "as_of": { "type": "string", "format": "date-time" },
+    "valid_until": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["EMPTY", "DEGRADED", "READY"] },
+    "instruments": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/InstrumentWorldState" }
+    },
+    "currency_twins": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/CurrencyTwin" }
+    },
+    "policy_version": { "const": "paper-regime-v1" },
+    "source": { "const": "PAPER_SIMULATED" }
+  },
+  "$defs": {
+    "InstrumentWorldState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "instrument_id",
+        "base_currency",
+        "quote_currency",
+        "quote_status",
+        "mid_price",
+        "spread_bps",
+        "history_status",
+        "bar_count",
+        "return_bps",
+        "realized_volatility_bps",
+        "regime",
+        "evidence_refs"
+      ],
+      "properties": {
+        "instrument_id": { "enum": ["EURUSD", "GBPUSD", "USDJPY", "EURJPY"] },
+        "base_currency": { "enum": ["EUR", "GBP", "USD"] },
+        "quote_currency": { "enum": ["USD", "JPY"] },
+        "quote_status": { "enum": ["MISSING", "UNTRUSTED", "FUTURE", "STALE", "FRESH"] },
+        "mid_price": { "$ref": "#/$defs/NullableNonnegativeDecimal" },
+        "spread_bps": { "$ref": "#/$defs/NullableNonnegativeDecimal" },
+        "history_status": { "enum": ["INSUFFICIENT", "STALE", "FRESH"] },
+        "bar_count": { "type": "integer", "minimum": 0, "maximum": 64 },
+        "return_bps": { "$ref": "#/$defs/NullableDecimal" },
+        "realized_volatility_bps": { "$ref": "#/$defs/NullableNonnegativeDecimal" },
+        "regime": { "enum": ["UNKNOWN", "TRENDING", "RANGING", "HIGH_VOLATILITY"] },
+        "evidence_refs": {
+          "type": "array",
+          "maxItems": 2,
+          "items": { "type": "string", "pattern": "^(paper-quote|paper-bars):[a-f0-9]{64}$" }
+        }
+      }
+    },
+    "CurrencyTwin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "instrument_ids", "fresh_quote_count", "macro_available"],
+      "properties": {
+        "currency": { "enum": ["EUR", "GBP", "JPY", "USD"] },
+        "instrument_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["EURUSD", "GBPUSD", "USDJPY", "EURJPY"] }
+        },
+        "fresh_quote_count": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "macro_available": { "type": "boolean" }
+      }
+    },
+    "NullableDecimal": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$" }
+      ]
+    },
+    "NullableNonnegativeDecimal": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$" }
+      ]
+    }
+  }
+}
