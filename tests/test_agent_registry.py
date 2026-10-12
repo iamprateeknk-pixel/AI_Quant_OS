@@ -1,9 +1,12 @@
 import asyncio
+import json
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 from ai_quant_os.api import create_app
+from ai_quant_os.agent_permissions import READ_TOOLS, ROLE_CEILINGS, SANDBOX_TOOLS
 from ai_quant_os.agent_registry import (
     AgentManifest,
     AgentRegistry,
@@ -253,3 +256,17 @@ def test_payload_limits_and_scope_are_bound_before_handler():
         assert calls[0].scope == "PAPER"
 
     asyncio.run(invoke())
+
+
+def test_published_agent_permission_matrix_matches_runtime_policy():
+    path = Path(__file__).resolve().parents[1] / "docs" / "agent-permission-matrix.json"
+    matrix = json.loads(path.read_text(encoding="utf-8"))
+    assert matrix["schema_version"] == "1.0"
+    assert matrix["agent_capabilities"] == {
+        agent: sorted(tools) for agent, tools in sorted(ROLE_CEILINGS.items())
+    }
+    assert matrix["read_tools"] == sorted(READ_TOOLS)
+    assert matrix["sandbox_only_tools"] == sorted(SANDBOX_TOOLS)
+    assert matrix["allowed_scopes"] == ["PAPER", "SANDBOX"]
+    assert matrix["live_scope_granted"] is False
+    assert matrix["deny_by_default"] is True

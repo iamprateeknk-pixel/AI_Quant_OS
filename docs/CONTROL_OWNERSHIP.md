@@ -1,6 +1,9 @@
 # Deterministic control ownership
 
-This map names the current code owner for each safety-critical paper action. An agent proposal, UI state, broker observation, or stale receipt cannot substitute for the named owner. Production/live release ownership is not implemented by this map.
+This map names the current code owner for each safety-critical paper action. An agent proposal, UI state, broker observation, or stale receipt cannot substitute for the named owner. Production/live release ownership is not implemented by this map. Agent tool
+ceilings, scope rules, sandbox-only operations, and lifecycle restrictions are
+listed in [agent-permission-matrix.json](agent-permission-matrix.json), whose
+parity is checked against the runtime policy.
 
 | Critical action | Deterministic owner | Persisted or checked evidence |
 | --- | --- | --- |

@@ -1431,3 +1431,7 @@ The broker/execution import guard now discovers every package module whose filen
 
 ### P00 strict agent output schema admission (2026-10-12)
 GraphRuntime now rejects output models configured to ignore unknown fields. It continues to bind the schema type to the registered manifest and revalidates serialized output before retaining it. Fresh isolated archive verification: 22 graph runtime and API tests passed; Ruff check and format passed. This establishes structural validation only, not semantic correctness or promotion eligibility. P00 remains open.
+
+
+### P00 versioned agent permission matrix (2026-10-12)
+docs/agent-permission-matrix.json documents all 18 fixed capability ceilings, read tools, sandbox-only tools, supported scopes, lifecycle restrictions, and the separation from human operator authorization. A parity test compares it with the runtime policy. Fresh isolated archive verification: 101 agent registry tests passed; Ruff check and format passed. This matrix does not certify external account access, compliance, or live authorization. P00 remains open.
