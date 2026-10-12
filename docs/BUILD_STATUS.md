@@ -1459,3 +1459,7 @@ Published PromotionDecision v1.0 for candidate/champion, offline/replay/adversar
 
 ### P00 environment strategy (2026-10-12)
 Documented the four environment tiers, authority limits, entry evidence, cost/secrets/recovery requirements, and present acceptance state. No remote environment or spend was selected or provisioned. Operator confirmation of owner, deployment model, users, and exposure remains open; P00 and P13 acceptance remain incomplete. See ADR 0180 and ENVIRONMENT_STRATEGY.md.
+
+
+### P00 secrets and compliance gates (2026-10-12)
+Added a source-anchored inventory of operator/recovery, optional provider, demo, connection, and integration-test credentials plus required staging/shadow reviews for identity, rotation, network, data rights, retention, and recovery. No environment values were read or changed. Production identity, secret management, compliance approvals, and independent review remain open; see ADR 0181 and SECRETS_AND_COMPLIANCE_GATES.md.
