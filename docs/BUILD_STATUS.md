@@ -1419,3 +1419,7 @@ A17 0.2.0 is registered PARTIAL/SHADOW in the protected paper graph. It binds th
 
 ### P00 package module inventory guard (2026-10-12)
 .clean/architecture.json now explicitly lists every Python module under src/ai_quant_os/. 	ests/test_architecture_broker_boundary.py rejects missing, stale, and duplicate entries, including modules in nested package folders. The five deterministic domain modules retain their existing forbidden-import checks. This is inventory coverage only: the other modules still need layer assignments and per-layer dependency rules. Verification in a fresh git archive HEAD checkout: 5 focused tests passed; Ruff check and format passed. P00 and final acceptance remain open.
+
+
+### P00 unresolved dynamic import guard (2026-10-12)
+Broker/agent and deterministic-domain import checks now report non-literal importlib.import_module, aliased import_module, and __import__ calls as unresolved violations. The regression test demonstrated the previous false negative for concatenated module names. Fresh isolated archive verification: 5 focused tests passed; Ruff check and format passed. Static checks do not cover other runtime loading mechanisms; P00 remains open.

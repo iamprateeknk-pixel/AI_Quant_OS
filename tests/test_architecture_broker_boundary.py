@@ -77,11 +77,10 @@ def _broker_imports(source: str) -> list[str]:
             is_dynamic_import = isinstance(node.func, ast.Name) and (
                 node.func.id == "__import__" or node.func.id in import_module_names
             )
-            if (
-                (is_importlib or is_dynamic_import)
-                and node.args
-                and isinstance(node.args[0], ast.Constant)
-            ):
+            if is_importlib or is_dynamic_import:
+                if not node.args or not isinstance(node.args[0], ast.Constant):
+                    found.add("<dynamic import>")
+                    continue
                 imported = node.args[0].value
                 if isinstance(imported, str) and any(
                     imported == boundary or imported.startswith(f"{boundary}.")
@@ -106,6 +105,10 @@ def test_boundary_detector_catches_static_and_dynamic_broker_imports():
     ) == ["ai_quant_os.execution"]
     assert _broker_imports("from ai_quant_os.execution import submit") == ["ai_quant_os.execution"]
     assert _broker_imports('__import__("ai_quant_os.execution")') == ["ai_quant_os.execution"]
+    assert _broker_imports(
+        'import importlib\nimportlib.import_module("ai_quant_os." + "broker")'
+    ) == ["<dynamic import>"]
+    assert _broker_imports("__import__(module_name)") == ["<dynamic import>"]
 
 
 def test_agent_and_strategy_sources_do_not_import_broker_execution_surfaces():
@@ -145,10 +148,12 @@ def _import_names(tree: ast.AST) -> set[str]:
             is_dynamic = isinstance(node.func, ast.Name) and (
                 node.func.id == "__import__" or node.func.id in import_module_names
             )
-            if (is_importlib or is_dynamic) and node.args:
-                value = node.args[0]
+            if is_importlib or is_dynamic:
+                value = node.args[0] if node.args else None
                 if isinstance(value, ast.Constant) and isinstance(value.value, str):
                     names.add(value.value)
+                else:
+                    names.add("<dynamic import>")
     return names
 
 
@@ -164,7 +169,8 @@ def test_machine_readable_architecture_domain_boundary_is_enforced():
         blocked = sorted(
             name
             for name in imports
-            if any(name == prefix or name.startswith(prefix + ".") for prefix in forbidden)
+            if name == "<dynamic import>"
+            or any(name == prefix or name.startswith(prefix + ".") for prefix in forbidden)
         )
         if blocked:
             violations[path.relative_to(ROOT).as_posix()] = blocked
@@ -183,6 +189,10 @@ def test_machine_readable_architecture_boundary_rejects_infrastructure_imports()
     assert blocked == ["ai_quant_os.execution", "pydantic"]
     dynamic = ast.parse('from importlib import import_module as load\nload("pydantic")')
     assert "pydantic" in _import_names(dynamic)
+    constructed = ast.parse(
+        'from importlib import import_module as load\nload("pydantic" + ".BaseModel")'
+    )
+    assert "<dynamic import>" in _import_names(constructed)
 
 
 def test_package_python_modules_are_explicitly_in_architecture_inventory():

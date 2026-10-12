@@ -7,7 +7,9 @@ machine-readable import rule in `.clean/architecture.json`. The existing
 architecture test reads that rule and checks every declared domain source for
 forbidden framework, storage, HTTP composition, broker, and execution imports. It
 also verifies that literal `importlib.import_module`, aliased `import_module`, and
-`__import__` calls are included in the check.
+`__import__` calls are included in the check. Dynamic imports whose module names are
+not string literals are rejected as unresolved by the broker and domain boundary
+checks.
 
 ## Verification
 
@@ -19,8 +21,9 @@ also verifies that literal `importlib.import_module`, aliased `import_module`, a
 ## Limits and next work
 
 The package inventory is explicit, but the other modules are not yet assigned to
-architecture layers or checked against per-layer dependency rules. The detector also
-does not detect names assembled at runtime.
+architecture layers or checked against per-layer dependency rules. The static detector conservatively rejects unresolved dynamic import calls in the
+checked sources; it cannot prove behavior of imports hidden behind other runtime
+mechanisms.
 Package-wide dependency direction, other phase gates, independent review, and all
 P00–P13 acceptance remain open. This change does not authorize a broker or live
 trading.
