@@ -84,6 +84,10 @@ class LocalSettings:
         }
         if inherited.get("AI_QUANT_OPERATOR_TOKEN"):
             backend["AI_QUANT_OPERATOR_TOKEN"] = inherited["AI_QUANT_OPERATOR_TOKEN"]
+        alerts_enabled = inherited.get("AI_QUANT_PROMETHEUS_ALERTS_ENABLED", "0")
+        if alerts_enabled not in {"0", "1"}:
+            raise ValueError("Explicit local monitoring alert enable flag required")
+        backend["AI_QUANT_PROMETHEUS_ALERTS_ENABLED"] = alerts_enabled
         telemetry_enabled = inherited.get("AI_QUANT_OTEL_ENABLED", "0")
         if telemetry_enabled not in {"0", "1"}:
             raise ValueError("Explicit OTel enable flag required")

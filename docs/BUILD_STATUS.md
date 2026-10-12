@@ -1257,3 +1257,12 @@ prove local observation behavior. Existing authenticated ingestion, Grafana and
 HALT remain in the staged verification scope. External delivery, durable incident
 acknowledgement, engine health coverage, production/independent/browser and all
 full P00–P13 gates remain open. See the paper HTTP monitoring runbook and0154.
+
+# Development increment0155 — protected local monitoring observations
+
+Optional backend-owned native rule source with fixed loopback URL, bounded
+async I/O, original state/time/hold validation, private payload omission and
+pre/post operator authorization. Native pending-state reads preserve order/HALT
+behavior. Incident frontend wiring, durable acknowledgement/notifications/engine
+health and production/independent/browser/full P00–P13 gates remain open.
+See MONITORING_ALERT_API_HANDOFF.md and ADR/evaluation0155.

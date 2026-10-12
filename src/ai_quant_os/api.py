@@ -89,6 +89,7 @@ from ai_quant_os.agent_trace_binding import make_agent_trace_binding
 from ai_quant_os.agent_trace_binding_api import install_agent_trace_binding_routes
 from ai_quant_os.collector_trace_source import CollectorTraceSource
 from ai_quant_os.collector_trace_api import install_collector_trace_routes
+from ai_quant_os.monitoring_alerts import MonitoringAlertSource, install_monitoring_alert_routes
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -292,6 +293,7 @@ def create_app(
     demo_sync_state_dir: Path | None = None,
     telemetry: PaperTelemetry | None = None,
     collector_trace_file: Path | None = None,
+    monitoring_alert_source: MonitoringAlertSource | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -2094,6 +2096,12 @@ def create_app(
     )
     install_tracing_status_routes(app, configured_telemetry, require_operator, current_time)
     install_paper_metrics_routes(app, configured_telemetry, require_operator)
+    install_monitoring_alert_routes(
+        app,
+        monitoring_alert_source
+        or MonitoringAlertSource(enabled=os.getenv("AI_QUANT_PROMETHEUS_ALERTS_ENABLED") == "1"),
+        require_operator,
+    )
     install_agent_trace_binding_routes(app, state_store, require_operator, current_time)
     install_collector_trace_routes(
         app,

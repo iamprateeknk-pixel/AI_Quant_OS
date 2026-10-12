@@ -17,6 +17,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 
 from ai_quant_os.api import create_app
 from ai_quant_os.paper_telemetry import PaperTelemetry
+from ai_quant_os.monitoring_alerts import MonitoringAlertSource
 from tests.test_paper_telemetry import NOW, payload, run_order
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,14 +86,19 @@ def test_actual_prometheus_ingests_sdk_buckets_and_reports_revoked_scrape_withou
     listener = socket.socket()
     listener.bind(("127.0.0.1", 0))
     port = listener.getsockname()[1]
-    telemetry = PaperTelemetry(exporter=InMemorySpanExporter())
-    app = create_app(operator_token="fixture-monitor-token", clock=lambda: NOW, telemetry=telemetry)
-    server = uvicorn.Server(uvicorn.Config(app, log_level="error", lifespan="on", access_log=False))
-    thread = threading.Thread(target=server.run, kwargs={"sockets": [listener]}, daemon=True)
-    thread.start()
     with socket.socket() as reservation:
         reservation.bind(("127.0.0.1", 0))
         prom_port = reservation.getsockname()[1]
+    telemetry = PaperTelemetry(exporter=InMemorySpanExporter())
+    app = create_app(
+        operator_token="fixture-monitor-token",
+        clock=lambda: NOW,
+        telemetry=telemetry,
+        monitoring_alert_source=MonitoringAlertSource(enabled=True, port=prom_port),
+    )
+    server = uvicorn.Server(uvicorn.Config(app, log_level="error", lifespan="on", access_log=False))
+    thread = threading.Thread(target=server.run, kwargs={"sockets": [listener]}, daemon=True)
+    thread.start()
     config["global"] = {
         "scrape_interval": "1s",
         "scrape_timeout": "500ms",
@@ -208,6 +214,21 @@ def test_actual_prometheus_ingests_sdk_buckets_and_reports_revoked_scrape_withou
                         (tmp_path / "native-alert-observation.json").write_text(
                             json.dumps(response.json())
                         )
+                        protected = httpx.get(
+                            paper_base + "/api/v1/observability/alerts",
+                            headers={"X-Operator-Token": "fixture-monitor-token"},
+                            timeout=5,
+                            trust_env=False,
+                        )
+                        assert protected.status_code == 200
+                        observation = protected.json()
+                        assert observation["state"] == "AVAILABLE"
+                        assert {item["name"]: item["state"] for item in observation["rules"]} == {
+                            "PaperHttpScrapeFailed": "PENDING",
+                            "PaperHttpScrapeMissing": "INACTIVE",
+                        }
+                        assert "fixture-monitor-token" not in protected.text
+                        (tmp_path / "protected-alert-observation.json").write_text(protected.text)
                         break
                     assert time.monotonic() < deadline, "Original alert evaluation deadline"
                     time.sleep(0.1)

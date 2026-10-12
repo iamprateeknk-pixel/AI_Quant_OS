@@ -89,6 +89,16 @@ def test_explicit_local_telemetry_reaches_only_backend_without_ambient_fields(tm
     assert "OTEL_RESOURCE_ATTRIBUTES" not in backend and "OTEL_EXPORTER_OTLP_HEADERS" not in backend
 
 
+def test_local_monitoring_alert_flag_is_explicit_and_backend_only(tmp_path):
+    settings = runtime().LocalSettings(Path.cwd(), tmp_path)
+    backend, frontend = settings.environments({"AI_QUANT_PROMETHEUS_ALERTS_ENABLED": "1"})
+    assert backend["AI_QUANT_PROMETHEUS_ALERTS_ENABLED"] == "1"
+    assert "AI_QUANT_PROMETHEUS_ALERTS_ENABLED" not in frontend
+    assert settings.environments({})[0]["AI_QUANT_PROMETHEUS_ALERTS_ENABLED"] == "0"
+    with pytest.raises(ValueError):
+        settings.environments({"AI_QUANT_PROMETHEUS_ALERTS_ENABLED": "true"})
+
+
 def test_remote_local_launcher_telemetry_is_refused_before_children(tmp_path):
     with pytest.raises(ValueError):
         runtime().LocalSettings(Path.cwd(), tmp_path).environments(

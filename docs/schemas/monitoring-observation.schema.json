@@ -1,0 +1,136 @@
+{
+  "$defs": {
+    "MonitoringRule": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "PaperHttpScrapeFailed",
+            "PaperHttpScrapeMissing"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "INACTIVE",
+            "PENDING",
+            "FIRING"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "evaluated_at": {
+          "format": "date-time",
+          "title": "Evaluated At",
+          "type": "string"
+        },
+        "active_since": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Active Since"
+        },
+        "hold_seconds": {
+          "const": 120,
+          "default": 120,
+          "title": "Hold Seconds",
+          "type": "integer"
+        },
+        "severity": {
+          "const": "warning",
+          "default": "warning",
+          "title": "Severity",
+          "type": "string"
+        },
+        "runbook_path": {
+          "title": "Runbook Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "state",
+        "evaluated_at",
+        "active_since",
+        "runbook_path"
+      ],
+      "title": "MonitoringRule",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "source_kind": {
+      "const": "LOCAL_PROMETHEUS_RULE_EVALUATION",
+      "default": "LOCAL_PROMETHEUS_RULE_EVALUATION",
+      "title": "Source Kind",
+      "type": "string"
+    },
+    "durable": {
+      "const": false,
+      "default": false,
+      "title": "Durable",
+      "type": "boolean"
+    },
+    "notification_verified": {
+      "const": false,
+      "default": false,
+      "title": "Notification Verified",
+      "type": "boolean"
+    },
+    "independently_attested": {
+      "const": false,
+      "default": false,
+      "title": "Independently Attested",
+      "type": "boolean"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "DISABLED",
+        "UNAVAILABLE",
+        "AVAILABLE"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "rules": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MonitoringRule"
+      },
+      "maxItems": 2,
+      "title": "Rules",
+      "type": "array"
+    }
+  },
+  "required": [
+    "observed_at",
+    "state"
+  ],
+  "title": "MonitoringObservation",
+  "type": "object"
+}

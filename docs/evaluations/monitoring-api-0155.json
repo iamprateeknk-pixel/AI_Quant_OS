@@ -1,0 +1,256 @@
+{
+  "increment": "0155",
+  "date": "2026-10-12",
+  "base_commit": "6de31a64df41b792c32586cae4bd737b43d654c4",
+  "feature": "Protected selected current native local monitoring rule observations",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0155-final",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "335766b63a49bdd1429ac36011a92f7b9b9176360fc02dc39a04875dfe60f076"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "d1ac800f3a54fb47840c9d510130d5e5173697a339cbbddc9d3d00a790fc0a06"
+      },
+      {
+        "path": "docs/MONITORING_ALERT_API_HANDOFF.md",
+        "sha256": "33941c24673d587ccb821d24206521b1dc66b0e9e5f53bd089f3242f079f8c2a"
+      },
+      {
+        "path": "docs/adr/0155-protected-monitoring-rules.md",
+        "sha256": "b0c909da79107d13d0feb5d4157db3b2fe950c4615688644cb324a72e9ae861c"
+      },
+      {
+        "path": "docs/schemas/monitoring-observation.schema.json",
+        "sha256": "47e222f10bd894deecc1584e91271b1ed663bd3c6e7f1f9db435f34db5fd66e2"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "ae04dda8fc0a80c2e16b8220f6dc8ea465d88f547d67e88e481c351aeac94a4b"
+      },
+      {
+        "path": "src/ai_quant_os/local_runtime.py",
+        "sha256": "750c75b156c069bb1f53bc93ce69ec9a0bcbbd74de33acf6631f694185025fc7"
+      },
+      {
+        "path": "src/ai_quant_os/monitoring_alerts.py",
+        "sha256": "6bf7c08df98822a67600984d1752e9267bd156674b125edb907822e8a5c1324b"
+      },
+      {
+        "path": "tests/test_local_runtime.py",
+        "sha256": "7e6de3641f616b24d43abcbd902190b30d80fa02df294daab3f386ee041191a3"
+      },
+      {
+        "path": "tests/test_monitoring_alert_api.py",
+        "sha256": "7850fd463cc3944043995514d0f345e3256f08b734049d78f92f75ee02332081"
+      },
+      {
+        "path": "tests/test_prometheus_deployment.py",
+        "sha256": "90df12bc0cb90d6ef002568aa5218a51c78081b44651e379bc578dc90ff31eb9"
+      }
+    ],
+    "backend_tests": 444,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "335.991",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py",
+      "tests/test_collector_console_fixture.py",
+      "tests/test_paper_trace_context.py",
+      "tests/test_paper_http_metrics.py",
+      "tests/test_prometheus_deployment.py",
+      "tests/test_grafana_deployment.py",
+      "tests/test_paper_http_alerts.py",
+      "tests/test_monitoring_alert_api.py"
+    ],
+    "checks": {
+      "backend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0155-final-fresh-backend.log",
+        "scope": [
+          "tests/test_provider_spend.py",
+          "tests/test_openai_spend_admission.py",
+          "tests/test_openai_reviewer.py",
+          "tests/test_provider_call_admission.py",
+          "tests/test_agent_call_budgets.py",
+          "tests/test_context_call_budgets.py",
+          "tests/test_jev_adapter.py",
+          "tests/test_decision_gateway.py",
+          "tests/test_deep_review.py",
+          "tests/test_api.py",
+          "tests/test_currency_risk.py",
+          "tests/test_event_risk.py",
+          "tests/test_operator_controls.py",
+          "tests/test_operator_sessions.py",
+          "tests/test_local_runtime.py",
+          "tests/test_audit_integrity.py",
+          "tests/test_provider_spend_api.py",
+          "tests/test_jev_spend_admission.py",
+          "tests/test_shared_provider_spend.py",
+          "tests/test_shared_spend_api.py",
+          "tests/test_paper_telemetry.py",
+          "tests/test_dependency_locks.py",
+          "tests/test_trace_export_queue.py",
+          "tests/test_tracing_status_api.py",
+          "tests/test_agent_telemetry.py",
+          "tests/test_agent_runs.py",
+          "tests/test_tracing_console_fixture.py",
+          "tests/test_agent_trace_binding.py",
+          "tests/test_agent_trace_binding_api.py",
+          "tests/test_agent_trace_console_fixture.py",
+          "tests/test_collector_deployment.py",
+          "tests/test_collector_trace_api.py",
+          "tests/test_collector_console_fixture.py",
+          "tests/test_paper_trace_context.py",
+          "tests/test_paper_http_metrics.py",
+          "tests/test_prometheus_deployment.py",
+          "tests/test_grafana_deployment.py",
+          "tests/test_paper_http_alerts.py",
+          "tests/test_monitoring_alert_api.py"
+        ],
+        "log_sha256": "6913884bfd2fb582cdf82340c44c97796f35ebd04e2dc0ca7f3ef9d3136f8a48"
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0155-final-fresh-ruff.log",
+        "scope": [
+          "ruff",
+          "check",
+          "src/ai_quant_os/monitoring_alerts.py",
+          "src/ai_quant_os/api.py",
+          "src/ai_quant_os/local_runtime.py",
+          "tests/test_prometheus_deployment.py",
+          "tests/test_monitoring_alert_api.py",
+          "tests/test_local_runtime.py"
+        ],
+        "log_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      "format": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0155-final-fresh-format.log",
+        "scope": [
+          "ruff",
+          "format",
+          "--check",
+          "src/ai_quant_os/monitoring_alerts.py",
+          "src/ai_quant_os/api.py",
+          "src/ai_quant_os/local_runtime.py",
+          "tests/test_prometheus_deployment.py",
+          "tests/test_monitoring_alert_api.py",
+          "tests/test_local_runtime.py"
+        ],
+        "log_sha256": "f57152af69ed696672a20f7a07dc500ce85005053092505a680768f611957e48"
+      },
+      "wheel": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0155-final-fresh-wheel.log",
+        "scope": [
+          "pip",
+          "--isolated",
+          "wheel",
+          "--no-index",
+          "--no-deps",
+          "--no-build-isolation",
+          "--wheel-dir",
+          "D:\\AI_Quant_OS\\data-local\\alert-api-0155-dist",
+          "."
+        ],
+        "log_sha256": "8c2b6c165e22ea66b726bfe7689ce0ce1f881d8c8f5a80e4777b8a120f06366a"
+      }
+    },
+    "junit_sha256": "784b5aa7a93a8cce051d00c19326103eec12fcb8b99d08b934c4c3b2d9e54b78",
+    "native_observation": {
+      "path": "D:\\AI_Quant_OS\\data-local\\prometheus-0155-final-fresh-fixtures\\test_actual_prometheus_ingests0\\protected-alert-observation.json",
+      "sha256": "8d7e90fe3692b80a9e02214d94130edd7280d9c934c40691643d03ae0a488e33",
+      "schema_version": "1.0",
+      "mode": "PAPER",
+      "source_kind": "LOCAL_PROMETHEUS_RULE_EVALUATION",
+      "durable": false,
+      "notification_verified": false,
+      "independently_attested": false,
+      "observed_at": "2026-10-12T08:22:33.291525Z",
+      "state": "AVAILABLE",
+      "rules": [
+        {
+          "name": "PaperHttpScrapeFailed",
+          "state": "PENDING",
+          "evaluated_at": "2026-10-12T08:22:32.414351Z",
+          "active_since": "2026-10-12T08:22:32.410695Z",
+          "hold_seconds": 120,
+          "severity": "warning",
+          "runbook_path": "docs/runbooks/paper-http-monitoring.md#scrape-failed"
+        },
+        {
+          "name": "PaperHttpScrapeMissing",
+          "state": "INACTIVE",
+          "evaluated_at": "2026-10-12T08:22:32.414351Z",
+          "active_since": null,
+          "hold_seconds": 120,
+          "severity": "warning",
+          "runbook_path": "docs/runbooks/paper-http-monitoring.md#scrape-missing"
+        }
+      ]
+    },
+    "wheel": {
+      "path": "D:\\AI_Quant_OS\\data-local\\alert-api-0155-dist\\ai_quant_os-0.1.0-py3-none-any.whl",
+      "sha256": "f1020f84344c66ea73db7f435b5b3222e2be19c2abc084e7fd646cab8a91eb95",
+      "all_packaged_runtime_files_exact_fresh_source": true,
+      "changed_runtime_exact_staged": true
+    },
+    "native_red": "Initial17 new tests failed on missing module/route injection. Original native Prometheus then yielded matching pending state through protected HTTP. A separate negative firing-before-hold test failed before adding120-second temporal validation. Launcher flag test failed on absent backend flag before explicit0/1 forwarding. All original reports preserved.",
+    "identity": {
+      "prior_schemas_unchanged": 111,
+      "new_schema": "monitoring-observation.schema.json",
+      "unchanged_runtime_frontend_prior_schemas_requirements_files": 548
+    },
+    "checks_detail": "Pre/post existing token/session authorization; zero unauthorized/disabled source reads; native pending and selected synthetic firing timestamps; stale/future/changed/duplicate/incomplete/failed/foreign labels withhold whole observations; native expression/hold consistency; no raw errors/credentials; bounded bytes/groups; no redirect/proxy/compression/retry; actual cooperative deadline/concurrency4/cancellation and subsequent reads; session expires during read401; local launcher backend-only explicitflag; exact exported schema. Native actual original orders/replay/metrics history/HALT and Grafana auth/provisioning/current withholding/owned plugin shutdown remain in scope.",
+    "review": "Local five-axis review: source/HTTP policy isolated in one infrastructure module, deterministic domain modules unchanged; optional defaultdisabled observer with no lifecycle worker/global client; fixed loopback/selected known rules and original UTC times, complete45-second freshness window, original120-second firing hold; sanitized unavailable state instead of zero/current inference; existing before/after operator policy. Known original admitted process/thread/job handles close and private data/logs remain. Existing Python/httpx dependencies only; no production latency/custody or independent review claim.",
+    "structure": "Ignored structure map refreshed; imports/layers manually reviewed. Existing prose architecture checker unsupported. Composition root adds delegated installer only; local runtime forwards explicitflag only to backend.",
+    "full_suite": "Not run; unknown0084/0088 candidate custody preserved. Scoped trusted SDK/collector/Prometheus/Grafana/API/provider/audit/risk/HALT/session/launcher/locks tests only.",
+    "frontend": "Unchanged; prior0149 frontend tests/build retained, no new browser launch or rendered interface claim.",
+    "scan_verdict": "passed; Gitleaks8.30.1 exact redacted staged patch, zero findings; retained report/log",
+    "observed_wait": "Final original native test process observed until terminal, including complete Grafana distribution reads.336.12-second test duration; no replacement solely for observation timeout."
+  },
+  "rollback": "Revert optional source/route/schema/launcher flag/docs/tests. No dependency or database/order-state migration, reset/retry, source/collector deletion or automatic service install.",
+  "limits": [
+    "All full P00-P13 gates remain incomplete.",
+    "Incident frontend source wiring remains pending; selected local rule observations only, without durable journal/acknowledgement or independently attested source identity.",
+    "No external Alertmanager/notification/engine-health coverage/automatic control or trading recovery authority. Local inactive state cannot prove order or risk recovery.",
+    "Source reads use cooperative bounds and trusted OS loopback admission; private role/network/service/Linux/resource/load/latency/retention/custody and independent/browser acceptance pending.",
+    "No candidate/Docker mutation, paid provider/broker/livecapital, remote push/promotion; user .agents/ and skills-lock.json untouched."
+  ]
+}
