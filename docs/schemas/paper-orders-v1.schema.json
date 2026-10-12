@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:paper-orders:1.0",
+  "title": "Paper Orders Response v1.0",
+  "description": "Read-only paper order receipts returned by GET /api/v1/orders.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["orders"],
+  "properties": {
+    "orders": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/PaperOrder" }
+    }
+  },
+  "$defs": {
+    "PaperOrder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order_id",
+        "intent_id",
+        "risk_id",
+        "status",
+        "broker_route",
+        "instrument_id"
+      ],
+      "properties": {
+        "order_id": { "type": "string", "minLength": 1 },
+        "intent_id": { "type": "string", "minLength": 1 },
+        "risk_id": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": [
+            "PENDING",
+            "DISPATCHING",
+            "UNKNOWN",
+            "ACCEPTED",
+            "REJECTED",
+            "PARTIALLY_FILLED",
+            "FILLED"
+          ]
+        },
+        "broker_route": { "const": "PAPER" },
+        "instrument_id": { "enum": ["EURUSD", "GBPUSD", "USDJPY", "EURJPY"] },
+        "broker_order_id": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

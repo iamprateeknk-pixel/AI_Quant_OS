@@ -155,3 +155,5 @@
 - 2026-10-13: Publish WorldState response v1.0 as a strict JSON Schema with stable ID, fixed four-pair PAPER universe, runtime dataclass parity, and actual API projection validation. No wire or persistence behavior changed. See ADR 0190 and WORLD_STATE_CONTRACT_HANDOFF.md.
 
 - 2026-10-13: Publish the existing PaperFill API response as a strict read-only v1 JSON Schema, validated against the PaperFill dataclass and actual API projection. No endpoint bytes or persistence behavior changed. See ADR 0191 and PAPER_FILLS_CONTRACT_HANDOFF.md.
+
+- 2026-10-13: Publish the existing PaperOrder response as a strict read-only v1 JSON Schema with explicit lifecycle states, PAPER routing, and optional broker reference; verify the real API projection. This adds no order authority or response bytes. See ADR 0192 and PAPER_ORDERS_CONTRACT_HANDOFF.md.
