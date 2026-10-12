@@ -20,3 +20,9 @@ test('broker health rejects incomplete, duplicate, unknown, scored-without-evide
   {...fixture,brokers:fixture.brokers.map((row,i)=>i===0?{...row,connection_state:'ACTIVE'}:row)},
  ]) assert.equal(parseBrokerHealth(value),null);
 });
+test('broker health rejects undeclared fields and naive timestamps but accepts complete measured evidence',()=>{
+ assert.equal(parseBrokerHealth({...fixture,private_value:'must not be accepted'}),null);
+ assert.equal(parseBrokerHealth({...fixture,brokers:fixture.brokers.map((row,i)=>i===0?{...row,updated_at:'2026-10-09T12:00:00'}:row)}),null);
+ const complete={...fixture,brokers:fixture.brokers.map((row,i)=>i===0?{...row,connection_state:'CONNECTED',quote_age_ms:10,order_latency_ms:20,reject_rate:0.02,reconciliation_state:'RECONCILED',spread_state:'WITHIN_LIMIT',account_state:'AVAILABLE',health_score:0.87}:row)};
+ assert.equal(parseBrokerHealth(complete)[0].health_score,0.87);
+});

@@ -642,8 +642,8 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
 
 ## Broker health Mission Control increment
 
-- The Brokers section now reads the protected `/api/v1/brokers/health` contract through the server-owned operator session and renders the fixed five-profile paper catalog. Unknown connection status and unassessed telemetry remain explicit; health scores are withheld unless complete measurements are present. This is observation only and does not enable native execution.
-- Focused broker-health parser, panel and protected-read tests pass; the complete web suite passes 156 tests and the Next.js production build succeeds. Browser visual acceptance remains unavailable in this environment. See `BROKER_HEALTH_UI_HANDOFF.md` and ADR 0184. P00/P04/P12 and the full P00-P13 objective remain in progress.
+- The Brokers section now reads the protected `/api/v1/brokers/health` contract through the server-owned operator session and renders the fixed five-profile paper catalog. The UI parser enforces exact schema properties, enums and timezone-aware timestamps. Unknown connection status and unassessed telemetry remain explicit; health scores are withheld unless complete measurements are present. This is observation only and does not enable native execution.
+- Focused broker-health parser, panel and protected-read tests pass; the complete web suite passes 156 tests and the Next.js production build succeeds. The parser now has regression coverage for rejected extra fields, naive timestamps and accepted complete evidence; a post-hardening production build passes. Browser visual acceptance remains unavailable in this environment. See `BROKER_HEALTH_UI_HANDOFF.md` and ADR 0184. P00/P04/P12 and the full P00-P13 objective remain in progress.
 
 ## Candidate compilation and proposed-test increment
 

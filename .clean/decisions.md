@@ -139,3 +139,5 @@
 - 2026-10-12: Assign each inventoried module to one primary layer and enforce five static dependency boundaries. A temporary agent-to-control import was rejected by the test. Transitive call-graph and complete architecture acceptance remain open. See ADR 0183.
 
 - 2026-10-12: Add a protected BrokerHealth read and paper observation table to Mission Control. The UI preserves unknown/unassessed evidence and withholds unsupported scores; broker execution authority is unchanged. Full web regression and production build pass; visual browser acceptance remains open. See ADR 0184 and BROKER_HEALTH_UI_HANDOFF.md.
+
+- 2026-10-12: Harden the BrokerHealth UI parser to enforce the exact schema property sets and timezone-aware timestamps; complete measured evidence still permits a valid score. Focused tests and the production build pass. See ADR 0184.
