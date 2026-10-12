@@ -1,0 +1,60 @@
+{
+  "increment": "0159",
+  "date": "2026-10-12",
+  "base_commit": "a9d006ca901462d775a6bef92242b4c39b32a69e",
+  "feature": "Bounded, journal-head-bound monitoring history and operator review receipts in the Incidents page",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0159-stage-v1",
+    "source_hashes": [
+      { "path": ".clean/decisions.md", "sha256": "4e5ad440c72a3b6935b9c4b7ff27704f743ede8af3df6436598e03cc1363dbb5" },
+      { "path": "apps/web/src/app/api/incidents/journal/acknowledge/route.ts", "sha256": "7bc0b3c1fa6762ed12339f5e786537d835880ccab6e9546412557ad1a760e4f5" },
+      { "path": "apps/web/src/app/api/incidents/journal/route.ts", "sha256": "fd73c36a24d8a625c56303ff6f86ba5877f021a25ca857d7e636b36f2559034b" },
+      { "path": "apps/web/src/features/incidents/monitoring-alert-panel.tsx", "sha256": "b2a0eed81a654744cdb4ec33666fb6914a0c2f77298249735a28090b112ec326" },
+      { "path": "apps/web/src/features/incidents/monitoring-journal-panel.tsx", "sha256": "7a938396ad17a06d056682af3101fe760928bd8d774c4f0ad4b6cca2fe459f6a" },
+      { "path": "apps/web/src/features/incidents/monitoring-journal.ts", "sha256": "18a6c5c37de363d82191bfee02bc02aaaf148f646086944c8509f87454c747b7" },
+      { "path": "apps/web/src/features/incidents/monitoring-live-panel.tsx", "sha256": "fa2389a5222a6e4238bff24526727704b4ccc3ad2e857222fa376110cb019f84" },
+      { "path": "apps/web/src/features/operator-session/server.ts", "sha256": "e6e635cb4d40c451228be982e6be8fd3f7ec83af0645fd6b255c0708d73968e5" },
+      { "path": "apps/web/tests/monitoring-journal-server.test.mjs", "sha256": "70adac19907d82a8a2f963ef99b9706c677fb201074b45815ed134934f3b7942" },
+      { "path": "apps/web/tests/monitoring-journal.test.mjs", "sha256": "faf679939a8aaeb90737edc7a5acd224f90d7b7b3cc7b4e8b38fc878966a4b01" },
+      { "path": "docs/BUILD_STATUS.md", "sha256": "9323e7ab59ef30b4b16cde3895956aa7c6114c1fa80ea78fcd9df44fbb68e6ea" },
+      { "path": "docs/MONITORING_JOURNAL_HANDOFF.md", "sha256": "0862847f1e233c58e2bff18008b2f7309dad1cb437748d73df9ea26d465b0307" },
+      { "path": "docs/adr/0159-paged-monitoring-incident-console.md", "sha256": "dbc6e18d8776ceddba2c1b7d1dcbe65079fdd67b5e7347d79939696febfc31b6" },
+      { "path": "docs/schemas/monitoring-incident-journal-page.schema.json", "sha256": "3cc6922f6a3692f024986600c2896ef26059858fe2157bfd6e41b6e5ab659800" },
+      { "path": "src/ai_quant_os/monitoring_journal_api.py", "sha256": "dcdb9a5cd98f9b72e1417ced4bc97dccf106ffb3d2b1bac8b2a5fbb23bdc153e" },
+      { "path": "tests/test_monitoring_journal_api.py", "sha256": "3f5abb8af04d50c1988ea272814499debd7b6996b9ba064add40a3983e7ef28b" }
+    ],
+    "web_tests": { "passed": 144, "failures": 0, "errors": 0, "skipped": 0, "fresh_staged_checkout": true },
+    "backend_api_test": { "passed": 1, "failures": 0, "fresh_staged_checkout": true },
+    "eslint": "passed on all changed frontend source and tests",
+    "typescript": "passed with --noEmit",
+    "next_production_build": "passed; paged history and acknowledgement routes emitted as dynamic routes",
+    "ruff": "passed for changed backend route and test; formatting check passed",
+    "wheel": {
+      "file": "ai_quant_os-0.1.0-py3-none-any.whl",
+      "bytes": 666591,
+      "sha256": "055f1672820d7264343181f46d204360e946b23b7c28c9196168bfd4596f30f2",
+      "python_modules_checked": 309,
+      "all_source_bytes_match_fresh_checkout": true
+    },
+    "gitleaks": {
+      "staged": true,
+      "findings": 0,
+      "redacted_report": "D:\\AI_Quant_OS\\data-local\\gitleaks-0159-staged-final.json",
+      "report_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "schema_identity": {
+      "prior_schema_json_files": 113,
+      "prior_schemas_changed": 0,
+      "new_schema_files": ["docs/schemas/monitoring-incident-journal-page.schema.json"]
+    },
+    "staged_identity": "All 16 staged source files were overlaid from the Git index into a fresh archive checkout and byte-compared.",
+    "limits": "Browser launch remains policy refused, so no browser interaction, visual review or accessibility acceptance is claimed. The full backend suite remains unrun to preserve prior uncertain candidate/Docker custody. No external alert delivery, production custody, multi-host storage, paid provider, broker, live capital, remote push or promotion was used."
+  },
+  "rollback": "Revert the paged history contract, same-origin Incidents routes and journal panel, page schema, tests, handoff and ADR. The durable journal and existing receipt endpoint remain available.",
+  "open_gates": [
+    "All P00-P13 phases remain incomplete.",
+    "Browser visual/accessibility review and production custody remain pending.",
+    "External notification delivery and monitoring-engine stopped-state detection remain unimplemented.",
+    "The local journal remains a hash-chain corruption check, not independent custody proof."
+  ]
+}

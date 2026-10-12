@@ -10,7 +10,7 @@ export function MonitoringAlertPanel({result,observedAt,automatic=false}:{result
   const signIn = !result.ok && result.reason === "SIGN_IN";
   return <section className="panel content-panel" aria-labelledby="monitoring-alert-heading">
     <div className="panel-heading"><h2 id="monitoring-alert-heading">Paper metrics alerts</h2><span>{current ? "READ SNAPSHOT" : snapshot?.state === "DISABLED" ? "DISABLED" : "UNAVAILABLE"}</span></div>
-    <p className="panel-muted">Point-in-time monitoring observations. Pending means the two-minute noise hold has not elapsed; firing means the rule remains active. Inactive does not establish healthy orders or safe risk recovery. Notification delivery and durable acknowledgement are not verified.</p>
+    <p className="panel-muted">Point-in-time monitoring observations. Pending means the two-minute noise hold has not elapsed; firing means the rule remains active. Inactive does not establish healthy orders or safe risk recovery. Notification delivery is not verified. The incident journal below records operator review only.</p>
     {current && snapshot ? <>
       <dl className="fact-list"><div><dt>Snapshot read, UTC</dt><dd><time dateTime={snapshot.observed_at}>{snapshot.observed_at}</time></dd></div><div><dt>Source evaluation window</dt><dd>Within 45 seconds of the snapshot read</dd></div></dl>
       <div className="table-scroll"><table><caption>Selected local paper monitoring rules at snapshot time</caption><thead><tr><th scope="col">Observation</th><th scope="col">Rule state</th><th scope="col">Last evaluated, UTC</th><th scope="col">Active since, UTC</th><th scope="col">Recovery guidance</th></tr></thead><tbody>{snapshot.rules.map(rule=><tr key={rule.name}>

@@ -1285,4 +1285,20 @@ read/timers/subscriptions are released. Initial props and private route outputs
 are selected before browser exposure. Backend safety stream remains independent.
 Durable acknowledgement/notification/engine-health and production/independent/
 browser/full P00–P13 gates stay open. See MONITORING_REALTIME_HANDOFF.md and0157.
-\r\n# Development increment0158 - durable monitoring episode review\r\n\r\nSelected original rule transitions now enter a bounded local hash-chained\r\njournal. Session-protected history and idempotent review receipts persist across\r\nrestart; receipts carry no safety or trading authority. External notification,\r\nengine-stopped detection, browser acceptance and remaining P00-P13 gates remain\r\nopen. See MONITORING_JOURNAL_HANDOFF.md and ADR/evaluation0158.\r\n
+\r\n# Development increment0158 - durable monitoring episode review
+
+Selected original rule transitions now enter a bounded local hash-chained
+journal. Session-protected history and idempotent review receipts persist across
+restart; receipts carry no safety or trading authority. External notification,
+engine-stopped detection, browser acceptance and remaining P00-P13 gates remain
+open. See MONITORING_JOURNAL_HANDOFF.md and ADR/evaluation0158.
+
+# Development increment0159 - paged durable monitoring history in Incidents
+
+The Incidents page now reads the session-protected durable journal through a
+same-origin route. Fixed 50-episode pages are bound to one journal head; stale
+pages require refresh. Operator acknowledgements show the saved review receipt
+and explicitly grant no control authority. Web suite: 144 passed; focused journal
+API: 1 passed; ESLint, TypeScript, Next production build and scoped Ruff pass.
+Browser visual review, production custody and remaining P00-P13 gates remain
+open. See MONITORING_JOURNAL_HANDOFF.md, ADR 0159 and evaluation0159.

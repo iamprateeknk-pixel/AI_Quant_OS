@@ -55,11 +55,41 @@ def test_protected_history_and_acknowledgement_survive_app_restart(tmp_path):
         schema = json.loads(
             (
                 Path(__file__).resolve().parents[1]
-                / "docs/schemas/monitoring-incident-journal.schema.json"
+                / "docs/schemas/monitoring-incident-journal-page.schema.json"
             ).read_text()
         )
         validator = Draft202012Validator(schema, format_checker=FormatChecker())
+        receipt_schema = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "docs/schemas/monitoring-incident-journal.schema.json"
+            ).read_text()
+        )
+        receipt_validator = Draft202012Validator(receipt_schema, format_checker=FormatChecker())
         validator.validate(payload)
+        assert payload["total"] == 1 and payload["offset"] == 0 and payload["limit"] == 50
+        assert payload["next_offset"] is None
+        assert (
+            client.get(
+                "/api/v1/observability/incidents?offset=1",
+                headers=headers,
+            ).status_code
+            == 422
+        )
+        assert (
+            client.get(
+                f"/api/v1/observability/incidents?offset=1&head={payload['head_hash']}",
+                headers=headers,
+            ).status_code
+            == 200
+        )
+        assert (
+            client.get(
+                f"/api/v1/observability/incidents?offset=1&head={'0' * 64}",
+                headers=headers,
+            ).status_code
+            == 409
+        )
         assert payload["durable"] is True
         assert payload["notification_verified"] is False
         episode = payload["episodes"][0]
@@ -73,10 +103,17 @@ def test_protected_history_and_acknowledgement_survive_app_restart(tmp_path):
             },
         )
         assert receipt.status_code == 200
-        validator.validate(receipt.json())
+        receipt_validator.validate(receipt.json())
         assert receipt.json()["committed"] is True
         assert receipt.json()["control_authorized"] is False
         assert receipt.json()["actor_session_id"]
+        assert (
+            client.get(
+                f"/api/v1/observability/incidents?offset=0&head={payload['head_hash']}",
+                headers=headers,
+            ).status_code
+            == 409
+        )
 
     restarted_source = MonitoringAlertSource(enabled=False)
     restarted = TestClient(

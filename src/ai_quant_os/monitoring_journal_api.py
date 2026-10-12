@@ -5,8 +5,8 @@ import sqlite3
 from typing import Callable, Literal
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Response
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, UUID4
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, UUID4, model_validator
 
 from ai_quant_os.monitoring_journal import (
     MonitoringAcknowledgement,
@@ -66,7 +66,20 @@ class MonitoringHistoryView(BaseModel):
     notification_verified: bool = False
     independently_attested: bool = False
     head_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
-    episodes: tuple[MonitoringEpisodeView, ...] = Field(max_length=8192)
+    total: int = Field(ge=0, le=8192, strict=True)
+    offset: int = Field(ge=0, le=8192, strict=True)
+    limit: Literal[50] = 50
+    next_offset: int | None = Field(ge=1, le=8192, strict=True)
+    episodes: tuple[MonitoringEpisodeView, ...] = Field(max_length=50)
+
+    @model_validator(mode="after")
+    def page_bounds(self):
+        expected = self.offset + self.limit if self.offset + self.limit < self.total else None
+        if self.next_offset != expected or len(self.episodes) != min(
+            self.limit, max(0, self.total - self.offset)
+        ):
+            raise ValueError("Monitoring history page bounds mismatch")
+        return self
 
 
 def _receipt(value: MonitoringAcknowledgement):
@@ -109,14 +122,31 @@ def install_monitoring_journal_routes(
         response_model=MonitoringHistoryView,
         dependencies=[Depends(require_session)],
     )
-    def history(response: Response):
+    def history(
+        response: Response,
+        offset: int = Query(default=0, ge=0, le=8192),
+        limit: Literal[50] = Query(default=50),
+        head: str | None = Query(default=None, pattern=r"^[a-f0-9]{64}$"),
+    ):
         owned = require_journal()
+        if offset > 0 and head is None:
+            raise HTTPException(422, "A journal head is required to continue history")
         try:
             current = owned.history()
+            if head is not None and head != current.head_hash:
+                raise HTTPException(409, "Monitoring history changed; refresh from the first page")
+            total = len(current.episodes)
+            episodes = current.episodes[offset : offset + limit]
             result = MonitoringHistoryView(
                 head_hash=current.head_hash,
-                episodes=tuple(_episode(item) for item in current.episodes),
+                total=total,
+                offset=offset,
+                limit=limit,
+                next_offset=offset + limit if offset + limit < total else None,
+                episodes=tuple(_episode(item) for item in episodes),
             )
+        except HTTPException:
+            raise
         except (ValueError, TypeError, KeyError, OSError, RuntimeError, sqlite3.Error) as error:
             raise HTTPException(503, "Monitoring journal could not be verified") from error
         response.headers["Cache-Control"] = "no-store"
