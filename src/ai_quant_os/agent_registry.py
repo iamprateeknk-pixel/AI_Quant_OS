@@ -254,6 +254,7 @@ def load_agent_catalog() -> AgentRegistry:
         "A14",
         "A15",
         "A16",
+        "A17",
         "A18",
     ):
         original = registry.get(identifier, "0.1.0")

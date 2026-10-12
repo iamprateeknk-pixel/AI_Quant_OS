@@ -165,6 +165,8 @@ from ai_quant_os.counterfactual_agent import counterfactual_implementation
 from ai_quant_os.counterfactual_sources import counterfactual_sources
 from ai_quant_os.health_repair_agent import repair_implementation
 from ai_quant_os.health_repair_sources import RepairInputs, repair_sources
+from ai_quant_os.evolution_director_agent import evolution_implementation
+from ai_quant_os.evolution_director_sources import evolution_sources
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
@@ -591,6 +593,7 @@ def create_app(
                     ("A14", "0.2.0"): drift_implementation(agent_registry),
                     ("A15", "0.2.0"): counterfactual_implementation(agent_registry),
                     ("A16", "0.2.0"): repair_implementation(agent_registry),
+                    ("A17", "0.2.0"): evolution_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(
@@ -1266,6 +1269,7 @@ def create_app(
             "0.2.0",
         )
         repair_mission = (payload.agent_id, payload.agent_version) == ("A16", "0.2.0")
+        evolution_mission = (payload.agent_id, payload.agent_version) == ("A17", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
             None
@@ -1404,6 +1408,8 @@ def create_app(
                     ),
                     now=current_time(),
                 )
+            elif evolution_mission:
+                sources = evolution_sources(agent_registry, now=current_time())
             elif payload.agent_id == "A07":
                 sources = integrity_sources(
                     snapshot, world_state.histories(), ingress_health.snapshot()

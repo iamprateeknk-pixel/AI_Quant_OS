@@ -1,0 +1,26 @@
+{
+  "increment": "0173",
+  "mission": "A17 Learning & Evolution Director 0.2.0",
+  "scope": "Read-only evolution readiness with explicit missing evidence",
+  "checks": {
+    "focused_tests": {
+      "result": "PASS",
+      "passed": 156,
+      "failed": 0,
+      "groups": [
+        "A17 evidence and output contract",
+        "protected A17 graph context and execution",
+        "registry, context, graph runtime, and call budgets"
+      ]
+    },
+    "ruff_check": "PASS",
+    "ruff_format": "PASS"
+  },
+  "limitations": [
+    "Calibrated quality metrics and immutable training dataset evidence are not connected.",
+    "Shared token/monetary cost and causal trace quality evidence are unavailable.",
+    "The mission creates no tournament plan and never calls EVOLUTION_PLAN_CREATE.",
+    "Independent promotion review and all P00-P13 release gates remain open."
+  ],
+  "promotion": "NOT_AUTHORIZED"
+}
