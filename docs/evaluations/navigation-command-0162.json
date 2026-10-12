@@ -1,0 +1,16 @@
+{
+  "increment": "0162",
+  "date": "2026-10-12",
+  "base_commit": "a99952c",
+  "feature": "Search registered navigation destinations from the application header",
+  "verification": {
+    "navigation_tests": { "passed": 3, "failures": 0 },
+    "web_tests": { "passed": 148, "failures": 0 },
+    "eslint_changed_frontend": "passed",
+    "typescript_no_emit": "passed",
+    "next_production_build": "passed",
+    "browser_interaction_visual_acceptance": "not performed; prior browser launch was policy refused"
+  },
+  "limits": "The dialog only navigates to registered destinations and does not search records or invoke actions. No browser visual or interaction acceptance is claimed; remaining P00-P13 gates are open.",
+  "rollback": "Revert the destination filtering helper, dialog, shell wiring, responsive styles, tests and increment documentation."
+}

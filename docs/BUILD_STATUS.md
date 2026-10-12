@@ -1325,3 +1325,12 @@ pathname resolution has a Suspense fallback that retains all navigation links.
 Web suite: 147 passed; ESLint, TypeScript and Next production build passed.
 Browser visual acceptance and all remaining P00-P13 gates remain open. See
 ADR 0161 and evaluation0161.
+
+# Development increment 0162 - search registered destinations
+
+The header now opens a searchable destination dialog by click or Ctrl/Command+K.
+Search covers route labels, groups and paths, and results only navigate to
+registered pages. The native dialog supports focus management and Escape; the
+mobile trigger stays compact. Web suite: 148 passed; ESLint, TypeScript and Next
+production build passed. Browser visual/interaction review and all P00-P13 gates
+remain open. See ADR 0162 and evaluation0162.

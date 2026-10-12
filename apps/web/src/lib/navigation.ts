@@ -43,3 +43,9 @@ export function isActiveNavigationItem(pathname: string | null, href: string): b
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+export function searchNavigationItems(query: string) {
+  const normalized = query.trim().toLocaleLowerCase();
+  if (!normalized) return sections;
+  return sections.filter((item) => `${item.label} ${item.group} ${item.href}`.toLocaleLowerCase().includes(normalized));
+}
