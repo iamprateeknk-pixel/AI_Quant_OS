@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-12: Publish stable v1.0 JSON Schemas for internal RiskDecision and OrderCommand dataclass shapes without changing stored JSON or introducing wire endpoints. Require consumers of untrusted JSON to use strict schema validation; Pydantic TypeAdapter ignores extra dataclass keys. BrokerHealth and PromotionDecision remain unimplemented. See ADR 0176.
+
 - 2026-10-12: Add additive TradeIntent request schema version 1.0, accepting omitted versions as the existing v1 contract and rejecting explicit unsupported versions. Keep the marker out of the domain dataclass and publish a runtime-parity JSON Schema. Other canonical contract versions remain open. See ADR 0175.
 
 - 2026-10-12: Require graph implementation output schemas to reject unknown fields at runtime admission, then revalidate serialized outputs against the manifest-bound model before retention. This hardens schema enforcement without implying semantic correctness or capital authority. See ADR 0174.

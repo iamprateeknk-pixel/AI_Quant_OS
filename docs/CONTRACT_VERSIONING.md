@@ -10,11 +10,13 @@ Published wire contracts use an explicit JSON Schema draft and stable `$id`. A b
 | --- | --- | --- | --- |
 | Paper `TradeIntent` request | 1.0 | Accepts legacy requests without `schema_version` as v1, accepts explicit `1.0`, rejects unknown versions, and excludes the version marker from the internal domain dataclass | `schemas/trade-intent-v1.schema.json` |
 | Advisory `AgentEnvelope` | 2.0 | Strict immutable Pydantic model; graph runtime validates the manifest-bound output model before retaining results | `agent_envelope.py` |
+| Internal `RiskDecision` | 1.0 | Schema covers the existing dataclass shape; no JSON wire endpoint or storage migration is introduced | `schemas/risk-decision-v1.schema.json` |
+| Internal `OrderCommand` | 1.0 | Schema covers the existing dataclass shape; persistence encoding remains unchanged | `schemas/order-command-v1.schema.json` |
 
 ## Remaining canonical contracts
 
-`RiskDecision` and `OrderCommand` still use internal dataclasses without a published versioned wire schema. The blueprint's `BrokerHealth` and `PromotionDecision` contracts do not yet have corresponding runtime models. They remain required P00/P04/P11 work and are not implied by the TradeIntent v1 schema.
+The JSON Schemas for `RiskDecision` and `OrderCommand` describe the current internal dataclass shapes; no runtime endpoint consumes them yet. Consumers must validate the JSON Schema before mapping untrusted JSON into those types. The blueprint's `BrokerHealth` and `PromotionDecision` contracts do not yet have corresponding runtime models. Those remain required P00/P04/P11 work.
 
 ## Verification
 
-`tests/test_api.py` checks the generated request schema against the published v1 JSON Schema, validates the schema itself, preserves omitted-version clients, and rejects unsupported explicit versions. No database migration or response format change is introduced by this increment.
+`tests/test_api.py` checks the generated request schema against the published v1 JSON Schema, validates the schema itself, preserves omitted-version clients, and rejects unsupported explicit versions. `tests/test_canonical_contract_schemas.py` checks internal contract schemas against dataclass type annotations and rejects unknown fields in both JSON Schema validation and native constructors. These additions do not change database records or response formats.

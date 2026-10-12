@@ -1,0 +1,72 @@
+{
+  "properties": {
+    "risk_id": {
+      "title": "Risk Id",
+      "type": "string"
+    },
+    "intent_id": {
+      "title": "Intent Id",
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "APPROVE",
+        "RESIZE",
+        "REJECT",
+        "HALT"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "approved_exposure": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Approved Exposure"
+    },
+    "rules_evaluated": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Rules Evaluated",
+      "type": "array"
+    },
+    "violations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Violations",
+      "type": "array"
+    },
+    "portfolio_snapshot_id": {
+      "title": "Portfolio Snapshot Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "risk_id",
+    "intent_id",
+    "decision",
+    "approved_exposure",
+    "rules_evaluated",
+    "violations",
+    "portfolio_snapshot_id",
+    "created_at"
+  ],
+  "title": "RiskDecision",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:risk-decision:1.0",
+  "additionalProperties": false
+}
