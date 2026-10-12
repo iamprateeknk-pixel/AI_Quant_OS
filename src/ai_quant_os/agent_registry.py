@@ -248,6 +248,7 @@ def load_agent_catalog() -> AgentRegistry:
         "A08",
         "A09",
         "A10",
+        "A11",
         "A14",
         "A18",
     ):
@@ -258,7 +259,7 @@ def load_agent_catalog() -> AgentRegistry:
                     **original.model_dump(),
                     "agent_version": "0.2.0",
                     "implementation_status": "PARTIAL",
-                    **({"timeout_seconds": 5} if identifier == "A01" else {}),
+                    **({"timeout_seconds": 5} if identifier in {"A01", "A11"} else {}),
                 }
             )
         )

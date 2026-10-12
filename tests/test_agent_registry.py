@@ -22,6 +22,8 @@ def test_catalog_covers_exact_pack_agents_and_reports_planned_implementations():
     assert registry.get("A18", "0.1.0").squad == "Safety"
     assert registry.get("A10", "0.1.0").output_type == "ValidationScorecard"
     assert registry.get("A02", "0.2.0").implementation_status == "PARTIAL"
+    assert registry.get("A11", "0.2.0").implementation_status == "PARTIAL"
+    assert registry.get("A11", "0.2.0").output_type == "AdversarialScorecard"
 
 
 @pytest.mark.parametrize("agent_id", [f"A{index:02}" for index in range(1, 19)])
@@ -125,7 +127,7 @@ def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
     client = TestClient(create_app(operator_token="fixture-token"))
     body = client.get("/api/v1/agents/registry").json()
     assert body["mode"] == "PAPER"
-    assert len(body["agents"]) == 32
+    assert len(body["agents"]) == 33
     assert {(item["agent_id"], item["agent_version"]) for item in body["agents"]} == (
         {(f"A{index:02}", "0.1.0") for index in range(1, 19)}
         | {
@@ -141,6 +143,7 @@ def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
             ("A08", "0.2.0"),
             ("A09", "0.2.0"),
             ("A10", "0.2.0"),
+            ("A11", "0.2.0"),
             ("A14", "0.2.0"),
             ("A18", "0.2.0"),
         }

@@ -153,10 +153,34 @@ from ai_quant_os.validation_scientist_sources import (
 )
 from ai_quant_os.validation_scientist_service import ValidationRun
 from ai_quant_os.validation_scientist_api import install_validation_scientist_routes
+from ai_quant_os.adversarial_agent import adversarial_implementation, adversarial_sources
+from ai_quant_os.adversarial_api import install_adversarial_routes
+from ai_quant_os.adversarial_service import StressRun as AdversarialStressRun
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
 from ai_quant_os.execution_attribution import build_execution_contributions
+
+
+def _available_research_store(workspace):
+    if workspace is None:
+        return None
+    path = workspace / "research.sqlite3"
+    if not path.is_file():
+        return None
+    from ai_quant_os.research_store import ResearchStore
+
+    return ResearchStore(path)
+
+
+def _load_research_report(workspace, experiment_id):
+    store = _available_research_store(workspace)
+    if store is None:
+        raise ValueError("Research archive is unavailable")
+    report = store.get(experiment_id)
+    if report is None:
+        raise KeyError("Completed research experiment not found")
+    return report
 
 
 class QuoteInput(BaseModel):
@@ -310,6 +334,11 @@ def create_app(
     ):
         raise ValueError("Recovery token must differ from operator token")
     current_time = clock or (lambda: datetime.now(timezone.utc))
+    configured_research_workspace = research_workspace or (
+        Path(os.environ["AI_QUANT_RESEARCH_WORKSPACE"])
+        if os.getenv("AI_QUANT_RESEARCH_WORKSPACE")
+        else None
+    )
     limits = RiskLimits(
         max_order_exposure=Decimal("1000"),
         max_portfolio_exposure=Decimal("1500"),
@@ -517,6 +546,7 @@ def create_app(
                     ("A08", "0.2.0"): hypothesis_implementation(agent_registry),
                     ("A09", "0.2.0"): builder_implementation(agent_registry),
                     ("A10", "0.2.0"): validation_implementation(agent_registry),
+                    ("A11", "0.2.0"): adversarial_implementation(agent_registry),
                     ("A14", "0.2.0"): drift_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
@@ -526,6 +556,12 @@ def create_app(
                         "VALIDATION_RUN": ValidationRun(
                             candidate_validation_store,
                             validation_package_store,
+                            agent_registry,
+                            context=archived_agent_context,
+                            clock=current_time,
+                        ),
+                        "STRESS_RUN": AdversarialStressRun(
+                            lambda: _available_research_store(configured_research_workspace),
                             agent_registry,
                             context=archived_agent_context,
                             clock=current_time,
@@ -1527,6 +1563,57 @@ def create_app(
         )
         return context
 
+    async def compile_adversarial_context(task_id: str, experiment_id: str) -> CompiledContext:
+        require_graph_runtime()
+        await supervisor_admission()
+        agent_registry.require_tool("A11", "0.2.0", "STRESS_RUN", scope="SANDBOX")
+        report = await owned_research_call(
+            lambda: _load_research_report(configured_research_workspace, experiment_id)
+        )
+        context = await ContextCompiler(
+            agent_registry,
+            adversarial_sources(report, now=current_time()),
+            clock=current_time,
+            call_budget=call_budget,
+            max_input_bytes=16384,
+            max_context_bytes=65536,
+        ).compile("A11", "0.2.0", task_id=task_id, scope="SANDBOX")
+        if any(row.status == "DENIED" for row in context.inputs):
+            raise PermissionError("Adversarial evidence fetch admission denied")
+        require_context_for_agent(
+            context,
+            registry=agent_registry,
+            agent_id="A11",
+            agent_version="0.2.0",
+            task_id=task_id,
+            scope="SANDBOX",
+            now=current_time(),
+        )
+        refreshed = await owned_research_call(
+            lambda: _load_research_report(configured_research_workspace, experiment_id)
+        )
+        from ai_quant_os.research_store import encode_research
+
+        if encode_research(refreshed) != encode_research(report):
+            raise ValueError("Research report changed during adversarial context capture")
+        state_store.record_context_checkpoint(
+            ContextCheckpoint(
+                schema_version="1.0",
+                manifest=agent_registry.get("A11", "0.2.0"),
+                context=context,
+            )
+        )
+        require_context_for_agent(
+            context,
+            registry=agent_registry,
+            agent_id="A11",
+            agent_version="0.2.0",
+            task_id=task_id,
+            scope="SANDBOX",
+            now=current_time(),
+        )
+        return context
+
     def capture_incident_observation() -> dict:
         incidents = health_worker.store.incidents() if health_worker else None
         health = health_worker.status() if health_worker else None
@@ -2047,6 +2134,14 @@ def create_app(
         runtime=require_graph_runtime,
         observe_receipt=observe_research_receipt,
     )
+    install_adversarial_routes(
+        app,
+        require_operator,
+        compile_context=compile_adversarial_context,
+        archived_context=archived_agent_context,
+        runtime=require_graph_runtime,
+        observe_receipt=observe_research_receipt,
+    )
     install_builder_routes(
         app,
         require_operator,
@@ -2080,12 +2175,7 @@ def create_app(
     )
     install_research_routes(
         app,
-        research_workspace
-        or (
-            Path(os.environ["AI_QUANT_RESEARCH_WORKSPACE"])
-            if os.getenv("AI_QUANT_RESEARCH_WORKSPACE")
-            else None
-        ),
+        configured_research_workspace,
         require_operator,
     )
     install_agent_call_routes(app, call_budget, require_operator)

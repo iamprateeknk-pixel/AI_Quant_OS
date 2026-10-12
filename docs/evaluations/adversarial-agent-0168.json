@@ -1,0 +1,28 @@
+{
+  "increment": "0168",
+  "mission": "A11 Adversarial Validator 0.2.0",
+  "scope": "Task-bound revalidation of immutable P08 native perturbation evidence",
+  "checks": {
+    "focused_tests": {
+      "result": "PASS",
+      "passed": 170,
+      "failed": 0,
+      "groups": [
+        "A11 agent contract and evidence sources",
+        "protected A11 API and real graph execution",
+        "agent registry",
+        "context authorization and expiry",
+        "agent call budgets",
+        "graph runtime"
+      ]
+    },
+    "ruff_check": "PASS",
+    "ruff_format": "PASS"
+  },
+  "limitations": [
+    "Verifies retained native stress evidence and does not execute candidate source.",
+    "Does not create new stress experiments or cover bad fills, data faults, or independent leakage review.",
+    "Does not prove physical holdout isolation or authorize promotion."
+  ],
+  "promotion": "NOT_AUTHORIZED"
+}
