@@ -1418,8 +1418,12 @@ A17 0.2.0 is registered PARTIAL/SHADOW in the protected paper graph. It binds th
 
 
 ### P00 package module inventory guard (2026-10-12)
-.clean/architecture.json now explicitly lists every Python module under src/ai_quant_os/. 	ests/test_architecture_broker_boundary.py rejects missing, stale, and duplicate entries, including modules in nested package folders. The five deterministic domain modules retain their existing forbidden-import checks. This is inventory coverage only: the other modules still need layer assignments and per-layer dependency rules. Verification in a fresh git archive HEAD checkout: 5 focused tests passed; Ruff check and format passed. P00 and final acceptance remain open.
+.clean/architecture.json now explicitly lists every Python module under src/ai_quant_os/. tests/test_architecture_broker_boundary.py rejects missing, stale, and duplicate entries, including modules in nested package folders. The five deterministic domain modules retain their existing forbidden-import checks. This is inventory coverage only: the other modules still need layer assignments and per-layer dependency rules. Verification in a fresh git archive HEAD checkout: 5 focused tests passed; Ruff check and format passed. P00 and final acceptance remain open.
 
 
 ### P00 unresolved dynamic import guard (2026-10-12)
 Broker/agent and deterministic-domain import checks now report non-literal importlib.import_module, aliased import_module, and __import__ calls as unresolved violations. The regression test demonstrated the previous false negative for concatenated module names. Fresh isolated archive verification: 5 focused tests passed; Ruff check and format passed. Static checks do not cover other runtime loading mechanisms; P00 remains open.
+
+
+### P00 agent and strategy broker boundary coverage (2026-10-12)
+The broker/execution import guard now discovers every package module whose filename contains gent or strategy, including strategy implementations and contracts previously omitted from the explicit list. Non-literal dynamic import attempts are rejected as unresolved across the discovered sources. Fresh isolated archive verification: 6 architecture tests passed; Ruff check and format passed. Static import scanning still does not prove the full runtime call graph. P00 remains open.

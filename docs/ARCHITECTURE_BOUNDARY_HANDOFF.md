@@ -2,14 +2,13 @@
 
 ## Summary
 
-The deterministic domain slice named in `.clean/architecture.md` now has a
-machine-readable import rule in `.clean/architecture.json`. The existing
-architecture test reads that rule and checks every declared domain source for
-forbidden framework, storage, HTTP composition, broker, and execution imports. It
-also verifies that literal `importlib.import_module`, aliased `import_module`, and
-`__import__` calls are included in the check. Dynamic imports whose module names are
-not string literals are rejected as unresolved by the broker and domain boundary
-checks.
+The deterministic domain slice named in `.clean/architecture.md` has a
+machine-readable import rule in `.clean/architecture.json`. The architecture test
+checks every declared domain source for forbidden framework, storage, HTTP
+composition, broker, and execution imports. It inventories every package Python
+module whose name contains `agent` or `strategy` and rejects broker/execution
+imports in that set. Literal dynamic imports are checked and unresolved dynamic
+import calls are rejected.
 
 ## Verification
 

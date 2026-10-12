@@ -18,11 +18,10 @@ BROKER_EXECUTION_MODULES = (
     "ai_quant_os.mt5_demo_worker",
     "ai_quant_os.mt5_sync_service",
 )
-AGENT_AND_STRATEGY_SOURCES = (
-    *PACKAGE.glob("*_agent.py"),
-    PACKAGE / "strategy_samples.py",
-    PACKAGE / "directional_strategy.py",
-    PACKAGE / "tick_strategy.py",
+AGENT_AND_STRATEGY_SOURCES = tuple(
+    path
+    for path in PACKAGE.rglob("*.py")
+    if path.name != "__init__.py" and ("agent" in path.stem or "strategy" in path.stem)
 )
 ARCHITECTURE = ROOT / ".clean" / "architecture.json"
 DOMAIN_SOURCES = (
@@ -109,6 +108,13 @@ def test_boundary_detector_catches_static_and_dynamic_broker_imports():
         'import importlib\nimportlib.import_module("ai_quant_os." + "broker")'
     ) == ["<dynamic import>"]
     assert _broker_imports("__import__(module_name)") == ["<dynamic import>"]
+
+
+def test_agent_and_strategy_source_inventory_includes_strategy_implementations():
+    assert PACKAGE / "strategy_builder.py" in AGENT_AND_STRATEGY_SOURCES
+    assert PACKAGE / "strategy_contracts.py" in AGENT_AND_STRATEGY_SOURCES
+    assert PACKAGE / "strategy_prefix_execution.py" in AGENT_AND_STRATEGY_SOURCES
+    assert PACKAGE / "strategy_image_runtime.py" in AGENT_AND_STRATEGY_SOURCES
 
 
 def test_agent_and_strategy_sources_do_not_import_broker_execution_surfaces():
