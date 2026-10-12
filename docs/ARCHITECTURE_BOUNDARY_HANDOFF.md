@@ -8,7 +8,9 @@ checks every declared domain source for forbidden framework, storage, HTTP
 composition, broker, and execution imports. It inventories every package Python
 module whose name contains `agent` or `strategy` and rejects broker/execution
 imports in that set. Literal dynamic imports are checked and unresolved dynamic
-import calls are rejected.
+import calls are rejected. `GraphRuntime` also refuses implementation output models
+that do not reject unknown fields; returned objects are serialized and schema
+validated before an output is retained. See ADR 0174.
 
 ## Verification
 

@@ -76,6 +76,7 @@ class GraphRuntime:
             if (
                 implementation.manifest_ref != manifest.manifest_ref
                 or not issubclass(implementation.output_schema, BaseModel)
+                or implementation.output_schema.model_config.get("extra") != "forbid"
                 or implementation.output_schema.__name__ != manifest.output_type
                 or not callable(implementation.invoke)
             ):

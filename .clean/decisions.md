@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-12: Require graph implementation output schemas to reject unknown fields at runtime admission, then revalidate serialized outputs against the manifest-bound model before retention. This hardens schema enforcement without implying semantic correctness or capital authority. See ADR 0174.
+
 - 2026-10-11: Pin aggregate eighteen-role ceilings and a bounded original model-policy inventory in one audited spending book. Resolve each reservation's accounting and check model/aggregate capacities atomically across versions/providers; retain unknown holds and global breach denial. Preserve old schemas and observe both counter levels under one head. Shared Costs, platform allocation, migration and independent acceptance remain open. See ADR 0138.
 
 - 2026-10-10: Reserve the reviewed Jev whole-input context ceiling in a distinct immutable input-only policy before provider I/O. Preserve the shared store's original OpenAI accounting, bind spending/route owners, retain unknown holds and charge matching native usage before answer acceptance. Outputs are free reported data; total-token/invoice and external bound correspondence are not certified. Full aggregate governance and independent acceptance remain open. See ADR 0137.

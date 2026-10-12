@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, create_model
 
 from ai_quant_os.agent_context import ContextCompiler, EvidenceRecord, SourceBinding
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
@@ -35,7 +35,9 @@ async def context(registry):
     ).compile("A02", "0.1.0", task_id="task", scope="PAPER")
 
 
-async def open_runtime(path, registry, handlers, clock=lambda: NOW):
+async def open_runtime(
+    path, registry, handlers, clock=lambda: NOW, output_schema=RegimeDistribution
+):
     # Import inside the test so missing implementation is an explicit failing assertion.
     import importlib.util
 
@@ -46,7 +48,7 @@ async def open_runtime(path, registry, handlers, clock=lambda: NOW):
         {
             ("A02", "0.1.0"): AgentImplementation(
                 manifest_ref=registry.get("A02", "0.1.0").manifest_ref,
-                output_schema=RegimeDistribution,
+                output_schema=output_schema,
                 invoke=handlers,
             )
         }
@@ -60,6 +62,27 @@ async def open_runtime(path, registry, handlers, clock=lambda: NOW):
         tools=AgentToolBoundary(registry, {}),
         clock=clock,
     )
+
+
+def test_runtime_rejects_output_schemas_that_ignore_unknown_fields(tmp_path):
+    PermissiveOutput = create_model("RegimeDistribution", label=(str, ...))
+
+    async def run():
+        registry = load_agent_catalog()
+
+        async def handler(invocation):
+            return PermissiveOutput(label="TRENDING")
+
+        with pytest.raises(ValueError, match="Agent implementation contract mismatch"):
+            async with await open_runtime(
+                tmp_path / "runtime.sqlite3",
+                registry,
+                handler,
+                output_schema=PermissiveOutput,
+            ):
+                pass
+
+    asyncio.run(run())
 
 
 def test_real_graph_executes_once_and_survives_restart(tmp_path):
