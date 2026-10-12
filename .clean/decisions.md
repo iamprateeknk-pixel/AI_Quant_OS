@@ -93,3 +93,5 @@
 - 2026-10-12: Increment0154 adds local native paper HTTP failed/missing scrape rules, explicit two-minute development noise holds and checked-out runbook annotations; native temporal/stale/recovery tests plus original-engine pending state. No invented latency/error SLO, external notification, incident journal or automatic trading recovery authority.
 
 - 2026-10-12: Increment0155 adds optional protected current local monitoring-rule observations with complete selected rules, original UTC evaluation/active times,45-second observation window and actual120-second firing hold. Pre/post operator policy and backend-only launcher flag; no private raw payload, notification/journal/control authority or zero fallback.
+
+- 2026-10-12: Increment0156 composes original protected monitoring rule observations into Incidents via server-only session read and a dedicated allowlisted decoder with integer-microsecond freshness/hold guards. Fixed served runbook paths, read refresh and generic operational read fallbacks; no incident/control authority or inferred healthy/zero state. Browser refusal retained.

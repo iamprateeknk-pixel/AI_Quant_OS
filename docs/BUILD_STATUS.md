@@ -1266,3 +1266,12 @@ pre/post operator authorization. Native pending-state reads preserve order/HALT
 behavior. Incident frontend wiring, durable acknowledgement/notifications/engine
 health and production/independent/browser/full P00–P13 gates remain open.
 See MONITORING_ALERT_API_HANDOFF.md and ADR/evaluation0155.
+
+# Development increment0156 — incident console monitoring observations
+
+Server-only protected monitoring read, selected original rule state/UTC times,
+precise freshness/hold guards and served fixed recovery runbooks. Loading/error/
+disabled/unavailable/sign-in/stale states infer no outcomes or control success.
+Retained health journals remain separate. Realtime/acknowledgement/delivery and
+production/independent/browser/full P00–P13 gates remain open. See
+MONITORING_CONSOLE_HANDOFF.md and ADR/evaluation0156.

@@ -4,7 +4,7 @@ import { sectionDetails, type SectionKey } from "@/lib/navigation";
 import { WorldStatePanel } from "@/features/world-state/world-state-panel";
 import { AuditIntegrityPanel } from "@/features/audit/audit-integrity-panel";
 import { OperatorConsole } from "@/features/operator-session/operator-console";
-import { readBrokerCapabilities, readDemoSyncHealth, readDemoPortfolio, readSessions, readCallBudget, readReviewSpending, readSharedSpending, readDossiers, readGenomes, readHealth, readStrategies, sessionStatus } from "@/features/operator-session/server";
+import { readBrokerCapabilities, readDemoSyncHealth, readDemoPortfolio, readSessions, readCallBudget, readReviewSpending, readSharedSpending, readDossiers, readGenomes, readHealth, readStrategies, readMonitoringAlerts, sessionStatus } from "@/features/operator-session/server";
 import { publicSession } from "@/features/operator-session/boundary";
 import { InstrumentPositionsPanel } from "@/features/portfolio/instrument-positions-panel";
 import { CurrencyExposurePanel } from "@/features/portfolio/currency-exposure-panel";
@@ -19,6 +19,7 @@ import { StrategyArchivePanel } from "@/features/strategies/archive-panel";
 import { SessionAdminPanel } from "@/features/operator-session/session-admin-panel";
 import { CallBudgetPanel } from "@/features/costs/call-budget-panel";
 import { SpendingPanels } from "@/features/costs/shared-spending-panel";
+import {MonitoringAlertPanel} from "@/features/incidents/monitoring-alert-panel";
 
 function isSection(value: string): value is SectionKey {
   return Object.prototype.hasOwnProperty.call(sectionDetails, value);
@@ -40,7 +41,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
   const query = section === "incidents" || section === "research" || section === "evolution" || section === "strategies" ? await searchParams : {};
   const offset = query.offset === undefined ? 0 : typeof query.offset === "string" && /^\d{1,4}$/.test(query.offset) ? Number(query.offset) : -1;
   const head = query.head === undefined ? undefined : typeof query.head === "string" ? query.head : "invalid";
-  const health = section === "incidents" ? await Promise.all([readHealth("status"), readHealth("incidents", offset, head)]) : null;
+  const health = section === "incidents" ? await Promise.all([readHealth("status"), readHealth("incidents", offset, head), readMonitoringAlerts()]) : null;
   const dossiers = section === "research" ? await readDossiers(offset, head) : null;
   const genomes = section === "evolution" ? await readGenomes(offset, head) : null;
   const strategies = section === "strategies" ? await readStrategies(offset, head) : null;
@@ -54,6 +55,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
     {brokerReads && <BrokerCapabilityPanel result={brokerReads[2]} observedAt={new Date().toISOString()} />}
     {brokerReads && <DemoSyncPanel result={brokerReads[1]} observedAt={new Date().toISOString()} />}
     {health && <HealthPanel statusResult={health[0]} timelineResult={health[1]} observedAt={new Date().toISOString()} />}
+    {health && <MonitoringAlertPanel result={health[2]} observedAt={new Date().toISOString()} />}
     {genomes && <GenomePanel result={genomes} />}
     {strategies && <StrategyArchivePanel result={strategies} />}
     {costReads && <SpendingPanels reviewResult={costReads[1]} sharedResult={costReads[2]} />}

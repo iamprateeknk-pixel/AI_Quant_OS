@@ -154,6 +154,10 @@ export async function readTracingStatus(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/observability/tracing", false, 4096);
 }
 
+export async function readMonitoringAlerts(): Promise<ProtectedRead> {
+  return protectedRead("/api/v1/observability/alerts", false, 8192);
+}
+
 export async function readGraphRuns(after = "", head?: string): Promise<ProtectedRead> {
   if (typeof after !== "string" || (after !== "" && !/^[A-Za-z0-9_-]{1,128}$/.test(after)) || (head !== undefined && (typeof head !== "string" || !/^[a-f0-9]{64}$/.test(head))) || (after !== "" && head === undefined)) return {ok:false,reason:"INVALID_PAGE"};
   return protectedRead(`/api/v1/agents/graph-runs?limit=25${after ? `&after_run_id=${encodeURIComponent(after)}` : ""}${head ? `&head=${head}` : ""}`);

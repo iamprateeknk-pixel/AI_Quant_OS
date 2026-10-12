@@ -1,0 +1,249 @@
+{
+  "increment": "0156",
+  "date": "2026-10-12",
+  "base_commit": "69871adb665188de406c7ac97b558b70863d09c5",
+  "feature": "Protected current monitoring-rule observations in incident console with served fixed runbooks and operational read fallbacks",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0156-final",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "42bd28be6cabbe46ef5b2acb49c5c7fd7f01121f0a9498457f21951d5fdaedfa"
+      },
+      {
+        "path": "apps/web/src/app/[section]/error.tsx",
+        "sha256": "ad5b833085432a284e00609c096d89d5c04331c38416887736bdbbef72b8e87a"
+      },
+      {
+        "path": "apps/web/src/app/[section]/loading.tsx",
+        "sha256": "78bd60d9727b3fb3aa73d656bde19f50c931db3f698c1857dc426e0b040d06dc"
+      },
+      {
+        "path": "apps/web/src/app/[section]/page.tsx",
+        "sha256": "f1f770ac97a7b5104c16fba67a2469e6162f19c7ede837d0d87fcfe46cc2cb6d"
+      },
+      {
+        "path": "apps/web/src/app/incidents/runbook/page.tsx",
+        "sha256": "5b9a225946bc88778cf0e281710f0c03ce7feaf481e6f038f189dcddd4105e9f"
+      },
+      {
+        "path": "apps/web/src/features/incidents/monitoring-alert-panel.tsx",
+        "sha256": "2257172fbd6b39e6f8984f8035b52dbea07f3443ef9773969ffcb61caa6d098d"
+      },
+      {
+        "path": "apps/web/src/features/incidents/monitoring-alerts.ts",
+        "sha256": "41d22f24aaa63526baea87fcd1d5a2525a5b3a60e4672cf5bdc6fb9cb97d95da"
+      },
+      {
+        "path": "apps/web/src/features/operator-session/server.ts",
+        "sha256": "8a8c9f428770ba86e09e38dca9850dc27abc8a73c39d56e5293a5b045b719e81"
+      },
+      {
+        "path": "apps/web/tests/fixtures/monitoring-alerts.json",
+        "sha256": "8d7e90fe3692b80a9e02214d94130edd7280d9c934c40691643d03ae0a488e33"
+      },
+      {
+        "path": "apps/web/tests/monitoring-alerts.test.mjs",
+        "sha256": "272e7b099f536d326c006d54a593cc8d2509ca51c7b6b5339ac54d79f9e3f2d2"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "76c72bb7b7c87cdffb984243aea8c740f36efd10cb6c31fc14bc7a9dee5e325a"
+      },
+      {
+        "path": "docs/MONITORING_CONSOLE_HANDOFF.md",
+        "sha256": "7ae0234efc83fceb5a8a1cacd4afe02265f31ee9eb318bb1994e99484a1ab439"
+      },
+      {
+        "path": "docs/adr/0156-monitoring-incident-console.md",
+        "sha256": "bdeebb477577f61dddf87ae5ad62d42a2c493e066541d2b5023dea1aca66e799"
+      },
+      {
+        "path": "tests/test_monitoring_console_fixture.py",
+        "sha256": "3433919fc92eef493506aa78aa82715d6ccc05d26c0d89cdc85d97c19daa0f5a"
+      }
+    ],
+    "backend_tests": 445,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "438.487",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py",
+      "tests/test_collector_console_fixture.py",
+      "tests/test_paper_trace_context.py",
+      "tests/test_paper_http_metrics.py",
+      "tests/test_prometheus_deployment.py",
+      "tests/test_grafana_deployment.py",
+      "tests/test_paper_http_alerts.py",
+      "tests/test_monitoring_alert_api.py",
+      "tests/test_monitoring_console_fixture.py"
+    ],
+    "frontend_tests": 129,
+    "checks": {
+      "backend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0156-final-fresh-backend.log",
+        "scope": [
+          "tests/test_provider_spend.py",
+          "tests/test_openai_spend_admission.py",
+          "tests/test_openai_reviewer.py",
+          "tests/test_provider_call_admission.py",
+          "tests/test_agent_call_budgets.py",
+          "tests/test_context_call_budgets.py",
+          "tests/test_jev_adapter.py",
+          "tests/test_decision_gateway.py",
+          "tests/test_deep_review.py",
+          "tests/test_api.py",
+          "tests/test_currency_risk.py",
+          "tests/test_event_risk.py",
+          "tests/test_operator_controls.py",
+          "tests/test_operator_sessions.py",
+          "tests/test_local_runtime.py",
+          "tests/test_audit_integrity.py",
+          "tests/test_provider_spend_api.py",
+          "tests/test_jev_spend_admission.py",
+          "tests/test_shared_provider_spend.py",
+          "tests/test_shared_spend_api.py",
+          "tests/test_paper_telemetry.py",
+          "tests/test_dependency_locks.py",
+          "tests/test_trace_export_queue.py",
+          "tests/test_tracing_status_api.py",
+          "tests/test_agent_telemetry.py",
+          "tests/test_agent_runs.py",
+          "tests/test_tracing_console_fixture.py",
+          "tests/test_agent_trace_binding.py",
+          "tests/test_agent_trace_binding_api.py",
+          "tests/test_agent_trace_console_fixture.py",
+          "tests/test_collector_deployment.py",
+          "tests/test_collector_trace_api.py",
+          "tests/test_collector_console_fixture.py",
+          "tests/test_paper_trace_context.py",
+          "tests/test_paper_http_metrics.py",
+          "tests/test_prometheus_deployment.py",
+          "tests/test_grafana_deployment.py",
+          "tests/test_paper_http_alerts.py",
+          "tests/test_monitoring_alert_api.py",
+          "tests/test_monitoring_console_fixture.py"
+        ],
+        "log_sha256": "f333ec15419e9ee8e087106d1da598b87ced960d7b8b68d0d7e168ae26a67dc8"
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0156-final-fresh-ruff.log",
+        "scope": [
+          "ruff",
+          "check",
+          "tests/test_monitoring_console_fixture.py"
+        ],
+        "log_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      "format": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0156-final-fresh-format.log",
+        "scope": [
+          "ruff",
+          "format",
+          "--check",
+          "tests/test_monitoring_console_fixture.py"
+        ],
+        "log_sha256": "7688ae71c60af2e4266827abb3678cc2145655f587daf33dfa649dbac2c619c3"
+      },
+      "frontend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0156-final-fresh-frontend.log",
+        "scope": [
+          "tests/*.test.mjs"
+        ],
+        "log_sha256": "4c76c87fada69fe9549a9391457d65c0a9e259ca10eff020a4a031e54391ef61"
+      },
+      "eslint": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0156-final-fresh-eslint.log",
+        "scope": [
+          "src/features/incidents/monitoring-alerts.ts",
+          "src/features/incidents/monitoring-alert-panel.tsx",
+          "src/features/operator-session/server.ts",
+          "src/app/[section]/page.tsx",
+          "src/app/[section]/loading.tsx",
+          "src/app/[section]/error.tsx",
+          "src/app/incidents/runbook/page.tsx"
+        ],
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "build": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0156-final-fresh-build.log",
+        "scope": [
+          "build"
+        ],
+        "log_sha256": "222904cb82a63bbfd09d65cfd2983e92bdd0cf26deaf9f15b6581ca8fb166768"
+      }
+    },
+    "junit_sha256": "04cab34ee35358c4b7e3c5af22586b35ad8dee34b0af5878ffe827f4624980d3",
+    "original_native_fixture": {
+      "path": "D:\\AI_Quant_OS\\apps\\web\\tests\\fixtures\\monitoring-alerts.json",
+      "sha256": "8d7e90fe3692b80a9e02214d94130edd7280d9c934c40691643d03ae0a488e33",
+      "source_increment": "0155",
+      "original_bytes_and_timestamps_unchanged": true
+    },
+    "identity": {
+      "prior_schemas_unchanged": 112,
+      "unchanged_runtime_prior_schemas_requirements_build_files": 427,
+      "frontend_root_index_fresh_lf_identical": true
+    },
+    "red": "First six new frontend checks failed on absent decoder/panel/reader. Scoped type probe exposed BigInt literal incompatibility with existing ES2017 target. Constructors retain identical integer-microsecond semantics; target/lock/dependencies unchanged. Root/index/fresh UI was corrected while original backend process remained live, before frontend tests/build started; source metadata records this correction. Original reports preserved.",
+    "checks_detail": "Original native protected fixture roundtrip/field privacy; complete fixed rule names/paths/states/false authority/hold validation; stale/future/invalid/duplicate or misleading data withheld; integer microsecond freshness/hold exact boundaries; pending/firing/inactive/disabled/unavailable/sign-in/stale view semantics; semantic table UTC times; fixed served anchors; no control actions or inferred zero incident inventory; private bounded no-store/redirecterror session fetch and failures; loading/error static markup/no raw error. Full frontend tests plus production Next/TypeScript build and scoped ESLint. Native backend SDK/collector/Prometheus/Grafana/alerts/auth/HALT/session/provider/risk gates remain scoped and pass.",
+    "build_routes": {
+      "operational_dynamic_page": true,
+      "served_runbook_page": true,
+      "manifest_sha256": "faad8c26b49beaed35e33960c3f0307e3842076b19decf3f6c0dc9c5947b354f"
+    },
+    "review": "Local five-axis review: incident feature owns decoder/panel; existing server-only private session boundary reused; fixed public runbook links only; point-in-time/manual-refresh semantics and stale-withholding, no fabricated zero/healthy/control verdict; no browser-to-native source/client credential/remote URL; existing theme/focus44px/scroll/table components; generic error fallback only retries read, no raw errors/logging. Runtime/schema/locks/dependencies unchanged. Independent/browser acceptance pending.",
+    "structure": "Ignored structure map refreshed; direct app composition/feature owner/server read boundaries reviewed against installed Next16.3.6 page/cookies/loading/error documentation. No new shared-module business logic or client-side source request.",
+    "full_suite": "Not run; preserve unknown0084/0088 candidate custody.445 scoped trusted backend tests plus129 frontend checks. No browser script executed.",
+    "prior_backend_build": "0155 native wheel/source identity retained; backend unchanged, no wheel rerun.",
+    "browser": "Not attempted; previous browser launch refusal preserved. Static React markup/unit tests and production build do not prove rendered visual/a11y/key/viewport acceptance.",
+    "scan_verdict": "passed; Gitleaks8.30.1 exact redacted staged patch, zero findings; original report/log retained",
+    "observed_wait": "Original backend process observed live while reading whole native Grafana distribution and then until terminal;438.72-second tests. No replacement solely because observation yielded."
+  },
+  "rollback": "Revert additive incident view/served guidance/read fallbacks with page/source wiring and tests/docs. No backend/database/schema/order-state/dependency migration, reset/retry, notification or automatic service install.",
+  "limits": [
+    "All full P00-P13 gates remain incomplete.",
+    "Point-in-time/manual-refresh view only; realtime monitoring integration, durable acknowledgement/incident custody, external notification/engine-health coverage remain pending.",
+    "Inactive rules do not establish healthy orders/recovered risk; displayed states cannot acknowledge/resolve retained health incidents or issue controls.",
+    "Private roles/service/Linux/resource/load/latency/retention/custody and independent/browser visual/accessibility acceptance pending.",
+    "No candidate/Docker mutation, paid provider/broker/livecapital, remote push/promotion; user .agents/ and skills-lock.json untouched."
+  ]
+}
