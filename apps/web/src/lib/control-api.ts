@@ -1,10 +1,11 @@
 import "server-only";
+import { parseMarketSnapshot, type MarketSnapshot } from "@/features/markets/snapshot";
 
 export type SystemStatus = { mode: "PAPER"; safety_state: string; order_count: number };
 export type PaperOrder = { order_id: string; intent_id: string; risk_id: string; instrument_id: string; status: string; broker_route: "PAPER"; broker_order_id?: string };
 export type AuditEvent = { action: string; intent_id: string; reason: string; trace_id?: string };
 export type BrokerView = { broker_id: string; connection_state: string; enabled: boolean; instruments: string[] };
-export type MarketView = { instrument_id: string; bid: string; ask: string; observed_at: string; world_state_version: string; freshness: string; source: string };
+export type MarketView = MarketSnapshot;
 export type PaperFill = { fill_id: string; order_id: string; instrument_id: string; side: "BUY" | "SELL"; quantity: string; price: string; fee: string; observed_at: string; source: "PAPER_MANUAL" | "PAPER_BROKER" };
 export type InstrumentPositionView = { instrument_id: string; base_currency: string; quote_currency: string; mark_price: string | null; net_quantity: string; cash_flow_quote: string; marked_pnl_quote: string | null };
 export type CurrencyExposureView = { currency: string; filled_balance: string; minimum_balance: string | null; maximum_balance: string | null; worst_case_exposure_reporting: string | null; issue: string | null };
@@ -84,10 +85,7 @@ export function getBrokers(): Promise<ReadResult<{ brokers: BrokerView[] }>> {
 }
 
 export function getMarket(instrument: string): Promise<ReadResult<MarketView>> {
-  return read(`/api/v1/markets/${encodeURIComponent(instrument)}`, (value) => {
-    if (!isRecord(value) || typeof value.instrument_id !== "string" || typeof value.bid !== "string" || typeof value.ask !== "string" || typeof value.observed_at !== "string" || typeof value.world_state_version !== "string" || typeof value.freshness !== "string" || value.source !== "PAPER_SIMULATED") return null;
-    return { instrument_id: value.instrument_id, bid: value.bid, ask: value.ask, observed_at: value.observed_at, world_state_version: value.world_state_version, freshness: value.freshness, source: "PAPER_SIMULATED" };
-  });
+  return read(`/api/v1/markets/${encodeURIComponent(instrument)}`, (value) => parseMarketSnapshot(value, instrument));
 }
 
 export function getFills(): Promise<ReadResult<{ fills: PaperFill[] }>> {

@@ -642,8 +642,8 @@ The 156 unpacked execution-pack files were compared by SHA-256 with the supplied
 
 ## Evidence-backed Mission Control homepage increment (2026-10-13)
 
-- The dashboard now uses paper portfolio P&L/exposure, exact-decimal open-position counts, current EURUSD quote freshness/source, protected broker health, and explicit order-to-fill references. Missing valuation and unassessed reconciliation remain explicit. No unsupported live, strategy-allocation or agent-health metrics are shown.
-- Dashboard decimal-count regression tests pass; full web suite passes 159 tests and the production build/TypeScript checks pass. Browser visual/accessibility acceptance remains open. See `MISSION_CONTROL_HOME_HANDOFF.md` and ADR 0185. P12 and P00-P13 remain in progress.
+- The dashboard now uses paper portfolio P&L/exposure, exact-decimal open-position counts, validated EURUSD quote freshness/source, protected broker health, and explicit intent/risk/order/acknowledgement/fill references. Missing valuation and unassessed reconciliation remain explicit. No unsupported live, strategy-allocation or agent-health metrics are shown.
+- Dashboard decimal-count and market-snapshot contract tests pass; full web suite passes 162 tests and the production build/TypeScript checks pass. Browser visual/accessibility acceptance remains open. See `MISSION_CONTROL_HOME_HANDOFF.md` and ADR 0185. P12 and P00-P13 remain in progress.
 
 ## Broker health Mission Control increment
 

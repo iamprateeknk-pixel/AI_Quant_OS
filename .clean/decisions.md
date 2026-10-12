@@ -143,3 +143,5 @@
 - 2026-10-12: Harden the BrokerHealth UI parser to enforce the exact schema property sets and timezone-aware timestamps; complete measured evidence still permits a valid score. Focused tests and the production build pass. See ADR 0184.
 
 - 2026-10-13: Expand Mission Control's homepage with sourced paper P&L/exposure, exact-decimal open-position counts, current quote freshness/source, protected BrokerHealth, and paper order/fill references. Missing valuation and reconciliation remain explicit. Full web tests and production build pass; visual acceptance remains open. See ADR 0185 and MISSION_CONTROL_HOME_HANDOFF.md.
+
+- 2026-10-13: Validate shared paper market snapshots against requested instrument identity, positive finite price strings, timezone-aware timestamp, bounded source version, backend freshness enum, and PAPER_SIMULATED source before presenting them. The full web suite and production build pass. See ADR 0186.
