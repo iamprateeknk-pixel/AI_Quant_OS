@@ -161,3 +161,5 @@
 - 2026-10-13: Publish the existing paper market quote response as a strict v1 JSON Schema and verify both fresh and stale actual API outputs. No response or execution behavior changed. See ADR 0193 and PAPER_MARKET_CONTRACT_HANDOFF.md.
 
 - 2026-10-13: Publish strict schemas for the existing paper positions and currency portfolio reads; tests validate actual endpoint outputs while preserving null marks, FX valuation, and exposure. No runtime or persistence behavior changed. See ADR 0194 and PORTFOLIO_READ_CONTRACTS_HANDOFF.md.
+
+- 2026-10-13: Publish strict PAPER system-status and risk-read schemas with tests against actual safety-state, order-count, and instrument-scoped API responses. This does not change control authority. See ADR 0195 and SAFETY_RISK_CONTRACT_HANDOFF.md.

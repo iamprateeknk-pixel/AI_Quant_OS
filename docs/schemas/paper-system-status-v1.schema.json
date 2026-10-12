@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:paper-system-status:1.0",
+  "title": "Paper System Status Response v1.0",
+  "description": "Current paper mode, authoritative safety state, and retained order count.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode", "safety_state", "order_count"],
+  "properties": {
+    "mode": { "const": "PAPER" },
+    "safety_state": { "$ref": "#/$defs/SafetyState" },
+    "order_count": { "type": "integer", "minimum": 0 }
+  },
+  "$defs": {
+    "SafetyState": { "enum": ["NORMAL", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"] }
+  }
+}

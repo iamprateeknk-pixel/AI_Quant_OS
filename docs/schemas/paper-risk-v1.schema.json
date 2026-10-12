@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:paper-risk:1.0",
+  "title": "Paper Risk State Response v1.0",
+  "description": "Instrument-scoped paper risk ceilings and exposure; this response does not authorize an order.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "instrument_id",
+    "safety_state",
+    "max_order_exposure",
+    "max_portfolio_exposure",
+    "worst_case_quantity",
+    "filled_net_quantity",
+    "pending_buy_quantity",
+    "pending_sell_quantity",
+    "portfolio_snapshot_id",
+    "reporting_currency",
+    "max_currency_exposure_reporting",
+    "max_gross_currency_exposure_reporting"
+  ],
+  "properties": {
+    "instrument_id": { "enum": ["EURUSD", "GBPUSD", "USDJPY", "EURJPY"] },
+    "safety_state": { "$ref": "#/$defs/SafetyState" },
+    "max_order_exposure": { "$ref": "#/$defs/PositiveDecimal" },
+    "max_portfolio_exposure": { "$ref": "#/$defs/PositiveDecimal" },
+    "worst_case_quantity": { "$ref": "#/$defs/NonnegativeDecimal" },
+    "filled_net_quantity": { "$ref": "#/$defs/Decimal" },
+    "pending_buy_quantity": { "$ref": "#/$defs/NonnegativeDecimal" },
+    "pending_sell_quantity": { "$ref": "#/$defs/NonnegativeDecimal" },
+    "portfolio_snapshot_id": { "type": "string", "minLength": 1 },
+    "reporting_currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "max_currency_exposure_reporting": { "$ref": "#/$defs/PositiveDecimal" },
+    "max_gross_currency_exposure_reporting": { "$ref": "#/$defs/PositiveDecimal" }
+  },
+  "$defs": {
+    "SafetyState": { "enum": ["NORMAL", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"] },
+    "Decimal": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+    },
+    "NonnegativeDecimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+    },
+    "PositiveDecimal": {
+      "type": "string",
+      "pattern": "^(?:[1-9][0-9]*(?:\\.[0-9]+)?|0?\\.[0-9]*[1-9][0-9]*)(?:[eE][+-]?[0-9]+)?$"
+    }
+  }
+}
