@@ -183,3 +183,19 @@ def test_machine_readable_architecture_boundary_rejects_infrastructure_imports()
     assert blocked == ["ai_quant_os.execution", "pydantic"]
     dynamic = ast.parse('from importlib import import_module as load\nload("pydantic")')
     assert "pydantic" in _import_names(dynamic)
+
+
+def test_package_python_modules_are_explicitly_in_architecture_inventory():
+    rules = json.loads(ARCHITECTURE.read_text(encoding="utf-8"))
+    inventory = rules["package_module_inventory"]
+    declared = set(inventory)
+    discovered = {
+        path.relative_to(ROOT).as_posix()
+        for path in PACKAGE.rglob("*.py")
+        if path.name != "__init__.py" and "__pycache__" not in path.parts
+    }
+    assert len(inventory) == len(declared), "Architecture inventory contains duplicates"
+    assert declared == discovered, (
+        f"Architecture inventory mismatch; missing={sorted(discovered - declared)}, "
+        f"stale={sorted(declared - discovered)}"
+    )

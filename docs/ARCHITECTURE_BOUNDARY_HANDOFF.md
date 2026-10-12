@@ -18,8 +18,9 @@ also verifies that literal `importlib.import_module`, aliased `import_module`, a
 
 ## Limits and next work
 
-The rule enforces direct and literal dynamic imports in this named slice. It does
-not classify every module in the package or detect names assembled at runtime.
+The package inventory is explicit, but the other modules are not yet assigned to
+architecture layers or checked against per-layer dependency rules. The detector also
+does not detect names assembled at runtime.
 Package-wide dependency direction, other phase gates, independent review, and all
 P00–P13 acceptance remain open. This change does not authorize a broker or live
 trading.
