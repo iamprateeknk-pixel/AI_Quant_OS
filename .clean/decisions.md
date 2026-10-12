@@ -141,3 +141,5 @@
 - 2026-10-12: Add a protected BrokerHealth read and paper observation table to Mission Control. The UI preserves unknown/unassessed evidence and withholds unsupported scores; broker execution authority is unchanged. Full web regression and production build pass; visual browser acceptance remains open. See ADR 0184 and BROKER_HEALTH_UI_HANDOFF.md.
 
 - 2026-10-12: Harden the BrokerHealth UI parser to enforce the exact schema property sets and timezone-aware timestamps; complete measured evidence still permits a valid score. Focused tests and the production build pass. See ADR 0184.
+
+- 2026-10-13: Expand Mission Control's homepage with sourced paper P&L/exposure, exact-decimal open-position counts, current quote freshness/source, protected BrokerHealth, and paper order/fill references. Missing valuation and reconciliation remain explicit. Full web tests and production build pass; visual acceptance remains open. See ADR 0185 and MISSION_CONTROL_HOME_HANDOFF.md.
