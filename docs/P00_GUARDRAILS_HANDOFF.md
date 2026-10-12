@@ -14,6 +14,7 @@ Recorded deterministic ownership for current paper control actions, established 
 - `SECURITY_BOUNDARY.md` (initial authority map; full threat model and production identity work remain open)
 - `ENVIRONMENT_STRATEGY.md` (tier roadmap; deployment owner/model/users/exposure remain unconfirmed)
 - `SECRETS_AND_COMPLIANCE_GATES.md` (credential inventory and owner-reviewed staging/shadow gates; production controls remain open)
+- `../AI_Quant_OS-threat-model.md` (repository-grounded draft; deployment and data-sensitivity assumptions remain unvalidated)
 - `adr/0165-program-definition-and-release-gates.md`
 
 ## Commands and checks

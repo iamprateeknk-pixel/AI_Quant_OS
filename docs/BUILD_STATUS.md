@@ -1475,3 +1475,7 @@ Tightened the PromotionDecision contract so completed evaluation references are 
 
 ### P00 primary module layers and import boundaries (2026-10-12)
 Assigned all 323 inventoried modules to domain, control, API, agents, strategies, persistence, integrations, or application layers. Enforced domain purity, control isolation, agent/strategy-to-control isolation, and persistence/integration isolation from API modules. Ten architecture tests passed in a fresh archive checkout; an injected strategy-to-control import was rejected. These static rules do not prove indirect call-graph safety; independent P00 review remains open. See ADR 0183 and ARCHITECTURE_LAYERS.md.
+
+
+### P00 threat model draft (2026-10-12)
+Created a repo-grounded threat model covering local API/UI, control/persistence, provider and demo flows, candidate containers, CI, assets, trust boundaries, abuse paths, and prioritized threats. It assumes local single-operator PAPER use only for provisional ranking; deployment exposure, user count, data sensitivity, and retention remain unconfirmed. This is a draft, not P00 security acceptance or independent review. See AI_Quant_OS-threat-model.md.
