@@ -60,19 +60,24 @@ class OperatorAuthorization:
     def require_session(
         self, x_operator_session: str | None = Header(default=None)
     ) -> OperatorSession:
+        grant = self.authenticate_session(x_operator_session)
+        self._admission()
+        return grant
+
+    def authenticate_session(self, token: str | None) -> OperatorSession:
+        """Revalidate an already admitted session without reacquiring its admission locks."""
         if not self._token:
             raise HTTPException(503, "Operator commands are disabled")
-        if not x_operator_session:
+        if not token:
             raise HTTPException(401, "Operator session required")
         try:
             grant = self._available_store().authenticate(
-                x_operator_session, self._clock(), self._epoch
+                token, self._clock(), self._epoch
             )
         except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
             raise HTTPException(503, "Operator session journal could not be verified") from error
         if grant is None:
             raise HTTPException(401, "Operator session expired or invalid")
-        self._admission()
         return grant
 
     def require_operator(

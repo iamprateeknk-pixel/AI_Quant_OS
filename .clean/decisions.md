@@ -97,3 +97,5 @@
 - 2026-10-12: Increment0156 composes original protected monitoring rule observations into Incidents via server-only session read and a dedicated allowlisted decoder with integer-microsecond freshness/hold guards. Fixed served runbook paths, read refresh and generic operational read fallbacks; no incident/control authority or inferred healthy/zero state. Browser refusal retained.
 
 - 2026-10-12: Increment0157 gates periodic selected monitoring reads on the existing shared authenticated channel, with original source expiry/microsecond ordering, generation-owned read cancellation and independent callback subscriptions. Initial props/private GET responses are selected before browser exposure. No extra EventSource, safety capture I/O, control authority or backend/schema change.
+
+- 2026-10-12: Increment0158 records original monitoring state transitions in a bounded hash-chained local journal. Session-protected history and idempotent review receipts require the expected journal head; acknowledgements have no risk or trading control authority.

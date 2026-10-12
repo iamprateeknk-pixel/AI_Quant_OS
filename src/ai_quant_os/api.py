@@ -90,6 +90,8 @@ from ai_quant_os.agent_trace_binding_api import install_agent_trace_binding_rout
 from ai_quant_os.collector_trace_source import CollectorTraceSource
 from ai_quant_os.collector_trace_api import install_collector_trace_routes
 from ai_quant_os.monitoring_alerts import MonitoringAlertSource, install_monitoring_alert_routes
+from ai_quant_os.monitoring_journal import MonitoringJournal
+from ai_quant_os.monitoring_journal_api import install_monitoring_journal_routes
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
 from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
@@ -369,6 +371,11 @@ def create_app(
     )
     incident_proposal_store = IncidentProposalStore(
         configured_path.with_name(configured_path.stem + ".incident-proposals.sqlite3")
+        if configured_path
+        else None
+    )
+    monitoring_journal = MonitoringJournal(
+        configured_path.with_name(configured_path.stem + ".monitoring.sqlite3")
         if configured_path
         else None
     )
@@ -668,6 +675,10 @@ def create_app(
                 health_worker.verify_admission()
             except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
                 raise HTTPException(503, "Health incident journal could not be verified") from error
+        try:
+            monitoring_journal.history()
+        except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Monitoring incident journal could not be verified") from error
 
     try:
         operator_sessions = OperatorSessionStore(
@@ -2096,11 +2107,21 @@ def create_app(
     )
     install_tracing_status_routes(app, configured_telemetry, require_operator, current_time)
     install_paper_metrics_routes(app, configured_telemetry, require_operator)
+    monitoring_alert_source = monitoring_alert_source or MonitoringAlertSource(
+        enabled=os.getenv("AI_QUANT_PROMETHEUS_ALERTS_ENABLED") == "1"
+    )
     install_monitoring_alert_routes(
         app,
-        monitoring_alert_source
-        or MonitoringAlertSource(enabled=os.getenv("AI_QUANT_PROMETHEUS_ALERTS_ENABLED") == "1"),
+        monitoring_alert_source,
         require_operator,
+        monitoring_journal if configured_path is not None else None,
+    )
+    install_monitoring_journal_routes(
+        app,
+        monitoring_journal if configured_path is not None else None,
+        operator_authorization.require_session,
+        operator_authorization.authenticate_session,
+        current_time,
     )
     install_agent_trace_binding_routes(app, state_store, require_operator, current_time)
     install_collector_trace_routes(

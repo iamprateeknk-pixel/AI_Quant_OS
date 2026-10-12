@@ -1,0 +1,154 @@
+{
+  "increment": "0158",
+  "date": "2026-10-12",
+  "base_commit": "34e52618c3107dc6105ec6afbef53070753b22bd",
+  "feature": "Audit-chained local monitoring episodes with protected history and idempotent review receipts",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0158-v3",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "068a5d6315360cf676f95f213aadbbc370dbaad448df3a9ab7ef1f39c53adc64"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "eb90f264c1c1e2a46ca346541d025fd9ccdb226b0b74eebdb31b9e2c51c03b24"
+      },
+      {
+        "path": "docs/MONITORING_JOURNAL_HANDOFF.md",
+        "sha256": "656bef953c34260c0edcae00ca62087d3ddede931d16ad68cf7ffc712362373f"
+      },
+      {
+        "path": "docs/adr/0158-durable-monitoring-incident-review.md",
+        "sha256": "956fe495b61c114a83edd657db32282a38f3f9c71116f801b0284f81f0a71b4a"
+      },
+      {
+        "path": "docs/schemas/monitoring-incident-journal.schema.json",
+        "sha256": "5e954f14a075a493b7a3630778ea999ed78909b223a38472ca1b3329cf4927ae"
+      },
+      {
+        "path": "src/ai_quant_os/api.py",
+        "sha256": "2cdc957f83bb40c8f520485f3eddc78f84c267e028decf5e020f79314dd7f776"
+      },
+      {
+        "path": "src/ai_quant_os/monitoring_alerts.py",
+        "sha256": "d7f6589c52597badaef261cdfcae6102e4744370f049307a7da3289332aa61dc"
+      },
+      {
+        "path": "src/ai_quant_os/monitoring_journal.py",
+        "sha256": "259f38e0caaa5ebd70dda41fddeeef0a59929b54722e452ac2f0cdfa1a873061"
+      },
+      {
+        "path": "src/ai_quant_os/monitoring_journal_api.py",
+        "sha256": "21f009e3b880dacd22b1523daa5a36a1f7b6527e9af7e371f736dc51b1089fb0"
+      },
+      {
+        "path": "src/ai_quant_os/operator_session_api.py",
+        "sha256": "4320281149d3564c5b2bc8331c58f65bbd650e637b3b36c9ef5a3242e48e5c81"
+      },
+      {
+        "path": "tests/test_monitoring_journal.py",
+        "sha256": "3ea4f7f19385fcd05552675ac1a9c7f46cc1740a5a826f9b963e4fc147012527"
+      },
+      {
+        "path": "tests/test_monitoring_journal_api.py",
+        "sha256": "59b2eaaa8d3d1b87a10f55eb4817a00613f13a9994e712496af331f62e3ee077"
+      },
+      {
+        "path": "tests/test_prometheus_deployment.py",
+        "sha256": "f7ff5f6739880a64187970286ae7de34d0ed750f88e43a36154db339d4d1e0f3"
+      }
+    ],
+    "backend_tests": 78,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "45.746",
+    "backend_scope": [
+      "tests/test_monitoring_journal.py",
+      "tests/test_monitoring_journal_api.py",
+      "tests/test_monitoring_alert_api.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_api.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_prometheus_deployment.py::test_actual_prometheus_ingests_sdk_buckets_and_reports_revoked_scrape_without_retrying_orders"
+    ],
+    "checks": {
+      "backend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\monitoring-journal-0158-v3-fresh-backend.log",
+        "scope": [
+          "tests/test_monitoring_journal.py",
+          "tests/test_monitoring_journal_api.py",
+          "tests/test_monitoring_alert_api.py",
+          "tests/test_operator_sessions.py",
+          "tests/test_api.py",
+          "tests/test_audit_integrity.py",
+          "tests/test_prometheus_deployment.py::test_actual_prometheus_ingests_sdk_buckets_and_reports_revoked_scrape_without_retrying_orders"
+        ],
+        "log_sha256": "532c61c315b0b745ff79809a8bb600e7024efdff0e31057b53c15bdd1e0ad847"
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\monitoring-journal-0158-v3-fresh-ruff.log",
+        "scope": [
+          "ruff",
+          "check",
+          "src/ai_quant_os/api.py",
+          "src/ai_quant_os/monitoring_alerts.py",
+          "src/ai_quant_os/operator_session_api.py",
+          "src/ai_quant_os/monitoring_journal.py",
+          "src/ai_quant_os/monitoring_journal_api.py",
+          "tests/test_monitoring_journal.py",
+          "tests/test_monitoring_journal_api.py",
+          "tests/test_prometheus_deployment.py"
+        ],
+        "log_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      "format": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\monitoring-journal-0158-v3-fresh-format.log",
+        "scope": [
+          "ruff",
+          "format",
+          "--check",
+          "src/ai_quant_os/monitoring_journal.py",
+          "src/ai_quant_os/monitoring_journal_api.py",
+          "tests/test_monitoring_journal.py",
+          "tests/test_monitoring_journal_api.py"
+        ],
+        "log_sha256": "55b5a2cb0bdd55641f1b6dad60805a4c29520e41d507781e75aa8ec8d6ed9a10"
+      }
+    },
+    "junit_sha256": "82f723c4285c504c8659646d2f1f3b37ca070b0416b4a2b0def876807070e146",
+    "wheel": {
+      "file": "ai_quant_os-0.1.0-py3-none-any.whl",
+      "bytes": 666052,
+      "sha256": "85265b49dca11d1cc7021e98055e24da4bd4ccc99d795150bc604fb323528768",
+      "python_modules_checked": 309,
+      "all_source_bytes_match_fresh_checkout": true
+    },
+    "native_prometheus": {
+      "version": "3.15.0",
+      "executable_sha256": "c19135130c94e17aa02520ba40c3c8a35727653cd2c667b6a12f9a18313df7ac",
+      "actual_source_to_durable_journal_http_flow": true
+    },
+    "identity": {
+      "prior_schemas_unchanged": 112,
+      "schema_count_after_addition": 113,
+      "fresh_checkout_matches_index_and_root": true
+    },
+    "red": "Initial checks caught the UUIDv4/UUIDv5 mismatch for deterministic episode identities and a re-entrant journal admission lock during session revalidation; both were corrected. Stale-head/action conflicts are distinguished from corrupted-journal availability errors. A native test fixture client-lifetime issue was also corrected. Final fresh staged verification passes.",
+    "review": "The journal is infrastructure only. Reads rebuild the projection from the audit chain, damaged metadata is refused without repair, fixed source names/runbooks are preserved, and session validity is checked immediately before commit. Review receipts carry control_authorized=false and have no paper order, risk, quarantine or recovery mutation path.",
+    "gitleaks": "passed exact final staged scan with redacted output and zero findings",
+    "full_suite": "Not run; preserve prior uncertain candidate/Docker custody. No browser script was executed.",
+    "limits": "The current browser console does not yet expose durable history or acknowledgement actions. The journal is local SQLite corruption evidence, not a remote custody signature. External notification, engine-stopped detection, multi-host storage, browser/accessibility review and production retention/service acceptance remain open."
+  },
+  "rollback": "Revert the monitoring journal/API integration, session revalidation helper, additive schema, tests and handoff. The prior point-in-time monitoring observation remains available without durable history or review receipts.",
+  "open_gates": [
+    "All full P00-P13 phases remain incomplete.",
+    "External alert delivery and monitoring-engine stopped-state detection are not implemented.",
+    "Browser review controls, visual/accessibility, independent custody and production deployment acceptance remain pending.",
+    "No candidate/Docker state, paid provider, broker, live capital, remote push or promotion was used; .agents/ and skills-lock.json remain untouched."
+  ]
+}

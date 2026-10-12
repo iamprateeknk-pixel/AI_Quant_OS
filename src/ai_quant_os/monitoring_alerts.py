@@ -3,9 +3,10 @@
 import asyncio
 from datetime import datetime, timezone
 import json
+import sqlite3
 from typing import Callable, Literal
 
-from fastapi import Depends, FastAPI, Header, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Response
 import httpx
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
@@ -202,7 +203,7 @@ class MonitoringAlertSource:
 
 
 def install_monitoring_alert_routes(
-    app: FastAPI, source: MonitoringAlertSource, require_operator: Callable
+    app: FastAPI, source: MonitoringAlertSource, require_operator: Callable, journal=None
 ):
     @app.get(
         "/api/v1/observability/alerts",
@@ -216,5 +217,10 @@ def install_monitoring_alert_routes(
     ):
         result = await source.observe()
         require_operator(x_operator_token, x_operator_session)
+        if journal is not None:
+            try:
+                journal.record(result)
+            except (ValueError, TypeError, KeyError, OSError, RuntimeError, sqlite3.Error) as error:
+                raise HTTPException(503, "Monitoring journal could not be verified") from error
         response.headers["Cache-Control"] = "no-store"
         return result

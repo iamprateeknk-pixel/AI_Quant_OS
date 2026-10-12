@@ -17,6 +17,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 
 from ai_quant_os.api import create_app
 from ai_quant_os.paper_telemetry import PaperTelemetry
+from ai_quant_os.monitoring_journal import MonitoringJournal
 from ai_quant_os.monitoring_alerts import MonitoringAlertSource
 from tests.test_paper_telemetry import NOW, payload, run_order
 
@@ -92,6 +93,7 @@ def test_actual_prometheus_ingests_sdk_buckets_and_reports_revoked_scrape_withou
     telemetry = PaperTelemetry(exporter=InMemorySpanExporter())
     app = create_app(
         operator_token="fixture-monitor-token",
+        paper_db_path=tmp_path / "paper.sqlite3",
         clock=lambda: NOW,
         telemetry=telemetry,
         monitoring_alert_source=MonitoringAlertSource(enabled=True, port=prom_port),
@@ -229,6 +231,29 @@ def test_actual_prometheus_ingests_sdk_buckets_and_reports_revoked_scrape_withou
                         }
                         assert "fixture-monitor-token" not in protected.text
                         (tmp_path / "protected-alert-observation.json").write_text(protected.text)
+                        with httpx.Client(timeout=5, trust_env=False) as operator:
+                            login = operator.post(
+                                paper_base + "/api/v1/operator/sessions",
+                                headers={"X-Operator-Token": "fixture-monitor-token"},
+                            )
+                            assert login.status_code == 201
+                            history_response = operator.get(
+                                paper_base + "/api/v1/observability/incidents",
+                                headers={
+                                    "X-Operator-Session": login.json()["session_token"]
+                                },
+                            )
+                            assert history_response.status_code == 200
+                            history = history_response.json()
+                            assert history["durable"] is True
+                            assert any(
+                                episode["rule_name"] == "PaperHttpScrapeFailed"
+                                and episode["state"] == "PENDING"
+                                for episode in history["episodes"]
+                            )
+                            journal = MonitoringJournal(tmp_path / "paper.monitoring.sqlite3")
+                            assert journal.history().head_hash == history["head_hash"]
+                            journal.close()
                         break
                     assert time.monotonic() < deadline, "Original alert evaluation deadline"
                     time.sleep(0.1)

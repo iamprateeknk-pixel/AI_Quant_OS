@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-quant-os.local/schemas/monitoring-incident-journal.schema.json",
+  "title": "Local monitoring incident journal",
+  "oneOf": [
+    { "$ref": "#/$defs/history" },
+    { "$ref": "#/$defs/acknowledgement" }
+  ],
+  "$defs": {
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "mode", "committed", "control_authorized", "action_id", "episode_id", "actor_session_id", "acknowledged_at", "source_head"],
+      "properties": {
+        "schema_version": { "const": "1.0" },
+        "mode": { "const": "PAPER" },
+        "committed": { "const": true },
+        "control_authorized": { "const": false },
+        "action_id": { "type": "string", "format": "uuid" },
+        "episode_id": { "type": "string", "format": "uuid" },
+        "actor_session_id": { "type": "string", "format": "uuid" },
+        "acknowledged_at": { "type": "string", "format": "date-time" },
+        "source_head": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "episode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["episode_id", "rule_name", "first_observed_at", "active_since", "state", "last_observed_at", "runbook_path", "acknowledgement"],
+      "properties": {
+        "episode_id": { "type": "string", "format": "uuid" },
+        "rule_name": { "enum": ["PaperHttpScrapeFailed", "PaperHttpScrapeMissing"] },
+        "first_observed_at": { "type": "string", "format": "date-time" },
+        "active_since": { "type": "string", "format": "date-time" },
+        "state": { "enum": ["PENDING", "FIRING", "NOT_CURRENTLY_OBSERVED", "OBSERVED_INACTIVE", "OBSERVED_REPLACED"] },
+        "last_observed_at": { "type": "string", "format": "date-time" },
+        "runbook_path": { "enum": ["docs/runbooks/paper-http-monitoring.md#scrape-failed", "docs/runbooks/paper-http-monitoring.md#scrape-missing"] },
+        "acknowledgement": { "anyOf": [{ "$ref": "#/$defs/receipt" }, { "type": "null" }] }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "mode", "source_kind", "durable", "notification_verified", "independently_attested", "head_hash", "episodes"],
+      "properties": {
+        "schema_version": { "const": "1.0" },
+        "mode": { "const": "PAPER" },
+        "source_kind": { "const": "LOCAL_PROMETHEUS_RULE_EVALUATION" },
+        "durable": { "const": true },
+        "notification_verified": { "const": false },
+        "independently_attested": { "const": false },
+        "head_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "episodes": { "type": "array", "maxItems": 8192, "items": { "$ref": "#/$defs/episode" } }
+      }
+    },
+    "acknowledgement": { "$ref": "#/$defs/receipt" }
+  }
+}

@@ -1285,3 +1285,4 @@ read/timers/subscriptions are released. Initial props and private route outputs
 are selected before browser exposure. Backend safety stream remains independent.
 Durable acknowledgement/notification/engine-health and production/independent/
 browser/full P00–P13 gates stay open. See MONITORING_REALTIME_HANDOFF.md and0157.
+\r\n# Development increment0158 - durable monitoring episode review\r\n\r\nSelected original rule transitions now enter a bounded local hash-chained\r\njournal. Session-protected history and idempotent review receipts persist across\r\nrestart; receipts carry no safety or trading authority. External notification,\r\nengine-stopped detection, browser acceptance and remaining P00-P13 gates remain\r\nopen. See MONITORING_JOURNAL_HANDOFF.md and ADR/evaluation0158.\r\n
