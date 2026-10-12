@@ -7,7 +7,8 @@ Recorded deterministic ownership for current paper control actions, established 
 ## Files
 
 - `CONTROL_OWNERSHIP.md`
-- `MODULE_CRITICALITY.md` (complete package-module critical/supporting classification; architecture layering and transitive boundary proof remain open)
+- `MODULE_CRITICALITY.md` (complete package-module critical/supporting classification)
+- `ARCHITECTURE_LAYERS.md` (primary layer assignment and selected static import rules; broader transitive boundaries remain open)
 - `DEFINITION_OF_DONE.md`
 - `RELEASE_AND_ROLLBACK.md`
 - `SECURITY_BOUNDARY.md` (initial authority map; full threat model and production identity work remain open)

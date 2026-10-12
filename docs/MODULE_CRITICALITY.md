@@ -26,4 +26,4 @@ When adding or moving a Python package module:
 4. Add focused tests for authority, failure, and persistence behavior before treating the classification as accepted.
 5. Obtain independent critical-path review before any phase promotion.
 
-This classification closes the inventory/criticality bookkeeping gap only. It does not close P00 architecture layering, full transitive dependency constraints, threat modeling, independent review, or any P01-P13 gate.
+This classification closes the inventory/criticality bookkeeping gap. Primary module layers and selected import boundaries are now tested, but full transitive dependency constraints, threat modeling, independent review, and the remaining P00-P13 gates stay open.

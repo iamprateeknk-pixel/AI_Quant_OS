@@ -26,10 +26,12 @@ AGENT_AND_STRATEGY_SOURCES = tuple(
 ARCHITECTURE = ROOT / ".clean" / "architecture.json"
 DOMAIN_SOURCES = (
     PACKAGE / "contracts.py",
+    PACKAGE / "currency_portfolio.py",
+    PACKAGE / "currency_risk.py",
     PACKAGE / "market.py",
+    PACKAGE / "paper_instruments.py",
     PACKAGE / "portfolio.py",
     PACKAGE / "risk.py",
-    PACKAGE / "backtest.py",
 )
 
 
@@ -125,6 +127,18 @@ def test_agent_and_strategy_sources_do_not_import_broker_execution_surfaces():
     }
     violations = {path: imports for path, imports in violations.items() if imports}
     assert not violations, f"Agent or strategy source crosses broker boundary: {violations}"
+
+
+def _forbidden_layer_imports(imports: set[str], forbidden_layers: set[str], layer_by_module):
+    blocked = []
+    for name in imports:
+        if name == "<dynamic import>":
+            blocked.append(name)
+        elif name.startswith("ai_quant_os."):
+            target = name.split(".")[1]
+            if layer_by_module.get(target) in forbidden_layers:
+                blocked.append(name)
+    return sorted(blocked)
 
 
 def _import_names(tree: ast.AST) -> set[str]:
@@ -231,3 +245,49 @@ def test_every_package_module_has_an_explicit_criticality_classification():
         "src/ai_quant_os/strategy_selector_agent.py",
         "src/ai_quant_os/adversarial_agent.py",
     } <= supporting
+
+
+def test_primary_layers_cover_every_package_module_once():
+    rules = json.loads(ARCHITECTURE.read_text(encoding="utf-8"))
+    inventory = set(rules["package_module_inventory"])
+    layers = rules["layers"]
+    assigned = [path for layer in layers.values() for path in layer["modules"]]
+    assert len(assigned) == len(set(assigned))
+    assert set(assigned) == inventory
+
+
+def test_layer_rule_detector_rejects_forbidden_imports_and_dynamic_loading():
+    rules = json.loads(ARCHITECTURE.read_text(encoding="utf-8"))
+    layer_by_module = {
+        Path(path).stem: layer_name
+        for layer_name, layer in rules["layers"].items()
+        for path in layer["modules"]
+    }
+    forbidden = {"control"}
+    assert _forbidden_layer_imports({"ai_quant_os.execution"}, forbidden, layer_by_module) == [
+        "ai_quant_os.execution"
+    ]
+    assert (
+        _forbidden_layer_imports({"ai_quant_os.agent_registry"}, forbidden, layer_by_module) == []
+    )
+    assert _forbidden_layer_imports({"<dynamic import>"}, forbidden, layer_by_module)
+
+
+def test_declared_layer_import_rules_hold_for_current_sources():
+    rules = json.loads(ARCHITECTURE.read_text(encoding="utf-8"))
+    layer_by_module = {
+        Path(path).stem: layer_name
+        for layer_name, layer in rules["layers"].items()
+        for path in layer["modules"]
+    }
+    violations = {}
+    for rule in rules["layer_import_rules"]:
+        forbidden = set(rule["forbidden_target_layers"])
+        for source_layer in rule["source_layers"]:
+            for relative in rules["layers"][source_layer]["modules"]:
+                path = ROOT / relative
+                imports = _import_names(ast.parse(path.read_text(encoding="utf-8")))
+                blocked = _forbidden_layer_imports(imports, forbidden, layer_by_module)
+                if blocked:
+                    violations[relative] = blocked
+    assert not violations, f"Layer dependency rules are violated: {violations}"

@@ -1471,3 +1471,7 @@ The architecture inventory now assigns all 323 Python package modules to disjoin
 
 ### P11 promotion evidence reference bounds (2026-10-12)
 Tightened the PromotionDecision contract so completed evaluation references are non-empty, limited to 32 per stage, and at most 512 characters each. The promotion contract suite now passes 6 tests in an isolated archive checkout; schema parity includes the item bounds.
+
+
+### P00 primary module layers and import boundaries (2026-10-12)
+Assigned all 323 inventoried modules to domain, control, API, agents, strategies, persistence, integrations, or application layers. Enforced domain purity, control isolation, agent/strategy-to-control isolation, and persistence/integration isolation from API modules. Ten architecture tests passed in a fresh archive checkout; an injected strategy-to-control import was rejected. These static rules do not prove indirect call-graph safety; independent P00 review remains open. See ADR 0183 and ARCHITECTURE_LAYERS.md.

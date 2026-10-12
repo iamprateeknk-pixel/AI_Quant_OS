@@ -135,3 +135,5 @@
 - 2026-10-12: Classify all inventoried Python modules as critical or supporting for local paper authority, enforced as a complete disjoint partition. Supporting modules remain reviewable for input/evidence/privacy/availability impact. See ADR 0182; architecture layering and transitive proof remain open.
 
 - 2026-10-12: Bound PromotionDecision evaluation evidence references to 32 non-empty strings of at most 512 characters per stage; schema and runtime model agree. See ADR 0179.
+
+- 2026-10-12: Assign each inventoried module to one primary layer and enforce five static dependency boundaries. A temporary agent-to-control import was rejected by the test. Transitive call-graph and complete architecture acceptance remain open. See ADR 0183.
