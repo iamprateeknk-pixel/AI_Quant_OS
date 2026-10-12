@@ -1455,3 +1455,7 @@ Added protected PAPER-only BrokerHealth v1 endpoint and published JSON Schema fo
 
 ### P11 fail-closed promotion evidence contract (2026-10-12)
 Published PromotionDecision v1.0 for candidate/champion, offline/replay/adversarial/shadow/canary evidence, rollback target, and timestamp. Completed evaluations require timestamped references; pending states require a reason. The model always returns WAIT_FOR_EVIDENCE with policy approval false and does not validate referenced evidence or alter candidate lifecycle. Fifteen focused tests passed in a fresh archive checkout; Ruff lint and format passed. Connected gates, independent policy review, promotion, rollback, and P00-P13 acceptance remain open; see ADR 0179.
+
+
+### P00 environment strategy (2026-10-12)
+Documented the four environment tiers, authority limits, entry evidence, cost/secrets/recovery requirements, and present acceptance state. No remote environment or spend was selected or provisioned. Operator confirmation of owner, deployment model, users, and exposure remains open; P00 and P13 acceptance remain incomplete. See ADR 0180 and ENVIRONMENT_STRATEGY.md.
