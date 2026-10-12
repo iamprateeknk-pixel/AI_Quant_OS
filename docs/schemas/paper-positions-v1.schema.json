@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:paper-positions:1.0",
+  "title": "Paper Positions Response v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mode", "positions"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "mode": { "const": "PAPER" },
+    "positions": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/Position" }
+    }
+  },
+  "$defs": {
+    "Position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "instrument_id",
+        "base_currency",
+        "quote_currency",
+        "mark_available",
+        "mark_price",
+        "net_quantity",
+        "cash_flow_quote",
+        "gross_exposure_quote",
+        "net_exposure_quote",
+        "marked_pnl_quote"
+      ],
+      "properties": {
+        "mode": { "const": "PAPER" },
+        "instrument_id": { "enum": ["EURUSD", "GBPUSD", "USDJPY", "EURJPY"] },
+        "base_currency": { "enum": ["EUR", "GBP", "USD"] },
+        "quote_currency": { "enum": ["USD", "JPY"] },
+        "mark_available": { "type": "boolean" },
+        "mark_price": { "$ref": "#/$defs/NullablePositiveDecimal" },
+        "net_quantity": { "$ref": "#/$defs/Decimal" },
+        "cash_flow_quote": { "$ref": "#/$defs/Decimal" },
+        "gross_exposure_quote": { "$ref": "#/$defs/NullableNonnegativeDecimal" },
+        "net_exposure_quote": { "$ref": "#/$defs/NullableDecimal" },
+        "marked_pnl_quote": { "$ref": "#/$defs/NullableDecimal" }
+      }
+    },
+    "Decimal": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+    },
+    "NullableDecimal": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/Decimal" }
+      ]
+    },
+    "NullablePositiveDecimal": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "pattern": "^(?:[1-9][0-9]*(?:\\.[0-9]+)?|0?\\.[0-9]*[1-9][0-9]*)(?:[eE][+-]?[0-9]+)?$"
+        }
+      ]
+    },
+    "NullableNonnegativeDecimal": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+        }
+      ]
+    }
+  }
+}

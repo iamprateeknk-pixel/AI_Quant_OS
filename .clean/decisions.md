@@ -159,3 +159,5 @@
 - 2026-10-13: Publish the existing PaperOrder response as a strict read-only v1 JSON Schema with explicit lifecycle states, PAPER routing, and optional broker reference; verify the real API projection. This adds no order authority or response bytes. See ADR 0192 and PAPER_ORDERS_CONTRACT_HANDOFF.md.
 
 - 2026-10-13: Publish the existing paper market quote response as a strict v1 JSON Schema and verify both fresh and stale actual API outputs. No response or execution behavior changed. See ADR 0193 and PAPER_MARKET_CONTRACT_HANDOFF.md.
+
+- 2026-10-13: Publish strict schemas for the existing paper positions and currency portfolio reads; tests validate actual endpoint outputs while preserving null marks, FX valuation, and exposure. No runtime or persistence behavior changed. See ADR 0194 and PORTFOLIO_READ_CONTRACTS_HANDOFF.md.

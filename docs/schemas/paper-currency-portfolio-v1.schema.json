@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:paper-currency-portfolio:1.0",
+  "title": "Paper Currency Portfolio Response v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "reporting_currency",
+    "currencies",
+    "marked_pnl_reporting",
+    "gross_worst_case_exposure_reporting",
+    "issues",
+    "valuation_available",
+    "mode"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "snapshot_id": { "type": "string", "pattern": "^currency:[a-f0-9]{64}$" },
+    "reporting_currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "currencies": { "type": "array", "items": { "$ref": "#/$defs/CurrencyExposure" } },
+    "marked_pnl_reporting": { "$ref": "#/$defs/NullableDecimal" },
+    "gross_worst_case_exposure_reporting": { "$ref": "#/$defs/NullableNonnegativeDecimal" },
+    "issues": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "valuation_available": { "type": "boolean" },
+    "mode": { "const": "PAPER" }
+  },
+  "$defs": {
+    "CurrencyExposure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "currency",
+        "filled_balance",
+        "minimum_balance",
+        "maximum_balance",
+        "marked_balance_reporting",
+        "worst_case_exposure_reporting",
+        "issue"
+      ],
+      "properties": {
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "filled_balance": { "$ref": "#/$defs/Decimal" },
+        "minimum_balance": { "$ref": "#/$defs/NullableDecimal" },
+        "maximum_balance": { "$ref": "#/$defs/NullableDecimal" },
+        "marked_balance_reporting": { "$ref": "#/$defs/NullableDecimal" },
+        "worst_case_exposure_reporting": { "$ref": "#/$defs/NullableNonnegativeDecimal" },
+        "issue": { "type": ["string", "null"] }
+      }
+    },
+    "Decimal": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+    },
+    "NullableDecimal": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/Decimal" }
+      ]
+    },
+    "NullableNonnegativeDecimal": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+        }
+      ]
+    }
+  }
+}
