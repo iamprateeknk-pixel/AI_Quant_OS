@@ -147,3 +147,5 @@
 - 2026-10-13: Validate shared paper market snapshots against requested instrument identity, positive finite price strings, timezone-aware timestamp, bounded source version, backend freshness enum, and PAPER_SIMULATED source before presenting them. The full web suite and production build pass. See ADR 0186.
 
 - 2026-10-13: Add an explicit operator-initiated paper-position comparison on Orders. It requires same-origin submission, operator session and confirmation because the audited backend action can escalate safety to NO_NEW_RISK; malformed and unavailable outcomes remain unknown. Full web suite and production build pass; browser review and P12 acceptance remain open. See ADR 0187 and PAPER_RECONCILIATION_UI_HANDOFF.md.
+
+- 2026-10-13: Show paper market context on Market Detail only when quote and world-state observations are fresh, instrument-matched and share an exact version. Malformed or mismatched evidence remains unavailable; no chart, calibrated regime, or trading eligibility is inferred. Full web suite and production build pass. See ADR 0188 and MARKET_DETAIL_CONTEXT_HANDOFF.md.
