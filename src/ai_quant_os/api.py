@@ -2224,7 +2224,7 @@ def create_app(
     install_demo_sync_health_routes(app, require_operator, demo_sync_state_dir, current_time)
     from ai_quant_os.broker_capability_api import install_broker_capability_routes
 
-    install_broker_capability_routes(app, router, require_operator)
+    install_broker_capability_routes(app, router, require_operator, clock=current_time)
     install_incident_proposal_routes(app, require_operator, incident_proposal_store)
     install_research_data_routes(app, research_data_catalog, require_operator, current_time)
     install_validation_package_routes(

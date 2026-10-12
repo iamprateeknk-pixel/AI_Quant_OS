@@ -1,0 +1,186 @@
+{
+  "$defs": {
+    "BrokerHealth": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "mode": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        },
+        "broker_id": {
+          "enum": [
+            "PAPER",
+            "EXNESS_MT5_DEMO",
+            "EXNESS",
+            "IBKR",
+            "ZERODHA"
+          ],
+          "title": "Broker Id",
+          "type": "string"
+        },
+        "connection_state": {
+          "enum": [
+            "CONNECTED",
+            "DISCONNECTED",
+            "UNKNOWN"
+          ],
+          "title": "Connection State",
+          "type": "string"
+        },
+        "quote_age_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote Age Ms"
+        },
+        "order_latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Order Latency Ms"
+        },
+        "reject_rate": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reject Rate"
+        },
+        "reconciliation_state": {
+          "default": "UNASSESSED",
+          "enum": [
+            "RECONCILED",
+            "MISMATCH",
+            "UNASSESSED"
+          ],
+          "title": "Reconciliation State",
+          "type": "string"
+        },
+        "spread_state": {
+          "default": "UNASSESSED",
+          "enum": [
+            "WITHIN_LIMIT",
+            "OUTSIDE_LIMIT",
+            "UNASSESSED"
+          ],
+          "title": "Spread State",
+          "type": "string"
+        },
+        "account_state": {
+          "default": "UNASSESSED",
+          "enum": [
+            "AVAILABLE",
+            "UNAVAILABLE",
+            "UNASSESSED"
+          ],
+          "title": "Account State",
+          "type": "string"
+        },
+        "health_score": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Health Score"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "live_execution_released": {
+          "const": false,
+          "default": false,
+          "title": "Live Execution Released",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "broker_id",
+        "connection_state",
+        "updated_at"
+      ],
+      "title": "BrokerHealth",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "brokers": {
+      "items": {
+        "$ref": "#/$defs/BrokerHealth"
+      },
+      "maxItems": 5,
+      "minItems": 5,
+      "title": "Brokers",
+      "type": "array"
+    },
+    "live_execution_released": {
+      "const": false,
+      "default": false,
+      "title": "Live Execution Released",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "brokers"
+  ],
+  "title": "BrokerHealthRegistry",
+  "type": "object"
+}

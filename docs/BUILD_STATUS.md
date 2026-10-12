@@ -1447,3 +1447,7 @@ Published strict JSON Schema 2020-12 artifacts with stable IDs for the existing 
 
 ### P00 AgentEnvelope schema v2 (2026-10-12)
 Published the exact runtime AgentEnvelope v2 model as a strict JSON Schema 2020-12 artifact with stable ID. Schema parity and extra-field rejection are tested. Fresh isolated archive verification: 3 canonical schema tests passed; Ruff check and format passed. This preserves the runtime envelope and does not add a P00 v1-to-v2 migration; earlier blueprint fields are not substituted. Remaining canonical models and threat review remain open.
+
+
+### P04 broker health observation contract (2026-10-12)
+Added protected PAPER-only BrokerHealth v1 endpoint and published JSON Schema for the five declared profiles. Only existing router connection state is reported; quote age, latency, rejects, reconciliation, spread, and account state remain unassessed and health scores are withheld. Six focused tests passed in a fresh archive checkout; Ruff lint and formatting passed. This does not complete P04, provide native broker health telemetry, or satisfy P00-P13 acceptance; see ADR 0178 and BROKER_CAPABILITY_HANDOFF.md.

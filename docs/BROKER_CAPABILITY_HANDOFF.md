@@ -64,6 +64,24 @@ The existing `/api/v1/brokers` shape and default PAPER values stay compatible.
 Risk ceilings, safety state, command expiry, symbol/type and other execution
 checks still apply after local broker admission.
 
+## Broker health read contract
+
+Protected GET `/api/v1/brokers/health` exposes the versioned PAPER-only
+`BrokerHealthRegistry` v1.0 contract. It lists exactly the five declared broker
+profiles and reads only the current `BrokerRouter` connection snapshot. A missing
+adapter is `UNKNOWN`; the existing paper adapter can report its declared
+connection state. Quote age, order latency, reject rate, reconciliation, spread,
+and account availability are not currently measured by this router, so the
+endpoint returns null measurements and `UNASSESSED` component states. It never
+calculates a health score from missing evidence. `updated_at` identifies the
+observation time, not the freshness of any broker telemetry.
+
+The JSON Schema is published at `docs/schemas/broker-health.schema.json` and
+checked against the runtime model. The endpoint requires operator authorization
+and disables caching. `live_execution_released` is fixed false at registry and
+row level; this read contract cannot authorize a broker or enable trading. Adding
+real health measurements requires source-specific semantics, freshness limits,
+error handling, and independent acceptance before any score is considered.
 ## Verification and remaining acceptance
 
 Tests reproduce the prior enabled-external routing gap and duplicate identity

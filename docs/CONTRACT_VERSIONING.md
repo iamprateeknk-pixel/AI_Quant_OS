@@ -12,11 +12,12 @@ Published wire contracts use an explicit JSON Schema draft and stable `$id`. A b
 | Advisory `AgentEnvelope` | 2.0 | Strict immutable Pydantic model; graph runtime validates the manifest-bound output model before retaining results | `schemas/agent-envelope-v2.schema.json` |
 | Internal `RiskDecision` | 1.0 | Schema covers the existing dataclass shape; no JSON wire endpoint or storage migration is introduced | `schemas/risk-decision-v1.schema.json` |
 | Internal `OrderCommand` | 1.0 | Schema covers the existing dataclass shape; persistence encoding remains unchanged | `schemas/order-command-v1.schema.json` |
+| Broker health registry | 1.0 | Protected PAPER-only observation; unavailable measurements remain null or UNASSESSED and live release is fixed false | `schemas/broker-health.schema.json` |
 
 ## Remaining canonical contracts
 
-The JSON Schemas for `RiskDecision` and `OrderCommand` describe the current internal dataclass shapes; no runtime endpoint consumes them yet. Consumers must validate the JSON Schema before mapping untrusted JSON into those types. The blueprint's `BrokerHealth` and `PromotionDecision` contracts do not yet have corresponding runtime models. Those remain required P00/P04/P11 work.
+The JSON Schemas for `RiskDecision` and `OrderCommand` describe the current internal dataclass shapes; no runtime endpoint consumes them yet. Consumers must validate the JSON Schema before mapping untrusted JSON into those types. The blueprint's `BrokerHealth` read model is now versioned for protected PAPER-only broker observations. Broker telemetry sources do not yet provide quote age, order latency, reject rate, reconciliation, spread, or account-state measurements; those fields remain explicitly unavailable and no health score is calculated. `PromotionDecision` still has no corresponding runtime model and remains required P00/P11 work.
 
 ## Verification
 
-`tests/test_api.py` checks the generated request schema against the published v1 JSON Schema, validates the schema itself, preserves omitted-version clients, and rejects unsupported explicit versions. `tests/test_canonical_contract_schemas.py` checks the internal dataclass schemas and AgentEnvelope v2 against their runtime types, and checks strict schema validation for unknown fields. These additions do not change database records or response formats.
+`tests/test_api.py` checks the generated request schema against the published v1 JSON Schema, validates the schema itself, preserves omitted-version clients, and rejects unsupported explicit versions. `tests/test_canonical_contract_schemas.py` checks the internal dataclass schemas and AgentEnvelope v2 against their runtime types, and checks strict schema validation for unknown fields. `tests/test_broker_health_api.py` checks the protected endpoint, unassessed metrics, schema parity, and the fixed false release flag. These additions do not change database records or existing response formats.
