@@ -1,0 +1,17 @@
+{
+  "increment": "0161",
+  "date": "2026-10-12",
+  "base_commit": "d1d53cc",
+  "feature": "Expose the current primary navigation destination accessibly across desktop, mobile, nested and instrument routes",
+  "verification": {
+    "navigation_tests": { "passed": 2, "failures": 0 },
+    "web_tests": { "passed": 147, "failures": 0 },
+    "eslint_changed_frontend": "passed",
+    "typescript_no_emit": "passed",
+    "next_production_build": "passed",
+    "diff_check": "passed",
+    "browser_visual_acceptance": "not performed; prior browser launch was policy refused"
+  },
+  "limits": "No browser visual acceptance is claimed. This increment does not satisfy the remaining P00-P13 gates, production custody or release criteria.",
+  "rollback": "Revert the navigation helper, component, layout wiring, styles, tests and increment documentation."
+}

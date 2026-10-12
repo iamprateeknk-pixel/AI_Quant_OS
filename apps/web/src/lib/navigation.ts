@@ -34,3 +34,12 @@ export const sectionDetails = {
 } as const;
 
 export type SectionKey = keyof typeof sectionDetails;
+
+export function isActiveNavigationItem(pathname: string | null, href: string): boolean {
+  if (!pathname) return false;
+  if (href === "/") return pathname === "/";
+  if (href.startsWith("/markets/")) {
+    return pathname === "/markets" || pathname.startsWith("/markets/");
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}

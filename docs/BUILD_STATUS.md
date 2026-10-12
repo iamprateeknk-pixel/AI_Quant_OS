@@ -1315,3 +1315,13 @@ proof that Prometheus stopped and adds no control/notification authority.
 Focused backend: 31 passed; web: 145 passed; Next production build, TypeScript,
 ESLint and scoped Ruff pass. Browser/independent source process review and all
 remaining P00-P13 gates stay open. See ADR 0160 and evaluation0160.
+
+# Development increment 0161 - show the current navigation destination
+
+Primary navigation now marks the current destination for screen readers and
+highlights it in the desktop and mobile menus. Nested routes stay with their
+owning destination, and market instrument pages select Markets. Dynamic route
+pathname resolution has a Suspense fallback that retains all navigation links.
+Web suite: 147 passed; ESLint, TypeScript and Next production build passed.
+Browser visual acceptance and all remaining P00-P13 gates remain open. See
+ADR 0161 and evaluation0161.
