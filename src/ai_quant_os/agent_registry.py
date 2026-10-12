@@ -249,6 +249,7 @@ def load_agent_catalog() -> AgentRegistry:
         "A09",
         "A10",
         "A11",
+        "A12",
         "A14",
         "A18",
     ):

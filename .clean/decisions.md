@@ -110,3 +110,4 @@
 - 2026-10-12: Increment 0167 makes the named deterministic domain import boundary machine-readable and enforceable; package-wide classification, runtime-constructed imports, independent review, and P00-P13 release gates remain open. See ADR 0167.
 
 - 2026-10-12: Increment 0168 adds a partial A11 shadow mission that rechecks source-bound archived native stress evidence through the durable SANDBOX graph; candidate execution, new stress runs, independent review, and full acceptance remain open. See ADR 0168.
+- 2026-10-12: Increment 0169 adds partial A12 paper shadow reporting with a checked candidate registry fingerprint and explicit missing approval, performance, and drift evidence. It returns no eligible strategies and grants no order or promotion authority; ranking, regime/portfolio fit, calibration, independent review, and all P00-P13 gates remain open. See ADR 0169.

@@ -1,0 +1,31 @@
+{
+  "increment": "0169",
+  "mission": "A12 Strategy Selector 0.2.0",
+  "scope": "Deterministic paper shadow eligibility report with explicit evidence blockers",
+  "checks": {
+    "focused_tests": {
+      "result": "PASS",
+      "passed": 172,
+      "failed": 0,
+      "groups": [
+        "selector contract and evidence binding",
+        "protected API execution and authorization",
+        "registry mutation after context compilation",
+        "agent registry and context validation",
+        "graph runtime and call budgets",
+        "architecture boundary",
+        "neighboring A10/A11 graph paths"
+      ]
+    },
+    "ruff_check": "PASS",
+    "ruff_format": "PASS"
+  },
+  "limitations": [
+    "CandidateStore has no approved lifecycle state or validated outcome contract.",
+    "Candidate keyed shadow performance and drift sources are not connected.",
+    "The selector always returns an empty eligible set and performs no ranking.",
+    "Regime/portfolio constraints, model routing, metrics, calibration, and independent mission acceptance remain open.",
+    "This mission does not satisfy any P00-P13 release gate or authorize promotion."
+  ],
+  "promotion": "NOT_AUTHORIZED"
+}

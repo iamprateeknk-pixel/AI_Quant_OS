@@ -156,6 +156,9 @@ from ai_quant_os.validation_scientist_api import install_validation_scientist_ro
 from ai_quant_os.adversarial_agent import adversarial_implementation, adversarial_sources
 from ai_quant_os.adversarial_api import install_adversarial_routes
 from ai_quant_os.adversarial_service import StressRun as AdversarialStressRun
+from ai_quant_os.strategy_selector_agent import selector_implementation
+from ai_quant_os.strategy_selector_service import StrategyRegistryRead
+from ai_quant_os.strategy_selector_sources import RegistrySnapshot, selector_sources
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
@@ -181,6 +184,25 @@ def _load_research_report(workspace, experiment_id):
     if report is None:
         raise KeyError("Completed research experiment not found")
     return report
+
+
+def _available_candidate_store(workspace):
+    if workspace is None:
+        return None
+    path = workspace / "candidates.sqlite3"
+    if not path.is_file():
+        return None
+    from ai_quant_os.research_candidate_store import CandidateStore
+
+    return CandidateStore(path)
+
+
+def _candidate_registry_snapshot(workspace):
+    store = _available_candidate_store(workspace)
+    return RegistrySnapshot(
+        available=store is not None,
+        candidates=() if store is None else store.list(),
+    )
 
 
 class QuoteInput(BaseModel):
@@ -547,6 +569,7 @@ def create_app(
                     ("A09", "0.2.0"): builder_implementation(agent_registry),
                     ("A10", "0.2.0"): validation_implementation(agent_registry),
                     ("A11", "0.2.0"): adversarial_implementation(agent_registry),
+                    ("A12", "0.2.0"): selector_implementation(agent_registry),
                     ("A14", "0.2.0"): drift_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
@@ -562,6 +585,12 @@ def create_app(
                         ),
                         "STRESS_RUN": AdversarialStressRun(
                             lambda: _available_research_store(configured_research_workspace),
+                            agent_registry,
+                            context=archived_agent_context,
+                            clock=current_time,
+                        ),
+                        "STRATEGY_REGISTRY_READ": StrategyRegistryRead(
+                            lambda: _available_candidate_store(configured_research_workspace),
                             agent_registry,
                             context=archived_agent_context,
                             clock=current_time,
@@ -1210,6 +1239,7 @@ def create_app(
         event_mission = (payload.agent_id, payload.agent_version) == ("A06", "0.2.0")
         macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
         drift_mission = (payload.agent_id, payload.agent_version) == ("A14", "0.2.0")
+        selector_mission = (payload.agent_id, payload.agent_version) == ("A12", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
             None
@@ -1298,6 +1328,16 @@ def create_app(
                     world_state.histories(),
                     context_quotes,
                     tuple(displayed_depth.copy().values()),
+                )
+            elif selector_mission:
+                registry_snapshot = await owned_research_call(
+                    lambda: _candidate_registry_snapshot(configured_research_workspace)
+                )
+                sources = selector_sources(
+                    registry_snapshot.candidates,
+                    snapshot,
+                    now=current_time(),
+                    registry_available=registry_snapshot.available,
                 )
             elif payload.agent_id == "A07":
                 sources = integrity_sources(

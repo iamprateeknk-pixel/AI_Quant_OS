@@ -1396,3 +1396,6 @@ execute candidate code, create new stress experiments, verify bad fills/data fau
 or satisfy independent leakage review and physical isolation. Full A11 acceptance
 and remaining P00-P13 gates remain open. See ADR 0168 and
 `ADVERSARIAL_VALIDATOR_HANDOFF.md`.
+# Development increment 0169 - add the A12 strategy selector shadow mission
+
+A12 0.2.0 is registered PARTIAL/SHADOW in the paper graph. It binds a candidate registry snapshot, current WorldState, and explicit unavailable candidate performance/drift observations. A task-bound read rechecks the registry fingerprint at execution; the deterministic result reports blockers and an empty eligible set with zero confidence and no promotion authority. The locked isolated checkout focused suite passed 172 tests; Ruff lint and formatting passed. This does not rank strategies, connect candidate-keyed metrics/drift, establish approval or validated lifecycle, evaluate regime/portfolio fit, or satisfy A12/P00-P13 acceptance. See ADR 0169, `STRATEGY_SELECTOR_HANDOFF.md`, and `docs/evaluations/strategy-selector-0169.json`.
