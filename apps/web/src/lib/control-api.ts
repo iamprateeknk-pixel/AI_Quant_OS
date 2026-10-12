@@ -1,5 +1,6 @@
 import "server-only";
 import { parseMarketSnapshot, type MarketSnapshot } from "@/features/markets/snapshot";
+import { parseWorldState, type WorldStateView } from "@/features/world-state/snapshot";
 
 export type SystemStatus = { mode: "PAPER"; safety_state: string; order_count: number };
 export type PaperOrder = { order_id: string; intent_id: string; risk_id: string; instrument_id: string; status: string; broker_route: "PAPER"; broker_order_id?: string };
@@ -133,23 +134,6 @@ export function getAuditIntegrity(): Promise<ReadResult<AuditIntegrityView>> {
   });
 }
 
-export type WorldStateInstrument = { instrument_id: string; quote_status: string; history_status: string; bar_count: number; spread_bps: string | null; return_bps: string | null; realized_volatility_bps: string | null; regime: string };
-export type CurrencyTwinView = { currency: string; instrument_ids: string[]; fresh_quote_count: number; macro_available: boolean };
-export type WorldStateView = { expired: boolean; world_state_version: string; as_of: string; valid_until: string; status: string; instruments: WorldStateInstrument[]; currency_twins: CurrencyTwinView[] };
-
 export function getWorldState(): Promise<ReadResult<WorldStateView>> {
-  return read("/api/v1/world-state", (value) => {
-    if (!isRecord(value) || value.mode !== "PAPER" || value.schema_version !== "1.0" || value.source !== "PAPER_SIMULATED" || typeof value.world_state_version !== "string" || typeof value.as_of !== "string" || !Number.isFinite(Date.parse(value.as_of)) || typeof value.valid_until !== "string" || !Number.isFinite(Date.parse(value.valid_until)) || typeof value.status !== "string" || !["EMPTY", "DEGRADED", "READY"].includes(value.status) || !Array.isArray(value.instruments) || !Array.isArray(value.currency_twins)) return null;
-    const instruments: WorldStateInstrument[] = [];
-    for (const item of value.instruments) {
-      if (!isRecord(item) || typeof item.instrument_id !== "string" || typeof item.quote_status !== "string" || typeof item.history_status !== "string" || typeof item.bar_count !== "number" || !Number.isSafeInteger(item.bar_count) || item.bar_count < 0 || !isNullableString(item.spread_bps) || !isNullableString(item.return_bps) || !isNullableString(item.realized_volatility_bps) || typeof item.regime !== "string") return null;
-      instruments.push({ instrument_id: item.instrument_id, quote_status: item.quote_status, history_status: item.history_status, bar_count: item.bar_count, spread_bps: item.spread_bps, return_bps: item.return_bps, realized_volatility_bps: item.realized_volatility_bps, regime: item.regime });
-    }
-    const twins: CurrencyTwinView[] = [];
-    for (const item of value.currency_twins) {
-      if (!isRecord(item) || typeof item.currency !== "string" || !Array.isArray(item.instrument_ids) || !item.instrument_ids.every((id) => typeof id === "string") || typeof item.fresh_quote_count !== "number" || !Number.isSafeInteger(item.fresh_quote_count) || item.fresh_quote_count < 0 || typeof item.macro_available !== "boolean") return null;
-      twins.push({ currency: item.currency, instrument_ids: item.instrument_ids, fresh_quote_count: item.fresh_quote_count, macro_available: item.macro_available });
-    }
-    return { expired: Date.now() >= Date.parse(value.valid_until), world_state_version: value.world_state_version, as_of: value.as_of, valid_until: value.valid_until, status: value.status, instruments, currency_twins: twins };
-  });
+  return read("/api/v1/world-state", (value) => parseWorldState(value));
 }
