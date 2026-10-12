@@ -125,3 +125,5 @@
 - 2026-10-12: Increment 0173 adds partial A17 evolution readiness from a source-bound registry inventory. It withholds tournament and promotion planning while quality, dataset, cost, trace, and independent gate evidence is missing. All P00-P13 gates remain open. See ADR 0173.
 
 - 2026-10-12: Publish protected BrokerHealth registry v1.0 for five declared profiles using router connection state only; absent telemetry stays null or UNASSESSED, scores require complete evidence, and live release is fixed false. See ADR 0178. P04 and P00-P13 acceptance remain open.
+
+- 2026-10-12: Publish PromotionDecision v1.0 as a fail-closed evidence snapshot: pending stages require reasons, completed stages require timestamped references, and decision/approval are fixed WAIT_FOR_EVIDENCE/false. No evidence verification or lifecycle authority is added. See ADR 0179; P11 remains open.

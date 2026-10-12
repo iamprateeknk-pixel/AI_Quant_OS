@@ -20,3 +20,16 @@ The focused locked Windows suite checks A17 input/output binding, the protected 
 ## Remaining work
 
 Connect calibrated quality measures, immutable training datasets, shared token and monetary cost evidence, causal trace quality, and independently reviewed promotion gates. Add bounded tournament design and acceptance cases before A17 can create an evolution plan. All P00–P13 release gates remain open.
+
+## Shared promotion evidence contract
+
+`docs/schemas/promotion-decision-v1.schema.json` publishes the strict v1 evidence
+snapshot contract implemented in `ai_quant_os.promotion_contracts`. Offline,
+replay, adversarial, shadow, and canary evaluations carry a status and, when
+completed, timestamped evidence references. Pending stages require an explicit
+reason. Candidate, current champion, rollback target, and decision timestamp are
+validated together. The decision remains `WAIT_FOR_EVIDENCE` and
+`approved_by_policy` remains false for every payload. The model records evidence;
+it does not verify referenced artifacts, run evaluations, consult an independent
+policy owner, change candidate lifecycle, execute promotion, or perform rollback.
+Those connected P11 gates remain open.

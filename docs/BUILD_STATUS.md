@@ -1451,3 +1451,7 @@ Published the exact runtime AgentEnvelope v2 model as a strict JSON Schema 2020-
 
 ### P04 broker health observation contract (2026-10-12)
 Added protected PAPER-only BrokerHealth v1 endpoint and published JSON Schema for the five declared profiles. Only existing router connection state is reported; quote age, latency, rejects, reconciliation, spread, and account state remain unassessed and health scores are withheld. Six focused tests passed in a fresh archive checkout; Ruff lint and formatting passed. This does not complete P04, provide native broker health telemetry, or satisfy P00-P13 acceptance; see ADR 0178 and BROKER_CAPABILITY_HANDOFF.md.
+
+
+### P11 fail-closed promotion evidence contract (2026-10-12)
+Published PromotionDecision v1.0 for candidate/champion, offline/replay/adversarial/shadow/canary evidence, rollback target, and timestamp. Completed evaluations require timestamped references; pending states require a reason. The model always returns WAIT_FOR_EVIDENCE with policy approval false and does not validate referenced evidence or alter candidate lifecycle. Fifteen focused tests passed in a fresh archive checkout; Ruff lint and format passed. Connected gates, independent policy review, promotion, rollback, and P00-P13 acceptance remain open; see ADR 0179.

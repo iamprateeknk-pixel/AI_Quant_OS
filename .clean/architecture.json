@@ -211,6 +211,7 @@
     "src/ai_quant_os/policy_rates.py",
     "src/ai_quant_os/portfolio_backtest_cli.py",
     "src/ai_quant_os/portfolio.py",
+    "src/ai_quant_os/promotion_contracts.py",
     "src/ai_quant_os/provider_attempts.py",
     "src/ai_quant_os/provider_call_admission.py",
     "src/ai_quant_os/provider_spend_api.py",
