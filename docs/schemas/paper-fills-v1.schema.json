@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:paper-fills:1.0",
+  "title": "Paper Fills Response v1.0",
+  "description": "Read-only paper fill records returned by GET /api/v1/fills.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["fills"],
+  "properties": {
+    "fills": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/PaperFill" }
+    }
+  },
+  "$defs": {
+    "PaperFill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fill_id",
+        "order_id",
+        "instrument_id",
+        "side",
+        "quantity",
+        "price",
+        "fee",
+        "observed_at",
+        "source"
+      ],
+      "properties": {
+        "fill_id": { "type": "string", "minLength": 1 },
+        "order_id": { "type": "string", "minLength": 1 },
+        "instrument_id": { "enum": ["EURUSD", "GBPUSD", "USDJPY", "EURJPY"] },
+        "side": { "enum": ["BUY", "SELL"] },
+        "quantity": { "type": "string", "pattern": "^(?:[1-9][0-9]*(?:\\.[0-9]+)?|0?\\.[0-9]*[1-9][0-9]*)(?:[eE][+-]?[0-9]+)?$" },
+        "price": { "type": "string", "pattern": "^(?:[1-9][0-9]*(?:\\.[0-9]+)?|0?\\.[0-9]*[1-9][0-9]*)(?:[eE][+-]?[0-9]+)?$" },
+        "fee": { "type": "string", "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$" },
+        "observed_at": { "type": "string", "format": "date-time" },
+        "source": { "enum": ["PAPER_MANUAL", "PAPER_BROKER"] }
+      }
+    }
+  }
+}
