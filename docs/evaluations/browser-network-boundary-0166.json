@@ -1,0 +1,17 @@
+{
+  "increment": "0166",
+  "date": "2026-10-12",
+  "base_commit": "b949be8",
+  "feature": "Guard client import graphs against statically visible direct broker network access and run web tests in CI",
+  "verification": {
+    "browser_boundary_tests": { "passed": 2, "failures": 0 },
+    "web_tests": { "passed": 151, "failures": 0 },
+    "typescript_no_emit": "passed",
+    "eslint": "passed with one pre-existing warning in tests/realtime.test.mjs",
+    "next_production_build": "passed",
+    "diff_check": "passed",
+    "github_workflow_execution": "not run locally"
+  },
+  "limits": "The source scanner cannot prove runtime behavior of obfuscated or generated code and does not replace browser runtime, accessibility, visual, or complete P00-P13 acceptance.",
+  "rollback": "Revert browser-network-boundary.test.mjs, the npm test script, the CI test step, and associated documentation. No persistent runtime data changed."
+}

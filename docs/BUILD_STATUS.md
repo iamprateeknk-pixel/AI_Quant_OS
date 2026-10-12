@@ -1361,3 +1361,13 @@ current paper owners and explicitly records that no production/live release
 owner exists; live remains unauthorized. Documentation only; `git diff --check`
 passed. P00 acceptance and all remaining P00-P13 gates remain open. See ADR 0165,
 P00_GUARDRAILS_HANDOFF.md, and evaluation0165.
+
+# Development increment 0166 - enforce the browser network boundary in CI
+
+The web test suite now checks browser entrypoints and their local import graph
+for known broker SDK imports and non-local network targets. Dynamic URL helpers
+pass only when all call sites use fixed same-origin /api routes. CI runs the full
+web test suite before the production build. Web tests: 151 passed; TypeScript
+and build passed. ESLint reported one unchanged unused-variable warning. The
+scanner is static; browser acceptance and remaining P00-P13 gates remain open.
+See ADR 0166 and BROWSER_NETWORK_BOUNDARY_HANDOFF.md.
