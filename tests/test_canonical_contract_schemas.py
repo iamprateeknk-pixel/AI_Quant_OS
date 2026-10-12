@@ -5,6 +5,7 @@ import pytest
 from jsonschema import Draft202012Validator, ValidationError
 from pydantic import TypeAdapter
 
+from ai_quant_os.agent_envelope import AgentEnvelope
 from ai_quant_os.contracts import OrderCommand, RiskDecision
 
 
@@ -63,3 +64,19 @@ def test_versioned_internal_contract_schema_matches_runtime(name, contract, cont
         validator.validate({**sample, "unrecognized": True})
     with pytest.raises(TypeError):
         contract(**{**sample, "unrecognized": True})
+
+
+def test_agent_envelope_v2_schema_matches_runtime_model():
+    path = ROOT / "docs" / "schemas" / "agent-envelope-v2.schema.json"
+    schema = json.loads(path.read_text(encoding="utf-8"))
+    expected = AgentEnvelope.model_json_schema()
+    expected.update(
+        {
+            "$schema": SCHEMA_ID,
+            "$id": "urn:ai-quant-os:contract:agent-envelope:2.0",
+        }
+    )
+    assert schema == expected
+    Draft202012Validator.check_schema(schema)
+    with pytest.raises(ValidationError):
+        Draft202012Validator(schema).validate({"schema_version": "2.0", "unknown": True})

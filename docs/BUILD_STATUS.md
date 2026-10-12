@@ -1443,3 +1443,7 @@ Paper intent requests now accept omitted schema versions as existing v1, accept 
 
 ### P00 internal RiskDecision and OrderCommand schemas v1 (2026-10-12)
 Published strict JSON Schema 2020-12 artifacts with stable IDs for the existing immutable dataclass shapes. Tests compare schema properties to runtime annotations and confirm unknown fields are rejected by the schema and native constructors. This does not change stored JSON or introduce API endpoints; consumers using Pydantic TypeAdapter must not assume unknown-key rejection. Fresh isolated archive verification: 2 schema tests passed; Ruff check and format passed. BrokerHealth and PromotionDecision models remain open.
+
+
+### P00 AgentEnvelope schema v2 (2026-10-12)
+Published the exact runtime AgentEnvelope v2 model as a strict JSON Schema 2020-12 artifact with stable ID. Schema parity and extra-field rejection are tested. Fresh isolated archive verification: 3 canonical schema tests passed; Ruff check and format passed. This preserves the runtime envelope and does not add a P00 v1-to-v2 migration; earlier blueprint fields are not substituted. Remaining canonical models and threat review remain open.

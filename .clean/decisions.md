@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-12: Publish the strict current AgentEnvelope 2.0 runtime model as a versioned JSON Schema with parity tests. Preserve its implemented fields rather than translating the earlier blueprint shape; no wire/persisted behavior changes. See ADR 0177.
+
 - 2026-10-12: Publish stable v1.0 JSON Schemas for internal RiskDecision and OrderCommand dataclass shapes without changing stored JSON or introducing wire endpoints. Require consumers of untrusted JSON to use strict schema validation; Pydantic TypeAdapter ignores extra dataclass keys. BrokerHealth and PromotionDecision remain unimplemented. See ADR 0176.
 
 - 2026-10-12: Add additive TradeIntent request schema version 1.0, accepting omitted versions as the existing v1 contract and rejecting explicit unsupported versions. Keep the marker out of the domain dataclass and publish a runtime-parity JSON Schema. Other canonical contract versions remain open. See ADR 0175.

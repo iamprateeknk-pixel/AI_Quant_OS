@@ -9,7 +9,7 @@ Published wire contracts use an explicit JSON Schema draft and stable `$id`. A b
 | Contract | Version | Runtime behavior | Schema |
 | --- | --- | --- | --- |
 | Paper `TradeIntent` request | 1.0 | Accepts legacy requests without `schema_version` as v1, accepts explicit `1.0`, rejects unknown versions, and excludes the version marker from the internal domain dataclass | `schemas/trade-intent-v1.schema.json` |
-| Advisory `AgentEnvelope` | 2.0 | Strict immutable Pydantic model; graph runtime validates the manifest-bound output model before retaining results | `agent_envelope.py` |
+| Advisory `AgentEnvelope` | 2.0 | Strict immutable Pydantic model; graph runtime validates the manifest-bound output model before retaining results | `schemas/agent-envelope-v2.schema.json` |
 | Internal `RiskDecision` | 1.0 | Schema covers the existing dataclass shape; no JSON wire endpoint or storage migration is introduced | `schemas/risk-decision-v1.schema.json` |
 | Internal `OrderCommand` | 1.0 | Schema covers the existing dataclass shape; persistence encoding remains unchanged | `schemas/order-command-v1.schema.json` |
 
@@ -19,4 +19,4 @@ The JSON Schemas for `RiskDecision` and `OrderCommand` describe the current inte
 
 ## Verification
 
-`tests/test_api.py` checks the generated request schema against the published v1 JSON Schema, validates the schema itself, preserves omitted-version clients, and rejects unsupported explicit versions. `tests/test_canonical_contract_schemas.py` checks internal contract schemas against dataclass type annotations and rejects unknown fields in both JSON Schema validation and native constructors. These additions do not change database records or response formats.
+`tests/test_api.py` checks the generated request schema against the published v1 JSON Schema, validates the schema itself, preserves omitted-version clients, and rejects unsupported explicit versions. `tests/test_canonical_contract_schemas.py` checks the internal dataclass schemas and AgentEnvelope v2 against their runtime types, and checks strict schema validation for unknown fields. These additions do not change database records or response formats.
