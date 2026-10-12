@@ -1,0 +1,259 @@
+{
+  "increment": "0157",
+  "date": "2026-10-12",
+  "base_commit": "9735beade9121fbcd2bb7363393c878e97208b84",
+  "feature": "Shared-stream-triggered protected monitoring observations with original expiry and generation-owned cancellation",
+  "verification": {
+    "fresh_staged_checkout": "D:\\AI_Quant_OS\\data-local\\operator-checkout-0157-final",
+    "source_hashes": [
+      {
+        "path": ".clean/decisions.md",
+        "sha256": "bdb916bbfc62715e99ff7bdcab25179e6f5980b0af069495a0d54ae1543f75c7"
+      },
+      {
+        "path": "apps/web/src/app/[section]/page.tsx",
+        "sha256": "8bc1230ffe66f07b11e0069a06418fbe7e9979568decf94627aff409ccb0cec1"
+      },
+      {
+        "path": "apps/web/src/app/api/incidents/monitoring/route.ts",
+        "sha256": "975c3da912e0a75d9c4eb576adfe8bc852992e0fa97104f6533a721a0b21b829"
+      },
+      {
+        "path": "apps/web/src/features/incidents/monitoring-alert-panel.tsx",
+        "sha256": "766299d70a61e871cc44ee79cb1b35b78edef4c0e98b9d3d1df9b294c95db7f7"
+      },
+      {
+        "path": "apps/web/src/features/incidents/monitoring-alerts.ts",
+        "sha256": "a10c481e7420a837024cf1fecc437a8a489669f6a2c095db6598c90ba3272fdc"
+      },
+      {
+        "path": "apps/web/src/features/incidents/monitoring-live-panel.tsx",
+        "sha256": "d202db9d7d3596356556855980ed92d917f28d740be10baa12fdb21a8c0bfdd5"
+      },
+      {
+        "path": "apps/web/src/features/incidents/monitoring-live-read.ts",
+        "sha256": "818410497f08c60f744e2bc89c393ba69904415d578dee957edd0881436944d3"
+      },
+      {
+        "path": "apps/web/src/features/incidents/monitoring-live-store.ts",
+        "sha256": "7d5ce7790c685ba23049d8593b59ccb510ec1cc50b0fd8f61d3fe386b0140063"
+      },
+      {
+        "path": "apps/web/src/features/realtime/use-realtime.ts",
+        "sha256": "56d0c41b612e6f17cdf677268d3d847d92811c68c4edab25e98e557ebe10ee42"
+      },
+      {
+        "path": "apps/web/tests/monitoring-alerts.test.mjs",
+        "sha256": "b90fa6ed2d7e85e85d0f1dc764e36e2fbde38afc247466ee11d06d1749cb1d22"
+      },
+      {
+        "path": "apps/web/tests/monitoring-live-boundary.test.mjs",
+        "sha256": "0ab4b430b78a4d13aed361d448b4786835cedebe07f8409191538498a971a141"
+      },
+      {
+        "path": "apps/web/tests/monitoring-live-store.test.mjs",
+        "sha256": "9442c2737c2c2adc4736f32fc724c976eb5e18def76abb9a469447e11d16e357"
+      },
+      {
+        "path": "docs/BUILD_STATUS.md",
+        "sha256": "6552414805a31a7b460903e882c0247d435986bd9a5a57820690ef84dc813b08"
+      },
+      {
+        "path": "docs/MONITORING_REALTIME_HANDOFF.md",
+        "sha256": "b13de7b26127d10b97b73bc22f325a30cf97f8ed9f12337f5611a9cd582d84da"
+      },
+      {
+        "path": "docs/adr/0157-realtime-monitoring-observer.md",
+        "sha256": "39823a31d701e6ad0c160405d52fdbb94637e446cb74324a84dc6f4c3fc49705"
+      }
+    ],
+    "backend_tests": 453,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "442.507",
+    "backend_scope": [
+      "tests/test_provider_spend.py",
+      "tests/test_openai_spend_admission.py",
+      "tests/test_openai_reviewer.py",
+      "tests/test_provider_call_admission.py",
+      "tests/test_agent_call_budgets.py",
+      "tests/test_context_call_budgets.py",
+      "tests/test_jev_adapter.py",
+      "tests/test_decision_gateway.py",
+      "tests/test_deep_review.py",
+      "tests/test_api.py",
+      "tests/test_currency_risk.py",
+      "tests/test_event_risk.py",
+      "tests/test_operator_controls.py",
+      "tests/test_operator_sessions.py",
+      "tests/test_local_runtime.py",
+      "tests/test_audit_integrity.py",
+      "tests/test_provider_spend_api.py",
+      "tests/test_jev_spend_admission.py",
+      "tests/test_shared_provider_spend.py",
+      "tests/test_shared_spend_api.py",
+      "tests/test_paper_telemetry.py",
+      "tests/test_dependency_locks.py",
+      "tests/test_trace_export_queue.py",
+      "tests/test_tracing_status_api.py",
+      "tests/test_agent_telemetry.py",
+      "tests/test_agent_runs.py",
+      "tests/test_tracing_console_fixture.py",
+      "tests/test_agent_trace_binding.py",
+      "tests/test_agent_trace_binding_api.py",
+      "tests/test_agent_trace_console_fixture.py",
+      "tests/test_collector_deployment.py",
+      "tests/test_collector_trace_api.py",
+      "tests/test_collector_console_fixture.py",
+      "tests/test_paper_trace_context.py",
+      "tests/test_paper_http_metrics.py",
+      "tests/test_prometheus_deployment.py",
+      "tests/test_grafana_deployment.py",
+      "tests/test_paper_http_alerts.py",
+      "tests/test_monitoring_alert_api.py",
+      "tests/test_monitoring_console_fixture.py",
+      "tests/test_realtime_feed.py",
+      "tests/test_realtime_world_ui_contract.py"
+    ],
+    "frontend_tests": 140,
+    "checks": {
+      "backend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0157-final-fresh-backend.log",
+        "scope": [
+          "tests/test_provider_spend.py",
+          "tests/test_openai_spend_admission.py",
+          "tests/test_openai_reviewer.py",
+          "tests/test_provider_call_admission.py",
+          "tests/test_agent_call_budgets.py",
+          "tests/test_context_call_budgets.py",
+          "tests/test_jev_adapter.py",
+          "tests/test_decision_gateway.py",
+          "tests/test_deep_review.py",
+          "tests/test_api.py",
+          "tests/test_currency_risk.py",
+          "tests/test_event_risk.py",
+          "tests/test_operator_controls.py",
+          "tests/test_operator_sessions.py",
+          "tests/test_local_runtime.py",
+          "tests/test_audit_integrity.py",
+          "tests/test_provider_spend_api.py",
+          "tests/test_jev_spend_admission.py",
+          "tests/test_shared_provider_spend.py",
+          "tests/test_shared_spend_api.py",
+          "tests/test_paper_telemetry.py",
+          "tests/test_dependency_locks.py",
+          "tests/test_trace_export_queue.py",
+          "tests/test_tracing_status_api.py",
+          "tests/test_agent_telemetry.py",
+          "tests/test_agent_runs.py",
+          "tests/test_tracing_console_fixture.py",
+          "tests/test_agent_trace_binding.py",
+          "tests/test_agent_trace_binding_api.py",
+          "tests/test_agent_trace_console_fixture.py",
+          "tests/test_collector_deployment.py",
+          "tests/test_collector_trace_api.py",
+          "tests/test_collector_console_fixture.py",
+          "tests/test_paper_trace_context.py",
+          "tests/test_paper_http_metrics.py",
+          "tests/test_prometheus_deployment.py",
+          "tests/test_grafana_deployment.py",
+          "tests/test_paper_http_alerts.py",
+          "tests/test_monitoring_alert_api.py",
+          "tests/test_monitoring_console_fixture.py",
+          "tests/test_realtime_feed.py",
+          "tests/test_realtime_world_ui_contract.py"
+        ],
+        "log_sha256": "69b3945581ad4e8f9416a371a2233210f4e337663b947533fafe40b417a37c6d"
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0157-final-fresh-ruff.log",
+        "scope": [
+          "ruff",
+          "check",
+          "tests/test_monitoring_console_fixture.py"
+        ],
+        "log_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      "format": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0157-final-fresh-format.log",
+        "scope": [
+          "ruff",
+          "format",
+          "--check",
+          "tests/test_monitoring_console_fixture.py"
+        ],
+        "log_sha256": "7688ae71c60af2e4266827abb3678cc2145655f587daf33dfa649dbac2c619c3"
+      },
+      "frontend": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0157-final-fresh-frontend.log",
+        "scope": [
+          "tests/*.test.mjs"
+        ],
+        "log_sha256": "5bf5e1b532c8d72d0000fd9af496a3232c200a0e3835e2b9a476d129d0b98818"
+      },
+      "eslint": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0157-final-fresh-eslint.log",
+        "scope": [
+          "src/features/incidents/monitoring-alerts.ts",
+          "src/features/incidents/monitoring-alert-panel.tsx",
+          "src/features/operator-session/server.ts",
+          "src/app/[section]/page.tsx",
+          "src/features/incidents/monitoring-live-store.ts",
+          "src/features/incidents/monitoring-live-read.ts",
+          "src/features/incidents/monitoring-live-panel.tsx",
+          "src/features/realtime/use-realtime.ts",
+          "src/app/api/incidents/monitoring/route.ts"
+        ],
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "build": {
+        "exit_code": 0,
+        "log": "D:\\AI_Quant_OS\\data-local\\prometheus-0157-final-fresh-build.log",
+        "scope": [
+          "build"
+        ],
+        "log_sha256": "b806d1655d349ca62aa6b98871de7cc1f542feccc4c00d3112437063a44ada6d"
+      }
+    },
+    "junit_sha256": "546753df0e91b092f2dc095c230e54c3460e5a351d6c8e4e8b05a0d233afaeae",
+    "original_native_fixture": {
+      "path": "D:\\AI_Quant_OS\\apps\\web\\tests\\fixtures\\monitoring-alerts.json",
+      "sha256": "8d7e90fe3692b80a9e02214d94130edd7280d9c934c40691643d03ae0a488e33",
+      "source_increment": "0155",
+      "original_bytes_and_timestamps_unchanged": true
+    },
+    "identity": {
+      "prior_schemas_unchanged": 112,
+      "unchanged_runtime_prior_schemas_requirements_build_files": 427,
+      "frontend_root_index_fresh_lf_identical": true
+    },
+    "red": "Initial six controlled-clock tests failed on missing live store. Strengthened original-expiry test preserves the same original response across continued current frames. Microsecond regression test first had evaluation after its rewritten captured time, correctly withholding its baseline; fixed fixture ordering and retained report. Identical callback subscription test then failed on premature cleanup; per-subscription wrappers corrected ownership. Original red reports retained.",
+    "checks_detail": "One shared monitoring observer/read; identical callback subscriptions independently released; original45-second expiry unaffected by fresh safety frames or identical old responses; original microsecond timestamp regression withholds data; pending-to-firing requires new observation; disconnect/new epoch/deadline/unsubscribe abort exact request and invalidate late completion even when cancellation ignored; last owner clears timers/subscription/selected cache. Actual original realtime-store composition has one source for header plus monitoring and immediately withholds on disconnect. Fixed Next GET rejects query overrides, selects contract and generic session/errors/no-store; browser read uses same-origin cookies/no explicit credentials,8192-byte decoded cap and original AbortSignal. Initial server props are selected before browser serialization. Existing native backend HTTP stream observes safety change then session revocation, closes original listener/thread; native SDK/collector/Prometheus/Grafana/source/risk/HALT/provider/session checks also pass.",
+    "build_routes": {
+      "operational_dynamic_page": true,
+      "private_monitoring_get": true,
+      "manifest_sha256": "31b1e53bf19684dae7599050d00151fcda987c12e81eab4507020258c15536ae"
+    },
+    "review": "Local five-axis review: incident feature owns lifecycle/decoder/read/view; realtime owner exports existing subscribe/snapshot boundary only, no backend capture/lease changes or new EventSource; all source data selected before browser output; complete frame-gated generation/read ownership and original source expiry; independent observer timestamps/hold validation; fixed same-origin private GET and bounded streaming JSON; no write/control/credential/source override. Current backend/runtime/schema/dependencies unchanged. Existing display/focus/table reused. Independent/browser acceptance pending.",
+    "structure": "Ignored structure map refreshed; installed Next route/page/cookies contracts and React useSyncExternalStore ownership reviewed. Cross-feature channel access uses explicit public exports; app composes initial selected props/private GET. No server worker or source I/O in deterministic safety capture.",
+    "full_suite": "Not run; preserve unknown0084/0088 candidate custody.453 scoped trusted backend tests plus140 frontend checks, including existing actual native HTTP SSE authorization/safety. No browser script executed.",
+    "prior_backend_build": "0155 native wheel/source identity retained; backend unchanged, no wheel rerun.",
+    "browser": "Not attempted; original browser launch refusal preserved. Controlled-clock/unit/static markup/build evidence does not prove rendered browser behavior, visual/accessibility/focus/viewport acceptance.",
+    "scan_verdict": "passed; Gitleaks8.30.1 exact redacted staged patch, zero findings; retained original report/log",
+    "observed_wait": "Original native backend process observed until terminal, including complete Grafana distribution reads;442.69-second tests. No replacement solely because observation yielded."
+  },
+  "rollback": "Revert incident live observer/private GET, existing channel public exports, selected initial props/live text and tests/docs. Existing manual panel remains. No backend/database/schema/dependency/order-state migration, reset/retry, notification, native source restart or automatic service installation.",
+  "limits": [
+    "All full P00-P13 gates remain incomplete.",
+    "SSE-gated periodic protected reads are not native server-pushed monitoring events or atomic safety/world/monitoring observations. Updates may pause during bounded stream reconnect/source failures.",
+    "No durable incident acknowledgement/custody, external notification/engine-health delivery, automatic control or trading recovery authority.",
+    "Private production roles/service/Linux/resource/load/latency/retention/custody and independent/browser visual/accessibility acceptance pending.",
+    "No candidate/Docker mutation, paid provider/broker/livecapital, remote push/promotion; user .agents/ and skills-lock.json untouched."
+  ]
+}

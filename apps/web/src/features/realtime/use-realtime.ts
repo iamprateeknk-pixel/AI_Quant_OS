@@ -13,3 +13,6 @@ const store=createRealtimeStore({
 export function useRealtime() {
   return useSyncExternalStore(store.subscribe,store.snapshot,store.serverSnapshot);
 }
+
+export const subscribeRealtime=store.subscribe;
+export const readRealtimeView=store.snapshot;

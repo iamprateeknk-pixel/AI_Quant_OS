@@ -21,6 +21,13 @@ test("original native protected pending fixture roundtrips and strips foreign pa
  const {parseMonitoringAlerts:parse}=await modules(),v=fixture();
  assert.deepEqual(parse({...v,credential:"private",rules:v.rules.map(r=>({...r,raw_error:"private"}))}),v);
 });
+test("initial client props are selected before serialization with no foreign fields or reasons",async()=>{
+ const {selectMonitoringRead:select}=await modules(),v=fixture();
+ assert.deepEqual(select({ok:true,value:{...v,credential:"private",rules:v.rules.map(r=>({...r,raw_error:"private"}))}}),{ok:true,value:v});
+ assert.deepEqual(select({ok:false,reason:"private-error"}),{ok:false,reason:"UNAVAILABLE"});
+ assert.deepEqual(select({ok:false,reason:"SIGN_IN"}),{ok:false,reason:"SIGN_IN"});
+ assert.deepEqual(select({ok:true,value:{...v,durable:true}}),{ok:false,reason:"UNAVAILABLE"});
+});
 test("rejects changed rule identity authority dates timestamps and hold",async()=>{
  const {parseMonitoringAlerts:parse}=await modules(),v=fixture();
  for(const change of [{state:"AVAILABLE",rules:[]},{durable:true},{notification_verified:true},{independently_attested:true},{observed_at:"2026-02-30T00:00:00Z"},{rules:[v.rules[0],v.rules[0]]},{rules:v.rules.map(r=>({...r,runbook_path:"https://private.invalid"}))},{rules:v.rules.map(r=>({...r,hold_seconds:0}))},{rules:v.rules.map(r=>({...r,evaluated_at:new Date(Date.parse(v.observed_at)-46000).toISOString()}))},{rules:v.rules.map(r=>({...r,evaluated_at:new Date(Date.parse(v.observed_at)+1000).toISOString()}))}])assert.equal(parse({...v,...change}),null);

@@ -19,7 +19,8 @@ import { StrategyArchivePanel } from "@/features/strategies/archive-panel";
 import { SessionAdminPanel } from "@/features/operator-session/session-admin-panel";
 import { CallBudgetPanel } from "@/features/costs/call-budget-panel";
 import { SpendingPanels } from "@/features/costs/shared-spending-panel";
-import {MonitoringAlertPanel} from "@/features/incidents/monitoring-alert-panel";
+import {MonitoringLivePanel} from "@/features/incidents/monitoring-live-panel";
+import {selectMonitoringRead} from "@/features/incidents/monitoring-alerts";
 
 function isSection(value: string): value is SectionKey {
   return Object.prototype.hasOwnProperty.call(sectionDetails, value);
@@ -55,7 +56,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
     {brokerReads && <BrokerCapabilityPanel result={brokerReads[2]} observedAt={new Date().toISOString()} />}
     {brokerReads && <DemoSyncPanel result={brokerReads[1]} observedAt={new Date().toISOString()} />}
     {health && <HealthPanel statusResult={health[0]} timelineResult={health[1]} observedAt={new Date().toISOString()} />}
-    {health && <MonitoringAlertPanel result={health[2]} observedAt={new Date().toISOString()} />}
+    {health && <MonitoringLivePanel initialResult={selectMonitoringRead(health[2])} observedAt={new Date().toISOString()} />}
     {genomes && <GenomePanel result={genomes} />}
     {strategies && <StrategyArchivePanel result={strategies} />}
     {costReads && <SpendingPanels reviewResult={costReads[1]} sharedResult={costReads[2]} />}

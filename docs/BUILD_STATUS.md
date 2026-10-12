@@ -1275,3 +1275,13 @@ disabled/unavailable/sign-in/stale states infer no outcomes or control success.
 Retained health journals remain separate. Realtime/acknowledgement/delivery and
 production/independent/browser/full P00–P13 gates remain open. See
 MONITORING_CONSOLE_HANDOFF.md and ADR/evaluation0156.
+
+# Development increment0157 — realtime-triggered monitoring observations
+
+Incidents subscribes to the existing authenticated realtime channel and refreshes
+selected protected monitoring reads every15 seconds with independent expiry.
+Disconnects, epochs, stale/late/expired/invalid reads withhold current rows; owned
+read/timers/subscriptions are released. Initial props and private route outputs
+are selected before browser exposure. Backend safety stream remains independent.
+Durable acknowledgement/notification/engine-health and production/independent/
+browser/full P00–P13 gates stay open. See MONITORING_REALTIME_HANDOFF.md and0157.
