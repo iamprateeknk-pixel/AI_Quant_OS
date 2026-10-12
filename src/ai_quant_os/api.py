@@ -159,6 +159,8 @@ from ai_quant_os.adversarial_service import StressRun as AdversarialStressRun
 from ai_quant_os.strategy_selector_agent import selector_implementation
 from ai_quant_os.strategy_selector_service import StrategyRegistryRead
 from ai_quant_os.strategy_selector_sources import RegistrySnapshot, selector_sources
+from ai_quant_os.meta_allocator_agent import allocator_implementation
+from ai_quant_os.meta_allocator_sources import AllocationInputs, allocator_sources
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
@@ -570,6 +572,7 @@ def create_app(
                     ("A10", "0.2.0"): validation_implementation(agent_registry),
                     ("A11", "0.2.0"): adversarial_implementation(agent_registry),
                     ("A12", "0.2.0"): selector_implementation(agent_registry),
+                    ("A13", "0.2.0"): allocator_implementation(agent_registry),
                     ("A14", "0.2.0"): drift_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
@@ -1240,6 +1243,7 @@ def create_app(
         macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
         drift_mission = (payload.agent_id, payload.agent_version) == ("A14", "0.2.0")
         selector_mission = (payload.agent_id, payload.agent_version) == ("A12", "0.2.0")
+        allocator_mission = (payload.agent_id, payload.agent_version) == ("A13", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
             None
@@ -1338,6 +1342,16 @@ def create_app(
                     snapshot,
                     now=current_time(),
                     registry_available=registry_snapshot.available,
+                )
+            elif allocator_mission:
+                portfolio = await asyncio.to_thread(lambda: execution.exposure_snapshot)
+                sources = allocator_sources(
+                    AllocationInputs(
+                        portfolio=portfolio,
+                        risk_limits=limits,
+                        safety_state=risk.safety_state.value,
+                    ),
+                    now=current_time(),
                 )
             elif payload.agent_id == "A07":
                 sources = integrity_sources(

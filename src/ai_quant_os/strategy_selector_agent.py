@@ -99,11 +99,11 @@ def _observations(context: CompiledContext):
             "strategy-selector:" + name + ":" + sha256(row.payload_json.encode()).hexdigest()
             for name, row in zip(names, context.inputs, strict=True)
         )
-        or any(row.as_of != context.created_at for row in context.inputs)
-        or world.as_of != context.created_at
-        or registry.as_of != context.created_at
-        or performance.as_of != context.created_at
-        or drift.as_of != context.created_at
+        or any(row.as_of > context.created_at for row in context.inputs)
+        or registry.as_of != context.inputs[0].as_of
+        or world.as_of != context.inputs[1].as_of
+        or performance.as_of != context.inputs[2].as_of
+        or drift.as_of != context.inputs[3].as_of
         or performance.input_name != "performance"
         or drift.input_name != "drift"
         or performance.availability != "UNCONNECTED"

@@ -1,0 +1,30 @@
+{
+  "increment": "0170",
+  "mission": "A13 Meta Allocator 0.2.0",
+  "scope": "Deterministic paper shadow allocation envelope with explicit evidence blockers",
+  "checks": {
+    "focused_tests": {
+      "result": "PASS",
+      "passed": 178,
+      "failed": 0,
+      "groups": [
+        "A12 selector contracts and API",
+        "A13 allocation contract and source binding",
+        "A13 protected API graph execution",
+        "registry, context, graph runtime, and call budgets",
+        "architecture boundary",
+        "neighboring A10/A11 validation paths"
+      ]
+    },
+    "ruff_check": "PASS",
+    "ruff_format": "PASS"
+  },
+  "limitations": [
+    "A12 graph output is not connected to A13.",
+    "Portfolio and exposure observations are limited to one aggregate snapshot.",
+    "Risk budget remains uncalibrated and candidate covariance is unavailable.",
+    "The output always has an empty allocation list and cannot authorize execution or promotion.",
+    "Independent A13 acceptance and all P00-P13 release gates remain open."
+  ],
+  "promotion": "NOT_AUTHORIZED"
+}

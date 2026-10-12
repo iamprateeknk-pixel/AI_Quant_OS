@@ -1,7 +1,7 @@
 """A12 must withhold eligibility while approved-candidate evidence is unavailable."""
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -9,7 +9,7 @@ import pytest
 NOW = datetime(2026, 10, 12, tzinfo=timezone.utc)
 
 
-def context_for(candidates=()):
+def context_for(candidates=(), *, context_time=NOW):
     from ai_quant_os.agent_context import ContextCompiler
     from ai_quant_os.agent_registry import load_agent_catalog
     from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
@@ -20,7 +20,7 @@ def context_for(candidates=()):
     snapshot = WorldStateEngine(PAPER_INSTRUMENTS).snapshot((), now=NOW)
     sources = selector_sources(candidates, snapshot, now=NOW, registry_available=True)
     return registry, asyncio.run(
-        ContextCompiler(registry, sources, clock=lambda: NOW).compile(
+        ContextCompiler(registry, sources, clock=lambda: context_time).compile(
             "A12", "0.2.0", task_id="selector-review", scope="PAPER"
         )
     )
@@ -86,3 +86,23 @@ def test_selector_never_ranks_a_challenger_or_accepts_a_changed_registry_receipt
 
     with pytest.raises(ValueError, match="registry receipt"):
         asyncio.run(selector_implementation(registry).invoke(AgentInvocation(context, Tools())))
+
+
+def test_selector_accepts_source_observations_captured_before_context_assembly():
+    from ai_quant_os.graph_runtime import AgentInvocation
+    from ai_quant_os.strategy_selector_agent import selector_implementation
+
+    registry, context = context_for(context_time=NOW + timedelta(microseconds=1))
+
+    class Tools:
+        async def call(self, tool, payload):
+            return {
+                "registry_sha256": payload["registry_sha256"],
+                "candidate_count": 0,
+                "status": "CHECKED_REGISTRY_SNAPSHOT",
+            }
+
+    output = asyncio.run(
+        selector_implementation(registry).invoke(AgentInvocation(context, Tools()))
+    )
+    output.require_context(context)
