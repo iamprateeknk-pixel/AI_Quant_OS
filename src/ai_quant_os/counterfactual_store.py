@@ -45,6 +45,16 @@ class CounterfactualStore:
             ).fetchone()
             return None if row is None else self._verified(row)[1]
 
+    @classmethod
+    def read_existing(cls, path: Path, replay_id: str):
+        """Verify a retained report through a SQLite read-only connection."""
+        resolved = path.resolve(strict=True)
+        with closing(sqlite3.connect(resolved.as_uri() + "?mode=ro", uri=True)) as db:
+            row = db.execute(
+                "SELECT * FROM counterfactual_replays WHERE replay_id=?", (replay_id,)
+            ).fetchone()
+        return None if row is None else cls._verified(row)[1]
+
     def reserve(self, inputs: ReplayInputs):
         raw = encode_research(inputs)
         if len(raw) > 16 * 1024 * 1024:

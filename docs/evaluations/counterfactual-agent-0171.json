@@ -1,0 +1,27 @@
+{
+  "increment": "0171",
+  "mission": "A15 Counterfactual Scientist 0.2.0",
+  "scope": "Read-only review of immutable existing counterfactual reports",
+  "checks": {
+    "focused_tests": {
+      "result": "PASS",
+      "passed": 157,
+      "failed": 0,
+      "groups": [
+        "missing and retained report behavior",
+        "native replay graph output is simulation-only",
+        "agent registry and context authorization",
+        "graph runtime and context budgets"
+      ]
+    },
+    "ruff_check": "PASS",
+    "ruff_format": "PASS"
+  },
+  "limitations": [
+    "The agent reads existing archived reports and does not start new simulations.",
+    "Decision lineage, linked fill lineage, and world-state archives remain unavailable.",
+    "Output is diagnostic evidence on already-seen data, not validation or market fact.",
+    "Independent A15 acceptance and all P00-P13 release gates remain open."
+  ],
+  "promotion": "NOT_AUTHORIZED"
+}

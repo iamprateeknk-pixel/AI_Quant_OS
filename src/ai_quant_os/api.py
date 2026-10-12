@@ -161,6 +161,8 @@ from ai_quant_os.strategy_selector_service import StrategyRegistryRead
 from ai_quant_os.strategy_selector_sources import RegistrySnapshot, selector_sources
 from ai_quant_os.meta_allocator_agent import allocator_implementation
 from ai_quant_os.meta_allocator_sources import AllocationInputs, allocator_sources
+from ai_quant_os.counterfactual_agent import counterfactual_implementation
+from ai_quant_os.counterfactual_sources import counterfactual_sources
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
@@ -205,6 +207,17 @@ def _candidate_registry_snapshot(workspace):
         available=store is not None,
         candidates=() if store is None else store.list(),
     )
+
+
+def _available_counterfactual_report(workspace, replay_id):
+    if workspace is None:
+        return None
+    path = workspace / "counterfactual.sqlite3"
+    if not path.is_file():
+        return None
+    from ai_quant_os.counterfactual_store import CounterfactualStore
+
+    return CounterfactualStore.read_existing(path, replay_id)
 
 
 class QuoteInput(BaseModel):
@@ -574,6 +587,7 @@ def create_app(
                     ("A12", "0.2.0"): selector_implementation(agent_registry),
                     ("A13", "0.2.0"): allocator_implementation(agent_registry),
                     ("A14", "0.2.0"): drift_implementation(agent_registry),
+                    ("A15", "0.2.0"): counterfactual_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(
@@ -1244,6 +1258,10 @@ def create_app(
         drift_mission = (payload.agent_id, payload.agent_version) == ("A14", "0.2.0")
         selector_mission = (payload.agent_id, payload.agent_version) == ("A12", "0.2.0")
         allocator_mission = (payload.agent_id, payload.agent_version) == ("A13", "0.2.0")
+        counterfactual_mission = (payload.agent_id, payload.agent_version) == (
+            "A15",
+            "0.2.0",
+        )
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
             None
@@ -1352,6 +1370,15 @@ def create_app(
                         safety_state=risk.safety_state.value,
                     ),
                     now=current_time(),
+                )
+            elif counterfactual_mission:
+                report = await owned_research_call(
+                    lambda: _available_counterfactual_report(
+                        configured_research_workspace, payload.task_id
+                    )
+                )
+                sources = counterfactual_sources(
+                    report, replay_id=payload.task_id, now=current_time()
                 )
             elif payload.agent_id == "A07":
                 sources = integrity_sources(
