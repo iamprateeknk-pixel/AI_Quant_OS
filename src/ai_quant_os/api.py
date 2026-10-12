@@ -163,6 +163,8 @@ from ai_quant_os.meta_allocator_agent import allocator_implementation
 from ai_quant_os.meta_allocator_sources import AllocationInputs, allocator_sources
 from ai_quant_os.counterfactual_agent import counterfactual_implementation
 from ai_quant_os.counterfactual_sources import counterfactual_sources
+from ai_quant_os.health_repair_agent import repair_implementation
+from ai_quant_os.health_repair_sources import RepairInputs, repair_sources
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
@@ -588,6 +590,7 @@ def create_app(
                     ("A13", "0.2.0"): allocator_implementation(agent_registry),
                     ("A14", "0.2.0"): drift_implementation(agent_registry),
                     ("A15", "0.2.0"): counterfactual_implementation(agent_registry),
+                    ("A16", "0.2.0"): repair_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
                 tools=AgentToolBoundary(
@@ -1262,6 +1265,7 @@ def create_app(
             "A15",
             "0.2.0",
         )
+        repair_mission = (payload.agent_id, payload.agent_version) == ("A16", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
             None
@@ -1379,6 +1383,26 @@ def create_app(
                 )
                 sources = counterfactual_sources(
                     report, replay_id=payload.task_id, now=current_time()
+                )
+            elif repair_mission:
+                try:
+                    health = (
+                        await asyncio.to_thread(health_worker.status) if health_worker else None
+                    )
+                except (ValueError, OSError, sqlite3.Error) as error:
+                    raise HTTPException(503, "Health evidence unavailable") from error
+                sources = repair_sources(
+                    RepairInputs(
+                        health_status="UNAVAILABLE"
+                        if health is None
+                        else "ERROR"
+                        if health["last_error"]
+                        else "MONITORED"
+                        if enabled_health
+                        else "RESTORED_ONLY",
+                        open_incidents=health["open_incidents"] if health else None,
+                    ),
+                    now=current_time(),
                 )
             elif payload.agent_id == "A07":
                 sources = integrity_sources(

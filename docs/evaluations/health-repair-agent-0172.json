@@ -1,0 +1,28 @@
+{
+  "increment": "0172",
+  "mission": "A16 Health & Repair Agent 0.2.0",
+  "scope": "Read-only repair readiness report with explicit evidence gaps",
+  "checks": {
+    "focused_tests": {
+      "result": "PASS",
+      "passed": 167,
+      "failed": 0,
+      "groups": [
+        "A16 evidence and output contract",
+        "protected A16 graph context and execution",
+        "registry, context, graph runtime, and call budgets",
+        "repair preparation and retained replay boundaries"
+      ]
+    },
+    "ruff_check": "PASS",
+    "ruff_format": "PASS"
+  },
+  "limitations": [
+    "Trace archives and code-test receipts are not connected.",
+    "Incident context is limited to an optional count and contains no incident detail.",
+    "The mission creates no repair candidate and always returns WAIT_FOR_EVIDENCE.",
+    "No verifier, container, repair workspace, deployment, or promotion is invoked.",
+    "Independent A16 acceptance and all P00-P13 release gates remain open."
+  ],
+  "promotion": "NOT_AUTHORIZED"
+}
