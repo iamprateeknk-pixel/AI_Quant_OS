@@ -1,0 +1,14 @@
+{
+  "increment": "0164",
+  "date": "2026-10-12",
+  "base_commit": "4c33101",
+  "feature": "Guard agent and built-in strategy source from direct broker/execution imports",
+  "verification": {
+    "focused_test": { "passed": 2, "failures": 0, "fresh_archive_checkout": true },
+    "ruff_check": "passed",
+    "ruff_format_check": "passed",
+    "staged_diff_check": "passed"
+  },
+  "limits": "Static import checks cover named source files and common import forms. They do not prove the complete indirect call graph, generated code behavior, P00 acceptance as a whole or any remaining P00-P13 gate.",
+  "rollback": "Revert the architecture boundary regression test and its increment documentation."
+}

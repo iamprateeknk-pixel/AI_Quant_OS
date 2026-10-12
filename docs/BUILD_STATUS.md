@@ -1343,3 +1343,12 @@ Rendered-markup regression coverage verifies the dialog semantics and initial
 announcement. Web suite: 149 passed; ESLint, TypeScript and Next production
 build passed. Browser/screen-reader acceptance and all P00-P13 gates remain open.
 See ADR 0163 and evaluation0163.
+
+# Development increment 0164 - enforce the direct agent/broker boundary
+
+A focused AST check rejects broker router, execution gateway and MT5 SDK imports
+from agent modules and registered built-in strategy sources. Its fixtures cover
+package-level imports and common dynamic import APIs. The scope is direct imports;
+it does not prove the complete indirect runtime call graph. Focused test: 2
+passed; Ruff and formatter checks passed. The other P00 acceptance items and all
+remaining P00-P13 gates remain open. See ADR 0164 and evaluation0164.
