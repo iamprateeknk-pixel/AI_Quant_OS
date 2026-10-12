@@ -45,7 +45,7 @@ export function NavigationCommand() {
       <label className="sr-only" htmlFor="navigation-command-query">Search destinations</label>
       <input ref={inputRef} id="navigation-command-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search pages or groups" autoComplete="off" />
       <ul aria-label="Destinations">{results.map((item) => <li key={item.href}><Link href={item.href} onClick={close}><span>{item.label}</span><small>{item.group}</small></Link></li>)}</ul>
-      {results.length === 0 && <p className="navigation-command-empty" role="status">No matching destinations</p>}
+      <p className="navigation-command-empty" role="status" aria-live="polite">{results.length === 0 ? "No matching destinations" : `${results.length} ${query.trim() ? "matching " : ""}${results.length === 1 ? "destination" : "destinations"} available`}</p>
     </dialog>
   </>;
 }

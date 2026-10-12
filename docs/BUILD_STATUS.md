@@ -1334,3 +1334,12 @@ registered pages. The native dialog supports focus management and Escape; the
 mobile trigger stays compact. Web suite: 148 passed; ESLint, TypeScript and Next
 production build passed. Browser visual/interaction review and all P00-P13 gates
 remain open. See ADR 0162 and evaluation0162.
+
+# Development increment 0163 - announce search results to screen readers
+
+The destination search exposes its changing result count and no-match state as
+a polite live announcement. The dialog and query field have programmatic labels.
+Rendered-markup regression coverage verifies the dialog semantics and initial
+announcement. Web suite: 149 passed; ESLint, TypeScript and Next production
+build passed. Browser/screen-reader acceptance and all P00-P13 gates remain open.
+See ADR 0163 and evaluation0163.

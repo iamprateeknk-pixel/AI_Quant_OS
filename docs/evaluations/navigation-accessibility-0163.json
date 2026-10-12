@@ -1,0 +1,17 @@
+{
+  "increment": "0163",
+  "date": "2026-10-12",
+  "base_commit": "9a3c13a",
+  "feature": "Expose destination-search result changes to assistive technology",
+  "verification": {
+    "navigation_tests": { "passed": 4, "failures": 0 },
+    "web_tests": { "passed": 149, "failures": 0 },
+    "rendered_markup": "named dialog, explicit query label and initial result announcement verified",
+    "eslint_changed_frontend": "passed",
+    "typescript_no_emit": "passed",
+    "next_production_build": "passed",
+    "browser_screen_reader_acceptance": "not performed; prior browser launch was policy refused"
+  },
+  "limits": "No browser screen-reader/accessibility audit is claimed. Remaining P00-P13 gates are open.",
+  "rollback": "Revert the live result status text, regression coverage and increment documentation."
+}
