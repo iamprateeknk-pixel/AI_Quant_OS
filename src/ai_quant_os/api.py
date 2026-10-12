@@ -281,6 +281,7 @@ class WorldStatePublishInput(BaseModel):
 
 class IntentInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    schema_version: Literal["1.0"] = Field(default="1.0", exclude=True)
     intent_id: str
     strategy_id: str
     strategy_version: str

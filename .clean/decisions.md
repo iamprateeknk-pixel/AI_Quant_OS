@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-12: Add additive TradeIntent request schema version 1.0, accepting omitted versions as the existing v1 contract and rejecting explicit unsupported versions. Keep the marker out of the domain dataclass and publish a runtime-parity JSON Schema. Other canonical contract versions remain open. See ADR 0175.
+
 - 2026-10-12: Require graph implementation output schemas to reject unknown fields at runtime admission, then revalidate serialized outputs against the manifest-bound model before retention. This hardens schema enforcement without implying semantic correctness or capital authority. See ADR 0174.
 
 - 2026-10-11: Pin aggregate eighteen-role ceilings and a bounded original model-policy inventory in one audited spending book. Resolve each reservation's accounting and check model/aggregate capacities atomically across versions/providers; retain unknown holds and global breach denial. Preserve old schemas and observe both counter levels under one head. Shared Costs, platform allocation, migration and independent acceptance remain open. See ADR 0138.

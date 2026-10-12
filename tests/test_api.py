@@ -2,10 +2,12 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import json
 import sqlite3
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from ai_quant_os.api import IntentInput, QuoteInput, create_app
 from ai_quant_os.contracts import TradeIntent
@@ -17,6 +19,47 @@ from ai_quant_os.risk import SafetyState
 
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+
+def test_trade_intent_accepts_legacy_and_explicit_v1_requests():
+    payload = {
+        "intent_id": "intent-1",
+        "strategy_id": "demo",
+        "strategy_version": "1.0.0",
+        "instrument_id": "EURUSD",
+        "side": "BUY",
+        "desired_exposure": "100",
+        "risk_budget": "10",
+        "max_spread": "0.0003",
+        "max_slippage": "0.0002",
+        "valid_until": "2026-01-01T00:01:00Z",
+        "world_state_version": "world-1",
+        "evidence_refs": ["fixture:1"],
+        "created_at": "2026-01-01T00:00:00Z",
+    }
+    legacy = IntentInput.model_validate(payload)
+    versioned = IntentInput.model_validate({**payload, "schema_version": "1.0"})
+
+    assert legacy.schema_version == versioned.schema_version == "1.0"
+    assert "schema_version" not in versioned.model_dump()
+    with pytest.raises(ValidationError):
+        IntentInput.model_validate({**payload, "schema_version": "2.0"})
+
+
+def test_trade_intent_v1_json_schema_matches_request_model():
+    from jsonschema import Draft202012Validator
+
+    path = Path(__file__).resolve().parents[1] / "docs" / "schemas" / "trade-intent-v1.schema.json"
+    schema = json.loads(path.read_text(encoding="utf-8"))
+    expected = IntentInput.model_json_schema(mode="validation")
+    expected.update(
+        {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "urn:ai-quant-os:contract:trade-intent:1.0",
+        }
+    )
+    assert schema == expected
+    Draft202012Validator.check_schema(schema)
 
 
 def test_retry_dispatches_committed_pending_order_after_restart(tmp_path) -> None:

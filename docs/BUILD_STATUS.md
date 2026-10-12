@@ -1435,3 +1435,7 @@ GraphRuntime now rejects output models configured to ignore unknown fields. It c
 
 ### P00 versioned agent permission matrix (2026-10-12)
 docs/agent-permission-matrix.json documents all 18 fixed capability ceilings, read tools, sandbox-only tools, supported scopes, lifecycle restrictions, and the separation from human operator authorization. A parity test compares it with the runtime policy. Fresh isolated archive verification: 101 agent registry tests passed; Ruff check and format passed. This matrix does not certify external account access, compliance, or live authorization. P00 remains open.
+
+
+### P00 TradeIntent request contract v1 (2026-10-12)
+Paper intent requests now accept omitted schema versions as existing v1, accept explicit version 1.0, and reject unsupported versions. The version marker stays out of the internal dataclass. A checked runtime-parity JSON Schema and remaining contract-version status are documented in docs/CONTRACT_VERSIONING.md. Fresh isolated archive verification: 26 API tests passed; Ruff check and format passed. Other canonical contract versions remain open; no migration or response change was made.
