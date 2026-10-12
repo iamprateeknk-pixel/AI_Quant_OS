@@ -8,7 +8,7 @@ function moduleUrl(source) {
 }
 const boundary=moduleUrl(readFileSync(new URL('../src/features/operator-session/boundary.ts',import.meta.url),'utf8'));
 const original=readFileSync(new URL('../src/features/operator-session/server.ts',import.meta.url),'utf8');
-const source=original.replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies = () => globalThis.testCookies();').replace('import { NextResponse } from "next/server";','const NextResponse = {};').replace('from "./boundary"',`from "${boundary}"`);
+const source=original.replace('import {parsePaperReconciliation} from "../orders/reconciliation";','').replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies = () => globalThis.testCookies();').replace('import { NextResponse } from "next/server";','const NextResponse = {};').replace('from "./boundary"',`from "${boundary}"`);
 const {readHealth,readDossiers,readGenomes,readStrategies,readCallBudget}=await import(moduleUrl(source));
 test('protected reads use only server session and fixed private paths',async()=>{
   const previousFetch=globalThis.fetch, previousCookies=globalThis.testCookies, previousOrigin=process.env.AI_QUANT_API_URL;

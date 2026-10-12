@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 function moduleUrl(source) {return `data:text/javascript;base64,${Buffer.from(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')}`;}
 const boundary=moduleUrl(readFileSync(new URL('../src/features/operator-session/boundary.ts',import.meta.url),'utf8'));
-const source=readFileSync(new URL('../src/features/operator-session/server.ts',import.meta.url),'utf8').replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies = () => globalThis.traceCookies();').replace('import { NextResponse } from "next/server";','const NextResponse = {};').replace('from "./boundary"',`from "${boundary}"`);
+const source=readFileSync(new URL('../src/features/operator-session/server.ts',import.meta.url),'utf8').replace('import {parsePaperReconciliation} from "../orders/reconciliation";','').replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies = () => globalThis.traceCookies();').replace('import { NextResponse } from "next/server";','const NextResponse = {};').replace('from "./boundary"',`from "${boundary}"`);
 const {readGraphRuns,readGraphTrace}=await import(moduleUrl(source));
 test('trace reads admit only fixed local paths and server session credentials',async()=>{
   const previous=globalThis.fetch, cookies=globalThis.traceCookies;

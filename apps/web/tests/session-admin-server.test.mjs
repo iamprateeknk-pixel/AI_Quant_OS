@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 const moduleUrl=s=>`data:text/javascript;base64,${Buffer.from(ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')}`;
 const boundary=moduleUrl(readFileSync(new URL('../src/features/operator-session/boundary.ts',import.meta.url),'utf8'));
-const source=readFileSync(new URL('../src/features/operator-session/server.ts',import.meta.url),'utf8').replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies=()=>globalThis.adminCookies();').replace('import { NextResponse } from "next/server";','const NextResponse=globalThis.adminResponse;').replace('from "./boundary"',`from "${boundary}"`);
+const source=readFileSync(new URL('../src/features/operator-session/server.ts',import.meta.url),'utf8').replace('import {parsePaperReconciliation} from "../orders/reconciliation";','').replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies=()=>globalThis.adminCookies();').replace('import { NextResponse } from "next/server";','const NextResponse=globalThis.adminResponse;').replace('from "./boundary"',`from "${boundary}"`);
 globalThis.adminResponse={json:(v,o)=>{const r=new Response(JSON.stringify(v),o);r.cookies={set:(...args)=>{r.cookie=args}};return r}};
 const server=await import(moduleUrl(source));
 delete globalThis.adminResponse;

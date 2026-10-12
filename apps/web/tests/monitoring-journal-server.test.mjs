@@ -13,7 +13,7 @@ const receipt={schema_version:"1.0",mode:"PAPER",committed:true,control_authoriz
 async function server(){
  const boundary=data(read("features/operator-session/boundary.ts"));
  const journal=data(read("features/incidents/monitoring-journal.ts").replace('from "./monitoring-alerts"',`from ${JSON.stringify(data(read("features/incidents/monitoring-alerts.ts")))}`));
- const source=read("features/operator-session/server.ts").replace('import "server-only";','')
+ const source=read("features/operator-session/server.ts").replace('import {parsePaperReconciliation} from "../orders/reconciliation";','').replace('import "server-only";','')
   .replace('import { cookies } from "next/headers";','const cookies=()=>globalThis.monitorCookies();')
   .replace('import { NextResponse } from "next/server";','const NextResponse={json:(value,init)=>Response.json(value,init)};')
   .replace('from "./boundary"',`from ${JSON.stringify(boundary)}`)

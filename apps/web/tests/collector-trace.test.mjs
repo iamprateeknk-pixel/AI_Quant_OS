@@ -41,7 +41,7 @@ test("empty, malformed and sign-in states show no invented span rows",async()=>{
 });
 test("private saved-span reader validates before access and keeps bounded no-store session fetch",async()=>{
  const boundary=compile(readFileSync(new URL("../src/features/operator-session/boundary.ts",import.meta.url),"utf8"));
- const source=readFileSync(new URL("../src/features/operator-session/server.ts",import.meta.url),"utf8").replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies=()=>globalThis.spanCookies();').replace('import { NextResponse } from "next/server";','const NextResponse={};').replace('from "./boundary"',`from "${boundary}"`);
+ const source=readFileSync(new URL("../src/features/operator-session/server.ts",import.meta.url),"utf8").replace('import {parsePaperReconciliation} from "../orders/reconciliation";','').replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies=()=>globalThis.spanCookies();').replace('import { NextResponse } from "next/server";','const NextResponse={};').replace('from "./boundary"',`from "${boundary}"`);
  const server=await import(compile(source));assert.equal(typeof server.readCollectorTrace,"function");
  const oldFetch=globalThis.fetch,oldCookies=globalThis.spanCookies,calls=[],v=fixture();
  try{

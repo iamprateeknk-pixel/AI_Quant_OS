@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { backendOrigin, loginCredential, publicSession, publicSessionInventory, publicSessionRevocation, readJson, record, requireOrigin } from "./boundary";
 import type {MonitoringAcknowledgementInput} from "../incidents/monitoring-journal";
+import {parsePaperReconciliation} from "../orders/reconciliation";
 
 const COOKIE = "ai_quant_operator";
 const origin = () => process.env.AI_QUANT_WEB_ORIGIN ?? "http://127.0.0.1:3000";
@@ -137,6 +138,26 @@ export async function readBrokerHealth(): Promise<ProtectedRead> {
 
 export async function readDemoSyncHealth(): Promise<ProtectedRead> {
   return protectedRead("/api/v1/brokers/demo-sync/health");
+}
+
+export async function submitPaperPositionReconciliation(request: Request) {
+  try { requireOrigin(request,origin()); } catch { return json({detail:"Same-origin request required."},403); }
+  try {
+    const input=record(await readJson(request,1024));
+    if(Object.keys(input).length!==1 || input.confirmation!=="COMPARE") return json({detail:"Confirm the paper ledger comparison before submitting."},422);
+  } catch { return json({detail:"Confirm the paper ledger comparison before submitting."},422); }
+  try {
+    const token=(await cookies()).get(COOKIE)?.value;
+    if(!token) return json({detail:"Sign in to compare the paper fill ledgers."},401);
+    const response=await upstream("/api/v1/paper/positions/reconcile","POST",{"X-Operator-Session":token},undefined,65536);
+    if(!response.value) {
+      const status=response.status===401?401:response.status===409?409:response.status===422?422:503;
+      const detail=status===401?"Sign in again to compare the paper fill ledgers.":status===409?"The paper state changed. Refresh before comparing again.":status===422?"The comparison was not admitted. Refresh current paper state.":"The comparison outcome is unavailable. Check Risk Center and the audit record before repeating it.";
+      return json({detail},status);
+    }
+    const result=parsePaperReconciliation(response.value);
+    return result?json(result):json({detail:"The comparison returned an invalid receipt. Check Risk Center and the audit record before repeating it."},503);
+  } catch { return json({detail:"The comparison outcome is unavailable. Check Risk Center and the audit record before repeating it."},503); }
 }
 
 export async function readDemoPortfolio(): Promise<ProtectedRead> {

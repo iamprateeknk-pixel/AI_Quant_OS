@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 const compile=source=>`data:text/javascript;base64,${Buffer.from(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')}`;
 const boundary=compile(readFileSync(new URL('../src/features/operator-session/boundary.ts',import.meta.url),'utf8'));
-const source=readFileSync(new URL('../src/features/operator-session/server.ts',import.meta.url),'utf8').replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies=()=>globalThis.spendCookies();').replace('import { NextResponse } from "next/server";','const NextResponse={};').replace('from "./boundary"',`from "${boundary}"`);
+const source=readFileSync(new URL('../src/features/operator-session/server.ts',import.meta.url),'utf8').replace('import {parsePaperReconciliation} from "../orders/reconciliation";','').replace('import "server-only";','').replace('import { cookies } from "next/headers";','const cookies=()=>globalThis.spendCookies();').replace('import { NextResponse } from "next/server";','const NextResponse={};').replace('from "./boundary"',`from "${boundary}"`);
 const server=await import(compile(source));
 test('fixed spending read requires a private session and preserves bounded uncached upstream access',async()=>{
  const priorFetch=globalThis.fetch,priorCookie=globalThis.spendCookies,calls=[];

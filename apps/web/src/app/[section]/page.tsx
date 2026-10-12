@@ -13,6 +13,7 @@ import { AgentRegistryPanel } from "@/features/agents/registry-panel";
 import { BrokerCapabilityPanel } from "@/features/brokers/capability-panel";
 import { BrokerHealthPanel } from "@/features/brokers/health-panel";
 import { DemoSyncPanel } from "@/features/brokers/demo-sync-panel";
+import { PaperReconciliationPanel } from "@/features/orders/reconciliation-panel";
 import { HealthPanel } from "@/features/health/health-panel";
 import { GenomePanel } from "@/features/evolution/genome-panel";
 import { DossierPanel } from "@/features/research/dossier-panel";
@@ -66,6 +67,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
     {sessions && <SessionAdminPanel result={sessions} />}
     {dossiers && <DossierPanel result={dossiers} />}
     {section === "risk" && <OperatorConsole initialSession={operatorSession} safetyState={risk?.ok ? risk.value.safety_state : null} />}
+    {section === "orders" && <PaperReconciliationPanel />}
     {section === "risk" && <section className="panel content-panel"><div className="panel-heading"><h2>Risk state</h2><span>BACKEND AUTHORITY</span></div><dl className="fact-list"><div><dt>Safety state</dt><dd>{risk?.ok ? risk.value.safety_state : "Unavailable"}</dd></div><div><dt>Mode</dt><dd>{status?.ok ? status.value.mode : "Unavailable"}</dd></div><div><dt>Per order ceiling, base units</dt><dd>{risk?.ok ? risk.value.max_order_exposure : "Unavailable"}</dd></div><div><dt>EURUSD position ceiling, base units</dt><dd>{risk?.ok ? risk.value.max_portfolio_exposure : "Unavailable"}</dd></div><div><dt>EURUSD worst case quantity</dt><dd>{risk?.ok ? risk.value.worst_case_quantity : "Unavailable"}</dd></div><div><dt>EURUSD filled net quantity</dt><dd>{risk?.ok ? risk.value.filled_net_quantity : "Unavailable"}</dd></div><div><dt>EURUSD pending buy / sell</dt><dd>{risk?.ok ? `${risk.value.pending_buy_quantity} / ${risk.value.pending_sell_quantity}` : "Unavailable"}</dd></div><div><dt>Per currency ceiling, {risk?.ok ? risk.value.reporting_currency : "reporting currency"}</dt><dd>{risk?.ok ? risk.value.max_currency_exposure_reporting : "Unavailable"}</dd></div><div><dt>Gross currency ceiling, {risk?.ok ? risk.value.reporting_currency : "reporting currency"}</dt><dd>{risk?.ok ? risk.value.max_gross_currency_exposure_reporting : "Unavailable"}</dd></div><div><dt>New live orders</dt><dd>Disabled</dd></div></dl><p className="panel-muted">Each instrument has its own unit ceiling. The shared currency ceilings include filled balances and pending paper orders. Both currency legs count toward gross currency exposure. Risk ceilings and recovery are not editable in this interface.</p></section>}
     {section === "portfolio" && <InstrumentPositionsPanel />}
     {section === "portfolio" && <CurrencyExposurePanel />}
