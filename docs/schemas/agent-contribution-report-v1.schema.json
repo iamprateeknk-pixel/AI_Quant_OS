@@ -1,0 +1,167 @@
+{
+  "$defs": {
+    "AgentRunContribution": {
+      "properties": {
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "agent_id": {
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "classification": {
+          "title": "Classification",
+          "type": "string"
+        },
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "order_count": {
+          "title": "Order Count",
+          "type": "integer"
+        },
+        "actual_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Actual Cash Flow Quote"
+        },
+        "fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee Cash Flow Quote"
+        }
+      },
+      "required": [
+        "run_id",
+        "agent_id",
+        "agent_version",
+        "instrument_id",
+        "quote_currency",
+        "classification",
+        "fill_count",
+        "order_count",
+        "actual_cash_flow_quote",
+        "fee_cash_flow_quote"
+      ],
+      "title": "AgentRunContribution",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "coverage": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "NONE",
+        "EMPTY"
+      ],
+      "title": "Coverage",
+      "type": "string"
+    },
+    "associations": {
+      "items": {
+        "$ref": "#/$defs/AgentRunContribution"
+      },
+      "title": "Associations",
+      "type": "array"
+    },
+    "unlinked_order_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unlinked Order Ids",
+      "type": "array"
+    },
+    "missing_run_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Run Ids",
+      "type": "array"
+    },
+    "ambiguous_order_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Ambiguous Order Ids",
+      "type": "array"
+    },
+    "unattributed_fill_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unattributed Fill Ids",
+      "type": "array"
+    },
+    "reconciled": {
+      "const": true,
+      "title": "Reconciled",
+      "type": "boolean"
+    },
+    "causal_attribution": {
+      "const": false,
+      "title": "Causal Attribution",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "mode",
+    "coverage",
+    "associations",
+    "unlinked_order_ids",
+    "missing_run_ids",
+    "ambiguous_order_ids",
+    "unattributed_fill_ids",
+    "reconciled",
+    "causal_attribution",
+    "promotion_allowed"
+  ],
+  "title": "AgentContributionReport",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:report:agent-contribution:1.0"
+}

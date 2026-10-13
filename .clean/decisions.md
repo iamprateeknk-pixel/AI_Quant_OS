@@ -1,5 +1,7 @@
 # Decisions
 
+- 2026-10-13: Add a protected read-only PAPER report that groups fill cash/fees only when the order intent explicitly references one verified archived advisory run using `agent-run:<run_id>`. Keep missing/ambiguous associations outside totals and set causal/promotion authority false; this is not A12/A13 causal attribution. See `docs/AGENT_CONTRIBUTION_HANDOFF.md`.
+
 - 2026-10-12: Publish the strict current AgentEnvelope 2.0 runtime model as a versioned JSON Schema with parity tests. Preserve its implemented fields rather than translating the earlier blueprint shape; no wire/persisted behavior changes. See ADR 0177.
 
 - 2026-10-12: Publish stable v1.0 JSON Schemas for internal RiskDecision and OrderCommand dataclass shapes without changing stored JSON or introducing wire endpoints. Require consumers of untrusted JSON to use strict schema validation; Pydantic TypeAdapter ignores extra dataclass keys. BrokerHealth and PromotionDecision remain unimplemented. See ADR 0176.

@@ -210,6 +210,41 @@ class PaperExecutionGateway:
                 )
             return tuple(owners), fills, benchmarks
 
+    @property
+    def agent_attribution_ledger(self):
+        """Read declared agent-run references from the same checked paper-order archive."""
+        with self._lock:
+            owners, fills, _ = self.execution_evidence_ledger
+            rows, source_fills, _, _ = self._store.execution_evidence_records()
+            if fills != source_fills:
+                raise ValueError("Paper fill snapshot changed during agent attribution read")
+            owner_by_id = {row.order_id: row for row in owners}
+            refs, metadata = {}, {}
+            for order_id, intent_id, intent_raw, _ in rows:
+                owner = owner_by_id.get(order_id)
+                if owner is None or sha256(intent_raw.encode()).hexdigest() != owner.intent_sha256:
+                    raise ValueError("Paper intent source changed during agent attribution read")
+                intent = json.loads(intent_raw)
+                if intent.get("intent_id") != intent_id:
+                    raise ValueError("Paper intent identity changed during agent attribution read")
+                evidence_refs = intent.get("evidence_refs")
+                if not isinstance(evidence_refs, list) or any(
+                    not isinstance(ref, str) for ref in evidence_refs
+                ):
+                    raise ValueError("Paper intent evidence references are invalid")
+                refs[order_id] = tuple(
+                    run_id
+                    for ref in evidence_refs
+                    if ref.startswith("agent-run:")
+                    if (run_id := ref.removeprefix("agent-run:"))
+                )
+                metadata[order_id] = {
+                    "instrument_id": intent["instrument_id"],
+                    "world_state_version": intent["world_state_version"],
+                    "created_at": datetime.fromisoformat(intent["created_at"]),
+                }
+            return owners, fills, refs, metadata
+
     def save_candidate_paper_assignment(self, assignment):
         return self._store.save_candidate_paper_assignment(assignment)
 

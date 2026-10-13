@@ -993,6 +993,53 @@ def create_app(
                 status_code=503, detail="Paper attribution ledger could not be verified"
             ) from error
 
+    @app.get("/api/v1/paper/evidence/agent-contributions", dependencies=[Depends(require_operator)])
+    def agent_contributions():
+        from pydantic import TypeAdapter
+        from fastapi.responses import Response
+
+        from ai_quant_os.agent_attribution import build_agent_contributions
+
+        try:
+            owners, fills, intent_run_refs, intent_metadata = execution.agent_attribution_ledger
+            run_ids = {run_id for refs in intent_run_refs.values() for run_id in refs}
+            runs = {}
+            for run_id in run_ids:
+                run = state_store.agent_run(run_id)
+                if run is None:
+                    continue
+                metadata = tuple(
+                    intent_metadata[owner.order_id]
+                    for owner in owners
+                    if run_id in intent_run_refs[owner.order_id]
+                )
+                if not metadata or any(
+                    item["instrument_id"] != run.decision.output.instrument_id
+                    or item["world_state_version"] != run.snapshot_ref
+                    or item["created_at"] < run.recorded_at
+                    or item["created_at"] >= run.deep_review.expires_at
+                    or item["created_at"] >= run.decision.expires_at
+                    for item in metadata
+                ):
+                    continue
+                snapshot = world_state_store.get(run.snapshot_ref)
+                if snapshot is None:
+                    raise ValueError("Agent run world-state source is missing")
+                verify_run_snapshot(run, snapshot)
+                runs[run_id] = run
+            report = build_agent_contributions(
+                owners, fills, intent_run_refs, runs, PAPER_INSTRUMENTS
+            )
+            return Response(
+                TypeAdapter(type(report)).dump_json(report),
+                media_type="application/json",
+                headers={"Cache-Control": "no-store"},
+            )
+        except (ValueError, KeyError, TypeError, ArithmeticError, sqlite3.Error) as error:
+            raise HTTPException(
+                status_code=503, detail="Agent contribution evidence could not be verified"
+            ) from error
+
     @app.get(
         "/api/v1/paper/evidence/execution-contributions", dependencies=[Depends(require_operator)]
     )
