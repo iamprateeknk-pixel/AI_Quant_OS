@@ -58,6 +58,10 @@ Current increment: a protected no-store endpoint reconstructs the shadow positio
 
 Current increment: accepted PAPER world-state bars are now retained in the persistent SQLite workspace with canonical row hashes and exact duplicate idempotency. Conflicting instrument/timestamp replacements are refused. Bar rows and their audit-chain event commit atomically; storage/audit errors leave the in-memory world state unchanged and return unavailable. Inclusive instrument/time reads are bounded at 4,096 rows, with one capacity check per batch. Focused world-state and ingress tests pass (36); the full locked Windows suite passes (2,997 passed, 36 skipped in 1,130.63 seconds); Ruff, formatting and diff checks pass. Bugbot found no remaining actionable issues. This retains only operator-submitted PAPER_SIMULATED data: provider/source authenticity, deletion-proof completeness, and automatic shadow scheduling remain open. See `docs/SHADOW_MARKET_INGRESS_HANDOFF.md`.
 
+### P09 automatic local PAPER shadow scheduling
+
+Current increment: an opt-in application-lifespan worker advances verified, non-retired shadow assignments from persisted PAPER bars, with deterministic idempotency keys, an audit-integrity gate, bounded inventory/source reads, capped retry backoff, and a protected no-store status endpoint. It waits for sufficient initial history and never invents missed bars. Assignment enumeration re-verifies stored records. Focused scheduler, API, and store tests plus the full suite and independent Bugbot review are recorded in `docs/BUILD_STATUS.md`. This remains local operator-submitted PAPER_SIMULATED evidence; source authenticity, production recovery, live broker comparison, financing, and P00-P13 release gates remain open. See `docs/SHADOW_SCHEDULER_HANDOFF.md`.
+
 ## Remaining P09 work
 
 - Full live-broker-versus-shadow comparison with complete candidate/genome and interval coverage.

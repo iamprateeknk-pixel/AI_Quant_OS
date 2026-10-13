@@ -163,6 +163,17 @@ class WorldStateStore:
     def read_bars(
         self, instrument_id: str, start: datetime, through: datetime, *, limit: int = 4096
     ) -> tuple[Bar, ...]:
+        rows = self._bar_rows(instrument_id, start, through, limit=limit, detect_overflow=True)
+        return self._decode_bar_rows(instrument_id, rows)
+
+    def read_bars_page(
+        self, instrument_id: str, start: datetime, through: datetime, *, limit: int = 4096
+    ) -> tuple[Bar, ...]:
+        """Read the earliest bounded page so callers can advance by its last timestamp."""
+        rows = self._bar_rows(instrument_id, start, through, limit=limit, detect_overflow=False)
+        return self._decode_bar_rows(instrument_id, rows)
+
+    def _bar_rows(self, instrument_id, start, through, *, limit, detect_overflow):
         _require_aware(start)
         _require_aware(through)
         if (
@@ -183,11 +194,14 @@ class WorldStateStore:
                     instrument_id,
                     start.astimezone(timezone.utc).isoformat(),
                     through.astimezone(timezone.utc).isoformat(),
-                    limit + 1,
+                    limit + 1 if detect_overflow else limit,
                 ),
             ).fetchall()
-        if len(rows) > limit:
+        if detect_overflow and len(rows) > limit:
             raise ValueError("Market bar query exceeds result limit")
+        return rows
+
+    def _decode_bar_rows(self, instrument_id, rows):
         bars = []
         try:
             for observed_at, raw, digest in rows:

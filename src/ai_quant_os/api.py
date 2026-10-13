@@ -373,6 +373,7 @@ def create_app(
     review_owner: ProviderOwner | None = None,
     drift_policy: DriftPolicy | None = None,
     daily_evidence_enabled: bool | None = None,
+    shadow_scheduler_enabled: bool | None = None,
     temporal_recovery_enabled: bool | None = None,
     temporal_recovery_target: str | None = None,
     health_watchdog_enabled: bool | None = None,
@@ -445,6 +446,34 @@ def create_app(
         enabled_daily and (configured_path is None or not configured_token)
     ):
         raise ValueError("Daily scheduler requires persistent paper storage and an operator token")
+    shadow_setting = os.getenv("AI_QUANT_SHADOW_SCHEDULER_ENABLED", "0")
+    if shadow_scheduler_enabled is None and shadow_setting not in ("0", "1"):
+        raise ValueError("AI_QUANT_SHADOW_SCHEDULER_ENABLED must be 0 or 1")
+    enabled_shadow_scheduler = (
+        shadow_setting == "1" if shadow_scheduler_enabled is None else shadow_scheduler_enabled
+    )
+    if type(enabled_shadow_scheduler) is not bool or (
+        enabled_shadow_scheduler
+        and (
+            configured_path is None or not configured_token or configured_research_workspace is None
+        )
+    ):
+        raise ValueError(
+            "Shadow scheduler requires persistent paper storage, an operator token, "
+            "and a research workspace"
+        )
+    if enabled_shadow_scheduler and configured_research_workspace is not None:
+        required_shadow_inputs = (
+            configured_research_workspace / "shadow.sqlite3",
+            configured_research_workspace / "candidates.sqlite3",
+            configured_research_workspace / "strategies",
+        )
+        if not (
+            required_shadow_inputs[0].is_file()
+            and required_shadow_inputs[1].is_file()
+            and required_shadow_inputs[2].is_dir()
+        ):
+            raise ValueError("Shadow scheduler requires existing shadow research stores")
     from ai_quant_os.recovery_api import install_recovery_routes, recovery_configuration
 
     enabled_recovery, recovery_target = recovery_configuration(
@@ -608,6 +637,21 @@ def create_app(
             lambda: state_store.audit_integrity().valid,
             execution_ledger=lambda: execution.execution_evidence_ledger,
         )
+    shadow_worker = None
+    if enabled_shadow_scheduler:
+        from ai_quant_os.research_candidate_store import CandidateStore
+        from ai_quant_os.shadow_scheduler import ShadowScheduler
+        from ai_quant_os.shadow_store import ShadowStore
+        from ai_quant_os.strategy_registry import StrategyRegistry
+
+        shadow_worker = ShadowScheduler(
+            ShadowStore(configured_research_workspace / "shadow.sqlite3"),
+            world_state_store,
+            CandidateStore(configured_research_workspace / "candidates.sqlite3"),
+            StrategyRegistry(configured_research_workspace / "strategies"),
+            current_time,
+            lambda: state_store.audit_integrity().valid,
+        )
 
     @asynccontextmanager
     async def service_lifespan(application: FastAPI):
@@ -721,6 +765,12 @@ def create_app(
                     application.state.daily_task = asyncio.create_task(
                         run_daily_scheduler(daily_worker)
                     )
+                if shadow_worker is not None:
+                    from ai_quant_os.shadow_scheduler import run_shadow_scheduler
+
+                    application.state.shadow_task = asyncio.create_task(
+                        run_shadow_scheduler(shadow_worker)
+                    )
                 if enabled_health:
                     application.state.health_task = asyncio.create_task(
                         run_health_watchdog(health_worker)
@@ -741,6 +791,13 @@ def create_app(
                     except asyncio.CancelledError:
                         pass
                     application.state.daily_task = None
+                if application.state.shadow_task is not None:
+                    application.state.shadow_task.cancel()
+                    try:
+                        await application.state.shadow_task
+                    except asyncio.CancelledError:
+                        pass
+                    application.state.shadow_task = None
                 application.state.graph_runtime = None
                 application.state.recovery_runtime = None
 
@@ -759,6 +816,7 @@ def create_app(
     app.state.paper_telemetry = configured_telemetry
     app.state.graph_runtime = None
     app.state.daily_task = None
+    app.state.shadow_task = None
     app.state.recovery_runtime = None
     app.state.health_task = None
 
@@ -873,6 +931,16 @@ def create_app(
             return daily_worker.status()
         except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
             raise HTTPException(503, "Daily scheduler history could not be verified") from error
+
+    @app.get("/api/v1/paper/shadows/scheduler", dependencies=[Depends(require_operator)])
+    def shadow_scheduler_status():
+        from fastapi.responses import JSONResponse
+
+        if shadow_worker is None:
+            value = {"schema_version": "1.0", "enabled": False, "state": "DISABLED"}
+        else:
+            value = shadow_worker.status()
+        return JSONResponse(jsonable_encoder(value), headers={"Cache-Control": "no-store"})
 
     @app.get("/api/v1/system/status")
     def status() -> dict[str, str | int]:

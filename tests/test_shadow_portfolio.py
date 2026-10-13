@@ -112,6 +112,30 @@ def test_shadow_store_returns_a_verified_history_for_period_comparison(tmp_path)
     )
 
     assert ShadowStore(store.path).history(assignment.shadow_id) == (first, second)
+    assert ShadowStore(store.path).assigned_ids() == (assignment.shadow_id,)
+
+
+def test_shadow_assignment_listing_refuses_corrupt_or_oversized_inventory(tmp_path):
+    assignment, store, candidates, strategies = shadow_fixture(tmp_path)
+    from ai_quant_os.shadow_pipeline import assign_shadow
+
+    assign_shadow(assignment, store, candidates, strategies)
+    with sqlite3.connect(store.path) as db:
+        db.execute(
+            "UPDATE shadow_assignments SET blob=? WHERE shadow_id=?",
+            (b"corrupt", assignment.shadow_id),
+        )
+    with pytest.raises(ValueError, match="assignment|hash|identity|integrity|fingerprint"):
+        store.assigned_ids()
+
+
+def test_shadow_assignment_listing_is_bounded(tmp_path):
+    assignment, store, candidates, strategies = shadow_fixture(tmp_path)
+    from ai_quant_os.shadow_pipeline import assign_shadow
+
+    assign_shadow(assignment, store, candidates, strategies)
+    with pytest.raises(ValueError, match="inventory limit"):
+        store.assigned_ids(limit=0)
 
 
 def test_shadow_retirement_is_durable_idempotent_and_blocks_new_observations(tmp_path):

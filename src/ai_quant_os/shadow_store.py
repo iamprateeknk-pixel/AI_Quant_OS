@@ -473,6 +473,23 @@ class ShadowStore:
             ).fetchone()
             return None if row is None else self._verified(db, shadow_id)[0]
 
+    def assigned_ids(self, *, limit=1000):
+        if type(limit) is not int or not 1 <= limit <= 1000:
+            raise ValueError("Shadow assignment inventory limit must be between 1 and 1000")
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN")
+            rows = db.execute(
+                "SELECT shadow_id FROM shadow_assignments ORDER BY shadow_id LIMIT ?",
+                (limit + 1,),
+            ).fetchall()
+            if len(rows) > limit:
+                raise ValueError("Shadow assignment inventory exceeds configured limit")
+            identifiers = tuple(row[0] for row in rows)
+            for shadow_id in identifiers:
+                self._verified(db, shadow_id)
+            db.commit()
+            return identifiers
+
     def cached(self, request):
         with closing(sqlite3.connect(self.path, timeout=10)) as db:
             db.execute("BEGIN")
