@@ -1,0 +1,492 @@
+{
+  "$defs": {
+    "AgentInstrumentMarkedContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "fill_count": {
+          "minimum": 0,
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "order_count": {
+          "minimum": 0,
+          "title": "Order Count",
+          "type": "integer"
+        },
+        "net_quantity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Net Quantity"
+        },
+        "cash_flow_before_fees_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Cash Flow Before Fees Quote"
+        },
+        "fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee Cash Flow Quote"
+        },
+        "cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Cash Flow Quote"
+        },
+        "marked_inventory_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marked Inventory Quote"
+        },
+        "marked_pnl_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marked Pnl Quote"
+        },
+        "mark_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mark Price"
+        },
+        "mark_observed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mark Observed At"
+        },
+        "mark_world_state_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mark World State Version"
+        },
+        "mark_state": {
+          "enum": [
+            "AVAILABLE",
+            "MISSING",
+            "UNTRUSTED",
+            "FUTURE",
+            "STALE"
+          ],
+          "title": "Mark State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "quote_currency",
+        "fill_count",
+        "order_count",
+        "net_quantity",
+        "cash_flow_before_fees_quote",
+        "fee_cash_flow_quote",
+        "cash_flow_quote",
+        "mark_state"
+      ],
+      "title": "AgentInstrumentMarkedContribution",
+      "type": "object"
+    },
+    "AgentMarkedContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "agent_id": {
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "classification": {
+          "title": "Classification",
+          "type": "string"
+        },
+        "fill_count": {
+          "minimum": 0,
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "order_count": {
+          "minimum": 0,
+          "title": "Order Count",
+          "type": "integer"
+        },
+        "net_quantity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Net Quantity"
+        },
+        "cash_flow_before_fees_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Cash Flow Before Fees Quote"
+        },
+        "fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee Cash Flow Quote"
+        },
+        "cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Cash Flow Quote"
+        },
+        "marked_inventory_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marked Inventory Quote"
+        },
+        "marked_pnl_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marked Pnl Quote"
+        },
+        "mark_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mark Price"
+        },
+        "mark_observed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mark Observed At"
+        },
+        "mark_world_state_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mark World State Version"
+        },
+        "mark_state": {
+          "enum": [
+            "AVAILABLE",
+            "MISSING",
+            "UNTRUSTED",
+            "FUTURE",
+            "STALE"
+          ],
+          "title": "Mark State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "agent_id",
+        "agent_version",
+        "instrument_id",
+        "quote_currency",
+        "classification",
+        "fill_count",
+        "order_count",
+        "net_quantity",
+        "cash_flow_before_fees_quote",
+        "fee_cash_flow_quote",
+        "cash_flow_quote",
+        "mark_state"
+      ],
+      "title": "AgentMarkedContribution",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "ledger_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Ledger Sha256",
+      "type": "string"
+    },
+    "accounting_scope": {
+      "const": "LINKED_AGENT_RUN_FILLS_ONLY",
+      "title": "Accounting Scope",
+      "type": "string"
+    },
+    "marking_method": {
+      "const": "COMMON_ATTRIBUTED_PORTFOLIO_LIQUIDATION_MARK_V1",
+      "title": "Marking Method",
+      "type": "string"
+    },
+    "coverage": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "NONE",
+        "EMPTY"
+      ],
+      "title": "Coverage",
+      "type": "string"
+    },
+    "associations": {
+      "items": {
+        "$ref": "#/$defs/AgentMarkedContribution"
+      },
+      "title": "Associations",
+      "type": "array"
+    },
+    "instruments": {
+      "items": {
+        "$ref": "#/$defs/AgentInstrumentMarkedContribution"
+      },
+      "title": "Instruments",
+      "type": "array"
+    },
+    "unlinked_order_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unlinked Order Ids",
+      "type": "array"
+    },
+    "missing_run_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Run Ids",
+      "type": "array"
+    },
+    "ambiguous_order_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Ambiguous Order Ids",
+      "type": "array"
+    },
+    "unattributed_fill_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unattributed Fill Ids",
+      "type": "array"
+    },
+    "evidence_gaps": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Gaps",
+      "type": "array"
+    },
+    "reconciled": {
+      "const": true,
+      "title": "Reconciled",
+      "type": "boolean"
+    },
+    "causal_attribution": {
+      "const": false,
+      "title": "Causal Attribution",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "mode",
+    "as_of",
+    "ledger_sha256",
+    "accounting_scope",
+    "marking_method",
+    "coverage",
+    "associations",
+    "instruments",
+    "unlinked_order_ids",
+    "missing_run_ids",
+    "ambiguous_order_ids",
+    "unattributed_fill_ids",
+    "evidence_gaps",
+    "reconciled",
+    "causal_attribution",
+    "promotion_allowed"
+  ],
+  "title": "AgentMarkedContributionReport",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:report:agent-contribution:2.0"
+}

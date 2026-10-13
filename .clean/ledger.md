@@ -38,6 +38,10 @@ Current increment: a protected no-store report associates exact paper-order fill
 
 Current increment: a protected no-store API reports direction only for the exact instrument in one verified shadow report and the latest local Exness MT5 demo portfolio record. It only returns position values when the source-bar timestamp and demo portfolio observation timestamp are identical; otherwise it withholds both. Strategy-model units and current-symbol-metadata broker units are separately labeled and never subtracted or equated; magnitude comparison is explicitly unavailable. Hedged positions with net-zero broker quantity are distinguished from flat inventory, and inventory presence remains truthful when quantities are withheld. The response preserves unverified/non-atomic caveats, report hashes and false causal/promotion/order-authority fields. It is not a live execution or PnL comparison, and it does not link broker orders to the candidate. Focused comparison/API/shadow/architecture tests: 68 passed. Full locked suite: 2,981 passed, 36 skipped. Ruff lint/format and both dependency lock profiles pass; Bugbot found no remaining actionable findings. See `docs/DEMO_SHADOW_POSITION_COMPARISON_HANDOFF.md`.
 
+### P09 marked agent contribution report
+
+Current increment: a new protected no-store v2 route adds marked inventory and P&L to the verified agent-run-to-PAPER-fill accounting association. It uses the common liquidation-side mark selected from linked fills per instrument, preserves the mark timestamp and world-state version, withholds marked values for missing/untrusted/future/stale marks while retaining cash/fee totals, and reconciles instrument totals to run rows. Owner-level timing, instrument and archived-run checks are repeated before inclusion; invalid owners and fills remain unattributed. The v1 response contract remains unchanged. Focused agent attribution, paper attribution and archived-run tests pass (36); the full locked Windows suite passes (2,985 passed, 36 skipped in 1,088.47 seconds). Ruff, formatting, both dependency locks and Bugbot review pass. Causal contribution remains unproven because the run-to-intent reference is explicit evidence association, not proof of agent order generation. See `docs/AGENT_CONTRIBUTION_HANDOFF.md`.
+
 ### P09 forward-shadow counterfactual replay
 
 Current increment: a protected PAPER endpoint accepts bounded declared alternatives for an exact verified shadow report, reruns the retained configuration as a reproducibility baseline, and archives the immutable report and source in its own SQLite store. No broker, candidate lifecycle, causal claim, or promotion authority is included. Five focused tests pass; the full suite passed 2,971 tests with 36 skipped in 2,120.09 seconds; Ruff and Bugbot checks pass. See `docs/SHADOW_COUNTERFACTUAL_HANDOFF.md`.
@@ -45,7 +49,7 @@ Current increment: a protected PAPER endpoint accepts bounded declared alternati
 ## Remaining P09 work
 
 - Full live-broker-versus-shadow comparison with complete candidate/genome and interval coverage.
-- Agent contribution attribution; do not infer agent causality because advisory A12/A13 are disconnected from order creation.
+- Causal agent contribution attribution; the marked PAPER report covers verified linked fills, but do not infer agent causality because advisory A12/A13 are disconnected from order creation.
 - External reality-gap notification delivery and production shadow market ingress/scheduling.
 - Financing/restatements and production schedule retention/recovery evidence.
 - Financing/restatements, live broker comparison, production shadow ingress/scheduling, agent attribution, and the full P09 acceptance checklist/independent release evidence.
