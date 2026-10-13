@@ -54,8 +54,20 @@ def _apply_reality_gap(report, candidates, policy):
     return candidates.demote_for_reality_gap(report, assessment, expected_revision=view.revision)
 
 
-def observe_shadow(shadow_id, command_id, bars, store, candidates, strategies):
+def observe_shadow(
+    shadow_id,
+    command_id,
+    bars,
+    store,
+    candidates,
+    strategies,
+    *,
+    recovery_id=None,
+    recovery_reason=None,
+):
     request = ShadowRequest(shadow_id, command_id, bars)
+    if (recovery_id is None) != (recovery_reason is None):
+        raise ValueError("Recovery ID and reason must be supplied together")
     reality_gap_policy = store.reality_gap_policy(shadow_id)
     cached = store.cached(request)
     if cached is not None:
@@ -65,7 +77,15 @@ def observe_shadow(shadow_id, command_id, bars, store, candidates, strategies):
     if bars[-1].observed_at > observed_at:
         raise ValueError("Future shadow observations are not accepted")
     _eligible(store.assignment(shadow_id), candidates)
-    token, assignment, source, previous, cached = store.reserve(request)
+    if recovery_id is None:
+        token, assignment, source, previous, cached = store.reserve(request)
+    else:
+        token, assignment, source, previous, cached = store.recover_reservation(
+            request,
+            recovery_id,
+            recovery_reason,
+            recovered_at=observed_at,
+        )
     if cached is not None:
         _apply_reality_gap(cached, candidates, reality_gap_policy)
         return cached

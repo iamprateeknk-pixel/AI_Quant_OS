@@ -168,6 +168,75 @@ def test_shadow_retirement_refuses_uncertain_reservations(tmp_path):
         )
 
 
+def test_shadow_uncertain_reservation_requires_audited_explicit_recovery(tmp_path):
+    from ai_quant_os.shadow_pipeline import assign_shadow, observe_shadow
+    from ai_quant_os.shadow_portfolio import ShadowRequest
+    from ai_quant_os.shadow_store import ShadowStore
+
+    assignment, store, candidates, strategies = shadow_fixture(tmp_path)
+    assign_shadow(assignment, store, candidates, strategies)
+    bars = forward_bars(assignment)
+    request = ShadowRequest(assignment.shadow_id, "interrupted-batch", bars)
+    stale_token, *_ = store.reserve(request)
+    with pytest.raises(ValueError, match="supplied together"):
+        observe_shadow(
+            assignment.shadow_id,
+            "interrupted-batch",
+            bars,
+            store,
+            candidates,
+            strategies,
+            recovery_id="recover-interrupted-batch",
+        )
+    with pytest.raises(ValueError, match="requires investigation"):
+        observe_shadow(
+            assignment.shadow_id,
+            "interrupted-batch",
+            bars,
+            store,
+            candidates,
+            strategies,
+        )
+
+    report = observe_shadow(
+        assignment.shadow_id,
+        "interrupted-batch",
+        bars,
+        store,
+        candidates,
+        strategies,
+        recovery_id="recover-interrupted-batch",
+        recovery_reason="Confirmed prior local worker stopped",
+    )
+
+    assert report.outcome == "OBSERVED"
+    assert len(store.recoveries(assignment.shadow_id)) == 1
+    recovery = store.recoveries(assignment.shadow_id)[0]
+    assert recovery.command_id == request.command_id
+    from hashlib import sha256
+    from ai_quant_os.research_store import encode_research
+
+    assert recovery.request_sha256 == sha256(encode_research(request)).hexdigest()
+    assert recovery.recovery_id == "recover-interrupted-batch"
+    with pytest.raises(ValueError, match="ownership"):
+        store.finish(stale_token, report)
+    restarted = ShadowStore(store.path)
+    assert (
+        observe_shadow(
+            assignment.shadow_id,
+            "interrupted-batch",
+            bars,
+            restarted,
+            candidates,
+            strategies,
+            recovery_id="recover-interrupted-batch",
+            recovery_reason="Confirmed prior local worker stopped",
+        )
+        == report
+    )
+    assert len(restarted.recoveries(assignment.shadow_id)) == 1
+
+
 def test_shadow_refuses_holdout_preassignment_and_withdrawn_inputs(tmp_path):
     from ai_quant_os.shadow_pipeline import assign_shadow, observe_shadow
 

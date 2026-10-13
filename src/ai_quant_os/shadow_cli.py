@@ -24,6 +24,8 @@ def main():
     observe.add_argument("shadow_id")
     observe.add_argument("--command-id", required=True)
     observe.add_argument("--bars", type=Path, required=True)
+    observe.add_argument("--recovery-id")
+    observe.add_argument("--recovery-reason")
     latest = commands.add_parser("latest")
     latest.add_argument("shadow_id")
     latest.add_argument("--output", type=Path, required=True)
@@ -105,6 +107,8 @@ def main():
                 store,
                 candidates,
                 strategies,
+                recovery_id=args.recovery_id,
+                recovery_reason=args.recovery_reason,
             )
             status = ""
             reality_gap_policy = store.reality_gap_policy(args.shadow_id)

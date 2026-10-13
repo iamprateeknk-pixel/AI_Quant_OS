@@ -10,8 +10,10 @@ from ai_quant_os.research_store import _decode, encode_research
 from ai_quant_os.shadow_portfolio import (
     ShadowAssignment,
     ShadowReport,
+    ShadowRecovery,
     ShadowRequest,
     ShadowRetirement,
+    _identifier,
     verify_forward_source,
 )
 
@@ -44,11 +46,24 @@ class ShadowStore:
                 CREATE TABLE IF NOT EXISTS shadow_retirements (
                     shadow_id TEXT PRIMARY KEY, blob BLOB NOT NULL, sha256 TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS shadow_recoveries (
+                    shadow_id TEXT NOT NULL, sequence INTEGER NOT NULL, recovery_id TEXT NOT NULL,
+                    blob BLOB NOT NULL, sha256 TEXT NOT NULL,
+                    PRIMARY KEY(shadow_id,sequence), UNIQUE(shadow_id,recovery_id)
+                );
+                CREATE TABLE IF NOT EXISTS shadow_recovery_heads (
+                    shadow_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL, sha256 TEXT NOT NULL
+                );
             """)
             db.execute(
                 "INSERT OR IGNORE INTO shadow_reality_gap_policies "
                 "SELECT shadow_id,?,? FROM shadow_assignments",
                 (DISABLED_REALITY_GAP_POLICY, sha256(DISABLED_REALITY_GAP_POLICY).hexdigest()),
+            )
+            db.execute(
+                "INSERT OR IGNORE INTO shadow_recovery_heads "
+                "SELECT shadow_id,0,? FROM shadow_assignments",
+                (ZERO,),
             )
             db.commit()
 
@@ -66,8 +81,11 @@ class ShadowStore:
         retirements = db.execute(
             "SELECT COALESCE(SUM(length(blob)),0) FROM shadow_retirements"
         ).fetchone()[0]
+        recoveries = db.execute(
+            "SELECT COALESCE(SUM(length(blob)),0) FROM shadow_recoveries"
+        ).fetchone()[0]
         if (
-            size + batches + policies + retirements + additional > 64 * 1024 * 1024
+            size + batches + policies + retirements + recoveries + additional > 64 * 1024 * 1024
             or count > 1000
             or batch_count > 1000
         ):
@@ -159,6 +177,51 @@ class ShadowStore:
                 or any(entry[2] is None for entry in entries.values())
             ):
                 raise ValueError("Shadow retirement lineage mismatch")
+        recovery_rows = db.execute(
+            "SELECT sequence,recovery_id,blob,sha256 FROM shadow_recoveries "
+            "WHERE shadow_id=? ORDER BY sequence",
+            (shadow_id,),
+        ).fetchall()
+        if len(recovery_rows) > 1000:
+            raise ValueError("Shadow recovery history capacity exceeded")
+        recovery_previous = ZERO
+        recovery_commands = {}
+        recovery_ids = set()
+        for index, (sequence, recovery_id, raw, digest) in enumerate(recovery_rows, 1):
+            recovery = _decode(raw, digest, ShadowRecovery)
+            entry = entries.get(recovery.command_id)
+            request_digest = (
+                sha256(encode_research(entry[1])).hexdigest() if entry is not None else None
+            )
+            prior_for_command = recovery_commands.get(recovery.command_id)
+            if (
+                recovery.shadow_id != shadow_id
+                or recovery_id != recovery.recovery_id
+                or recovery_id in recovery_ids
+                or sequence != index
+                or recovery.sequence != sequence
+                or recovery.previous_sha256 != recovery_previous
+                or entry is None
+                or recovery.request_sha256 != request_digest
+                or recovery.recovered_at < assignment.assigned_at
+                or (entry[2] is not None and recovery.recovered_at > entry[2].observed_at)
+                or (
+                    prior_for_command is not None
+                    and recovery.previous_owner_sha256 != prior_for_command.owner_sha256
+                )
+            ):
+                raise ValueError("Shadow recovery lineage mismatch")
+            recovery_ids.add(recovery_id)
+            recovery_commands[recovery.command_id] = recovery
+            recovery_previous = digest
+        recovery_head = db.execute(
+            "SELECT sequence,sha256 FROM shadow_recovery_heads WHERE shadow_id=?", (shadow_id,)
+        ).fetchone()
+        if recovery_head != (len(recovery_rows), recovery_previous):
+            raise ValueError("Shadow recovery committed head mismatch")
+        for command_id, recovery in recovery_commands.items():
+            if sha256(entries[command_id][0].encode()).hexdigest() != recovery.owner_sha256:
+                raise ValueError("Shadow recovered owner token mismatch")
         return assignment, previous, entries
 
     @staticmethod
@@ -214,6 +277,9 @@ class ShadowStore:
                 (assignment.shadow_id, raw, sha256(raw).hexdigest()),
             )
             db.execute("INSERT INTO shadow_heads VALUES (?,0,?)", (assignment.shadow_id, ZERO))
+            db.execute(
+                "INSERT INTO shadow_recovery_heads VALUES (?,0,?)", (assignment.shadow_id, ZERO)
+            )
             db.execute(
                 "INSERT INTO shadow_reality_gap_policies VALUES (?,?,?)",
                 (assignment.shadow_id, policy_raw, policy_digest),
@@ -283,6 +349,110 @@ class ShadowStore:
             )
             db.commit()
             return retirement
+
+    def recoveries(self, shadow_id):
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN")
+            self._verified(db, shadow_id)
+            rows = db.execute(
+                "SELECT blob,sha256 FROM shadow_recoveries WHERE shadow_id=? ORDER BY sequence",
+                (shadow_id,),
+            ).fetchall()
+            return tuple(_decode(raw, digest, ShadowRecovery) for raw, digest in rows)
+
+    def recover_reservation(self, request, recovery_id, reason, *, recovered_at):
+        if type(request) is not ShadowRequest:
+            raise ValueError("Typed shadow reservation is required for recovery")
+        _identifier(recovery_id)
+        if not isinstance(reason, str):
+            raise ValueError("A bounded recovery reason is required")
+        reason = reason.strip()
+        if not reason or len(reason) > 212:
+            raise ValueError("A bounded recovery reason is required")
+        raw_request = encode_research(request)
+        request = _decode(raw_request, sha256(raw_request).hexdigest(), ShadowRequest)
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN IMMEDIATE")
+            assignment, previous, entries = self._verified(db, request.shadow_id)
+            entry = entries.get(request.command_id)
+            if entry is None or entry[1] != request:
+                raise ValueError("Exact retained shadow reservation is required for recovery")
+            prior_recovery_row = db.execute(
+                "SELECT blob,sha256 FROM shadow_recoveries WHERE shadow_id=? AND recovery_id=?",
+                (request.shadow_id, recovery_id),
+            ).fetchone()
+            if prior_recovery_row is not None:
+                prior_recovery = _decode(*prior_recovery_row, ShadowRecovery)
+                if (
+                    prior_recovery.command_id != request.command_id
+                    or prior_recovery.request_sha256 != sha256(raw_request).hexdigest()
+                    or prior_recovery.reason != reason
+                    or prior_recovery.owner_sha256 != sha256(entry[0].encode()).hexdigest()
+                ):
+                    raise ValueError("Shadow recovery command identity conflict")
+                return (
+                    None if entry[2] is not None else entry[0],
+                    assignment,
+                    entry[2].source_bars
+                    if entry[2] is not None
+                    else self._recovery_source(previous, request, assignment),
+                    previous,
+                    entry[2],
+                )
+            if entry[2] is not None:
+                raise ValueError("Completed shadow reservation does not require recovery")
+            if any(other[2] is None for key, other in entries.items() if key != request.command_id):
+                raise ValueError("Another uncertain shadow reservation blocks recovery")
+            if db.execute(
+                "SELECT 1 FROM shadow_retirements WHERE shadow_id=?", (request.shadow_id,)
+            ).fetchone():
+                raise ValueError("Shadow assignment is retired")
+
+            source = self._recovery_source(previous, request, assignment)
+            current_token = entry[0]
+            replacement_token = uuid4().hex
+            recovery_rows = db.execute(
+                "SELECT sequence,sha256 FROM shadow_recoveries WHERE shadow_id=? ORDER BY sequence",
+                (request.shadow_id,),
+            ).fetchall()
+            if len(recovery_rows) >= 1000:
+                raise ValueError("Shadow recovery capacity exceeded")
+            recovery = ShadowRecovery(
+                request.shadow_id,
+                recovery_id,
+                request.command_id,
+                sha256(raw_request).hexdigest(),
+                reason,
+                sha256(current_token.encode()).hexdigest(),
+                sha256(replacement_token.encode()).hexdigest(),
+                len(recovery_rows) + 1,
+                recovery_rows[-1][1] if recovery_rows else ZERO,
+                recovered_at,
+            )
+            raw = encode_research(recovery)
+            digest = sha256(raw).hexdigest()
+            self._capacity(db, len(raw))
+            db.execute(
+                "UPDATE shadow_batches SET owner_token=? WHERE shadow_id=? AND command_id=?",
+                (replacement_token, request.shadow_id, request.command_id),
+            )
+            db.execute(
+                "INSERT INTO shadow_recoveries VALUES (?,?,?,?,?)",
+                (request.shadow_id, recovery.sequence, recovery_id, raw, digest),
+            )
+            db.execute(
+                "UPDATE shadow_recovery_heads SET sequence=?,sha256=? WHERE shadow_id=?",
+                (recovery.sequence, digest, request.shadow_id),
+            )
+            self._verified(db, request.shadow_id)
+            db.commit()
+            return replacement_token, assignment, source, previous, None
+
+    @staticmethod
+    def _recovery_source(previous, request, assignment):
+        source = (previous.source_bars if previous is not None else ()) + request.bars
+        verify_forward_source(assignment, source)
+        return source
 
     def lookup(self, shadow_id):
         with closing(sqlite3.connect(self.path, timeout=10)) as db:

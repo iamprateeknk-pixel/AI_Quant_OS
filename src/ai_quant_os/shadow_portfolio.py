@@ -184,3 +184,51 @@ class ShadowRetirement:
         ):
             raise ValueError("Invalid shadow retirement evidence")
         object.__setattr__(self, "reason", self.reason.strip())
+
+
+@dataclass(frozen=True)
+class ShadowRecovery:
+    shadow_id: str
+    recovery_id: str
+    command_id: str
+    request_sha256: str
+    reason: str
+    previous_owner_sha256: str
+    owner_sha256: str
+    sequence: int
+    previous_sha256: str
+    recovered_at: datetime
+    schema_version: Literal["1.0"] = "1.0"
+
+    def __post_init__(self):
+        _identifier(self.shadow_id)
+        _identifier(self.recovery_id)
+        _identifier(self.command_id)
+        _require_aware(self.recovered_at)
+        object.__setattr__(self, "recovered_at", self.recovered_at.astimezone(timezone.utc))
+        hashes = (
+            self.request_sha256,
+            self.previous_owner_sha256,
+            self.owner_sha256,
+            self.previous_sha256,
+        )
+        if (
+            any(
+                not isinstance(value, str)
+                or len(value) != 64
+                or any(ch not in "0123456789abcdef" for ch in value)
+                for value in hashes
+            )
+            or self.previous_owner_sha256 == self.owner_sha256
+            or not isinstance(self.reason, str)
+            or not 1 <= len(self.reason.strip()) <= 212
+            or type(self.sequence) is not int
+            or not 1 <= self.sequence <= 1000
+            or self.schema_version != "1.0"
+        ):
+            raise ValueError("Invalid shadow reservation recovery evidence")
+        object.__setattr__(self, "reason", self.reason.strip())
+
+    @property
+    def fingerprint(self):
+        return sha256(encode_research(self)).hexdigest()
