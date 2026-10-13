@@ -7,26 +7,32 @@ type Source = {
   close():void;
   onerror:((event:Event)=>void)|null;
 };
-type Options = {connect:()=>Source;clock:()=>number;schedule:(callback:()=>void,delay:number)=>number;cancel:(id:number)=>void};
+type Options = {authorize?:()=>Promise<boolean>;connect:()=>Source;clock:()=>number;schedule:(callback:()=>void,delay:number)=>number;cancel:(id:number)=>void};
 const INITIAL:RealtimeView=Object.freeze({state:"CONNECTING",frame:null});
 
 /** One connection and original-lease timer, owned by the active subscriptions. */
 export function createRealtimeStore(options:Options) {
   let view=INITIAL,source:Source|null=null,detach:(()=>void)|null=null;
-  let expiry:number|null=null,retry:number|null=null,failures=0;
+  let expiry:number|null=null,retry:number|null=null,failures=0,authorizationPending=false,generation=0;
   const listeners=new Set<()=>void>();
   const publish=(next:RealtimeView)=>{view=next;for(const listener of [...listeners])listener();};
   const clearExpiry=()=>{if(expiry!==null)options.cancel(expiry);expiry=null;};
   const close=()=>{const cleanup=detach;source=null;detach=null;cleanup?.();};
   const retryConnection=()=>{
-    clearExpiry();close();publish({...view,state:"DISCONNECTED"});
+    generation++;authorizationPending=false;clearExpiry();close();publish({...view,state:"DISCONNECTED"});
     if(!listeners.size || retry!==null) return;
     const delay=Math.min(30000,2000*2**Math.min(failures++,4));
     retry=options.schedule(()=>{retry=null;start();},delay);
   };
   const start=()=>{
-    if(!listeners.size || source!==null) return;
-    try{
+    if(!listeners.size || source!==null || authorizationPending) return;
+    const attempt=++generation;
+    authorizationPending=true;
+    void Promise.resolve().then(()=>options.authorize?.() ?? true).then(authorized=>{
+      if(attempt!==generation || !listeners.size) return;
+      authorizationPending=false;
+      if(!authorized){retryConnection();return;}
+      try{
       const active=options.connect();source=active;
       const receive=(event:MessageEvent,reset:boolean)=>{
         if(source!==active) return;
@@ -42,7 +48,8 @@ export function createRealtimeStore(options:Options) {
       detach=()=>{active.removeEventListener("reset",reset);active.removeEventListener("snapshot",snapshot);active.onerror=null;active.close();};
       active.addEventListener("reset",reset);active.addEventListener("snapshot",snapshot);
       active.onerror=()=>{if(source===active)retryConnection();};
-    }catch{retryConnection();}
+      }catch{retryConnection();}
+    }).catch(()=>{if(attempt===generation && listeners.size){authorizationPending=false;retryConnection();}});
   };
   return {
     snapshot:()=>view,
@@ -51,7 +58,7 @@ export function createRealtimeStore(options:Options) {
       const notify=()=>listener();listeners.add(notify);if(listeners.size===1)start();
       return()=>{
         listeners.delete(notify);
-        if(!listeners.size){clearExpiry();if(retry!==null)options.cancel(retry);retry=null;close();view={...view,state:"DISCONNECTED"};}
+        if(!listeners.size){generation++;authorizationPending=false;clearExpiry();if(retry!==null)options.cancel(retry);retry=null;close();view={...view,state:"DISCONNECTED"};}
       };
     },
   };

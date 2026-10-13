@@ -61,3 +61,10 @@ test('populated protected backend features survive proxy validation without roun
  const euro=parsed.instruments.find(row=>row.instrument_id==='EURUSD'),source=fixture.world.instruments.find(row=>row.instrument_id==='EURUSD');
  assert.equal(euro.return_bps,source.return_bps);assert.equal(euro.realized_volatility_bps,source.realized_volatility_bps);assert.deepEqual(parsed.currency_twins,fixture.world.currency_twins);
 });
+
+test('stream proxy identifies stale frame leases and mismatched event IDs without echoing payloads',async()=>{
+ const proxy=await proxyModule(),raw=frame();
+ const event=(id)=>new Response(`id: ${id}\nevent: reset\ndata: ${JSON.stringify(raw)}\n\n`,{headers:{'Content-Type':'text/event-stream'}});
+ await assert.rejects(proxy.proxyRealtimeResponse(event(`${raw.epoch}:1`),new AbortController().signal,()=>Date.parse(now)+3001).text(),/Realtime frame is invalid or expired/);
+ await assert.rejects(proxy.proxyRealtimeResponse(event(`${raw.epoch}:2`),new AbortController().signal,()=>Date.parse(now)).text(),/Realtime event ID mismatch/);
+});

@@ -39,6 +39,18 @@ export async function sessionStatus() {
   } catch { return failure(503); }
 }
 
+/** Public same-browser readiness probe for the protected realtime stream. */
+export async function realtimeAuthorization() {
+  try {
+    const token = (await cookies()).get(COOKIE)?.value;
+    if (!token) return json({ authorized: false });
+    const response = await upstream("/api/v1/operator/session", "GET", { "X-Operator-Session": token });
+    if (!response.value) return json({ authorized: false });
+    publicSession(response.value);
+    return json({ authorized: true });
+  } catch { return json({ authorized: false }); }
+}
+
 export async function sessionLogin(request: Request) {
   try { requireOrigin(request, origin()); } catch { return failure(403); }
   let credential: string;
@@ -93,6 +105,35 @@ export async function controlReceipt(actionId: string) {
     const token = (await cookies()).get(COOKIE)?.value;
     if (!token) return failure(401);
     const response = await upstream("/api/v1/operator/controls/" + actionId, "GET", { "X-Operator-Session": token });
+    return response.value ? json(response.value) : failure(response.status);
+  } catch { return failure(503); }
+}
+
+export async function submitBrokerRouteControl(request: Request) {
+  try { requireOrigin(request, origin()); } catch { return json({ detail: "Same-origin request required." }, 403); }
+  let input: Record<string, unknown>, credential: string;
+  try {
+    input = record(await readJson(request));
+    credential = loginCredential({ credential: input.credential });
+    const allowed = ["credential", "action_id", "requested_enabled", "expected_enabled", "reason", "operator_session_id", "client_timestamp", "confirmation"];
+    if (Object.keys(input).some((key) => !allowed.includes(key))) throw new Error("Invalid route command");
+  } catch { return json({ detail: "A valid route command and access code are required." }, 422); }
+  const command = { ...input };
+  delete command.credential;
+  try {
+    const token = (await cookies()).get(COOKIE)?.value;
+    if (!token) return failure(401);
+    const response = await upstream("/api/v1/brokers/PAPER/route-controls", "POST", { "X-Operator-Session": token, "X-Operator-Reauth": credential }, command);
+    return response.value ? json(response.value) : failure(response.status);
+  } catch { return failure(503); }
+}
+
+export async function brokerRouteControlReceipt(actionId: string) {
+  if (!/^[0-9a-f-]{36}$/.test(actionId)) return failure(404);
+  try {
+    const token = (await cookies()).get(COOKIE)?.value;
+    if (!token) return failure(401);
+    const response = await upstream("/api/v1/brokers/route-controls/" + actionId, "GET", { "X-Operator-Session": token });
     return response.value ? json(response.value) : failure(response.status);
   } catch { return failure(503); }
 }
@@ -191,7 +232,7 @@ export async function readMonitoringIncidents(offset = 0, head?: string): Promis
     return {ok:false,reason:"INVALID_PAGE"};
   }
   const result=await protectedRead(
-    `/api/v1/observability/incidents?limit=50&offset=${offset}${head ? `&head=${head}` : ""}`,
+    `/api/v1/observability/incidents?offset=${offset}${head ? `&head=${head}` : ""}`,
     false,
     262144,
   );

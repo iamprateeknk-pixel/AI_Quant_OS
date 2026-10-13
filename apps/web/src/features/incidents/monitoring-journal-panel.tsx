@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {useCallback,useEffect,useRef,useState} from "react";
+import {hasOperatorSession} from "@/features/operator-session/browser";
 import {parseMonitoringAcknowledgement,parseMonitoringJournal,type MonitoringEpisode,type MonitoringJournalPage} from "./monitoring-journal";
 
 type View={status:"LOADING"}|{status:"READY";page:MonitoringJournalPage}|{status:"UNAVAILABLE";reason:"SIGN_IN"|"CHANGED"|"UNAVAILABLE"};
@@ -25,6 +26,7 @@ export function MonitoringJournalPanel() {
  const load=useCallback(async(offset=0,head?:string,signal?:AbortSignal)=>{
   const sequence=++requestSequence.current;
   try{
+   if(!await hasOperatorSession(signal))throw new Error("401");
    const query=offset?`?offset=${offset}&head=${head}`:"";
    const response=await fetch(`/api/incidents/journal${query}`,{cache:"no-store",redirect:"error",credentials:"same-origin",signal});
    const value=parseMonitoringJournal(await decoded(response));
@@ -47,6 +49,7 @@ export function MonitoringJournalPanel() {
   setPending(true);setMessage("");
   const actionId=crypto.randomUUID();
   try{
+   if(!await hasOperatorSession())throw new Error("401");
    const response=await fetch("/api/incidents/journal/acknowledge",{
     method:"POST",cache:"no-store",redirect:"error",credentials:"same-origin",
     headers:{"Content-Type":"application/json"},

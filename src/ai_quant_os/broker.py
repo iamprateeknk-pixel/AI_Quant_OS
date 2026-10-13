@@ -4,8 +4,8 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from threading import Lock
-from typing import Protocol
+from threading import Lock, RLock
+from typing import Callable, Protocol
 
 from ai_quant_os.broker_capabilities import BrokerEligibility, default_eligibility
 from ai_quant_os.contracts import OrderCommand, _require_aware
@@ -18,6 +18,10 @@ class BrokerUnavailable(ValueError):
 
 class BrokerOutcomeUnknown(BrokerUnavailable):
     pass
+
+
+class BrokerRouteStateConflict(ValueError):
+    """A broker route changed after the operator observed it."""
 
 
 @dataclass(frozen=True)
@@ -294,42 +298,86 @@ class BrokerRouter:
             else eligibility.get(identity, BrokerEligibility())
             for identity in self._adapters
         }
+        self._route_lock = RLock()
 
     def eligibility(self, broker_id: str) -> BrokerEligibility:
         return self._eligibility.get(broker_id, BrokerEligibility())
 
     def snapshot(self) -> list[dict[str, str | bool | list[str]]]:
-        return [
-            {
-                "broker_id": adapter.broker_id,
-                "connection_state": "CONNECTED" if adapter.connected is True else "DISCONNECTED",
-                "enabled": adapter.enabled is True,
-                "instruments": sorted(adapter.symbol_map),
-            }
-            for adapter in self._adapters.values()
-        ]
+        with self._route_lock:
+            return [
+                {
+                    "broker_id": adapter.broker_id,
+                    "connection_state": (
+                        "CONNECTED" if adapter.connected is True else "DISCONNECTED"
+                    ),
+                    "enabled": adapter.enabled is True,
+                    "instruments": sorted(adapter.symbol_map),
+                }
+                for adapter in self._adapters.values()
+            ]
+
+    def set_enabled(
+        self,
+        broker_id: str,
+        enabled: bool,
+        *,
+        expected_enabled: bool | None = None,
+        before_change: Callable[[bool], None] | None = None,
+    ) -> bool:
+        """Change only new-order routing, serializing it against in-flight dispatch."""
+        if type(enabled) is not bool or (
+            expected_enabled is not None and type(expected_enabled) is not bool
+        ):
+            raise ValueError("Broker route state must be boolean")
+        def apply(current: bool) -> bool:
+            if expected_enabled is not None and current is not expected_enabled:
+                raise BrokerRouteStateConflict("Broker route state changed")
+            if before_change is not None:
+                before_change(current)
+            return enabled
+
+        return self.transition_enabled(broker_id, apply)[0]
+
+    def transition_enabled(
+        self, broker_id: str, decide: Callable[[bool], bool]
+    ) -> tuple[bool, bool]:
+        """Run a durable route-state decision while new-order dispatch is excluded."""
+        adapter = self._adapters.get(broker_id)
+        if adapter is None:
+            raise BrokerUnavailable("Broker route does not exist")
+        with self._route_lock:
+            current = adapter.enabled
+            if type(current) is not bool:
+                raise BrokerUnavailable("Broker route state is invalid")
+            enabled = decide(current)
+            if type(enabled) is not bool:
+                raise ValueError("Broker route transition must return a boolean")
+            adapter.enabled = enabled
+            return current, enabled
 
     def route(self, command: OrderCommand, *, now: datetime) -> BrokerAck:
         _require_aware(now)
-        adapter = self._adapters.get(command.broker_route)
-        if adapter is None or adapter.enabled is not True:
-            raise BrokerUnavailable("Broker route is disabled")
-        if command.broker_route != "PAPER":
-            raise BrokerUnavailable("External broker execution is not released")
-        if not self.eligibility(command.broker_route).allows_paper_orders():
-            raise BrokerUnavailable("Broker eligibility is not confirmed for local simulation")
-        if adapter.connected is not True:
-            raise BrokerUnavailable("Broker is disconnected")
-        if command.instrument_id not in adapter.symbol_map or command.order_type != "MARKET":
-            raise BrokerUnavailable("Instrument or order type is unsupported")
-        if now >= command.expires_at:
-            raise BrokerUnavailable("Order command expired")
-        try:
-            return adapter.place(command)
-        except Exception as error:
-            raise BrokerOutcomeUnknown(
-                "Broker outcome is unknown; reconcile before new risk"
-            ) from error
+        with self._route_lock:
+            adapter = self._adapters.get(command.broker_route)
+            if adapter is None or adapter.enabled is not True:
+                raise BrokerUnavailable("Broker route is disabled")
+            if command.broker_route != "PAPER":
+                raise BrokerUnavailable("External broker execution is not released")
+            if not self.eligibility(command.broker_route).allows_paper_orders():
+                raise BrokerUnavailable("Broker eligibility is not confirmed for local simulation")
+            if adapter.connected is not True:
+                raise BrokerUnavailable("Broker is disconnected")
+            if command.instrument_id not in adapter.symbol_map or command.order_type != "MARKET":
+                raise BrokerUnavailable("Instrument or order type is unsupported")
+            if now >= command.expires_at:
+                raise BrokerUnavailable("Order command expired")
+            try:
+                return adapter.place(command)
+            except Exception as error:
+                raise BrokerOutcomeUnknown(
+                    "Broker outcome is unknown; reconcile before new risk"
+                ) from error
 
     def lookup(self, command: OrderCommand) -> BrokerAck | None:
         adapter = self._adapters.get(command.broker_route)

@@ -56,10 +56,14 @@ def install_research_routes(app: FastAPI, workspace: Path | None, require_operat
         except (ValueError, OSError) as error:
             raise HTTPException(503, "Strategy archive verification failed") from error
 
-    def store():
+    def store(*, create: bool = False):
         if root is None:
             raise HTTPException(status_code=503, detail="Research workspace is disabled")
         try:
+            if not root.is_dir():
+                raise OSError("Research workspace directory is unavailable")
+            if not create and not (root / "candidates.sqlite3").is_file():
+                raise OSError("Research registry file is unavailable")
             from ai_quant_os.research_candidate_store import CandidateStore
 
             return CandidateStore(root / "candidates.sqlite3")
@@ -124,7 +128,7 @@ def install_research_routes(app: FastAPI, workspace: Path | None, require_operat
 
     @app.post("/api/v1/paper/research/candidates", dependencies=[Depends(require_operator)])
     def register_candidate(payload: CandidateRegistrationInput):
-        registry = store()
+        registry = store(create=True)
         from ai_quant_os.research_candidates import build_candidate_bundle
         from ai_quant_os.research_store import ResearchStore
         from ai_quant_os.strategy_registry import StrategyRegistry

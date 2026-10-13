@@ -1,20 +1,16 @@
 """Provenance-bound native execution for trusted allowlisted strategy genomes."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from ai_quant_os.backtest import BacktestCosts
 from ai_quant_os.market_data import BarDataset
-from ai_quant_os.nautilus_runtime import (
-    NautilusResult,
-    run_nautilus_backtest,
-    run_nautilus_tick_backtest,
-    run_nautilus_directional_backtest,
-)
+from ai_quant_os.nautilus_contracts import NautilusResult
 from ai_quant_os.strategy_contracts import StrategyBinding, StrategyGenome
 from ai_quant_os.strategy_registry import StrategyRegistry, prepare_builtin, verify_implementation
 from ai_quant_os.tick_data import TickDataset
 from ai_quant_os.directional_strategy import DIRECTIONAL_REF
-
 
 @dataclass(frozen=True)
 class RegisteredBacktest:
@@ -30,6 +26,12 @@ def run_registered_backtest(
     *,
     quantity: int = 1,
 ) -> RegisteredBacktest:
+    from ai_quant_os.nautilus_runtime import (
+        run_nautilus_backtest,
+        run_nautilus_directional_backtest,
+        run_nautilus_tick_backtest,
+    )
+
     expected = BarDataset if genome.input_kind == "BAR" else TickDataset
     if not isinstance(dataset, expected):
         raise ValueError("Strategy input does not match genome")

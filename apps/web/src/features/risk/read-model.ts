@@ -1,7 +1,9 @@
 export type SafetyState = "NORMAL" | "NO_NEW_RISK" | "FLATTEN_ONLY" | "HALT";
+export const RISK_INSTRUMENTS = ["EURUSD", "GBPUSD", "USDJPY", "EURJPY"] as const;
+export type RiskInstrument = typeof RISK_INSTRUMENTS[number];
 export type SystemStatus = { mode: "PAPER"; safety_state: SafetyState; order_count: number };
 export type RiskView = {
-  instrument_id: "EURUSD" | "GBPUSD" | "USDJPY" | "EURJPY";
+  instrument_id: RiskInstrument;
   safety_state: SafetyState;
   max_order_exposure: string;
   max_portfolio_exposure: string;
@@ -16,7 +18,6 @@ export type RiskView = {
 };
 
 const safetyStates = ["NORMAL", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"] as const;
-const instruments = ["EURUSD", "GBPUSD", "USDJPY", "EURJPY"] as const;
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -41,7 +42,7 @@ export function parseSystemStatus(value: unknown): SystemStatus | null {
 
 export function parseRiskView(value: unknown, instrument: RiskView["instrument_id"] = "EURUSD"): RiskView | null {
   const keys = ["instrument_id", "safety_state", "max_order_exposure", "max_portfolio_exposure", "worst_case_quantity", "filled_net_quantity", "pending_buy_quantity", "pending_sell_quantity", "portfolio_snapshot_id", "reporting_currency", "max_currency_exposure_reporting", "max_gross_currency_exposure_reporting"];
-  if (!record(value) || !exactKeys(value, keys) || value.instrument_id !== instrument || !instruments.includes(value.instrument_id as RiskView["instrument_id"]) ||
+  if (!record(value) || !exactKeys(value, keys) || value.instrument_id !== instrument || !RISK_INSTRUMENTS.includes(value.instrument_id as RiskInstrument) ||
       !safetyStates.includes(value.safety_state as SafetyState) ||
       !decimal(value.max_order_exposure, false, false) || !decimal(value.max_portfolio_exposure, false, false) ||
       !decimal(value.worst_case_quantity, false, true) || !decimal(value.filled_net_quantity, true, true) ||

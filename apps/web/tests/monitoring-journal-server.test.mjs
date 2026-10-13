@@ -28,11 +28,13 @@ test("history reads use the current private session and fixed bounded page",asyn
   const api=await server();globalThis.monitorCookies=()=>({get:()=>undefined});globalThis.fetch=async(url,options)=>{calls.push({url,options});return Response.json(new URL(url).searchParams.get("offset")==="50"?{...page,offset:50}:page);};
   assert.deepEqual(await api.readMonitoringIncidents(),{ok:false,reason:"SIGN_IN"});assert.equal(calls.length,0);
   globalThis.monitorCookies=()=>({get:()=>({value:"private-session"})});
+  const firstPage=await api.readMonitoringIncidents();assert.equal(firstPage.ok,true);
+  assert.equal(new URL(calls[0].url).search,"?offset=0");
   const result=await api.readMonitoringIncidents(50,head);assert.equal(result.ok,true);
-  assert.equal(calls.length,1);assert.equal(new URL(calls[0].url).pathname,"/api/v1/observability/incidents");
-  assert.equal(new URL(calls[0].url).search,"?limit=50&offset=50&head="+head);
-  assert.equal(calls[0].options.headers["X-Operator-Session"],"private-session");
-  assert.equal(calls[0].options.cache,"no-store");assert.equal(calls[0].options.redirect,"error");
+  assert.equal(calls.length,2);assert.equal(new URL(calls[1].url).pathname,"/api/v1/observability/incidents");
+  assert.equal(new URL(calls[1].url).search,"?offset=50&head="+head);
+  assert.equal(calls[1].options.headers["X-Operator-Session"],"private-session");
+  assert.equal(calls[1].options.cache,"no-store");assert.equal(calls[1].options.redirect,"error");
   assert.deepEqual(await api.readMonitoringIncidents(1),{ok:false,reason:"INVALID_PAGE"});
   globalThis.fetch=async()=>new Response(null,{status:409});
   assert.deepEqual(await api.readMonitoringIncidents(0),{ok:false,reason:"CHANGED"});

@@ -33,6 +33,22 @@ test('session administrative proxy denies cross-origin/invalid targets and keeps
  }finally{globalThis.fetch=oldFetch;if(oldCookies===undefined)delete globalThis.adminCookies;else globalThis.adminCookies=oldCookies;for(const [i,key] of ['AI_QUANT_API_URL','AI_QUANT_WEB_ORIGIN'].entries())if(origins[i]===undefined)delete process.env[key];else process.env[key]=origins[i]}
 });
 
+test('realtime authorization probe returns only a no-store boolean without an authentication error',async()=>{
+ const oldFetch=globalThis.fetch,oldCookies=globalThis.adminCookies;
+ try{
+  globalThis.adminCookies=()=>({get:()=>undefined});
+  const anonymous=await server.realtimeAuthorization();
+  assert.equal(anonymous.status,200);assert.equal(anonymous.headers.get('cache-control'),'no-store');assert.deepEqual(await anonymous.json(),{authorized:false});
+  globalThis.adminCookies=()=>({get:()=>({value:'synthetic-server-nonce'})});
+  globalThis.fetch=async()=>new Response(JSON.stringify(session));
+  const authorized=await server.realtimeAuthorization();assert.equal(authorized.status,200);assert.deepEqual(await authorized.json(),{authorized:true});
+  globalThis.fetch=async()=>new Response(JSON.stringify({unexpected:'shape'}));
+  const malformed=await server.realtimeAuthorization();assert.equal(malformed.status,200);assert.deepEqual(await malformed.json(),{authorized:false});
+  globalThis.fetch=async()=>new Response(null,{status:401});
+  const revoked=await server.realtimeAuthorization();assert.equal(revoked.status,200);assert.deepEqual(await revoked.json(),{authorized:false});
+ }finally{globalThis.fetch=oldFetch;if(oldCookies===undefined)delete globalThis.adminCookies;else globalThis.adminCookies=oldCookies}
+});
+
 
 test('self revocation clears the HttpOnly session only after a verified receipt',async()=>{
  const oldFetch=globalThis.fetch,oldCookies=globalThis.adminCookies;

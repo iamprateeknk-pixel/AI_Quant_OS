@@ -109,6 +109,7 @@ from ai_quant_os.paper_state_store import PaperStateStore
 from ai_quant_os.operator_session_store import OperatorSessionStore
 from ai_quant_os.operator_session_api import OperatorAuthorization
 from ai_quant_os.operator_control_api import install_operator_control_routes
+from ai_quant_os.broker_route_control_api import install_broker_route_control_routes
 from ai_quant_os.portfolio import PaperFill, summarize_position
 from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
 from ai_quant_os.research_api import install_research_routes
@@ -515,6 +516,12 @@ def create_app(
             )
         ]
     )
+    try:
+        router.set_enabled(
+            "PAPER", state_store.broker_route_enabled("PAPER", default_enabled=True)
+        )
+    except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
+        raise ValueError("Persistent PAPER broker route state could not be verified") from error
     execution = PaperExecutionGateway(
         risk,
         store_path=configured_path,
@@ -800,6 +807,16 @@ def create_app(
     )
     install_operator_control_routes(
         app, operator_authorization, state_store, risk, control_lock, current_time
+    )
+    install_broker_route_control_routes(
+        app,
+        operator_authorization,
+        state_store,
+        router,
+        risk,
+        control_lock,
+        current_time,
+        persistent=configured_path is not None,
     )
 
     def require_recovery(x_recovery_token: str | None = Header(default=None)) -> None:

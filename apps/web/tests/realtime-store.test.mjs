@@ -1,49 +1,45 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync,readFileSync} from 'node:fs';
+import {readFileSync} from 'node:fs';
 import ts from 'typescript';
-const compile=source=>`data:text/javascript;base64,${Buffer.from(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')}`;
-const frames=compile(readFileSync(new URL('../src/features/realtime/frames.ts',import.meta.url),'utf8'));
-const path=new URL('../src/features/realtime/store.ts',import.meta.url);
-async function module(){assert(existsSync(path),'Shared realtime store must exist');return import(compile(readFileSync(path,'utf8').replace('from "./frames"',`from "${frames}"`)));}
-function fixture(){
- const sources=[],timers=new Map();let now=Date.parse('2026-10-10T00:00:00Z'),nextTimer=0;
- class Source{
-  listeners=new Map();onerror=null;closed=false;
-  addEventListener(type,callback){this.listeners.set(type,callback);}
-  removeEventListener(type){this.listeners.delete(type);}
-  close(){this.closed=true;}
-  emit(type,raw){this.listeners.get(type)?.({data:JSON.stringify(raw),lastEventId:`${raw.epoch}:${raw.sequence}`});}
- }
- return {sources,timers,options:{connect(){const source=new Source();sources.push(source);return source;},clock:()=>now,schedule(callback,delay){const id=++nextTimer;timers.set(id,{callback,at:now+delay});return id;},cancel(id){timers.delete(id);}},advance(ms){now+=ms;for(const [id,timer] of [...timers])if(timer.at<=now){timers.delete(id);timer.callback();}},frame(sequence=1){return {...JSON.parse(readFileSync(new URL('./fixtures/realtime-snapshot.json',import.meta.url),'utf8')),sequence,captured_at:new Date(now).toISOString(),valid_until:new Date(now+3000).toISOString(),world:{...JSON.parse(readFileSync(new URL('./fixtures/realtime-snapshot.json',import.meta.url),'utf8')).world,as_of:new Date(now).toISOString(),valid_until:new Date(now+5000).toISOString()}};}};
+
+const base=new URL('../src/features/realtime/',import.meta.url);
+const moduleUrl=source=>`data:text/javascript;base64,${Buffer.from(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText).toString('base64')}`;
+const frames=moduleUrl(readFileSync(new URL('frames.ts',base),'utf8'));
+const source=readFileSync(new URL('store.ts',base),'utf8').replace('from "./frames"',`from "${frames}"`);
+const {createRealtimeStore}=await import(moduleUrl(source));
+
+function harness(authorize){
+ const scheduled=[],cancelled=[];let connections=0,closed=0;
+ const store=createRealtimeStore({authorize,connect:()=>{connections++;return {addEventListener(){},removeEventListener(){},close(){closed++},onerror:null};},clock:()=>Date.now(),schedule:(callback,delay)=>{scheduled.push({callback,delay});return scheduled.length;},cancel:id=>cancelled.push(id)});
+ return {store,scheduled,cancelled,connections:()=>connections,closed:()=>closed};
 }
-test('all subscribers share one channel and original expiry clears current state',async()=>{
- const m=await module(),f=fixture(),store=m.createRealtimeStore(f.options);let notifications=0;
- assert.deepEqual(store.serverSnapshot(),{state:'CONNECTING',frame:null});assert.equal(f.sources.length,0);
- const a=store.subscribe(()=>notifications++),b=store.subscribe(()=>notifications++);assert.equal(f.sources.length,1);
- f.sources[0].emit('reset',f.frame());assert.equal(store.snapshot().state,'CURRENT');const current=store.snapshot();assert.equal(store.snapshot(),current);
- f.advance(3000);assert.equal(store.snapshot().state,'STALE');assert.equal(store.snapshot().frame.sequence,1);assert(notifications>0);
- a();assert.equal(f.sources[0].closed,false);b();assert.equal(f.sources[0].closed,true);assert.equal(f.timers.size,0);
+
+test('unauthenticated realtime subscription does not open an EventSource and backs off',async()=>{
+ const h=harness(async()=>false),unsubscribe=h.store.subscribe(()=>{});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.connections(),0);assert.equal(h.store.snapshot().state,'DISCONNECTED');
+ assert.deepEqual(h.scheduled.map(item=>item.delay),[2000]);
+ unsubscribe();assert.deepEqual(h.cancelled,[1]);
 });
-test('failed private access retries with one source and old callbacks cannot reauthorize data',async()=>{
- const m=await module(),f=fixture(),store=m.createRealtimeStore(f.options),unsubscribe=store.subscribe(()=>{}),old=f.sources[0];
- const late=old.listeners.get('reset');old.onerror(new Event('error'));assert.equal(store.snapshot().state,'DISCONNECTED');assert(old.closed);
- f.advance(2000);assert.equal(f.sources.length,2);assert.equal(f.sources[1].closed,false);
- late({data:JSON.stringify(f.frame()),lastEventId:`${f.frame().epoch}:1`});assert.equal(store.snapshot().state,'DISCONNECTED');
- f.sources[1].emit('reset',f.frame());assert.equal(store.snapshot().state,'CURRENT');unsubscribe();assert.equal(f.timers.size,0);
+
+test('authorized realtime subscription opens one source after session validation',async()=>{
+ const h=harness(async()=>true),unsubscribe=h.store.subscribe(()=>{});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.connections(),1);assert.equal(h.store.snapshot().state,'CONNECTING');
+ unsubscribe();assert.equal(h.closed(),1);
 });
-test('regressions and epoch changes are withheld without replacing accepted evidence',async()=>{
- const m=await module(),f=fixture(),store=m.createRealtimeStore(f.options),unsubscribe=store.subscribe(()=>{});
- f.sources[0].emit('reset',f.frame(2));f.sources[0].emit('snapshot',f.frame(1));assert.equal(store.snapshot().state,'WITHHELD');assert.equal(store.snapshot().frame.sequence,2);
- f.sources[0].emit('snapshot',f.frame(3));assert.equal(store.snapshot().state,'CURRENT');
- const epoch={...f.frame(4),epoch:'12345678-1234-4123-8123-123456789abc'};f.sources[0].emit('snapshot',epoch);assert.equal(store.snapshot().state,'WITHHELD');unsubscribe();
+
+test('unsubscribe invalidates a pending authorization check before it can connect',async()=>{
+ let authorize;
+ const h=harness(()=>new Promise(resolve=>{authorize=resolve;})),unsubscribe=h.store.subscribe(()=>{});
+ await Promise.resolve();unsubscribe();authorize(true);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.connections(),0);assert.equal(h.scheduled.length,0);assert.equal(h.store.snapshot().state,'DISCONNECTED');
 });
-test('access failures back off to a bounded delay and last unsubscribe cancels retry',async()=>{
- const m=await module(),f=fixture(),store=m.createRealtimeStore(f.options),unsubscribe=store.subscribe(()=>{});
- for(const delay of [2000,4000,8000,16000,30000,30000]){
-  f.sources.at(-1).onerror(new Event('error'));assert.equal(f.timers.size,1);
-  const before=f.sources.length;f.advance(delay-1);assert.equal(f.sources.length,before);f.advance(1);assert.equal(f.sources.length,before+1);
-  assert.equal(f.sources.filter(source=>!source.closed).length,1);
- }
- f.sources.at(-1).onerror(new Event('error'));unsubscribe();assert.equal(f.timers.size,0);f.advance(30000);assert.equal(f.sources.length,7);
+
+test('authorization failures retry without opening the protected stream',async()=>{
+ const h=harness(async()=>{throw new Error('probe unavailable');}),unsubscribe=h.store.subscribe(()=>{});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.connections(),0);assert.equal(h.store.snapshot().state,'DISCONNECTED');
+ assert.deepEqual(h.scheduled.map(item=>item.delay),[2000]);unsubscribe();
 });

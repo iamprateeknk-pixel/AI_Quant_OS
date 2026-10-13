@@ -38,8 +38,8 @@ export function getSystemStatus(): Promise<ReadResult<SystemStatus>> {
   return read("/api/v1/system/status", parseSystemStatus);
 }
 
-export function getRisk(): Promise<ReadResult<RiskView>> {
-  return read("/api/v1/risk", (value) => parseRiskView(value, "EURUSD"));
+export function getRisk(instrument: RiskView["instrument_id"] = "EURUSD"): Promise<ReadResult<RiskView>> {
+  return read(`/api/v1/risk?instrument=${encodeURIComponent(instrument)}`, (value) => parseRiskView(value, instrument));
 }
 
 export function getOrders(): Promise<ReadResult<{ orders: PaperOrder[] }>> {

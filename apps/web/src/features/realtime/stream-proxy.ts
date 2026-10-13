@@ -30,7 +30,9 @@ export function proxyRealtimeResponse(upstream: Response, signal: AbortSignal, c
             const reset=fields.get("event")==="reset";
             if(!reset && fields.get("event")!=="snapshot") throw new Error("Invalid realtime event type");
             const raw=JSON.parse(fields.get("data")??"null"), frame=parseRealtimeFrame(raw,clock());
-            if(!frame || fields.get("id")!==`${frame.epoch}:${frame.sequence}` || !acceptRealtimeFrame(previous,frame,reset)) throw new Error("Invalid realtime state");
+            if(!frame) throw new Error("Realtime frame is invalid or expired");
+            if(fields.get("id")!==`${frame.epoch}:${frame.sequence}`) throw new Error("Realtime event ID mismatch");
+            if(!acceptRealtimeFrame(previous,frame,reset)) throw new Error("Realtime event order rejected");
             previous=frame;
             const safe={schema_version:"1.0",mode:"PAPER",epoch:frame.epoch,sequence:frame.sequence,captured_at:frame.captured_at,valid_until:frame.valid_until,safety_state:frame.safety_state,order_count:frame.order_count,
               world:{schema_version:"1.0",source:"PAPER_SIMULATED",world_state_version:frame.world_version,as_of:frame.captured_at,valid_until:raw.world.valid_until,status:frame.world_status,instruments:frame.instruments,currency_twins:frame.currency_twins}};

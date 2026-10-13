@@ -69,7 +69,7 @@ test("actual shared realtime store keeps one source and immediately withholds mo
  class Source{listeners=new Map();onerror=null;closed=false;addEventListener(type,callback){this.listeners.set(type,callback);}removeEventListener(type){this.listeners.delete(type);}close(){this.closed=true;}}
  const channel=createRealtimeStore({...f.options,connect(){const source=new Source();sources.push(source);return source;}});
  const headerOff=channel.subscribe(()=>{});
- const store=create({...f.options,signal:channel.snapshot,subscribeTrigger:channel.subscribe}),off=store.subscribe(()=>{});assert.equal(sources.length,1);
+ const store=create({...f.options,signal:channel.snapshot,subscribeTrigger:channel.subscribe}),off=store.subscribe(()=>{});await settle();assert.equal(sources.length,1);
  const frame=JSON.parse(readFileSync(new URL("./fixtures/realtime-snapshot.json",import.meta.url),"utf8"));
  frame.captured_at=new Date(f.now()).toISOString();frame.valid_until=new Date(f.now()+3000).toISOString();frame.world.as_of=frame.captured_at;frame.world.valid_until=new Date(f.now()+5000).toISOString();
  sources[0].listeners.get("reset")({data:JSON.stringify(frame),lastEventId:`${frame.epoch}:${frame.sequence}`});assert.equal(f.calls.length,1);f.reply();await settle();assert.equal(store.snapshot().state,"CURRENT");

@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "format": "uuid4",
+      "title": "Action Id",
+      "type": "string"
+    },
+    "requested_enabled": {
+      "title": "Requested Enabled",
+      "type": "boolean"
+    },
+    "expected_enabled": {
+      "title": "Expected Enabled",
+      "type": "boolean"
+    },
+    "reason": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "operator_session_id": {
+      "format": "uuid4",
+      "title": "Operator Session Id",
+      "type": "string"
+    },
+    "client_timestamp": {
+      "format": "date-time",
+      "title": "Client Timestamp",
+      "type": "string"
+    },
+    "confirmation": {
+      "enum": [
+        "ENABLE",
+        "DISABLE"
+      ],
+      "title": "Confirmation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "action_id",
+    "requested_enabled",
+    "expected_enabled",
+    "reason",
+    "operator_session_id",
+    "client_timestamp",
+    "confirmation"
+  ],
+  "title": "BrokerRouteControlCommand",
+  "type": "object"
+}

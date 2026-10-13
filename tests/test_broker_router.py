@@ -68,6 +68,21 @@ def test_simulated_broker_retry_is_idempotent() -> None:
     assert len(paper.orders) == 1
 
 
+def test_disabling_route_blocks_new_orders_without_blocking_existing_order_lookup() -> None:
+    paper = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True)
+    router = BrokerRouter([paper])
+    existing = command()
+    acknowledgement = router.route(existing, now=NOW)
+
+    router.set_enabled("PAPER", False)
+
+    assert router.snapshot()[0]["enabled"] is False
+    with pytest.raises(BrokerUnavailable, match="disabled"):
+        router.route(command(), now=NOW)
+    assert router.lookup(existing) == acknowledgement
+    assert len(paper.orders) == 1
+
+
 def test_simulated_broker_acknowledgement_survives_restart(tmp_path) -> None:
     path = tmp_path / "paper.sqlite3"
     first = SimulatedBroker("PAPER", {"EURUSD": "EURUSD"}, enabled=True, store_path=path)

@@ -31,13 +31,13 @@ def test_wake_plan_covers_real_supported_versions_with_exact_permissions():
     evidence = read_supervisor_context(context())
     selected, deferred = wake_plan(evidence)
     assert tuple(row.agent_id for row in selected) == SPECIALISTS
-    assert len(deferred) == 25
+    assert len(deferred) == len(load_agent_catalog().manifests()) - len(selected) - 1
     for version in ("0.3.0", "0.4.0"):
         assert any(
             row.agent_id == "A01" and row.agent_version == version and row.reason == "UNSUPPORTED"
             for row in deferred
         )
-    assert sum(row.reason == "UNSUPPORTED" for row in deferred) == 7
+    assert sum(row.reason == "UNSUPPORTED" for row in deferred) == len(deferred) - 18
     assert any(
         row.agent_id == "A14" and row.agent_version == "0.2.0" and row.reason == "UNSUPPORTED"
         for row in deferred
@@ -63,7 +63,7 @@ def test_quarantine_and_health_error_withhold_calls_without_clearance():
     selected, deferred = wake_plan(
         read_supervisor_context(context(registry, health_status="ERROR", open_incidents=1))
     )
-    assert selected == () and len(deferred) == 31
+    assert selected == () and len(deferred) == len(registry.manifests()) - 1
     assert registry.lifecycle("A03", "0.2.0") == "QUARANTINED"
 
 

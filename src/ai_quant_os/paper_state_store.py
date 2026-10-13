@@ -62,6 +62,22 @@ class PaperStateStore:
                 )"""
             )
             self._connection.execute("CREATE TABLE IF NOT EXISTS operator_reservations (action_key TEXT PRIMARY KEY, pending_json TEXT NOT NULL)")
+            self._connection.execute(
+                """CREATE TABLE IF NOT EXISTS broker_route_state (
+                    broker_id TEXT PRIMARY KEY,
+                    enabled INTEGER NOT NULL CHECK (enabled IN (0, 1)),
+                    latest_action_id TEXT,
+                    state_sha256 TEXT NOT NULL
+                )"""
+            )
+            self._connection.execute(
+                """CREATE TABLE IF NOT EXISTS broker_route_control_receipts (
+                    action_id TEXT PRIMARY KEY,
+                    receipt_json TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    request_sha256 TEXT NOT NULL
+                )"""
+            )
             legacy_states = self._connection.execute(
                 "SELECT safety_state FROM control_receipts UNION ALL "
                 "SELECT safety_state FROM order_safety_escalations"
@@ -87,6 +103,204 @@ class PaperStateStore:
                 "SELECT safety_state FROM safety_current WHERE singleton = 1"
             ).fetchone()
             return SafetyState(row[0])
+
+    @staticmethod
+    def _broker_route_state_hash(broker_id: str, enabled: bool, source: str) -> str:
+        raw = json.dumps(
+            {"broker_id": broker_id, "enabled": enabled, "source": source},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return sha256(raw.encode()).hexdigest()
+
+    def _broker_route_receipt_locked(self, action_id: str) -> dict | None:
+        row = self._connection.execute(
+            "SELECT receipt_json, reason, request_sha256 FROM broker_route_control_receipts "
+            "WHERE action_id=?",
+            (action_id,),
+        ).fetchone()
+        event = self._connection.execute(
+            "SELECT event_json FROM audit_events WHERE event_key=?",
+            ("broker-route-control:" + action_id,),
+        ).fetchone()
+        if row is None and event is None:
+            return None
+        if row is None or event is None:
+            raise ValueError("Broker route receipt audit binding is missing")
+        receipt_raw, reason, fingerprint = row
+        receipt = json.loads(receipt_raw)
+        audit = json.loads(event[0])
+        if (
+            len(receipt_raw.encode()) > 4096
+            or receipt.get("action_id") != action_id
+            or receipt.get("request_sha256") != fingerprint
+            or audit.get("receipt_sha256") != sha256(receipt_raw.encode()).hexdigest()
+            or audit.get("reason") != reason
+            or audit.get("trace_id") != receipt.get("trace_id")
+        ):
+            raise ValueError("Broker route receipt audit binding mismatch")
+        return receipt
+
+    def _verified_broker_route_state_locked(self, broker_id: str) -> bool | None:
+        row = self._connection.execute(
+            "SELECT enabled, latest_action_id, state_sha256 FROM broker_route_state "
+            "WHERE broker_id=?",
+            (broker_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        stored_enabled, action_id, digest = row
+        enabled = stored_enabled == 1
+        if action_id is None:
+            expected = self._broker_route_state_hash(broker_id, enabled, "DEFAULT")
+            if digest != expected:
+                raise ValueError("Broker route default state could not be verified")
+            return enabled
+        receipt = self._broker_route_receipt_locked(action_id)
+        receipt_row = self._connection.execute(
+            "SELECT receipt_json FROM broker_route_control_receipts WHERE action_id=?",
+            (action_id,),
+        ).fetchone()
+        if (
+            receipt is None
+            or receipt_row is None
+            or digest != sha256(receipt_row[0].encode()).hexdigest()
+            or receipt.get("broker_id") != broker_id
+            or receipt.get("authoritative_enabled") is not enabled
+        ):
+            raise ValueError("Broker route state receipt binding mismatch")
+        return enabled
+
+    def broker_route_enabled(self, broker_id: str, *, default_enabled: bool) -> bool:
+        if not broker_id or type(default_enabled) is not bool:
+            raise ValueError("Broker route identity and boolean default are required")
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            self._audit_chain.require_valid()
+            current = self._verified_broker_route_state_locked(broker_id)
+            if current is not None:
+                return current
+            digest = self._broker_route_state_hash(broker_id, default_enabled, "DEFAULT")
+            self._connection.execute(
+                "INSERT INTO broker_route_state VALUES (?, ?, NULL, ?)",
+                (broker_id, int(default_enabled), digest),
+            )
+            return default_enabled
+
+    def record_broker_route_control(
+        self,
+        key: str,
+        reason: str,
+        receipt: dict,
+        *,
+        current_enabled: bool,
+        rejection_reason: str | None = None,
+    ) -> dict:
+        action_id = receipt.get("action_id")
+        expected_enabled = receipt.get("expected_enabled")
+        requested_enabled = receipt.get("requested_enabled")
+        fingerprint = receipt.get("request_sha256")
+        if (
+            not isinstance(action_id, str)
+            or key != "broker-route:" + action_id
+            or not isinstance(reason, str)
+            or not reason.strip()
+            or len(reason) > 512
+            or type(current_enabled) is not bool
+            or type(expected_enabled) is not bool
+            or type(requested_enabled) is not bool
+            or not isinstance(fingerprint, str)
+            or len(fingerprint) != 64
+            or any(character not in "0123456789abcdef" for character in fingerprint)
+            or rejection_reason
+            not in {
+                None,
+                "STALE_COMMAND",
+                "BROKER_DISCONNECTED",
+                "BROKER_NOT_ELIGIBLE",
+                "SAFETY_STATE_BLOCKS_ENABLE",
+            }
+        ):
+            raise ValueError("Broker route control receipt is invalid")
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            self._audit_chain.require_valid()
+            previous_receipt = self._broker_route_receipt_locked(action_id)
+            if previous_receipt is not None:
+                if previous_receipt["request_sha256"] != fingerprint:
+                    raise OperatorReservationConflict(
+                        "Broker route action identity was reused for a different command"
+                    )
+                return previous_receipt
+            persisted_enabled = self._verified_broker_route_state_locked(
+                receipt.get("broker_id", "")
+            )
+            if persisted_enabled is None or persisted_enabled is not current_enabled:
+                raise ValueError("Broker route runtime and durable state differ")
+            accepted = expected_enabled is current_enabled and rejection_reason is None
+            authoritative_enabled = requested_enabled if accepted else current_enabled
+            denied_reason = (
+                None
+                if accepted
+                else rejection_reason or "STALE_STATE"
+            )
+            result = {
+                **receipt,
+                "decision": "ACCEPTED" if accepted else "REJECTED",
+                "previous_enabled": current_enabled,
+                "authoritative_enabled": authoritative_enabled,
+                "rejection_reason": denied_reason,
+                "policy_checks": [
+                    "PAPER_ONLY",
+                    "VALID_SESSION",
+                    "FRESH_REAUTH",
+                    (
+                        "EXPECTED_STATE"
+                        if accepted
+                        else "COMMAND_FRESHNESS_REJECTED"
+                        if rejection_reason == "STALE_COMMAND"
+                        else "EXPECTED_STATE_REJECTED"
+                    ),
+                    "NEW_ORDERS_ONLY",
+                ],
+            }
+            raw = json.dumps(result, sort_keys=True, separators=(",", ":"))
+            if len(raw.encode()) > 4096:
+                raise ValueError("Broker route receipt exceeds its limit")
+            digest = sha256(raw.encode()).hexdigest()
+            event_key = "broker-route-control:" + action_id
+            self._connection.execute(
+                "INSERT INTO broker_route_control_receipts VALUES (?, ?, ?, ?)",
+                (action_id, raw, reason, fingerprint),
+            )
+            self._connection.execute(
+                "UPDATE broker_route_state SET enabled=?, latest_action_id=?, state_sha256=? "
+                "WHERE broker_id=?",
+                (int(authoritative_enabled), action_id, digest, receipt["broker_id"]),
+            )
+            self._audit_chain.append(
+                event_key,
+                {
+                    "action": (
+                        "BROKER_ROUTE_ENABLED"
+                        if accepted and requested_enabled
+                        else "BROKER_ROUTE_DISABLED"
+                        if accepted
+                        else "BROKER_ROUTE_CONTROL_REJECTED"
+                    ),
+                    "intent_id": "",
+                    "reason": reason,
+                    "receipt_sha256": digest,
+                    "trace_id": receipt["trace_id"],
+                },
+            )
+            return result
+
+    def broker_route_control_receipt(self, action_id: str) -> dict | None:
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN")
+            self._audit_chain.require_valid()
+            return self._broker_route_receipt_locked(action_id)
 
     def _escalate(self, state: SafetyState) -> bool:
         row = self._connection.execute(

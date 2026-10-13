@@ -1,0 +1,122 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "broker_id": {
+      "const": "PAPER",
+      "title": "Broker Id",
+      "type": "string"
+    },
+    "action_id": {
+      "format": "uuid4",
+      "title": "Action Id",
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "ACCEPTED",
+        "REJECTED"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "expected_enabled": {
+      "title": "Expected Enabled",
+      "type": "boolean"
+    },
+    "requested_enabled": {
+      "title": "Requested Enabled",
+      "type": "boolean"
+    },
+    "previous_enabled": {
+      "title": "Previous Enabled",
+      "type": "boolean"
+    },
+    "authoritative_enabled": {
+      "title": "Authoritative Enabled",
+      "type": "boolean"
+    },
+    "operator_session_id": {
+      "format": "uuid4",
+      "title": "Operator Session Id",
+      "type": "string"
+    },
+    "request_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Sha256",
+      "type": "string"
+    },
+    "server_timestamp": {
+      "format": "date-time",
+      "title": "Server Timestamp",
+      "type": "string"
+    },
+    "trace_id": {
+      "format": "uuid4",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "policy_checks": {
+      "items": {
+        "enum": [
+          "PAPER_ONLY",
+          "VALID_SESSION",
+          "FRESH_REAUTH",
+          "EXPECTED_STATE",
+          "EXPECTED_STATE_REJECTED",
+          "COMMAND_FRESHNESS_REJECTED",
+          "NEW_ORDERS_ONLY"
+        ],
+        "type": "string"
+      },
+      "title": "Policy Checks",
+      "type": "array"
+    },
+    "rejection_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "STALE_STATE",
+            "STALE_COMMAND",
+            "BROKER_DISCONNECTED",
+            "BROKER_NOT_ELIGIBLE",
+            "SAFETY_STATE_BLOCKS_ENABLE"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rejection Reason"
+    }
+  },
+  "required": [
+    "schema_version",
+    "mode",
+    "broker_id",
+    "action_id",
+    "decision",
+    "expected_enabled",
+    "requested_enabled",
+    "previous_enabled",
+    "authoritative_enabled",
+    "operator_session_id",
+    "request_sha256",
+    "server_timestamp",
+    "trace_id",
+    "policy_checks",
+    "rejection_reason"
+  ],
+  "title": "BrokerRouteControlReceipt",
+  "type": "object"
+}
