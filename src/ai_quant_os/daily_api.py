@@ -380,6 +380,91 @@ def install_daily_routes(
         except (TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
             raise HTTPException(503, "Demo/shadow evidence could not be verified") from error
 
+    @app.get(
+        "/api/v1/paper/shadows/{shadow_id}/demo-trajectory-comparison",
+        dependencies=[Depends(require_operator)],
+    )
+    def demo_shadow_trajectory_comparison(shadow_id: str, sequence: int = Query(ge=1, le=1000)):
+        if research_workspace is None or demo_sync_state_dir is None:
+            raise HTTPException(503, "Demo or shadow evidence workspace is disabled")
+        shadow_path = research_workspace / "shadow.sqlite3"
+        projection_path = demo_sync_state_dir / "projection.sqlite"
+        if not shadow_path.is_file():
+            raise HTTPException(404, "Unknown shadow portfolio")
+        if not projection_path.is_file():
+            raise HTTPException(503, "Retained demo position history is unavailable")
+        try:
+            from ai_quant_os.shadow_store import ShadowStore
+
+            shadow_store = ShadowStore(shadow_path)
+            if shadow_store.lookup(shadow_id) is None:
+                raise HTTPException(404, "Unknown shadow portfolio")
+            history = shadow_store.history(shadow_id)
+        except HTTPException:
+            raise
+        except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Shadow evidence could not be verified") from error
+        if sequence > len(history):
+            raise HTTPException(404, "Unknown shadow observation sequence")
+
+        projection = None
+        try:
+            from ai_quant_os.demo_shadow_position_comparison import (
+                DemoPositionSnapshot,
+                compare_demo_shadow_position_history,
+            )
+            from ai_quant_os.mt5_portfolio_observation import read_portfolio
+            from ai_quant_os.mt5_sync_projection import ProjectionRejected, SyncProjectionStore
+
+            demo = read_portfolio(demo_sync_state_dir / "portfolio.json", clock=clock)
+            if (
+                demo.state != "AVAILABLE"
+                or demo.publication is None
+                or demo.publication.record is None
+            ):
+                raise HTTPException(503, "A fresh demo portfolio observation is unavailable")
+            projection = SyncProjectionStore(projection_path, clock=clock)
+            records = projection.position_observations_for_scope(
+                demo.publication.record.account_scope_ref
+            )
+            if not records or records[-1].receipt_ref != demo.publication.record.source_receipt_ref:
+                raise HTTPException(409, "Demo portfolio and retained history have changed")
+            latest_demo = read_portfolio(demo_sync_state_dir / "portfolio.json", clock=clock)
+            if (
+                latest_demo.state != "AVAILABLE"
+                or latest_demo.publication is None
+                or latest_demo.publication.record is None
+                or latest_demo.publication.record.source_receipt_ref
+                != demo.publication.record.source_receipt_ref
+            ):
+                raise HTTPException(409, "Demo portfolio changed during comparison")
+            snapshots = tuple(
+                DemoPositionSnapshot(
+                    account_scope_ref=record.batch.account_scope_ref,
+                    source_receipt_ref=record.receipt_ref,
+                    observed_at=record.batch.observed_at,
+                    history_start=record.batch.history_start,
+                    history_through=record.batch.history_end,
+                    positions=record.batch.positions,
+                )
+                for record in records
+            )
+            report = compare_demo_shadow_position_history(snapshots, history[sequence - 1])
+            return response(report)
+        except HTTPException:
+            raise
+        except ProjectionRejected as error:
+            raise HTTPException(
+                503, "Retained demo position history could not be verified"
+            ) from error
+        except ValueError as error:
+            raise HTTPException(409, "Demo/shadow history cannot be compared") from error
+        except (TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Demo/shadow evidence could not be verified") from error
+        finally:
+            if projection is not None:
+                projection.close()
+
     @app.post(
         "/api/v1/paper/shadows/{shadow_id}/counterfactual",
         dependencies=[Depends(require_operator)],

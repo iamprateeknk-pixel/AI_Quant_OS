@@ -50,6 +50,10 @@ Current increment: a protected PAPER endpoint accepts bounded declared alternati
 
 Current increment: the exact-time demo/shadow direction observation now also requires the declared MT5 history interval to cover every source bar in the selected shadow report. If demo history begins after the first shadow bar, the no-store response withholds both quantities and reports `HISTORY_WINDOW_MISMATCH`; the response exposes both source intervals. Focused demo/shadow, shadow archive and MT5 comparison tests pass (60); the full locked Windows suite passes (2,986 passed, 36 skipped in 1,085.55 seconds); Ruff and formatting pass; Bugbot found no actionable findings. This remains a single-instrument final-position direction observation with unverified native history; fill, PnL, financing, ownership and full live-broker comparison remain open. See `docs/DEMO_SHADOW_POSITION_COMPARISON_HANDOFF.md`.
 
+### P09 per-bar demo/shadow position coverage
+
+Current increment: a protected no-store endpoint reconstructs the shadow position direction at each source bar from the verified native shadow fills, then joins only to audited MT5 demo position snapshots captured at that exact timestamp. It binds reads to the account scope and current published projection head, returns every bar with COMPLETE/PARTIAL/NONE coverage, and never forward-fills a missing snapshot. Quantities remain in separate strategy and broker bases; causal, order, portfolio and promotion authority remain false. Focused demo/shadow and projection tests pass (79); Ruff/format and schema parity pass. The full locked Windows suite passes (2,990 passed, 36 skipped in 1,095.63 seconds); Bugbot found no actionable findings. The report covers one selected shadow assignment/instrument and does not reconcile fills or P&L. See `docs/DEMO_SHADOW_POSITION_COMPARISON_HANDOFF.md`.
+
 ## Remaining P09 work
 
 - Full live-broker-versus-shadow comparison with complete candidate/genome and interval coverage.

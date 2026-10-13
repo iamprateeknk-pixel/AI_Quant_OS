@@ -55,6 +55,32 @@ def test_projection_applies_verified_receipt_once_and_survives_restart(tmp_path)
     assert restarted.view(request.connection) == view
 
 
+def test_projection_reads_position_observations_by_published_account_scope(tmp_path):
+    module = implementation()
+    time = [NOW]
+    gateway, _ = fixture_gateway(tmp_path / "gateway.sqlite", SyncNative(), time)
+    request = sync_request()
+    attempt = uuid4()
+    gateway.capture(request, attempt)
+    store = module.SyncProjectionStore(tmp_path / "projection.sqlite", clock=lambda: time[0])
+    store.apply(gateway, request, attempt)
+
+    from ai_quant_os.mt5_account_sync import account_scope
+
+    rows = store.position_observations_for_scope(account_scope(request.connection))
+
+    assert len(rows) == 1
+    assert rows[0].attempt_id == attempt
+    assert rows[0].batch.positions[0].instrument_id == "EURUSD"
+    assert rows[0].batch.account_scope_ref == account_scope(request.connection)
+
+    import pytest
+    from ai_quant_os.mt5_sync_projection import ProjectionRejected
+
+    with pytest.raises(ProjectionRejected, match="FOREIGN_SCOPE"):
+        store.position_observations_for_scope("f" * 64)
+
+
 def test_missing_gateway_attempt_never_dispatches_native_capture(tmp_path):
     module = implementation()
     time = [NOW]

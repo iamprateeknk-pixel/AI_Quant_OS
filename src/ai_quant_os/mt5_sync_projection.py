@@ -404,6 +404,33 @@ class SyncProjectionStore:
             latest = tuple(folded[0][ref][-1] for ref in sorted(folded[0]))
             return self._view(records, folded), latest
 
+    def position_observations_for_scope(self, account_scope_ref: str):
+        """Read audited position snapshots when the caller already holds the published scope."""
+        if (
+            not isinstance(account_scope_ref, str)
+            or len(account_scope_ref) != 64
+            or any(character not in "0123456789abcdef" for character in account_scope_ref)
+        ):
+            raise ProjectionRejected("FOREIGN_SCOPE")
+        with self._lock:
+            try:
+                if self._connection is None:
+                    raise ProjectionRejected("STORAGE_UNAVAILABLE")
+                self._connection.execute("BEGIN")
+                records = self._verify()
+                if records and any(
+                    record.batch.account_scope_ref != account_scope_ref for record in records
+                ):
+                    raise ProjectionRejected("FOREIGN_SCOPE")
+                return tuple(records)
+            except ProjectionRejected:
+                raise
+            except Exception:
+                raise ProjectionRejected("STORAGE_UNAVAILABLE") from None
+            finally:
+                if self._connection is not None:
+                    self._connection.rollback()
+
     def deal_versions(
         self, connection: DemoCaptureRequest, event_ref: str
     ) -> tuple[DealVersion, ...]:

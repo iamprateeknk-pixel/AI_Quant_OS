@@ -1,0 +1,285 @@
+{
+  "$defs": {
+    "DemoShadowPositionObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "shadow_direction": {
+          "enum": [
+            "LONG",
+            "SHORT",
+            "FLAT"
+          ],
+          "title": "Shadow Direction",
+          "type": "string"
+        },
+        "demo_direction": {
+          "anyOf": [
+            {
+              "enum": [
+                "LONG",
+                "SHORT",
+                "FLAT"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Demo Direction"
+        },
+        "demo_has_instrument_positions": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Demo Has Instrument Positions"
+        },
+        "state": {
+          "enum": [
+            "SAME_DIRECTION",
+            "OPPOSITE_DIRECTION",
+            "SHADOW_ONLY",
+            "DEMO_ONLY",
+            "BOTH_FLAT",
+            "DEMO_HEDGED_NEUTRAL",
+            "WITHHELD"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "const": "NO_EXACT_DEMO_SNAPSHOT",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Code"
+        },
+        "demo_source_receipt_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Demo Source Receipt Ref"
+        }
+      },
+      "required": [
+        "observed_at",
+        "shadow_direction",
+        "demo_direction",
+        "demo_has_instrument_positions",
+        "state",
+        "code"
+      ],
+      "title": "DemoShadowPositionObservation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "observation_kind": {
+      "const": "DEMO_SHADOW_POSITION_HISTORY_COMPARISON",
+      "default": "DEMO_SHADOW_POSITION_HISTORY_COMPARISON",
+      "title": "Observation Kind",
+      "type": "string"
+    },
+    "coverage": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "NONE"
+      ],
+      "title": "Coverage",
+      "type": "string"
+    },
+    "shadow_id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$",
+      "title": "Shadow Id",
+      "type": "string"
+    },
+    "shadow_sequence": {
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Shadow Sequence",
+      "type": "integer"
+    },
+    "candidate_id": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Report Sha256",
+      "type": "string"
+    },
+    "genome_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Genome Sha256",
+      "type": "string"
+    },
+    "instrument_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Instrument Id",
+      "type": "string"
+    },
+    "shadow_source_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Shadow Source Sha256",
+      "type": "string"
+    },
+    "shadow_interval_start": {
+      "format": "date-time",
+      "title": "Shadow Interval Start",
+      "type": "string"
+    },
+    "shadow_interval_end": {
+      "format": "date-time",
+      "title": "Shadow Interval End",
+      "type": "string"
+    },
+    "demo_account_scope_ref": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Demo Account Scope Ref",
+      "type": "string"
+    },
+    "demo_history_start": {
+      "format": "date-time",
+      "title": "Demo History Start",
+      "type": "string"
+    },
+    "demo_history_through": {
+      "format": "date-time",
+      "title": "Demo History Through",
+      "type": "string"
+    },
+    "total_source_bars": {
+      "maximum": 4096,
+      "minimum": 1,
+      "title": "Total Source Bars",
+      "type": "integer"
+    },
+    "matched_source_bars": {
+      "maximum": 4096,
+      "minimum": 0,
+      "title": "Matched Source Bars",
+      "type": "integer"
+    },
+    "observations": {
+      "items": {
+        "$ref": "#/$defs/DemoShadowPositionObservation"
+      },
+      "maxItems": 4096,
+      "minItems": 1,
+      "title": "Observations",
+      "type": "array"
+    },
+    "shadow_quantity_basis": {
+      "const": "STRATEGY_MODEL_UNITS",
+      "default": "STRATEGY_MODEL_UNITS",
+      "title": "Shadow Quantity Basis",
+      "type": "string"
+    },
+    "demo_quantity_basis": {
+      "const": "CURRENT_SYMBOL_METADATA",
+      "default": "CURRENT_SYMBOL_METADATA",
+      "title": "Demo Quantity Basis",
+      "type": "string"
+    },
+    "magnitude_comparison": {
+      "const": "NOT_AVAILABLE",
+      "default": "NOT_AVAILABLE",
+      "title": "Magnitude Comparison",
+      "type": "string"
+    },
+    "demo_attestation": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "Demo Attestation",
+      "type": "string"
+    },
+    "history_attestation": {
+      "const": "UNVERIFIED",
+      "default": "UNVERIFIED",
+      "title": "History Attestation",
+      "type": "string"
+    },
+    "consistency": {
+      "const": "NON_ATOMIC_SEQUENTIAL_READ",
+      "default": "NON_ATOMIC_SEQUENTIAL_READ",
+      "title": "Consistency",
+      "type": "string"
+    },
+    "causal_attribution": {
+      "const": false,
+      "default": false,
+      "title": "Causal Attribution",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    },
+    "may_submit_orders": {
+      "const": false,
+      "default": false,
+      "title": "May Submit Orders",
+      "type": "boolean"
+    },
+    "may_affect_portfolio": {
+      "const": false,
+      "default": false,
+      "title": "May Affect Portfolio",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "coverage",
+    "shadow_id",
+    "shadow_sequence",
+    "candidate_id",
+    "candidate_report_sha256",
+    "genome_sha256",
+    "instrument_id",
+    "shadow_source_sha256",
+    "shadow_interval_start",
+    "shadow_interval_end",
+    "demo_account_scope_ref",
+    "demo_history_start",
+    "demo_history_through",
+    "total_source_bars",
+    "matched_source_bars",
+    "observations"
+  ],
+  "title": "DemoShadowPositionHistoryComparison",
+  "type": "object"
+}
