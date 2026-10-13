@@ -153,3 +153,34 @@ class ShadowReport:
     @property
     def fingerprint(self):
         return sha256(encode_research(self)).hexdigest()
+
+
+@dataclass(frozen=True)
+class ShadowRetirement:
+    shadow_id: str
+    command_id: str
+    reason: str
+    retired_at: datetime
+    final_sequence: int
+    final_sha256: str
+    schema_version: Literal["1.0"] = "1.0"
+    promotion_allowed: Literal[False] = False
+
+    def __post_init__(self):
+        _identifier(self.shadow_id)
+        _identifier(self.command_id)
+        _require_aware(self.retired_at)
+        object.__setattr__(self, "retired_at", self.retired_at.astimezone(timezone.utc))
+        if (
+            not isinstance(self.reason, str)
+            or not 1 <= len(self.reason.strip()) <= 212
+            or type(self.final_sequence) is not int
+            or not 0 <= self.final_sequence <= 1000
+            or not isinstance(self.final_sha256, str)
+            or len(self.final_sha256) != 64
+            or any(ch not in "0123456789abcdef" for ch in self.final_sha256)
+            or self.schema_version != "1.0"
+            or self.promotion_allowed is not False
+        ):
+            raise ValueError("Invalid shadow retirement evidence")
+        object.__setattr__(self, "reason", self.reason.strip())

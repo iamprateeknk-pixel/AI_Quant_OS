@@ -11,6 +11,7 @@ from ai_quant_os.shadow_portfolio import (
     ShadowAssignment,
     ShadowReport,
     ShadowRequest,
+    ShadowRetirement,
     verify_forward_source,
 )
 
@@ -40,6 +41,9 @@ class ShadowStore:
                 CREATE TABLE IF NOT EXISTS shadow_reality_gap_policies (
                     shadow_id TEXT PRIMARY KEY, blob BLOB NOT NULL, sha256 TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS shadow_retirements (
+                    shadow_id TEXT PRIMARY KEY, blob BLOB NOT NULL, sha256 TEXT NOT NULL
+                );
             """)
             db.execute(
                 "INSERT OR IGNORE INTO shadow_reality_gap_policies "
@@ -59,8 +63,11 @@ class ShadowStore:
         policies = db.execute(
             "SELECT COALESCE(SUM(length(blob)),0) FROM shadow_reality_gap_policies"
         ).fetchone()[0]
+        retirements = db.execute(
+            "SELECT COALESCE(SUM(length(blob)),0) FROM shadow_retirements"
+        ).fetchone()[0]
         if (
-            size + batches + policies + additional > 64 * 1024 * 1024
+            size + batches + policies + retirements + additional > 64 * 1024 * 1024
             or count > 1000
             or batch_count > 1000
         ):
@@ -139,6 +146,19 @@ class ShadowStore:
         expected = (previous.sequence, previous.fingerprint) if previous is not None else (0, ZERO)
         if head != expected:
             raise ValueError("Shadow committed head mismatch")
+        retirement_row = db.execute(
+            "SELECT blob,sha256 FROM shadow_retirements WHERE shadow_id=?", (shadow_id,)
+        ).fetchone()
+        if retirement_row is not None:
+            retirement = _decode(*retirement_row, ShadowRetirement)
+            if (
+                retirement.shadow_id != shadow_id
+                or (retirement.final_sequence, retirement.final_sha256) != expected
+                or retirement.retired_at < assignment.assigned_at
+                or (previous is not None and retirement.retired_at < previous.observed_at)
+                or any(entry[2] is None for entry in entries.values())
+            ):
+                raise ValueError("Shadow retirement lineage mismatch")
         return assignment, previous, entries
 
     @staticmethod
@@ -217,6 +237,53 @@ class ShadowStore:
             db.execute("BEGIN")
             return self._verified(db, shadow_id)[1]
 
+    def retirement(self, shadow_id):
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN")
+            self._verified(db, shadow_id)
+            row = db.execute(
+                "SELECT blob,sha256 FROM shadow_retirements WHERE shadow_id=?", (shadow_id,)
+            ).fetchone()
+            return None if row is None else _decode(*row, ShadowRetirement)
+
+    def retire(self, shadow_id, command_id, reason, *, retired_at):
+        retirement = ShadowRetirement(shadow_id, command_id, reason, retired_at, 0, ZERO)
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN IMMEDIATE")
+            assignment, previous, entries = self._verified(db, shadow_id)
+            prior = db.execute(
+                "SELECT blob,sha256 FROM shadow_retirements WHERE shadow_id=?", (shadow_id,)
+            ).fetchone()
+            if prior is not None:
+                existing = _decode(*prior, ShadowRetirement)
+                if existing.command_id != command_id or existing.reason != retirement.reason:
+                    raise ValueError("Shadow retirement command identity conflict")
+                return existing
+            if any(entry[2] is None for entry in entries.values()):
+                raise ValueError("Uncertain shadow reservation blocks retirement")
+            final_sequence = previous.sequence if previous is not None else 0
+            final_sha256 = previous.fingerprint if previous is not None else ZERO
+            if retired_at < assignment.assigned_at or (
+                previous is not None and retired_at < previous.observed_at
+            ):
+                raise ValueError("Shadow retirement time cannot precede retained evidence")
+            retirement = ShadowRetirement(
+                shadow_id,
+                command_id,
+                reason,
+                retired_at,
+                final_sequence,
+                final_sha256,
+            )
+            raw = encode_research(retirement)
+            self._capacity(db, len(raw))
+            db.execute(
+                "INSERT INTO shadow_retirements VALUES (?,?,?)",
+                (shadow_id, raw, sha256(raw).hexdigest()),
+            )
+            db.commit()
+            return retirement
+
     def lookup(self, shadow_id):
         with closing(sqlite3.connect(self.path, timeout=10)) as db:
             db.execute("BEGIN")
@@ -249,6 +316,10 @@ class ShadowStore:
                 if prior[2] is None:
                     raise ValueError("Uncertain shadow reservation requires investigation")
                 return None, assignment, prior[2].source_bars, previous, prior[2]
+            if db.execute(
+                "SELECT 1 FROM shadow_retirements WHERE shadow_id=?", (request.shadow_id,)
+            ).fetchone():
+                raise ValueError("Shadow assignment is retired")
             if any(entry[2] is None for entry in entries.values()):
                 raise ValueError("Uncertain shadow reservation blocks new observations")
             if previous is not None and previous.outcome == "FAILED":

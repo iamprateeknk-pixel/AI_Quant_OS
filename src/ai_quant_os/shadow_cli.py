@@ -27,6 +27,10 @@ def main():
     latest = commands.add_parser("latest")
     latest.add_argument("shadow_id")
     latest.add_argument("--output", type=Path, required=True)
+    retire = commands.add_parser("retire")
+    retire.add_argument("shadow_id")
+    retire.add_argument("--command-id", required=True)
+    retire.add_argument("--reason", required=True)
     args = parser.parse_args()
     try:
         from ai_quant_os.data_archive import _write_immutable
@@ -41,8 +45,14 @@ def main():
 
         root = args.workspace.resolve()
         store = ShadowStore(root / "shadow.sqlite3")
-        candidates = CandidateStore(root / "candidates.sqlite3")
-        strategies = StrategyRegistry(root / "strategies")
+        candidates = (
+            CandidateStore(root / "candidates.sqlite3")
+            if args.command in ("assign", "observe")
+            else None
+        )
+        strategies = (
+            StrategyRegistry(root / "strategies") if args.command in ("assign", "observe") else None
+        )
         if args.command == "assign":
             assignment = store.lookup(args.shadow_id)
             if (
@@ -107,6 +117,14 @@ def main():
             print(
                 f"{report.outcome}: shadow sequence {report.sequence}{status}; promotion_allowed=false"
             )
+        elif args.command == "retire":
+            retirement = store.retire(
+                args.shadow_id,
+                args.command_id,
+                args.reason,
+                retired_at=datetime.now(timezone.utc),
+            )
+            print(encode_research(retirement).decode())
         else:
             output = args.output.resolve()
             if (

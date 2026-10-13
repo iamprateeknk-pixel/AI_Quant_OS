@@ -20,6 +20,10 @@ Source preparation, native failure, changed historical fill prefix and candidate
 
 The candidate registry and shadow database are separate. Eligibility checks are not an atomic transaction with candidate withdrawal: withdrawal immediately after the final check may precede archive commit. No capital authority exists in that interval; the next observation refuses the changed lifecycle. A future execution assignment needs one transactional lifecycle authority and an independent review.
 
+## Operator retirement
+
+An operator can close a shadow assignment after its diagnostic window using `ai-quant-shadow retire <shadow-id> --command-id <id> --reason <reason>`. The immutable retirement record binds the final report sequence and hash. Retirement is refused while a reservation is unfinished, survives process restart, and is idempotent for the same command and reason. Existing reports and exact cached observations remain readable; new observations are blocked. Retirement does not delete or rewrite evidence. Failed or uncertain histories still require investigation; this command does not resume or repair them.
+
 ## Storage and integrity
 
 `shadow.sqlite3` is a separate sibling database. An immediate transaction reserves each immutable command before native execution. Only its private owner can finish once. Reservations are sequential per portfolio; concurrent requests have one owner. Completed matching commands return cached evidence without another engine run; altered command payloads are refused.
@@ -38,6 +42,7 @@ Install the editable package with research/trading prerequisites. Register the c
 ai-quant-shadow --workspace data-local/research-adversarial-a assign eurusd-shadow --candidate-id aa8c5d53f15133b8b1b391af0123a9b50cd047e067112e989fa56bef5126d4c6 --reality-gap-threshold-bps 100 --minimum-shadow-bars 60 --minimum-shadow-fills 2 --minimum-holdout-fills 2
 ai-quant-shadow --workspace data-local/research-adversarial-a observe eurusd-shadow --command-id first-observations --bars new-observations.csv
 ai-quant-shadow --workspace data-local/research-adversarial-a latest eurusd-shadow --output data-local/shadow-report.json
+ai-quant-shadow --workspace data-local/research-adversarial-a retire eurusd-shadow --command-id close-eurusd-window --reason "Diagnostic window complete"
 ```
 
 Use the full verified candidate ID from the registry. Observation CSV columns match the existing bar importer: `instrument_id,observed_at,open,high,low,close,volume`. Supply newly completed observations after assignment, with timezone-aware UTC timestamps. The command does not accept a backdated assignment cutoff, source code, promotion claim, filesystem database override or broker route.
@@ -55,4 +60,4 @@ This is a holdout-to-forward-shadow diagnostic. It is not a live-versus-shadow c
 
 Two independent workspaces each ran two native cumulative windows and exported identical first/final reports. The synthetic logical-clock fixture retains three then six EURUSD bars after its archived holdout. The first window has an open 100-unit position and -0.10 USD marked PnL; the second ends flat with -20.20 USD PnL. Both saved reports validate with the report schema, typed decoding and canonical reencoding, and their sequence/hash/prefix chain replays from SQLite. This proves the mechanism under controlled inputs, not prospective performance or independent calibration.
 
-P09 still requires production shadow ingress/scheduling, lifecycle recovery/retirement, candidate-bound paper assignments, live/shadow comparison, linkage to the separate daily opening-mark/accounting workflow, agent attribution, recorded fill-time/latency evidence, PAPER-versus-shadow comparison, reality-gap alerts and market-ingress scheduling/recovery. Research shadow, sandbox and independent-review gates remain pending. Hosted CI is configured but unverified. No paid provider or live broker was exercised.
+P09 still requires production shadow ingress/scheduling, uncertain-reservation recovery, candidate-bound paper assignments, live/shadow comparison, linkage to the separate daily opening-mark/accounting workflow, agent attribution, recorded fill-time/latency evidence, PAPER-versus-shadow comparison, reality-gap alerts and market-ingress scheduling/recovery. Immutable operator retirement is implemented. Research shadow, sandbox and independent-review gates remain pending. Hosted CI is configured but unverified. No paid provider or live broker was exercised.

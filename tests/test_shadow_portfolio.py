@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 import sqlite3
@@ -94,6 +94,77 @@ def test_shadow_cached_restart_and_changed_command_refusal(tmp_path, monkeypatch
     with pytest.raises(ValueError):
         observe_shadow(
             assignment.shadow_id, "reuse-period", bars, restarted, candidates, strategies
+        )
+
+
+def test_shadow_retirement_is_durable_idempotent_and_blocks_new_observations(tmp_path):
+    from ai_quant_os.shadow_pipeline import assign_shadow, observe_shadow
+    from ai_quant_os.shadow_store import ShadowStore
+
+    assignment, store, candidates, strategies = shadow_fixture(tmp_path)
+    assign_shadow(assignment, store, candidates, strategies)
+    bars = forward_bars(assignment)
+    report = observe_shadow(assignment.shadow_id, "batch-one", bars, store, candidates, strategies)
+    retired_at = datetime.now(timezone.utc)
+
+    retirement = store.retire(
+        assignment.shadow_id,
+        "retire-complete",
+        "Diagnostic window complete",
+        retired_at=retired_at,
+    )
+
+    restarted = ShadowStore(store.path)
+    assert restarted.retirement(assignment.shadow_id) == retirement
+    assert retirement.final_sequence == report.sequence
+    assert retirement.final_sha256 == report.fingerprint
+    assert (
+        restarted.retire(
+            assignment.shadow_id,
+            "retire-complete",
+            "Diagnostic window complete",
+            retired_at=datetime.now(timezone.utc),
+        )
+        == retirement
+    )
+    assert (
+        observe_shadow(assignment.shadow_id, "batch-one", bars, restarted, candidates, strategies)
+        == report
+    )
+    with pytest.raises(ValueError, match="retired"):
+        observe_shadow(
+            assignment.shadow_id,
+            "after-retirement",
+            (forward_bars(assignment)[-1],),
+            restarted,
+            candidates,
+            strategies,
+        )
+    with pytest.raises(ValueError, match="retirement command"):
+        restarted.retire(
+            assignment.shadow_id,
+            "other-retirement",
+            "Different command",
+            retired_at=datetime.now(timezone.utc),
+        )
+
+
+def test_shadow_retirement_refuses_uncertain_reservations(tmp_path):
+    from ai_quant_os.shadow_pipeline import assign_shadow
+    from ai_quant_os.shadow_portfolio import ShadowRequest
+
+    assignment, store, candidates, strategies = shadow_fixture(tmp_path)
+    assign_shadow(assignment, store, candidates, strategies)
+    store.reserve(
+        ShadowRequest(assignment.shadow_id, "pending-observation", forward_bars(assignment))
+    )
+
+    with pytest.raises(ValueError, match="reservation blocks retirement"):
+        store.retire(
+            assignment.shadow_id,
+            "retire-pending",
+            "Close incomplete diagnostic",
+            retired_at=datetime.now(timezone.utc),
         )
 
 
