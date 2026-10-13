@@ -165,3 +165,5 @@
 - 2026-10-13: Publish strict PAPER system-status and risk-read schemas with tests against actual safety-state, order-count, and instrument-scoped API responses. This does not change control authority. See ADR 0195 and SAFETY_RISK_CONTRACT_HANDOFF.md.
 
 - 2026-10-13: Enforce exact safety and EURUSD risk API projections in the browser, rejecting unsupported safety states, negative counts/ceilings, malformed quantities, unknown fields and instrument mismatch. Full web suite and production build pass. See ADR 0196 and RISK_READ_UI_HANDOFF.md.
+
+- 2026-10-13: Candidate paper assignment identity stays alongside the persisted paper order, not in `TradeIntent`. The registered strategy source closure fingerprints `contracts.py`; adding metadata there invalidates archived candidate provenance. Assignment admission instead stores an immutable assignment reference in the order record and rechecks the live candidate snapshot at admission.

@@ -99,6 +99,19 @@
       "format": "date-time",
       "title": "Created At",
       "type": "string"
+    },
+    "candidate_assignment_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Candidate Assignment Id"
     }
   },
   "required": [

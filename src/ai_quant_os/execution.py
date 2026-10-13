@@ -66,8 +66,13 @@ def _encode_value(value: Decimal | datetime) -> str:
     raise TypeError(f"Unsupported order value: {type(value)}")
 
 
-def _encode_record(record: TradeIntent | PaperOrder) -> str:
-    return json.dumps(asdict(record), default=_encode_value, sort_keys=True)
+def _encode_record(record: TradeIntent | PaperOrder, *, candidate_assignment_id=None) -> str:
+    value = asdict(record)
+    if candidate_assignment_id is not None:
+        if not isinstance(record, TradeIntent) or not isinstance(candidate_assignment_id, str):
+            raise ValueError("Candidate assignment can only bind a paper intent")
+        value["candidate_assignment_id"] = candidate_assignment_id
+    return json.dumps(value, default=_encode_value, sort_keys=True)
 
 
 def _decode_order(raw: str) -> PaperOrder:
@@ -148,7 +153,7 @@ class PaperExecutionGateway:
     @property
     def execution_evidence_ledger(self):
         with self._lock:
-            rows, fills, benchmarks = self._store.execution_evidence_records()
+            rows, fills, benchmarks, assignments = self._store.execution_evidence_records()
             retained = {row.order_id: row for row in benchmarks}
             owners = []
             for order_id, intent_id, intent_raw, order_raw in rows:
@@ -176,6 +181,14 @@ class PaperExecutionGateway:
                     or benchmark.market.world_state_version != intent["world_state_version"]
                 ):
                     raise ValueError("Paper benchmark ownership mismatch")
+                candidate_assignment_id = intent.get("candidate_assignment_id")
+                candidate_assignment = (
+                    assignments.get(candidate_assignment_id)
+                    if candidate_assignment_id is not None
+                    else None
+                )
+                if candidate_assignment_id is not None and candidate_assignment is None:
+                    raise ValueError("Paper candidate assignment ownership mismatch")
                 owners.append(
                     OrderAttribution(
                         order_id,
@@ -190,9 +203,18 @@ class PaperExecutionGateway:
                         command.expires_at,
                         sha256(intent_raw.encode()).hexdigest(),
                         sha256(order_raw.encode()).hexdigest(),
+                        candidate_assignment_id,
+                        candidate_assignment.candidate_id if candidate_assignment else None,
+                        candidate_assignment.genome_sha256 if candidate_assignment else None,
                     )
                 )
             return tuple(owners), fills, benchmarks
+
+    def save_candidate_paper_assignment(self, assignment):
+        return self._store.save_candidate_paper_assignment(assignment)
+
+    def candidate_paper_assignment(self, assignment_id):
+        return self._store.candidate_paper_assignment(assignment_id)
 
     @property
     def exposure_snapshot(self) -> PortfolioExposure:
@@ -361,12 +383,14 @@ class PaperExecutionGateway:
                 raise ValueError("Paper fill ledger mismatch blocks safety recovery")
             self._risk.recover_paper_safety(before_change=before_change)
 
-    def replay(self, intent: TradeIntent, *, idempotency_key: str) -> PaperOrder | None:
+    def replay(
+        self, intent: TradeIntent, *, idempotency_key: str, candidate_assignment_id=None
+    ) -> PaperOrder | None:
         with self._lock:
             prior = self._store.get(idempotency_key)
             if prior is None:
                 return None
-            if prior[0] != _encode_record(intent):
+            if prior[0] != _encode_record(intent, candidate_assignment_id=candidate_assignment_id):
                 raise ValueError("idempotency key reused for a different intent")
             return _with_fill_status(_decode_order(prior[1]), self._store.all_fills())
 
@@ -434,13 +458,14 @@ class PaperExecutionGateway:
         market: MarketSnapshot,
         now: datetime,
         currency_context: CurrencyRiskContext | None = None,
+        candidate_assignment_id: str | None = None,
     ) -> PaperOrder:
         _require_aware(now)
         with self._lock:
             prior = self._store.get(idempotency_key)
             if prior is None:
                 raise ValueError("Paper order does not exist")
-            if prior[0] != _encode_record(intent):
+            if prior[0] != _encode_record(intent, candidate_assignment_id=candidate_assignment_id):
                 raise ValueError("idempotency key reused for a different intent")
             order = _decode_order(prior[1])
             if order.status != "PENDING":
@@ -531,12 +556,18 @@ class PaperExecutionGateway:
         *,
         idempotency_key: str,
         now: datetime,
+        candidate_assignment_id: str | None = None,
     ) -> PaperOrder | None:
         _require_aware(now)
         if not idempotency_key:
             raise ValueError("Idempotency key is required")
-        intent_json = _encode_record(intent)
+        intent_json = _encode_record(intent, candidate_assignment_id=candidate_assignment_id)
         with self._lock:
+            if candidate_assignment_id is not None:
+                assignment = self._store.candidate_paper_assignment(candidate_assignment_id)
+                if assignment is None:
+                    raise ValueError("Candidate paper assignment does not exist")
+                assignment.authorize_intent(intent, candidate_assignment_id, now=now)
             prior = self._store.get(idempotency_key)
             if prior is not None:
                 if prior[0] != intent_json:

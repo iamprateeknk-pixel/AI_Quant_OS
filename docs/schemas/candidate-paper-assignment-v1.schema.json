@@ -1,0 +1,93 @@
+{
+  "properties": {
+    "assignment_id": {
+      "title": "Assignment Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_revision": {
+      "title": "Candidate Revision",
+      "type": "integer"
+    },
+    "candidate_event_sha256": {
+      "title": "Candidate Event Sha256",
+      "type": "string"
+    },
+    "candidate_bundle_sha256": {
+      "title": "Candidate Bundle Sha256",
+      "type": "string"
+    },
+    "genome_sha256": {
+      "title": "Genome Sha256",
+      "type": "string"
+    },
+    "strategy_ref": {
+      "title": "Strategy Ref",
+      "type": "string"
+    },
+    "instrument_id": {
+      "title": "Instrument Id",
+      "type": "string"
+    },
+    "max_exposure": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Max Exposure"
+    },
+    "assigned_at": {
+      "format": "date-time",
+      "title": "Assigned At",
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "broker_route": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Broker Route",
+      "type": "string"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "candidate_id",
+    "candidate_revision",
+    "candidate_event_sha256",
+    "candidate_bundle_sha256",
+    "genome_sha256",
+    "strategy_ref",
+    "instrument_id",
+    "max_exposure",
+    "assigned_at",
+    "expires_at"
+  ],
+  "title": "CandidatePaperAssignment",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:candidate-paper-assignment:1.0"
+}

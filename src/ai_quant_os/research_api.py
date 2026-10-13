@@ -22,7 +22,9 @@ class CandidateWithdrawalInput(BaseModel):
     reason: str = Field(min_length=1, max_length=212)
 
 
-def install_research_routes(app: FastAPI, workspace: Path | None, require_operator):
+def install_research_routes(
+    app: FastAPI, workspace: Path | None, require_operator, admission_guard=None
+):
     root = workspace.resolve() if workspace is not None else None
 
     @app.get("/api/v1/research/strategies/page", dependencies=[Depends(require_operator)])
@@ -149,7 +151,8 @@ def install_research_routes(app: FastAPI, workspace: Path | None, require_operat
 
     @app.post(
         "/api/v1/paper/research/candidates/{candidate_id}/withdraw",
-        dependencies=[Depends(require_operator)],
+        dependencies=[Depends(require_operator)]
+        + ([Depends(admission_guard)] if admission_guard is not None else []),
     )
     def withdraw_candidate(candidate_id: str, payload: CandidateWithdrawalInput):
         try:

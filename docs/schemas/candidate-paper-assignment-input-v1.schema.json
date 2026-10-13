@@ -1,0 +1,62 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "assignment_id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$",
+      "title": "Assignment Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "strategy_id": {
+      "pattern": "^[a-z][a-z0-9-]{0,63}$",
+      "title": "Strategy Id",
+      "type": "string"
+    },
+    "strategy_version": {
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "title": "Strategy Version",
+      "type": "string"
+    },
+    "instrument_id": {
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Instrument Id",
+      "type": "string"
+    },
+    "max_exposure": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,31}0*$)\\d{0,18}\\.\\d{0,12}0*$)",
+          "type": "string"
+        }
+      ],
+      "title": "Max Exposure"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "candidate_id",
+    "strategy_id",
+    "strategy_version",
+    "instrument_id",
+    "max_exposure",
+    "expires_at"
+  ],
+  "title": "CandidatePaperAssignmentInput",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:candidate-paper-assignment-input:1.0"
+}

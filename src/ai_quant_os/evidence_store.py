@@ -23,7 +23,20 @@ class EvidenceConflictError(ValueError):
 
 def encode_evidence(value):
     record = json.loads(TypeAdapter(type(value)).dump_json(value))
+    _preserve_optional_candidate_binding(record)
     return json.dumps(record, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+
+
+def _preserve_optional_candidate_binding(record):
+    if isinstance(record, dict):
+        for field in ("candidate_assignment_id", "candidate_id", "genome_sha256"):
+            if record.get(field) is None:
+                record.pop(field, None)
+        for value in record.values():
+            _preserve_optional_candidate_binding(value)
+    elif isinstance(record, list):
+        for value in record:
+            _preserve_optional_candidate_binding(value)
 
 
 def _decode(raw, digest, model):

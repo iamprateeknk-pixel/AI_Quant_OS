@@ -1,6 +1,7 @@
 """Transactional candidate registration and withdrawal with a verified event journal."""
 
 from contextlib import closing
+from contextlib import contextmanager
 from decimal import Decimal
 from dataclasses import dataclass
 from hashlib import sha256
@@ -339,6 +340,26 @@ class CandidateStore:
             if row is None:
                 return None
             return views[identifier], _decode(row[0], row[1], CandidateBundle)
+
+    @contextmanager
+    def admission_snapshot(self, identifier: str):
+        """Hold SQLite's cross-process writer reservation while an order is admitted."""
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN IMMEDIATE")
+            views, _ = self._verified(db)
+            row = db.execute(
+                "SELECT bundle,bundle_sha256 FROM research_candidates WHERE candidate_id=?",
+                (identifier,),
+            ).fetchone()
+            snapshot = (
+                None
+                if row is None
+                else (views[identifier], _decode(row[0], row[1], CandidateBundle))
+            )
+            try:
+                yield snapshot
+            finally:
+                db.rollback()
 
     def dossier_page(self, *, limit: int, offset: int, head: str | None):
         if (

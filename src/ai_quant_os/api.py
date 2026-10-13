@@ -1,5 +1,6 @@
 import asyncio
 import hmac
+import json
 import os
 import re
 import sqlite3
@@ -296,6 +297,22 @@ class IntentInput(BaseModel):
     world_state_version: str
     evidence_refs: tuple[str, ...]
     created_at: datetime
+    candidate_assignment_id: str | None = Field(
+        default=None,
+        exclude=True,
+        pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$",
+    )
+
+
+class CandidatePaperAssignmentInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    assignment_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
+    candidate_id: str = Field(pattern=r"^[a-f0-9]{64}$")
+    strategy_id: str = Field(pattern=r"^[a-z][a-z0-9-]{0,63}$")
+    strategy_version: str = Field(pattern=r"^\d+\.\d+\.\d+$")
+    instrument_id: str = Field(min_length=1, max_length=32)
+    max_exposure: Decimal = Field(gt=0, max_digits=30, decimal_places=12)
+    expires_at: datetime
 
 
 class ControlInput(BaseModel):
@@ -530,6 +547,19 @@ def create_app(
     quotes: dict[str, MarketSnapshot] = {}
     displayed_depth: dict[str, DisplayedDepth] = {}
     control_lock = Lock()
+    candidate_paper_store = None
+
+    def paper_candidate_store():
+        nonlocal candidate_paper_store
+        if candidate_paper_store is None:
+            candidate_paper_store = _available_candidate_store(configured_research_workspace)
+        return candidate_paper_store
+
+    def candidate_admission_guard():
+        """Serialize PAPER candidate admission with lifecycle changes in this API."""
+        with control_lock:
+            yield
+
     health_worker = None
     if configured_path is not None:
         health_path = configured_path.with_name(configured_path.stem + ".health.sqlite3")
@@ -1957,8 +1987,83 @@ def create_app(
             "provenance": depth.provenance,
         }
 
-    @app.post("/api/v1/paper/intents", dependencies=[Depends(require_operator)])
-    def submit_intent(
+    @app.post("/api/v1/paper/candidate-assignments", dependencies=[Depends(require_operator)])
+    def assign_candidate_to_paper(payload: CandidatePaperAssignmentInput):
+        from ai_quant_os.research_store import encode_research
+
+        if payload.expires_at.tzinfo is None or payload.expires_at.utcoffset() is None:
+            raise HTTPException(status_code=422, detail="Assignment expiry must include a timezone")
+        strategy_ref = f"{payload.strategy_id}@{payload.strategy_version}"
+        existing = execution.candidate_paper_assignment(payload.assignment_id)
+        if existing is not None:
+            if (
+                existing.candidate_id != payload.candidate_id
+                or existing.strategy_ref != strategy_ref
+                or existing.instrument_id != payload.instrument_id
+                or existing.max_exposure != payload.max_exposure
+                or existing.expires_at != payload.expires_at.astimezone(timezone.utc)
+            ):
+                raise HTTPException(
+                    status_code=409, detail="Candidate paper assignment is immutable"
+                )
+            return json.loads(encode_research(existing))
+        candidate_store = paper_candidate_store()
+        if candidate_store is None:
+            raise HTTPException(status_code=409, detail="Candidate registry is unavailable")
+        snapshot = candidate_store.snapshot(payload.candidate_id)
+        if snapshot is None:
+            raise HTTPException(status_code=404, detail="Research candidate not found")
+        from ai_quant_os.candidate_paper import create_candidate_paper_assignment
+
+        view, bundle = snapshot
+        try:
+            assignment = create_candidate_paper_assignment(
+                payload.assignment_id,
+                view,
+                bundle,
+                strategy_id=payload.strategy_id,
+                strategy_version=payload.strategy_version,
+                instrument_id=payload.instrument_id,
+                max_exposure=payload.max_exposure,
+                assigned_at=current_time(),
+                expires_at=payload.expires_at,
+            )
+            retained = execution.save_candidate_paper_assignment(assignment)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return json.loads(encode_research(retained))
+
+    @app.get(
+        "/api/v1/paper/candidate-assignments/{assignment_id}",
+        dependencies=[Depends(require_operator)],
+    )
+    def get_candidate_paper_assignment(assignment_id: str):
+        try:
+            assignment = execution.candidate_paper_assignment(assignment_id)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        if assignment is None:
+            raise HTTPException(status_code=404, detail="Candidate paper assignment not found")
+        from ai_quant_os.research_store import encode_research
+
+        return json.loads(encode_research(assignment))
+
+    def authorize_candidate_paper_intent(intent, assignment_id, *, now):
+        if assignment_id is None:
+            return
+        assignment = execution.candidate_paper_assignment(assignment_id)
+        candidate_store = paper_candidate_store()
+        snapshot = (
+            candidate_store.snapshot(assignment.candidate_id)
+            if candidate_store is not None and assignment is not None
+            else None
+        )
+        if assignment is None or snapshot is None:
+            raise ValueError("Current candidate paper assignment evidence is unavailable")
+        view, bundle = snapshot
+        assignment.authorize(intent, assignment_id, view, bundle, now=now)
+
+    def _submit_intent(
         payload: IntentInput, idempotency_key: str = Header(min_length=1)
     ) -> dict[str, str | None]:
         try:
@@ -1966,7 +2071,11 @@ def create_app(
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
         try:
-            previous = execution.replay(intent, idempotency_key=idempotency_key)
+            previous = execution.replay(
+                intent,
+                idempotency_key=idempotency_key,
+                candidate_assignment_id=payload.candidate_assignment_id,
+            )
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         if previous is not None:
@@ -1974,6 +2083,12 @@ def create_app(
                 span.set("ai_quant.order.id", previous.order_id)
                 span.set("ai_quant.order.status", previous.status)
             if previous.status == "PENDING":
+                try:
+                    authorize_candidate_paper_intent(
+                        intent, payload.candidate_assignment_id, now=current_time()
+                    )
+                except ValueError as error:
+                    raise HTTPException(status_code=409, detail=str(error)) from error
                 quote = quotes.get(intent.instrument_id)
                 if quote is None:
                     raise HTTPException(status_code=409, detail="No paper market quote")
@@ -1985,6 +2100,7 @@ def create_app(
                             market=quote,
                             now=current_time(),
                             currency_context=currency_context(quote),
+                            candidate_assignment_id=payload.candidate_assignment_id,
                         )
                         span.set("ai_quant.order.id", previous.order_id)
                         span.set("ai_quant.order.status", previous.status)
@@ -2000,6 +2116,12 @@ def create_app(
                         },
                     )
             return _order_view(previous)
+        try:
+            authorize_candidate_paper_intent(
+                intent, payload.candidate_assignment_id, now=current_time()
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
         with configured_telemetry.span("paper.market.snapshot"):
             quote = quotes.get(intent.instrument_id)
         if quote is None:
@@ -2016,7 +2138,13 @@ def create_app(
                 )
                 span.set("ai_quant.risk.decision", decision.decision)
             with configured_telemetry.span("paper.order.submit") as span:
-                order = execution.submit(intent, decision, idempotency_key=idempotency_key, now=now)
+                order = execution.submit(
+                    intent,
+                    decision,
+                    idempotency_key=idempotency_key,
+                    now=now,
+                    candidate_assignment_id=payload.candidate_assignment_id,
+                )
                 if order is not None:
                     span.set("ai_quant.order.id", order.order_id)
                     span.set("ai_quant.order.status", order.status)
@@ -2043,6 +2171,25 @@ def create_app(
             {"action": "PAPER_ORDER", "intent_id": intent.intent_id, "reason": "APPROVE"},
         )
         return _order_view(order)
+
+    @app.post(
+        "/api/v1/paper/intents",
+        dependencies=[Depends(require_operator), Depends(candidate_admission_guard)],
+    )
+    def submit_intent(
+        payload: IntentInput, idempotency_key: str = Header(min_length=1)
+    ) -> dict[str, str | None]:
+        assignment_id = payload.candidate_assignment_id
+        if assignment_id is None:
+            return _submit_intent(payload, idempotency_key)
+        assignment = execution.candidate_paper_assignment(assignment_id)
+        if assignment is None:
+            raise HTTPException(status_code=409, detail="Candidate paper assignment not found")
+        candidate_store = paper_candidate_store()
+        if candidate_store is None:
+            raise HTTPException(status_code=409, detail="Candidate registry is unavailable")
+        with candidate_store.admission_snapshot(assignment.candidate_id):
+            return _submit_intent(payload, idempotency_key)
 
     @app.post("/api/v1/paper/fills", dependencies=[Depends(require_operator)])
     def record_fill(payload: FillInput) -> dict[str, str]:
@@ -2306,6 +2453,7 @@ def create_app(
         app,
         configured_research_workspace,
         require_operator,
+        candidate_admission_guard,
     )
     install_agent_call_routes(app, call_budget, require_operator)
     install_spending_routes(

@@ -30,6 +30,20 @@ def _decode_fill(raw: str) -> PaperFill:
     return PaperFill(**data)
 
 
+def _candidate_intent(intent_raw):
+    from ai_quant_os.contracts import TradeIntent
+
+    data = json.loads(intent_raw)
+    assignment_id = data.pop("candidate_assignment_id", None)
+    if assignment_id is None:
+        return None, None
+    for name in ("desired_exposure", "risk_budget", "max_spread", "max_slippage"):
+        data[name] = Decimal(data[name])
+    for name in ("valid_until", "created_at"):
+        data[name] = datetime.fromisoformat(data[name])
+    return assignment_id, TradeIntent(**data)
+
+
 class PaperOrderStore:
     def __init__(self, path: Path | None = None) -> None:
         self._connection = sqlite3.connect(
@@ -84,6 +98,11 @@ class PaperOrderStore:
                 "CREATE INDEX IF NOT EXISTS idx_paper_fills_order_id ON paper_fills(order_id)"
             )
             self._connection.execute(
+                """CREATE TABLE IF NOT EXISTS candidate_paper_assignments (
+                    assignment_id TEXT PRIMARY KEY, blob BLOB NOT NULL, sha256 TEXT NOT NULL
+                )"""
+            )
+            self._connection.execute(
                 "CREATE TABLE IF NOT EXISTS paper_price_benchmarks (order_id TEXT PRIMARY KEY, benchmark_json TEXT NOT NULL, sha256 TEXT NOT NULL)"
             )
             columns = {
@@ -131,6 +150,57 @@ class PaperOrderStore:
             ).fetchone()
             return row[0] if row else None
 
+    def save_candidate_paper_assignment(self, assignment):
+        from ai_quant_os.candidate_paper import CandidatePaperAssignment
+        from ai_quant_os.research_store import encode_research
+
+        if type(assignment) is not CandidatePaperAssignment:
+            raise ValueError("Typed candidate paper assignment required")
+        raw = encode_research(assignment)
+        digest = sha256(raw).hexdigest()
+        with self._lock:
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                prior = self._connection.execute(
+                    "SELECT blob,sha256 FROM candidate_paper_assignments WHERE assignment_id=?",
+                    (assignment.assignment_id,),
+                ).fetchone()
+                if prior is not None:
+                    if prior != (raw, digest):
+                        raise ValueError("Candidate paper assignment is immutable")
+                    self._connection.commit()
+                    return assignment
+                count, size = self._connection.execute(
+                    "SELECT COUNT(*),COALESCE(SUM(length(blob)),0) FROM candidate_paper_assignments"
+                ).fetchone()
+                if count >= 1000 or size + len(raw) > 64 * 1024 * 1024:
+                    raise ValueError("Candidate paper assignment capacity exceeded")
+                self._connection.execute(
+                    "INSERT INTO candidate_paper_assignments VALUES (?,?,?)",
+                    (assignment.assignment_id, raw, digest),
+                )
+                self._connection.commit()
+                return assignment
+            except BaseException:
+                self._connection.rollback()
+                raise
+
+    def candidate_paper_assignment(self, assignment_id: str):
+        from ai_quant_os.candidate_paper import CandidatePaperAssignment
+        from ai_quant_os.research_store import _decode
+
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT blob,sha256 FROM candidate_paper_assignments WHERE assignment_id=?",
+                (assignment_id,),
+            ).fetchone()
+            if row is None:
+                return None
+            assignment = _decode(row[0], row[1], CandidatePaperAssignment)
+            if assignment.assignment_id != assignment_id:
+                raise ValueError("Candidate paper assignment identity mismatch")
+            return assignment
+
     def all_fills(self) -> tuple[PaperFill, ...]:
         with self._lock:
             rows = self._connection.execute(
@@ -150,7 +220,7 @@ class PaperOrderStore:
                 raise
 
     def attribution_records(self):
-        rows, fills, _ = self.execution_evidence_records()
+        rows, fills, _, _ = self.execution_evidence_records()
         return rows, fills
 
     def execution_evidence_records(self):
@@ -185,8 +255,31 @@ class PaperOrderStore:
                 required = {identifier for identifier, flag in metadata if flag == 1}
                 if present - order_ids or present != required:
                     raise ValueError("Paper benchmark inventory lineage mismatch")
+                from ai_quant_os.candidate_paper import CandidatePaperAssignment
+                from ai_quant_os.research_store import _decode
+
+                assignment_rows = self._connection.execute(
+                    "SELECT assignment_id,blob,sha256 FROM candidate_paper_assignments"
+                ).fetchall()
+                if len(assignment_rows) > 1000:
+                    raise ValueError("Candidate paper assignment capacity exceeded")
+                assignments = {}
+                for assignment_id, raw, digest in assignment_rows:
+                    assignment = _decode(raw, digest, CandidatePaperAssignment)
+                    if assignment.assignment_id != assignment_id:
+                        raise ValueError("Candidate paper assignment identity mismatch")
+                    assignments[assignment_id] = assignment
+                for _, _, intent_raw, _ in rows:
+                    assignment_id, candidate_intent = _candidate_intent(intent_raw)
+                    if assignment_id is not None:
+                        assignment = assignments.get(assignment_id)
+                        if assignment is None:
+                            raise ValueError(
+                                "Paper order references a missing candidate assignment"
+                            )
+                        assignment.verify_intent_binding(candidate_intent, assignment_id)
                 self._connection.commit()
-                return tuple(rows), fills, benchmarks
+                return tuple(rows), fills, benchmarks, assignments
             except BaseException:
                 self._connection.rollback()
                 raise
@@ -448,6 +541,19 @@ class PaperOrderStore:
                     self._validate_currency_reservation(
                         currency_reservation, command, intent_json, order_id, now=now
                     )
+                assignment_id, candidate_intent = _candidate_intent(intent_json)
+                if assignment_id is not None:
+                    from ai_quant_os.candidate_paper import CandidatePaperAssignment
+                    from ai_quant_os.research_store import _decode
+
+                    assignment_row = self._connection.execute(
+                        "SELECT blob,sha256 FROM candidate_paper_assignments WHERE assignment_id=?",
+                        (assignment_id,),
+                    ).fetchone()
+                    if assignment_row is None:
+                        raise ValueError("Candidate paper assignment does not exist")
+                    assignment = _decode(*assignment_row, CandidatePaperAssignment)
+                    assignment.verify_intent_binding(candidate_intent, assignment_id)
                 cursor = self._connection.execute(
                     "INSERT OR IGNORE INTO paper_orders (idempotency_key, intent_id, order_id, intent_json, order_json,benchmark_required) VALUES (?, ?, ?, ?, ?, ?)",
                     (key, intent_id, order_id, intent_json, order_json, int(benchmark is not None)),

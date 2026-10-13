@@ -26,6 +26,9 @@ class OrderAttribution:
     expires_at: datetime
     intent_sha256: str
     order_sha256: str
+    candidate_assignment_id: str | None = None
+    candidate_id: str | None = None
+    genome_sha256: str | None = None
 
     def __post_init__(self):
         for name in ("created_at", "expires_at"):
@@ -50,6 +53,19 @@ class OrderAttribution:
             or any(
                 not re.fullmatch(r"[a-f0-9]{64}", value)
                 for value in (self.intent_sha256, self.order_sha256)
+            )
+            or ((self.candidate_assignment_id is None) != (self.candidate_id is None))
+            or ((self.candidate_assignment_id is None) != (self.genome_sha256 is None))
+            or (
+                self.candidate_assignment_id is not None
+                and (
+                    not isinstance(self.candidate_assignment_id, str)
+                    or not 1 <= len(self.candidate_assignment_id) <= 128
+                    or not isinstance(self.candidate_id, str)
+                    or re.fullmatch(r"[a-f0-9]{64}", self.candidate_id) is None
+                    or not isinstance(self.genome_sha256, str)
+                    or re.fullmatch(r"[a-f0-9]{64}", self.genome_sha256) is None
+                )
             )
         ):
             raise ValueError("Invalid paper attribution ownership")
@@ -137,9 +153,13 @@ def _fingerprint(owners, fills):
             return str(value)
         raise TypeError("Unsupported paper attribution value")
 
+    owner_rows = []
+    for row in sorted(owners, key=lambda item: item.order_id):
+        owner = asdict(row)
+        owner_rows.append({key: value for key, value in owner.items() if value is not None})
     raw = json.dumps(
         {
-            "owners": [asdict(row) for row in sorted(owners, key=lambda row: row.order_id)],
+            "owners": owner_rows,
             "fills": [asdict(row) for row in sorted(fills, key=lambda row: row.fill_id)],
         },
         default=scalar,

@@ -20,6 +20,14 @@ Source preparation, native failure, changed historical fill prefix and candidate
 
 The candidate registry and shadow database are separate. Eligibility checks are not an atomic transaction with candidate withdrawal: withdrawal immediately after the final check may precede archive commit. No capital authority exists in that interval; the next observation refuses the changed lifecycle. A future execution assignment needs one transactional lifecycle authority and an independent review.
 
+## Candidate-bound PAPER assignments
+
+A paper operator can bind a frozen eligible challenger to one exact strategy reference and instrument with `POST /api/v1/paper/candidate-assignments`. The immutable assignment retains the candidate bundle hash, selected genome hash, candidate registry revision/event hash, a per-order exposure ceiling of at most 1,000, and an expiry no more than 30 days away. Repeating the same assignment ID and request returns the original record; reusing that ID for changed inputs is refused. The strategy reference must exactly match the candidate's verified holdout genome; the candidate must still be the unchanged `CHALLENGER` when an order is admitted.
+
+Include the returned `assignment_id` as `candidate_assignment_id` in `POST /api/v1/paper/intents`. The order is refused when the assignment is absent, expired, withdrawn/demoted, mapped to a different strategy or instrument, or exceeded. The assignment reference is stored with the immutable paper intent, checked on retry and recovery, and surfaced in execution attribution with candidate and genome fingerprints. Candidate source code is not run to create an intent: an operator still submits the paper intent, and broker route remains `PAPER`.
+
+Candidate-bound PAPER admission and pending recovery hold a SQLite writer reservation on the candidate registry through durable order processing. Withdrawal and reality-gap demotion use SQLite write transactions, so they cannot interleave between lifecycle validation and order persistence, including when invoked by a separate CLI process. If the assignment or registry cannot be loaded, candidate-bound admission fails closed.
+
 ## Operator retirement
 
 An operator can close a shadow assignment after its diagnostic window using `ai-quant-shadow retire <shadow-id> --command-id <id> --reason <reason>`. The immutable retirement record binds the final report sequence and hash. Retirement is refused while a reservation is unfinished, survives process restart, and is idempotent for the same command and reason. Existing reports and exact cached observations remain readable; new observations are blocked. Retirement does not delete or rewrite evidence. An unfinished reservation must first be recovered explicitly as described below.
