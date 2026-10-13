@@ -93,7 +93,7 @@ Windows API decisions were checked against Microsoft's
 [job object lifecycle](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects),
 [thread entry layout](https://learn.microsoft.com/en-us/windows/win32/api/tlhelp32/ns-tlhelp32-threadentry32)
 and [ResumeThread semantics](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-resumethread).
-Installed Next 16.3.6 CLI documentation/help confirmed the built-server command and
+Installed Next 16.4.0 CLI documentation/help confirmed the built-server command and
 explicit loopback hostname flag.
 
 ## Evidence and remaining work
