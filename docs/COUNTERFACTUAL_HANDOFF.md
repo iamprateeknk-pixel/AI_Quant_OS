@@ -43,4 +43,4 @@ Two independent workspaces each ran four native engines and exported identical `
 
 This fixture establishes replay reproducibility and sensitivity under the declared model. It does not establish forward performance, causal attribution, real broker slippage or suitability for trading. No paid provider or live broker was exercised. Windows/Linux native CI includes the new tests but hosted runs remain unverified.
 
-P09 still needs shadow portfolio integration, live/shadow comparison, daily reports/opening marks, candidate-bound paper assignments, agent attribution, fill-time/latency evidence, reality-gap alerts and demotion. P08 sandbox, independent review and shadow gates remain pending.
+P09 still needs shadow portfolio integration, live/shadow comparison, candidate-bound paper assignments, agent attribution, fill-time/latency evidence, reality-gap alerts and demotion. Daily opening marks and durable accounting reports are available through the separate daily-evidence workflow; their linkage to counterfactual and shadow results remains. P08 sandbox, independent review and shadow gates remain pending.

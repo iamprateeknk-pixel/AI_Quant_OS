@@ -34,7 +34,7 @@ Coverage is `COMPLETE`, `PARTIAL`, `NONE` or `EMPTY`. Missing legacy references 
 
 The committed synthetic paper-broker example stores two initial kernel quotes before dispatch, records simulator fills and imports them through the existing idempotent broker-fill path. Its midpoint, spread, decision-to-fill and fee components reconcile to -7.02 EURUSD quote units of cash. Retained ownership/fills/benchmarks/catalog replay the report and validate with the published schemas. This is simulator accounting evidence, not real-broker performance.
 
-Daily opening inventory/marks and durable report publication, resolved candidate bindings, shadow portfolio comparison, agent/causal contribution, isolated counterfactual datasets, reality-gap alerts/demotion and real-broker validation remain. No candidate or live-capital authority is added.
+Daily paper opening inventory/marks and immutable accounting reports are available through the dedicated daily-evidence workflow; binding those reports to execution-contribution output remains. Resolved candidate bindings, shadow portfolio comparison, agent/causal contribution, isolated counterfactual datasets, reality-gap alerts/demotion and real-broker validation also remain. No candidate or live-capital authority is added.
 
 ## Rollback and retention
 

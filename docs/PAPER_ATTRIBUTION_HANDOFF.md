@@ -33,7 +33,7 @@ The committed synthetic evaluation contains original ownership descriptors, two 
 
 The report explicitly lists absent decision-price benchmarks, agent-credit evidence, causal factor attribution and candidate-genome bindings. Original paper intents retain strategy identity but do not identify a resolved parameterized candidate genome. Registration of a research challenger therefore does not turn these fills into candidate shadow-validation evidence.
 
-This report is cumulative, not a daily return calculation. Daily opening marks/inventory and durable evidence publication, shadow portfolios, live-versus-shadow comparison, execution attribution, agent contribution, isolated counterfactual datasets, reality-gap alerts and candidate demotion remain. The paper marking convention is not an executable guarantee of liquidity or a live-capital release gate.
+This report is cumulative, not a daily return calculation. Daily opening marks/inventory and durable accounting publication are implemented separately in the daily-evidence workflow; linking them to this report remains. Shadow portfolios, live-versus-shadow comparison, execution attribution, agent contribution, isolated counterfactual datasets, reality-gap alerts and candidate demotion remain. The paper marking convention is not an executable guarantee of liquidity or a live-capital release gate.
 
 ## Compatibility
 
