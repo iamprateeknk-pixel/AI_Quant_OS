@@ -399,6 +399,11 @@ def create_app(
         if os.getenv("AI_QUANT_RESEARCH_WORKSPACE")
         else None
     )
+    configured_demo_sync_state_dir = demo_sync_state_dir or (
+        Path(os.environ["AI_QUANT_DEMO_SYNC_STATE"])
+        if os.getenv("AI_QUANT_DEMO_SYNC_STATE")
+        else None
+    )
     limits = RiskLimits(
         max_order_exposure=Decimal("1000"),
         max_portfolio_exposure=Decimal("1500"),
@@ -2431,7 +2436,9 @@ def create_app(
     install_health_routes(app, require_operator, health_worker, enabled_health)
     from ai_quant_os.mt5_sync_health_api import install_demo_sync_health_routes
 
-    install_demo_sync_health_routes(app, require_operator, demo_sync_state_dir, current_time)
+    install_demo_sync_health_routes(
+        app, require_operator, configured_demo_sync_state_dir, current_time
+    )
     from ai_quant_os.broker_capability_api import install_broker_capability_routes
 
     install_broker_capability_routes(app, router, require_operator, clock=current_time)
@@ -2496,6 +2503,7 @@ def create_app(
         PAPER_INSTRUMENTS,
         current_time,
         configured_research_workspace,
+        configured_demo_sync_state_dir,
     )
     install_research_routes(
         app,

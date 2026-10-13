@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import sqlite3
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -57,6 +57,7 @@ def install_daily_routes(
     catalog,
     clock,
     research_workspace: Path | None = None,
+    demo_sync_state_dir: Path | None = None,
 ):
     def store():
         if paper_path is None:
@@ -69,6 +70,9 @@ def install_daily_routes(
             media_type="application/json",
             headers={"Cache-Control": "no-store"},
         )
+
+    if demo_sync_state_dir is not None and not demo_sync_state_dir.is_absolute():
+        raise ValueError("Demo comparison requires an absolute server-owned state directory")
 
     @app.post("/api/v1/paper/evidence/checkpoints", dependencies=[Depends(require_operator)])
     def capture(payload: CheckpointInput):
@@ -330,6 +334,51 @@ def install_daily_routes(
             raise
         except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
             raise HTTPException(503, "Shadow alert evidence could not be verified") from error
+
+    @app.get(
+        "/api/v1/paper/shadows/{shadow_id}/demo-position-comparison",
+        dependencies=[Depends(require_operator)],
+    )
+    def demo_shadow_position_comparison(shadow_id: str, sequence: int = Query(ge=1, le=1000)):
+        if research_workspace is None or demo_sync_state_dir is None:
+            raise HTTPException(503, "Demo or shadow evidence workspace is disabled")
+        shadow_path = research_workspace / "shadow.sqlite3"
+        if not shadow_path.is_file():
+            raise HTTPException(404, "Unknown shadow portfolio")
+        try:
+            from ai_quant_os.shadow_store import ShadowStore
+
+            shadow_store = ShadowStore(shadow_path)
+            if shadow_store.lookup(shadow_id) is None:
+                raise HTTPException(404, "Unknown shadow portfolio")
+            history = shadow_store.history(shadow_id)
+        except HTTPException:
+            raise
+        except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Shadow evidence could not be verified") from error
+        if sequence > len(history):
+            raise HTTPException(404, "Unknown shadow observation sequence")
+        report = history[sequence - 1]
+        try:
+            from ai_quant_os.mt5_portfolio_observation import read_portfolio
+            from ai_quant_os.demo_shadow_position_comparison import (
+                compare_demo_shadow_position,
+            )
+
+            demo = read_portfolio(demo_sync_state_dir / "portfolio.json", clock=clock)
+            if (
+                demo.state != "AVAILABLE"
+                or demo.publication is None
+                or demo.publication.record is None
+            ):
+                raise HTTPException(503, "A fresh demo portfolio observation is unavailable")
+            return response(compare_demo_shadow_position(demo.publication.record, report))
+        except HTTPException:
+            raise
+        except ValueError as error:
+            raise HTTPException(409, "Demo/shadow position evidence cannot be compared") from error
+        except (TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Demo/shadow evidence could not be verified") from error
 
     @app.post(
         "/api/v1/paper/shadows/{shadow_id}/counterfactual",

@@ -253,6 +253,7 @@
         "src/ai_quant_os/data_cli.py",
         "src/ai_quant_os/decision_gateway.py",
         "src/ai_quant_os/deep_review.py",
+        "src/ai_quant_os/demo_shadow_position_comparison.py",
         "src/ai_quant_os/drift_sources.py",
         "src/ai_quant_os/ecb_rates.py",
         "src/ai_quant_os/evaluation_cli.py",
@@ -304,6 +305,7 @@
         "src/ai_quant_os/paper_attribution.py",
         "src/ai_quant_os/paper_context_sources.py",
         "src/ai_quant_os/paper_http_metrics.py",
+        "src/ai_quant_os/paper_shadow_comparison.py",
         "src/ai_quant_os/paper_telemetry.py",
         "src/ai_quant_os/policy_rates.py",
         "src/ai_quant_os/portfolio_backtest_cli.py",
@@ -346,6 +348,7 @@
         "src/ai_quant_os/research_results.py",
         "src/ai_quant_os/root_ownership.py",
         "src/ai_quant_os/shadow_cli.py",
+        "src/ai_quant_os/shadow_counterfactual.py",
         "src/ai_quant_os/shadow_pipeline.py",
         "src/ai_quant_os/shadow_portfolio.py",
         "src/ai_quant_os/shadow_reality_gap.py",
@@ -371,9 +374,7 @@
         "src/ai_quant_os/validation_scientist_service.py",
         "src/ai_quant_os/validation_scientist_sources.py",
         "src/ai_quant_os/volatility_features.py",
-        "src/ai_quant_os/world_state.py",
-        "src/ai_quant_os/paper_shadow_comparison.py",
-        "src/ai_quant_os/shadow_counterfactual.py"
+        "src/ai_quant_os/world_state.py"
       ]
     }
   },
@@ -538,6 +539,7 @@
       "src/ai_quant_os/data_cli.py",
       "src/ai_quant_os/decision_gateway.py",
       "src/ai_quant_os/deep_review.py",
+      "src/ai_quant_os/demo_shadow_position_comparison.py",
       "src/ai_quant_os/directional_strategy.py",
       "src/ai_quant_os/drift_agent.py",
       "src/ai_quant_os/drift_sources.py",
@@ -777,11 +779,11 @@
     "src/ai_quant_os/adversarial_agent.py",
     "src/ai_quant_os/adversarial_api.py",
     "src/ai_quant_os/adversarial_service.py",
+    "src/ai_quant_os/agent_attribution.py",
     "src/ai_quant_os/agent_call_api.py",
     "src/ai_quant_os/agent_call_budgets.py",
     "src/ai_quant_os/agent_call_policy.py",
     "src/ai_quant_os/agent_call_store.py",
-    "src/ai_quant_os/agent_attribution.py",
     "src/ai_quant_os/agent_catalog.py",
     "src/ai_quant_os/agent_context.py",
     "src/ai_quant_os/agent_envelope.py",
@@ -858,6 +860,7 @@
     "src/ai_quant_os/data_cli.py",
     "src/ai_quant_os/decision_gateway.py",
     "src/ai_quant_os/deep_review.py",
+    "src/ai_quant_os/demo_shadow_position_comparison.py",
     "src/ai_quant_os/directional_strategy.py",
     "src/ai_quant_os/drift_agent.py",
     "src/ai_quant_os/drift_sources.py",
@@ -962,6 +965,7 @@
     "src/ai_quant_os/paper_market_ingress.py",
     "src/ai_quant_os/paper_metrics_api.py",
     "src/ai_quant_os/paper_recovery.py",
+    "src/ai_quant_os/paper_shadow_comparison.py",
     "src/ai_quant_os/paper_state_store.py",
     "src/ai_quant_os/paper_telemetry.py",
     "src/ai_quant_os/policy_rates.py",
@@ -1022,6 +1026,7 @@
     "src/ai_quant_os/root_ownership.py",
     "src/ai_quant_os/s3_archive.py",
     "src/ai_quant_os/shadow_cli.py",
+    "src/ai_quant_os/shadow_counterfactual.py",
     "src/ai_quant_os/shadow_pipeline.py",
     "src/ai_quant_os/shadow_portfolio.py",
     "src/ai_quant_os/shadow_reality_gap.py",
@@ -1102,8 +1107,6 @@
     "src/ai_quant_os/valkey_cache.py",
     "src/ai_quant_os/volatility_features.py",
     "src/ai_quant_os/world_state.py",
-    "src/ai_quant_os/world_state_store.py",
-    "src/ai_quant_os/paper_shadow_comparison.py",
-    "src/ai_quant_os/shadow_counterfactual.py"
+    "src/ai_quant_os/world_state_store.py"
   ]
 }

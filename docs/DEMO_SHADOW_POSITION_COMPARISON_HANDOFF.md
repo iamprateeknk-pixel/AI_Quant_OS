@@ -1,0 +1,11 @@
+# Demo and shadow position direction comparison
+
+The operator-protected `GET /api/v1/paper/shadows/{shadow_id}/demo-position-comparison?sequence=N` endpoint reports a descriptive direction comparison between the instrument position produced by one retained shadow report and the latest local Exness MT5 demo portfolio observation.
+
+The endpoint reads the demo record from the server-configured demo sync directory and loads the shadow report from the verified shadow archive. It only reports positions when the demo portfolio observation timestamp exactly matches the last source-bar timestamp in the selected report. A time mismatch returns `WITHHELD` with `SOURCE_TIME_MISMATCH` and null position values. An unavailable or stale demo portfolio is a service error. The response is uncached and records the demo account scope, source receipt, shadow hash, candidate report hash, genome hash, and both source timestamps.
+
+The signed shadow value is in abstract strategy-model units. The signed demo value is in broker quantity units derived from current symbol contract metadata. Those units are incompatible, and the response never subtracts or equates their magnitudes. It compares direction only and explicitly reports `magnitude_comparison: NOT_AVAILABLE`. A separate inventory-presence field distinguishes `DEMO_HEDGED_NEUTRAL` from flat when BUY and SELL positions net to zero; inventory presence is still reported when timestamp mismatch withholds position quantities. The demo source remains `UNVERIFIED` and observations are `NON_ATOMIC_SEQUENTIAL_READ`.
+
+The output is not proof that the candidate generated or owns broker orders. It contains no PnL, financing, fill, latency, or causal attribution and grants no order or promotion authority. The API must not be described as a live-broker execution comparison. Production broker history linkage and production source ingestion remain open.
+
+The strict response schema is `docs/schemas/demo-shadow-position-comparison-v1.schema.json`. Tests cover direction classification across distinct units, hedged-neutral versus flat inventory, inventory presence during timestamp mismatch withholding, refused failed shadow evidence, operator authorization, no-store response behavior, and schema parity.

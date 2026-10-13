@@ -1,0 +1,223 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "state": {
+      "enum": [
+        "SAME_DIRECTION",
+        "OPPOSITE_DIRECTION",
+        "SHADOW_ONLY",
+        "DEMO_ONLY",
+        "BOTH_FLAT",
+        "DEMO_HEDGED_NEUTRAL",
+        "WITHHELD"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "code": {
+      "anyOf": [
+        {
+          "const": "SOURCE_TIME_MISMATCH",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Code"
+    },
+    "broker_id": {
+      "const": "EXNESS_MT5_DEMO",
+      "title": "Broker Id",
+      "type": "string"
+    },
+    "mode": {
+      "const": "DEMO_OBSERVATION",
+      "title": "Mode",
+      "type": "string"
+    },
+    "shadow_id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$",
+      "title": "Shadow Id",
+      "type": "string"
+    },
+    "shadow_sequence": {
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Shadow Sequence",
+      "type": "integer"
+    },
+    "candidate_id": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Report Sha256",
+      "type": "string"
+    },
+    "genome_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Genome Sha256",
+      "type": "string"
+    },
+    "instrument_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Instrument Id",
+      "type": "string"
+    },
+    "source_time": {
+      "format": "date-time",
+      "title": "Source Time",
+      "type": "string"
+    },
+    "demo_observed_at": {
+      "format": "date-time",
+      "title": "Demo Observed At",
+      "type": "string"
+    },
+    "shadow_source_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Shadow Source Sha256",
+      "type": "string"
+    },
+    "demo_source_receipt_ref": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Demo Source Receipt Ref",
+      "type": "string"
+    },
+    "demo_account_scope_ref": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Demo Account Scope Ref",
+      "type": "string"
+    },
+    "shadow_position_strategy_units": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Signed abstract position in strategy-model units; not convertible to broker quantity without an explicit size binding.",
+      "title": "Shadow Position Strategy Units"
+    },
+    "demo_position_current_contract_units": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Signed observed broker quantity in units derived from current symbol contract metadata.",
+      "title": "Demo Position Current Contract Units"
+    },
+    "shadow_quantity_basis": {
+      "const": "STRATEGY_MODEL_UNITS",
+      "title": "Shadow Quantity Basis",
+      "type": "string"
+    },
+    "demo_quantity_basis": {
+      "const": "CURRENT_SYMBOL_METADATA",
+      "title": "Demo Quantity Basis",
+      "type": "string"
+    },
+    "demo_has_instrument_positions": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Demo Has Instrument Positions"
+    },
+    "magnitude_comparison": {
+      "const": "NOT_AVAILABLE",
+      "description": "Strategy-model and broker quantities have incompatible units; no magnitude comparison is made.",
+      "title": "Magnitude Comparison",
+      "type": "string"
+    },
+    "demo_attestation": {
+      "const": "UNVERIFIED",
+      "title": "Demo Attestation",
+      "type": "string"
+    },
+    "consistency": {
+      "const": "NON_ATOMIC_SEQUENTIAL_READ",
+      "title": "Consistency",
+      "type": "string"
+    },
+    "causal_attribution": {
+      "const": false,
+      "title": "Causal Attribution",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    },
+    "may_submit_orders": {
+      "const": false,
+      "title": "May Submit Orders",
+      "type": "boolean"
+    },
+    "may_affect_portfolio": {
+      "const": false,
+      "title": "May Affect Portfolio",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "state",
+    "code",
+    "broker_id",
+    "mode",
+    "shadow_id",
+    "shadow_sequence",
+    "candidate_id",
+    "candidate_report_sha256",
+    "genome_sha256",
+    "instrument_id",
+    "source_time",
+    "demo_observed_at",
+    "shadow_source_sha256",
+    "demo_source_receipt_ref",
+    "demo_account_scope_ref",
+    "shadow_quantity_basis",
+    "demo_quantity_basis",
+    "demo_has_instrument_positions",
+    "magnitude_comparison",
+    "demo_attestation",
+    "consistency",
+    "causal_attribution",
+    "promotion_allowed",
+    "may_submit_orders",
+    "may_affect_portfolio"
+  ],
+  "title": "DemoShadowPositionComparison",
+  "type": "object"
+}
