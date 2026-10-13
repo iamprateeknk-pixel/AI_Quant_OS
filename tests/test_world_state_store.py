@@ -4,6 +4,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,6 +13,7 @@ from ai_quant_os.api import create_app
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
 from ai_quant_os.world_state import WorldStateEngine
 from ai_quant_os.world_state_store import WorldStateStore
+from ai_quant_os.market_data import Bar
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 HEADERS = {"X-Operator-Token": "fixture-token"}
@@ -19,6 +21,188 @@ HEADERS = {"X-Operator-Token": "fixture-token"}
 
 def snapshot(now=NOW):
     return WorldStateEngine(PAPER_INSTRUMENTS).snapshot((), now=now)
+
+
+def market_bars():
+    return (
+        Bar(
+            "EURUSD",
+            NOW,
+            Decimal("1.1"),
+            Decimal("1.2"),
+            Decimal("1.0"),
+            Decimal("1.15"),
+            Decimal("10"),
+        ),
+        Bar(
+            "EURUSD",
+            NOW + timedelta(minutes=1),
+            Decimal("1.15"),
+            Decimal("1.25"),
+            Decimal("1.1"),
+            Decimal("1.2"),
+            Decimal("12"),
+        ),
+    )
+
+
+def test_market_bars_are_persisted_idempotently_and_survive_restart(tmp_path):
+    path = tmp_path / "paper.sqlite3"
+    store = WorldStateStore(path)
+    assert store.record_bars(market_bars()) == (2, 0)
+    assert store.record_bars(market_bars()) == (0, 2)
+    restarted = WorldStateStore(path)
+    assert restarted.read_bars("EURUSD", NOW, NOW + timedelta(minutes=2)) == market_bars()
+
+
+def test_market_bar_archive_refuses_conflicting_replacement_and_tampering(tmp_path):
+    path = tmp_path / "paper.sqlite3"
+    store = WorldStateStore(path)
+    store.record_bars(market_bars())
+    changed = (replace(market_bars()[0], close=Decimal("1.16")),)
+    with pytest.raises(ValueError, match="conflict"):
+        store.record_bars(changed)
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "UPDATE world_state_bars SET bar_json = '{}' WHERE instrument_id = 'EURUSD'"
+        )
+    with pytest.raises(ValueError, match="integrity"):
+        store.read_bars("EURUSD", NOW, NOW + timedelta(minutes=2))
+
+
+def test_market_bar_batch_capacity_is_atomic(tmp_path):
+    store = WorldStateStore(tmp_path / "paper.sqlite3", max_bars=1)
+    with pytest.raises(ValueError, match="capacity"):
+        store.record_bars(market_bars())
+    assert store.read_bars("EURUSD", NOW, NOW + timedelta(minutes=2)) == ()
+
+
+def test_paper_market_ingress_persists_bars_across_application_restart(tmp_path):
+    path = tmp_path / "paper.sqlite3"
+    payload = {
+        "bars": [
+            {
+                "instrument_id": bar.instrument_id,
+                "observed_at": bar.observed_at.isoformat(),
+                "open": str(bar.open),
+                "high": str(bar.high),
+                "low": str(bar.low),
+                "close": str(bar.close),
+                "volume": str(bar.volume),
+            }
+            for bar in market_bars()
+        ]
+    }
+    client = TestClient(
+        create_app(
+            operator_token="fixture-token",
+            paper_db_path=path,
+            clock=lambda: NOW + timedelta(minutes=2),
+        )
+    )
+    result = client.post("/api/v1/paper/world-state/bars", headers=HEADERS, json=payload)
+    assert result.status_code == 200 and result.json()["inserted_count"] == 2
+    restarted = WorldStateStore(path)
+    assert restarted.read_bars("EURUSD", NOW, NOW + timedelta(minutes=2)) == market_bars()
+
+    conflicting = {"bars": [dict(payload["bars"][0], close="1.16")]}
+    refused = client.post("/api/v1/paper/world-state/bars", headers=HEADERS, json=conflicting)
+    assert refused.status_code == 422
+    assert restarted.read_bars("EURUSD", NOW, NOW) == market_bars()[:1]
+
+
+def test_market_archive_failure_does_not_update_live_in_memory_history(monkeypatch):
+    def fail(self, bars, *, audit_event_key=None):
+        raise sqlite3.OperationalError("private storage failure")
+
+    monkeypatch.setattr(WorldStateStore, "record_bars", fail)
+    client = TestClient(
+        create_app(operator_token="fixture-token", clock=lambda: NOW + timedelta(minutes=2))
+    )
+    payload = {
+        "bars": [
+            {
+                "instrument_id": bar.instrument_id,
+                "observed_at": bar.observed_at.isoformat(),
+                "open": str(bar.open),
+                "high": str(bar.high),
+                "low": str(bar.low),
+                "close": str(bar.close),
+                "volume": str(bar.volume),
+            }
+            for bar in market_bars()
+        ]
+    }
+    result = client.post("/api/v1/paper/world-state/bars", headers=HEADERS, json=payload)
+    assert result.status_code == 503
+    assert "private storage failure" not in result.text
+    assert client.get("/api/v1/world-state").json()["status"] == "EMPTY"
+
+
+def test_market_bar_write_rolls_back_when_atomic_audit_append_fails(monkeypatch, tmp_path):
+    from ai_quant_os.audit_chain import AuditChain
+
+    def fail(self, key, event, *, only_if_missing=False):
+        raise sqlite3.OperationalError("audit unavailable")
+
+    monkeypatch.setattr(AuditChain, "append", fail)
+    path = tmp_path / "paper.sqlite3"
+    client = TestClient(
+        create_app(
+            operator_token="fixture-token",
+            paper_db_path=path,
+            clock=lambda: NOW + timedelta(minutes=2),
+        )
+    )
+    payload = {
+        "bars": [
+            {
+                "instrument_id": bar.instrument_id,
+                "observed_at": bar.observed_at.isoformat(),
+                "open": str(bar.open),
+                "high": str(bar.high),
+                "low": str(bar.low),
+                "close": str(bar.close),
+                "volume": str(bar.volume),
+            }
+            for bar in market_bars()
+        ]
+    }
+    result = client.post("/api/v1/paper/world-state/bars", headers=HEADERS, json=payload)
+    assert result.status_code == 503
+    assert WorldStateStore(path).read_bars("EURUSD", NOW, NOW + timedelta(minutes=2)) == ()
+    assert client.get("/api/v1/world-state").json()["status"] == "EMPTY"
+
+
+def test_corrupt_market_audit_is_a_storage_failure_not_an_input_error(tmp_path):
+    path = tmp_path / "paper.sqlite3"
+    client = TestClient(
+        create_app(
+            operator_token="fixture-token",
+            paper_db_path=path,
+            clock=lambda: NOW + timedelta(minutes=2),
+        )
+    )
+    with sqlite3.connect(path) as connection:
+        connection.execute("UPDATE audit_head SET head_hash = ?", ("f" * 64,))
+    payload = {
+        "bars": [
+            {
+                "instrument_id": bar.instrument_id,
+                "observed_at": bar.observed_at.isoformat(),
+                "open": str(bar.open),
+                "high": str(bar.high),
+                "low": str(bar.low),
+                "close": str(bar.close),
+                "volume": str(bar.volume),
+            }
+            for bar in market_bars()
+        ]
+    }
+    result = client.post("/api/v1/paper/world-state/bars", headers=HEADERS, json=payload)
+    assert result.status_code == 503
+    assert WorldStateStore(path).read_bars("EURUSD", NOW, NOW + timedelta(minutes=2)) == ()
+    assert client.get("/api/v1/world-state").json()["status"] == "EMPTY"
 
 
 def test_immutable_snapshot_survives_restart_and_same_version_is_idempotent(tmp_path):

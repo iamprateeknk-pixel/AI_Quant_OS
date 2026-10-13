@@ -54,6 +54,10 @@ Current increment: the exact-time demo/shadow direction observation now also req
 
 Current increment: a protected no-store endpoint reconstructs the shadow position direction at each source bar from the verified native shadow fills, then joins only to audited MT5 demo position snapshots captured at that exact timestamp. It binds reads to the account scope and current published projection head, returns every bar with COMPLETE/PARTIAL/NONE coverage, and never forward-fills a missing snapshot. Quantities remain in separate strategy and broker bases; causal, order, portfolio and promotion authority remain false. Focused demo/shadow and projection tests pass (79); Ruff/format and schema parity pass. The full locked Windows suite passes (2,990 passed, 36 skipped in 1,095.63 seconds); Bugbot found no actionable findings. The report covers one selected shadow assignment/instrument and does not reconcile fills or P&L. See `docs/DEMO_SHADOW_POSITION_COMPARISON_HANDOFF.md`.
 
+### P09 durable PAPER market-bar ingress
+
+Current increment: accepted PAPER world-state bars are now retained in the persistent SQLite workspace with canonical row hashes and exact duplicate idempotency. Conflicting instrument/timestamp replacements are refused. Bar rows and their audit-chain event commit atomically; storage/audit errors leave the in-memory world state unchanged and return unavailable. Inclusive instrument/time reads are bounded at 4,096 rows, with one capacity check per batch. Focused world-state and ingress tests pass (36); the full locked Windows suite passes (2,997 passed, 36 skipped in 1,130.63 seconds); Ruff, formatting and diff checks pass. Bugbot found no remaining actionable issues. This retains only operator-submitted PAPER_SIMULATED data: provider/source authenticity, deletion-proof completeness, and automatic shadow scheduling remain open. See `docs/SHADOW_MARKET_INGRESS_HANDOFF.md`.
+
 ## Remaining P09 work
 
 - Full live-broker-versus-shadow comparison with complete candidate/genome and interval coverage.

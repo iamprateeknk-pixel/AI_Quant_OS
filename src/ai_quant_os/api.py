@@ -457,7 +457,11 @@ def create_app(
     )
     state_store = PaperStateStore(configured_path)
     calibration_store = CalibrationStore(configured_path)
-    world_state_store = WorldStateStore(configured_path)
+    world_state_store = WorldStateStore(
+        configured_path,
+        connection=state_store._connection,
+        lock=state_store._lock,
+    )
     event_feed_store = EventFeedStore(
         configured_path.with_name(configured_path.stem + ".events.sqlite3")
         if configured_path
@@ -2022,22 +2026,27 @@ def create_app(
             bars = tuple(Bar(**item.model_dump()) for item in payload.bars)
             for bar in bars:
                 require_paper_prices(bar.instrument_id, (bar.open, bar.high, bar.low, bar.close))
-            inserted, duplicates = world_state.record_bars_with_health(bars, now=current_time())
+            now = current_time()
+            if any(bar.observed_at > now for bar in bars):
+                raise ValueError("World-state bars cannot be future-dated")
+            world_state_store.record_bars(bars, audit_event_key=f"world-state-bars:{uuid4()}")
+            inserted, duplicates = world_state.record_bars_with_health(bars, now=now)
         except ValueError as error:
-            code = (
-                "CONFLICTING_BAR"
-                if str(error).startswith("Conflicting duplicate bar")
-                else "FUTURE_BAR"
-                if "future-dated" in str(error)
-                else "INVALID_BAR"
-            )
+            message = str(error)
+            if "Market bar archive conflict" in message or "Conflicting duplicate" in message:
+                ingress_health.note("CONFLICTING_BAR")
+                raise HTTPException(status_code=422, detail=message) from error
+            if any(
+                marker in message.lower()
+                for marker in ("archive", "capacity exhausted", "integrity", "audit")
+            ):
+                raise HTTPException(503, "Market history archive unavailable") from error
+            code = "FUTURE_BAR" if "future-dated" in message else "INVALID_BAR"
             ingress_health.note(code)
-            raise HTTPException(status_code=422, detail=str(error)) from error
+            raise HTTPException(status_code=422, detail=message) from error
+        except sqlite3.Error as error:
+            raise HTTPException(503, "Market history archive unavailable") from error
         ingress_health.note("DUPLICATE_BAR", duplicates)
-        state_store.record_event(
-            f"world-state-bars:{uuid4()}",
-            {"action": "PAPER_WORLD_STATE_BARS", "intent_id": "", "reason": f"INSERTED:{inserted}"},
-        )
         return {"mode": "PAPER", "inserted_count": inserted}
 
     @app.post("/api/v1/paper/quotes", dependencies=[Depends(require_operator)])
