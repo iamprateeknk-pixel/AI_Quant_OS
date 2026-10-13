@@ -26,7 +26,7 @@ with served human-readable guidance and links back to Incidents/Risk Center.
 The original checked-out operations runbook remains the deployment reference.
 No private source/config output, arbitrary URL, raw HTML, untrusted annotation
 content or file path becomes a link. Operational dynamic routes gain general
-loading/error boundaries; the installed Next16.3.6 retry() contract is used
+loading/error boundaries; the installed Next16.4.0 retry() contract is used
 without displaying/logging raw errors or retrying a command.
 
 Semantic sections/headings, UTC time elements, captioned table/scope headers,
