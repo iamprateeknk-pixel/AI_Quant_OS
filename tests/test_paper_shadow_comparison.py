@@ -136,8 +136,48 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
             headers={"X-Operator-Token": "operator"},
             json={"shadow_id": assignment.shadow_id, "sequence": 3, "cash": "999"},
         )
+        range_response = client.get(
+            "/api/v1/paper/evidence/daily-shadow-comparison",
+            headers={"X-Operator-Token": "operator"},
+            params={
+                "shadow_id": assignment.shadow_id,
+                "start": START.date().isoformat(),
+                "end": (START.date() + timedelta(days=1)).isoformat(),
+            },
+        )
+        unauthorized_range = client.get(
+            "/api/v1/paper/evidence/daily-shadow-comparison",
+            params={
+                "shadow_id": assignment.shadow_id,
+                "start": START.date().isoformat(),
+                "end": START.date().isoformat(),
+            },
+        )
+        invalid_range = client.get(
+            "/api/v1/paper/evidence/daily-shadow-comparison",
+            headers={"X-Operator-Token": "operator"},
+            params={
+                "shadow_id": assignment.shadow_id,
+                "start": START.date().isoformat(),
+                "end": (START.date() + timedelta(days=366)).isoformat(),
+            },
+        )
+        empty_range = client.get(
+            "/api/v1/paper/evidence/daily-shadow-comparison",
+            headers={"X-Operator-Token": "operator"},
+            params={
+                "shadow_id": assignment.shadow_id,
+                "start": (START.date() + timedelta(days=10)).isoformat(),
+                "end": (START.date() + timedelta(days=10)).isoformat(),
+            },
+        )
     assert unauthorized.status_code == 401
     assert response.status_code == 200, response.text
+    assert range_response.status_code == 200, range_response.text
+    assert unauthorized_range.status_code == 401
+    assert invalid_range.status_code == 422
+    assert empty_range.status_code == 200
+    assert empty_range.json()["coverage"] == "NO_EVIDENCE"
     assert missing_shadow.status_code == 404
     assert extra_input.status_code == 422
     assert response.json()["paper_evidence_sha256"] == comparison.paper_evidence_sha256
@@ -152,13 +192,28 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
     assert response.json()["shadow_fill_count"] == len(expected_shadow_fills)
     assert response.json()["shadow_cash_flow_quote"] == str(expected_shadow_cash)
     assert response.headers["cache-control"] == "no-store"
+    range_report = range_response.json()
+    assert range_report["coverage"] == "PARTIAL"
+    assert range_report["covered_days"] == [START.date().isoformat()]
+    assert range_report["missing_days"] == [(START.date() + timedelta(days=1)).isoformat()]
+    assert range_report["days"][0]["comparison"]["shadow_cash_flow_quote"] == str(
+        expected_shadow_cash
+    )
+    assert range_report["days"][1]["missing_reason"] == "DAILY_EXECUTION_MISSING"
+    assert range_report["totals"]["shadow_cash_flow_quote"] == str(expected_shadow_cash)
+    assert range_report["promotion_allowed"] is False
+    assert range_report["causal_attribution_allowed"] is False
+    assert range_response.headers["cache-control"] == "no-store"
 
     import json
     from pathlib import Path
     from jsonschema import Draft202012Validator
     from pydantic import TypeAdapter
     from ai_quant_os.daily_api import DailyShadowComparisonInput
-    from ai_quant_os.paper_shadow_comparison import PaperShadowComparison
+    from ai_quant_os.paper_shadow_comparison import (
+        DailyPaperShadowAggregate,
+        PaperShadowComparison,
+    )
 
     schema_dir = Path(__file__).resolve().parents[1] / "docs" / "schemas"
     for name, model, schema_id in (
@@ -171,6 +226,11 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
             "paper-shadow-comparison-v1.schema.json",
             TypeAdapter(PaperShadowComparison),
             "urn:ai-quant-os:contract:paper-shadow-comparison:1.0",
+        ),
+        (
+            "daily-paper-shadow-aggregate-v1.schema.json",
+            TypeAdapter(DailyPaperShadowAggregate),
+            "urn:ai-quant-os:contract:daily-paper-shadow-aggregate:1.0",
         ),
     ):
         schema = json.loads((schema_dir / name).read_text(encoding="utf-8"))
@@ -188,6 +248,42 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
         assert schema == expected
         Draft202012Validator.check_schema(schema)
 
+    boundary_bars = tuple(
+        Bar(
+            "EURUSD",
+            observed_at,
+            Decimal("1.2"),
+            Decimal("1.2"),
+            Decimal("1.2"),
+            Decimal("1.2"),
+            Decimal(100),
+        )
+        for observed_at in (
+            START + timedelta(hours=23, minutes=55),
+            START + timedelta(days=1),
+        )
+    )
+    observe_shadow(
+        assignment.shadow_id,
+        "cross-day-period",
+        boundary_bars,
+        shadow_store,
+        candidates,
+        strategies,
+    )
+    with TestClient(app) as client:
+        cross_day_response = client.get(
+            "/api/v1/paper/evidence/daily-shadow-comparison",
+            headers={"X-Operator-Token": "operator"},
+            params={
+                "shadow_id": assignment.shadow_id,
+                "start": START.date().isoformat(),
+                "end": START.date().isoformat(),
+            },
+        )
+    assert cross_day_response.status_code == 200, cross_day_response.text
+    assert cross_day_response.json()["days"][0]["missing_reason"] == "CROSS_DAY_BATCH"
+
     import sqlite3
 
     with sqlite3.connect(tmp_path / "shadow.sqlite3") as database:
@@ -201,7 +297,17 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
             headers={"X-Operator-Token": "operator"},
             json={"shadow_id": assignment.shadow_id, "sequence": 3},
         )
+        corrupt_range = client.get(
+            "/api/v1/paper/evidence/daily-shadow-comparison",
+            headers={"X-Operator-Token": "operator"},
+            params={
+                "shadow_id": assignment.shadow_id,
+                "start": START.date().isoformat(),
+                "end": START.date().isoformat(),
+            },
+        )
     assert corrupt_response.status_code == 503
+    assert corrupt_range.status_code == 503
 
 
 def test_daily_comparison_rejects_unlinked_shadow_period(tmp_path):

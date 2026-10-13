@@ -82,6 +82,204 @@ class PaperShadowComparison:
             raise ValueError("Invalid PAPER/shadow comparison")
 
 
+@dataclass(frozen=True)
+class DailyPaperShadowDay:
+    day: date
+    comparison: PaperShadowComparison | None
+    missing_reason: (
+        Literal[
+            "DAILY_EXECUTION_MISSING",
+            "SHADOW_EVIDENCE_MISSING",
+            "PRE_DAY_BASELINE_MISSING",
+            "CROSS_DAY_BATCH",
+        ]
+        | None
+    )
+
+    def __post_init__(self):
+        if (
+            type(self.day) is not date
+            or (self.comparison is None) == (self.missing_reason is None)
+            or (
+                self.comparison is not None
+                and (
+                    type(self.comparison) is not PaperShadowComparison
+                    or self.comparison.day != self.day
+                )
+            )
+            or self.missing_reason
+            not in (
+                None,
+                "DAILY_EXECUTION_MISSING",
+                "SHADOW_EVIDENCE_MISSING",
+                "PRE_DAY_BASELINE_MISSING",
+                "CROSS_DAY_BATCH",
+            )
+        ):
+            raise ValueError("Invalid daily PAPER/shadow coverage row")
+
+
+@dataclass(frozen=True)
+class DailyPaperShadowTotals:
+    candidate_id: str
+    genome_sha256: str
+    strategy_ref: str
+    instrument_id: str
+    quote_currency: str
+    compared_day_count: int
+    paper_fill_count: int
+    shadow_fill_count: int
+    paper_cash_flow_quote: Decimal
+    shadow_cash_flow_quote: Decimal
+    shadow_minus_paper_cash_flow_quote: Decimal
+    paper_fee_cash_flow_quote: Decimal
+    shadow_fee_cash_flow_quote: Decimal
+    shadow_minus_paper_fee_cash_flow_quote: Decimal
+
+    def __post_init__(self):
+        amounts = (
+            self.paper_cash_flow_quote,
+            self.shadow_cash_flow_quote,
+            self.shadow_minus_paper_cash_flow_quote,
+            self.paper_fee_cash_flow_quote,
+            self.shadow_fee_cash_flow_quote,
+            self.shadow_minus_paper_fee_cash_flow_quote,
+        )
+        if any(type(value) is not Decimal or not value.is_finite() for value in amounts):
+            raise ValueError("Daily PAPER/shadow totals must be finite decimals")
+        with localcontext(Context(prec=80)) as context:
+            context.traps[Inexact] = True
+            cash_gap = self.shadow_cash_flow_quote - self.paper_cash_flow_quote
+            fee_gap = self.shadow_fee_cash_flow_quote - self.paper_fee_cash_flow_quote
+        if (
+            not isinstance(self.candidate_id, str)
+            or not self.candidate_id
+            or not isinstance(self.genome_sha256, str)
+            or len(self.genome_sha256) != 64
+            or any(character not in "0123456789abcdef" for character in self.genome_sha256)
+            or any(
+                not isinstance(value, str) or not value
+                for value in (self.strategy_ref, self.instrument_id, self.quote_currency)
+            )
+            or type(self.compared_day_count) is not int
+            or self.compared_day_count <= 0
+            or type(self.paper_fill_count) is not int
+            or type(self.shadow_fill_count) is not int
+            or min(self.paper_fill_count, self.shadow_fill_count) < 0
+            or any(type(value) is not Decimal or not value.is_finite() for value in amounts)
+            or self.shadow_minus_paper_cash_flow_quote != cash_gap
+            or self.shadow_minus_paper_fee_cash_flow_quote != fee_gap
+        ):
+            raise ValueError("Invalid daily PAPER/shadow totals")
+
+
+@dataclass(frozen=True)
+class DailyPaperShadowAggregate:
+    start_day: date
+    end_day: date
+    shadow_id: str
+    days: tuple[DailyPaperShadowDay, ...]
+    covered_days: tuple[date, ...]
+    missing_days: tuple[date, ...]
+    totals: DailyPaperShadowTotals | None
+    coverage: Literal["COMPLETE", "PARTIAL", "NO_EVIDENCE"]
+    schema_version: Literal["1.0"] = "1.0"
+    mode: Literal["PAPER_SHADOW_DIAGNOSTIC"] = "PAPER_SHADOW_DIAGNOSTIC"
+    promotion_allowed: Literal[False] = False
+    causal_attribution_allowed: Literal[False] = False
+
+    def __post_init__(self):
+        if (
+            type(self.start_day) is not date
+            or type(self.end_day) is not date
+            or type(self.days) is not tuple
+            or any(type(row) is not DailyPaperShadowDay for row in self.days)
+        ):
+            raise ValueError("Invalid daily PAPER/shadow aggregate sources")
+        expected = tuple(
+            self.start_day + timedelta(days=offset)
+            for offset in range((self.end_day - self.start_day).days + 1)
+        )
+        covered = tuple(row.day for row in self.days if row.comparison is not None)
+        missing = tuple(row.day for row in self.days if row.comparison is None)
+        comparisons = tuple(row.comparison for row in self.days if row.comparison is not None)
+        if (
+            type(self.start_day) is not date
+            or type(self.end_day) is not date
+            or self.end_day < self.start_day
+            or (self.end_day - self.start_day).days >= 366
+            or not isinstance(self.shadow_id, str)
+            or not self.shadow_id
+            or type(self.days) is not tuple
+            or any(type(row) is not DailyPaperShadowDay for row in self.days)
+            or tuple(row.day for row in self.days) != expected
+            or type(self.covered_days) is not tuple
+            or self.covered_days != covered
+            or type(self.missing_days) is not tuple
+            or self.missing_days != missing
+            or (self.totals is None) != (not comparisons)
+            or (self.totals is not None and type(self.totals) is not DailyPaperShadowTotals)
+            or self.coverage
+            != ("NO_EVIDENCE" if not comparisons else "PARTIAL" if missing else "COMPLETE")
+            or self.schema_version != "1.0"
+            or self.mode != "PAPER_SHADOW_DIAGNOSTIC"
+            or self.promotion_allowed is not False
+            or self.causal_attribution_allowed is not False
+        ):
+            raise ValueError("Invalid daily PAPER/shadow aggregate")
+        if self.totals is not None:
+            if any(
+                (
+                    row.candidate_id,
+                    row.genome_sha256,
+                    row.strategy_ref,
+                    row.instrument_id,
+                    row.quote_currency,
+                )
+                != (
+                    self.totals.candidate_id,
+                    self.totals.genome_sha256,
+                    self.totals.strategy_ref,
+                    self.totals.instrument_id,
+                    self.totals.quote_currency,
+                )
+                for row in comparisons
+            ):
+                raise ValueError("Daily PAPER/shadow totals mix candidate identities")
+            with localcontext(Context(prec=80)) as context:
+                context.traps[Inexact] = True
+                paper_cash = sum((row.paper_cash_flow_quote for row in comparisons), Decimal(0))
+                shadow_cash = sum((row.shadow_cash_flow_quote for row in comparisons), Decimal(0))
+                paper_fees = sum((row.paper_fee_cash_flow_quote for row in comparisons), Decimal(0))
+                shadow_fees = sum(
+                    (row.shadow_fee_cash_flow_quote for row in comparisons), Decimal(0)
+                )
+            expected_totals = (
+                len(comparisons),
+                sum(row.paper_fill_count for row in comparisons),
+                sum(row.shadow_fill_count for row in comparisons),
+                paper_cash,
+                shadow_cash,
+                shadow_cash - paper_cash,
+                paper_fees,
+                shadow_fees,
+                shadow_fees - paper_fees,
+            )
+            actual_totals = (
+                self.totals.compared_day_count,
+                self.totals.paper_fill_count,
+                self.totals.shadow_fill_count,
+                self.totals.paper_cash_flow_quote,
+                self.totals.shadow_cash_flow_quote,
+                self.totals.shadow_minus_paper_cash_flow_quote,
+                self.totals.paper_fee_cash_flow_quote,
+                self.totals.shadow_fee_cash_flow_quote,
+                self.totals.shadow_minus_paper_fee_cash_flow_quote,
+            )
+            if actual_totals != expected_totals:
+                raise ValueError("Daily PAPER/shadow totals do not match covered days")
+
+
 def _cash_flow(fills):
     cash_flow = Decimal(0)
     fees = Decimal(0)
@@ -195,4 +393,95 @@ def compare_daily_paper_to_shadow_batches(daily_execution, prior, batches):
         paper_fee_cash_flow_quote=paper_fees,
         shadow_fee_cash_flow_quote=shadow_fees,
         shadow_minus_paper_fee_cash_flow_quote=shadow_fees - paper_fees,
+    )
+
+
+def aggregate_daily_paper_shadow(start_day, end_day, shadow_id, daily_evidence, history):
+    """Aggregate verified same-day PAPER/shadow comparisons over a bounded UTC range."""
+    if (
+        type(start_day) is not date
+        or type(end_day) is not date
+        or end_day < start_day
+        or (end_day - start_day).days >= 366
+        or not isinstance(shadow_id, str)
+        or not shadow_id
+        or type(daily_evidence) is not tuple
+        or len(daily_evidence) > 366
+        or any(type(row) is not DailyExecutionEvidence for row in daily_evidence)
+        or len({row.daily.report.day for row in daily_evidence}) != len(daily_evidence)
+        or any(not start_day <= row.daily.report.day <= end_day for row in daily_evidence)
+        or type(history) is not tuple
+        or len(history) > 1000
+        or any(type(row) is not ShadowReport for row in history)
+        or any(row.assignment.shadow_id != shadow_id for row in history)
+    ):
+        raise ValueError("Bounded daily evidence and shadow history are required")
+
+    daily_by_day = {row.daily.report.day: row for row in daily_evidence}
+    batches_by_day = {}
+    cross_day = set()
+    for report in history:
+        dates = {bar.observed_at.astimezone(timezone.utc).date() for bar in report.request.bars}
+        if len(dates) == 1:
+            day = next(iter(dates))
+            batches_by_day.setdefault(day, []).append(report)
+        elif dates:
+            cross_day.update(dates)
+
+    day_rows = []
+    comparisons = []
+    for offset in range((end_day - start_day).days + 1):
+        day = start_day + timedelta(days=offset)
+        batches = tuple(batches_by_day.get(day, ()))
+        if day not in daily_by_day:
+            day_rows.append(DailyPaperShadowDay(day, None, "DAILY_EXECUTION_MISSING"))
+        elif day in cross_day:
+            day_rows.append(DailyPaperShadowDay(day, None, "CROSS_DAY_BATCH"))
+        elif not batches:
+            day_rows.append(DailyPaperShadowDay(day, None, "SHADOW_EVIDENCE_MISSING"))
+        elif batches[0].sequence == 1:
+            day_rows.append(DailyPaperShadowDay(day, None, "PRE_DAY_BASELINE_MISSING"))
+        else:
+            prior = history[batches[0].sequence - 2]
+            comparison = compare_daily_paper_to_shadow_batches(daily_by_day[day], prior, batches)
+            comparisons.append(comparison)
+            day_rows.append(DailyPaperShadowDay(day, comparison, None))
+
+    totals = None
+    if comparisons:
+        first = comparisons[0]
+        with localcontext(Context(prec=80)) as context:
+            context.traps[Inexact] = True
+            paper_cash = sum((row.paper_cash_flow_quote for row in comparisons), Decimal(0))
+            shadow_cash = sum((row.shadow_cash_flow_quote for row in comparisons), Decimal(0))
+            paper_fees = sum((row.paper_fee_cash_flow_quote for row in comparisons), Decimal(0))
+            shadow_fees = sum((row.shadow_fee_cash_flow_quote for row in comparisons), Decimal(0))
+        totals = DailyPaperShadowTotals(
+            first.candidate_id,
+            first.genome_sha256,
+            first.strategy_ref,
+            first.instrument_id,
+            first.quote_currency,
+            len(comparisons),
+            sum(row.paper_fill_count for row in comparisons),
+            sum(row.shadow_fill_count for row in comparisons),
+            paper_cash,
+            shadow_cash,
+            shadow_cash - paper_cash,
+            paper_fees,
+            shadow_fees,
+            shadow_fees - paper_fees,
+        )
+    rows = tuple(day_rows)
+    covered_days = tuple(row.day for row in rows if row.comparison is not None)
+    missing_days = tuple(row.day for row in rows if row.comparison is None)
+    return DailyPaperShadowAggregate(
+        start_day,
+        end_day,
+        shadow_id,
+        rows,
+        covered_days,
+        missing_days,
+        totals,
+        "NO_EVIDENCE" if not comparisons else "PARTIAL" if missing_days else "COMPLETE",
     )

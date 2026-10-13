@@ -1,0 +1,435 @@
+{
+  "$defs": {
+    "DailyPaperShadowDay": {
+      "properties": {
+        "day": {
+          "format": "date",
+          "title": "Day",
+          "type": "string"
+        },
+        "comparison": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PaperShadowComparison"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "missing_reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "DAILY_EXECUTION_MISSING",
+                "SHADOW_EVIDENCE_MISSING",
+                "PRE_DAY_BASELINE_MISSING",
+                "CROSS_DAY_BATCH"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Missing Reason"
+        }
+      },
+      "required": [
+        "day",
+        "comparison",
+        "missing_reason"
+      ],
+      "title": "DailyPaperShadowDay",
+      "type": "object"
+    },
+    "DailyPaperShadowTotals": {
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "genome_sha256": {
+          "title": "Genome Sha256",
+          "type": "string"
+        },
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "compared_day_count": {
+          "title": "Compared Day Count",
+          "type": "integer"
+        },
+        "paper_fill_count": {
+          "title": "Paper Fill Count",
+          "type": "integer"
+        },
+        "shadow_fill_count": {
+          "title": "Shadow Fill Count",
+          "type": "integer"
+        },
+        "paper_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Paper Cash Flow Quote"
+        },
+        "shadow_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Shadow Cash Flow Quote"
+        },
+        "shadow_minus_paper_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Shadow Minus Paper Cash Flow Quote"
+        },
+        "paper_fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Paper Fee Cash Flow Quote"
+        },
+        "shadow_fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Shadow Fee Cash Flow Quote"
+        },
+        "shadow_minus_paper_fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Shadow Minus Paper Fee Cash Flow Quote"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "genome_sha256",
+        "strategy_ref",
+        "instrument_id",
+        "quote_currency",
+        "compared_day_count",
+        "paper_fill_count",
+        "shadow_fill_count",
+        "paper_cash_flow_quote",
+        "shadow_cash_flow_quote",
+        "shadow_minus_paper_cash_flow_quote",
+        "paper_fee_cash_flow_quote",
+        "shadow_fee_cash_flow_quote",
+        "shadow_minus_paper_fee_cash_flow_quote"
+      ],
+      "title": "DailyPaperShadowTotals",
+      "type": "object"
+    },
+    "PaperShadowComparison": {
+      "properties": {
+        "day": {
+          "format": "date",
+          "title": "Day",
+          "type": "string"
+        },
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "genome_sha256": {
+          "title": "Genome Sha256",
+          "type": "string"
+        },
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "paper_evidence_sha256": {
+          "title": "Paper Evidence Sha256",
+          "type": "string"
+        },
+        "prior_shadow_sha256": {
+          "title": "Prior Shadow Sha256",
+          "type": "string"
+        },
+        "current_shadow_sha256": {
+          "title": "Current Shadow Sha256",
+          "type": "string"
+        },
+        "paper_fill_count": {
+          "title": "Paper Fill Count",
+          "type": "integer"
+        },
+        "shadow_fill_count": {
+          "title": "Shadow Fill Count",
+          "type": "integer"
+        },
+        "paper_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Paper Cash Flow Quote"
+        },
+        "shadow_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Shadow Cash Flow Quote"
+        },
+        "shadow_minus_paper_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Shadow Minus Paper Cash Flow Quote"
+        },
+        "paper_fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Paper Fee Cash Flow Quote"
+        },
+        "shadow_fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Shadow Fee Cash Flow Quote"
+        },
+        "shadow_minus_paper_fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Shadow Minus Paper Fee Cash Flow Quote"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "mode": {
+          "const": "PAPER_SHADOW_DIAGNOSTIC",
+          "default": "PAPER_SHADOW_DIAGNOSTIC",
+          "title": "Mode",
+          "type": "string"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        },
+        "causal_attribution_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Causal Attribution Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "day",
+        "candidate_id",
+        "genome_sha256",
+        "strategy_ref",
+        "instrument_id",
+        "quote_currency",
+        "paper_evidence_sha256",
+        "prior_shadow_sha256",
+        "current_shadow_sha256",
+        "paper_fill_count",
+        "shadow_fill_count",
+        "paper_cash_flow_quote",
+        "shadow_cash_flow_quote",
+        "shadow_minus_paper_cash_flow_quote",
+        "paper_fee_cash_flow_quote",
+        "shadow_fee_cash_flow_quote",
+        "shadow_minus_paper_fee_cash_flow_quote"
+      ],
+      "title": "PaperShadowComparison",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "start_day": {
+      "format": "date",
+      "title": "Start Day",
+      "type": "string"
+    },
+    "end_day": {
+      "format": "date",
+      "title": "End Day",
+      "type": "string"
+    },
+    "shadow_id": {
+      "title": "Shadow Id",
+      "type": "string"
+    },
+    "days": {
+      "items": {
+        "$ref": "#/$defs/DailyPaperShadowDay"
+      },
+      "title": "Days",
+      "type": "array"
+    },
+    "covered_days": {
+      "items": {
+        "format": "date",
+        "type": "string"
+      },
+      "title": "Covered Days",
+      "type": "array"
+    },
+    "missing_days": {
+      "items": {
+        "format": "date",
+        "type": "string"
+      },
+      "title": "Missing Days",
+      "type": "array"
+    },
+    "totals": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DailyPaperShadowTotals"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "coverage": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "NO_EVIDENCE"
+      ],
+      "title": "Coverage",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER_SHADOW_DIAGNOSTIC",
+      "default": "PAPER_SHADOW_DIAGNOSTIC",
+      "title": "Mode",
+      "type": "string"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    },
+    "causal_attribution_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Causal Attribution Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "start_day",
+    "end_day",
+    "shadow_id",
+    "days",
+    "covered_days",
+    "missing_days",
+    "totals",
+    "coverage"
+  ],
+  "title": "DailyPaperShadowAggregate",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:contract:daily-paper-shadow-aggregate:1.0"
+}

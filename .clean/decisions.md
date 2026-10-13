@@ -169,3 +169,5 @@
 - 2026-10-13: Candidate paper assignment identity stays alongside the persisted paper order, not in `TradeIntent`. The registered strategy source closure fingerprints `contracts.py`; adding metadata there invalidates archived candidate provenance. Assignment admission instead stores an immutable assignment reference in the order record and rechecks the live candidate snapshot at admission.
 
 - 2026-10-13: Keep the daily PAPER/shadow API input stable by treating its sequence as the final retained report for the day and walking backward over consecutive same-day batches. The API still obtains amounts and bars only from verified archives; a UTC-boundary-crossing batch is refused. The final report hash commits to the intermediate report chain.
+
+- 2026-10-13: Multi-day PAPER/shadow comparison keeps each UTC day as an independently source-bound comparison and exposes exact quote-currency totals only across covered days. Missing daily evidence, shadow observations, pre-day baseline, or a cross-day batch stay explicit; no missing interval is zero-filled. The 366-day range remains diagnostic and cannot support causal or promotion claims.

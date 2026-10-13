@@ -189,6 +189,47 @@ def install_daily_routes(
         except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
             raise HTTPException(503, "Daily execution attribution could not be verified") from error
 
+    @app.get(
+        "/api/v1/paper/evidence/daily-shadow-comparison",
+        dependencies=[Depends(require_operator)],
+    )
+    def daily_shadow_comparison_aggregate(start: date, end: date, shadow_id: str):
+        try:
+            daily_evidence = store().daily_execution_range(start, end)
+        except EvidenceIntegrityError as error:
+            raise HTTPException(503, "Daily PAPER/shadow sources could not be verified") from error
+        except ValueError as error:
+            raise HTTPException(422, "Daily PAPER/shadow range is invalid") from error
+        except (TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Daily PAPER/shadow sources could not be verified") from error
+        if research_workspace is None:
+            raise HTTPException(503, "Shadow evidence workspace is disabled")
+        shadow_path = research_workspace / "shadow.sqlite3"
+        if not shadow_path.is_file():
+            raise HTTPException(404, "Unknown shadow portfolio")
+        try:
+            from ai_quant_os.shadow_store import ShadowStore
+
+            shadow_store = ShadowStore(shadow_path)
+            if shadow_store.lookup(shadow_id) is None:
+                raise HTTPException(404, "Unknown shadow portfolio")
+            history = shadow_store.history(shadow_id)
+        except HTTPException:
+            raise
+        except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Shadow evidence could not be verified") from error
+        try:
+            from ai_quant_os.paper_shadow_comparison import aggregate_daily_paper_shadow
+
+            report = aggregate_daily_paper_shadow(start, end, shadow_id, daily_evidence, history)
+            return response(report)
+        except ValueError as error:
+            raise HTTPException(409, "Daily PAPER/shadow evidence does not reconcile") from error
+        except ArithmeticError as error:
+            raise HTTPException(
+                409, "Daily PAPER/shadow amounts cannot be aggregated exactly"
+            ) from error
+
     @app.post(
         "/api/v1/paper/evidence/daily/{day}/shadow-comparison",
         dependencies=[Depends(require_operator)],

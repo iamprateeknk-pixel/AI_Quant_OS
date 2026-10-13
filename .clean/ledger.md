@@ -26,6 +26,10 @@ Current increment: a protected no-cache operator endpoint derives `DEMOTION_REQU
 
 Committed next increment: the protected daily comparison now aggregates all consecutive verified shadow batches appended within the selected UTC day, from the prior pre-day report through the requested final sequence. Source amounts remain server-owned, and the result retains initial/final hashes that commit to the complete chain. A mid-day batch crossing a UTC boundary is refused. The affected shadow/daily/aggregation suites pass (33); the full suite passes (2,971 passed, 36 skipped in 1,902.01 seconds); Ruff and format checks pass; Bugbot found no actionable issues. The structure map reports no misplaced/unreferenced source. The boundary checker cannot parse the repository’s descriptive Markdown declaration, so the changed imports were manually checked; no framework dependency entered the domain module. Rollback is code-only: revert this increment’s route/domain edits; no persisted format or archive changed.
 
+### P09 multi-day PAPER/shadow attribution
+
+Completed increment: a protected no-store range endpoint combines retained daily execution evidence with the verified shadow history for up to 366 days. It reports per-day comparisons and exact quote-currency totals, with distinct missing-day reasons for missing daily evidence, missing shadow observations, absent pre-day baseline, and cross-day batches. No gap is treated as zero activity; causal and promotion authority remain false. The affected shadow/daily suites pass (33); the full suite passes (2,971 passed, 36 skipped in 1,644.20 seconds); Ruff, format and diff checks pass; Bugbot found no actionable issues. The map reports no misplaced or unreferenced source. Rollback is code-only; no persisted archive format changed. See `docs/PAPER_SHADOW_COMPARISON_HANDOFF.md`.
+
 ### P09 forward-shadow counterfactual replay
 
 Current increment: a protected PAPER endpoint accepts bounded declared alternatives for an exact verified shadow report, reruns the retained configuration as a reproducibility baseline, and archives the immutable report and source in its own SQLite store. No broker, candidate lifecycle, causal claim, or promotion authority is included. Five focused tests pass; the full suite passed 2,971 tests with 36 skipped in 2,120.09 seconds; Ruff and Bugbot checks pass. See `docs/SHADOW_COUNTERFACTUAL_HANDOFF.md`.
@@ -36,7 +40,7 @@ Current increment: a protected PAPER endpoint accepts bounded declared alternati
 - Agent contribution attribution; do not infer agent causality because advisory A12/A13 are disconnected from order creation.
 - External reality-gap notification delivery and production shadow market ingress/scheduling.
 - Financing/restatements and production schedule retention/recovery evidence.
-- Multi-day execution/shadow aggregation, financing/restatements, and the full P09 acceptance checklist/independent release evidence.
+- Financing/restatements, live broker comparison, production shadow ingress/scheduling, agent attribution, and the full P09 acceptance checklist/independent release evidence.
 
 ## Broader project
 

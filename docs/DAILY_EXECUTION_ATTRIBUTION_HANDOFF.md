@@ -24,9 +24,9 @@ The first publication wins. Repeating the publication returns its original artif
 
 The embedded `ExecutionContributionReport` uses the existing midpoint, side-quote, decision-to-fill and fee decomposition at actual filled quantities. Benchmark gaps remain partial or absent; the report never infers a missing initial quote. The JSON Schema is `docs/schemas/daily-execution-evidence.schema.json`.
 
-This does not provide fill-time market quotes, latency attribution, financing, restatements or shadow aggregation. Manual paper fills remain labelled as such. An empty day can publish an `EMPTY` report. None of these records approve a candidate, change risk, or grant broker/live authority.
+This does not provide fill-time market quotes, latency attribution, financing, or restatements. Manual paper fills remain labelled as such. An empty day can publish an `EMPTY` report. None of these records approve a candidate, change risk, or grant broker/live authority.
 
-For candidate-bound fill cash/fee comparison against an exact same-day shadow batch, see `PAPER_SHADOW_COMPARISON_HANDOFF.md`. That diagnostic requires two consecutive linked shadow reports and does not compare marked equity or infer causality.
+For candidate-bound fill cash/fee comparison against verified same-day shadow batches and bounded multi-day ranges, see `PAPER_SHADOW_COMPARISON_HANDOFF.md`. The daily diagnostic aggregates every linked batch appended during the UTC day; its range endpoint reports per-day evidence and exact quote-currency totals while preserving missing days. It does not compare marked equity or infer causality.
 
 ## Verification and rollback
 
