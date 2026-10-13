@@ -22,13 +22,17 @@ Focused API, comparison, archive-integrity, shadow history, daily evidence, arch
 
 Current increment: a protected no-cache operator endpoint derives `DEMOTION_REQUIRED` alerts from verified retained shadow reports and the immutable assignment policy. It stays readable after restart and returns source hashes and the measured threshold. The API has no external notification or acknowledgement semantics. Twenty focused reality-gap, shadow, and API tests pass. Bugbot found no actionable findings. The full suite passed 2,966 tests with 36 skipped in 1,150.98 seconds; Ruff lint/format checks and BUILD_STATUS.md CP1252/CRLF validation pass.
 
+### P09 forward-shadow counterfactual replay
+
+Current increment: a protected PAPER endpoint accepts bounded declared alternatives for an exact verified shadow report, reruns the retained configuration as a reproducibility baseline, and archives the immutable report and source in its own SQLite store. No broker, candidate lifecycle, causal claim, or promotion authority is included. Five focused tests pass; the full suite passed 2,971 tests with 36 skipped in 2,120.09 seconds; Ruff and Bugbot checks pass. See `docs/SHADOW_COUNTERFACTUAL_HANDOFF.md`.
+
 ## Remaining P09 work
 
 - Full live-broker-versus-shadow comparison with complete candidate/genome and interval coverage.
 - Agent contribution attribution; do not infer agent causality because advisory A12/A13 are disconnected from order creation.
 - External reality-gap notification delivery and production shadow market ingress/scheduling.
 - Financing/restatements and production schedule retention/recovery evidence.
-- Broader daily execution/shadow attribution, forward counterfactual integration, complete P09 acceptance checklist and independent release evidence.
+- Broader daily execution/shadow attribution and full P09 acceptance checklist/independent release evidence.
 
 ## Broader project
 

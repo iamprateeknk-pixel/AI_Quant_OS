@@ -371,7 +371,8 @@
         "src/ai_quant_os/validation_scientist_sources.py",
         "src/ai_quant_os/volatility_features.py",
         "src/ai_quant_os/world_state.py",
-        "src/ai_quant_os/paper_shadow_comparison.py"
+        "src/ai_quant_os/paper_shadow_comparison.py",
+        "src/ai_quant_os/shadow_counterfactual.py"
       ]
     }
   },
@@ -765,7 +766,8 @@
       "src/ai_quant_os/volatility_features.py",
       "src/ai_quant_os/world_state_store.py",
       "src/ai_quant_os/world_state.py",
-      "src/ai_quant_os/paper_shadow_comparison.py"
+      "src/ai_quant_os/paper_shadow_comparison.py",
+      "src/ai_quant_os/shadow_counterfactual.py"
     ]
   },
   "package_module_inventory": [
@@ -1098,6 +1100,7 @@
     "src/ai_quant_os/volatility_features.py",
     "src/ai_quant_os/world_state.py",
     "src/ai_quant_os/world_state_store.py",
-    "src/ai_quant_os/paper_shadow_comparison.py"
+    "src/ai_quant_os/paper_shadow_comparison.py",
+    "src/ai_quant_os/shadow_counterfactual.py"
   ]
 }

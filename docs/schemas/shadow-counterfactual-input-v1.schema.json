@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "BacktestCosts": {
+      "properties": {
+        "slippage_bps": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Slippage Bps"
+        },
+        "fee_per_trade": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee Per Trade"
+        }
+      },
+      "required": [
+        "slippage_bps",
+        "fee_per_trade"
+      ],
+      "title": "BacktestCosts",
+      "type": "object"
+    },
+    "ReplayVariant": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "genome": {
+          "$ref": "#/$defs/StrategyGenome"
+        },
+        "quantity": {
+          "title": "Quantity",
+          "type": "integer"
+        },
+        "costs": {
+          "$ref": "#/$defs/BacktestCosts"
+        }
+      },
+      "required": [
+        "name",
+        "genome",
+        "quantity",
+        "costs"
+      ],
+      "title": "ReplayVariant",
+      "type": "object"
+    },
+    "StrategyGenome": {
+      "properties": {
+        "strategy_ref": {
+          "title": "Strategy Ref",
+          "type": "string"
+        },
+        "input_kind": {
+          "enum": [
+            "BAR",
+            "TICK"
+          ],
+          "title": "Input Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Parameters",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strategy_ref",
+        "input_kind"
+      ],
+      "title": "StrategyGenome",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "replay_id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$",
+      "title": "Replay Id",
+      "type": "string"
+    },
+    "sequence": {
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Report Sha256",
+      "type": "string"
+    },
+    "variants": {
+      "items": {
+        "$ref": "#/$defs/ReplayVariant"
+      },
+      "maxItems": 7,
+      "minItems": 1,
+      "title": "Variants",
+      "type": "array"
+    }
+  },
+  "required": [
+    "replay_id",
+    "sequence",
+    "report_sha256",
+    "variants"
+  ],
+  "title": "ShadowCounterfactualInput",
+  "type": "object"
+}

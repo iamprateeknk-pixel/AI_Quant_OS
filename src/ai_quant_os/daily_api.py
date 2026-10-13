@@ -9,6 +9,7 @@ from fastapi import Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from ai_quant_os.counterfactual_contracts import ReplayVariant
 from ai_quant_os.daily_evidence import DailyEvidence, EvidenceCheckpoint, build_daily_report
 from ai_quant_os.daily_execution_evidence import build_daily_execution_evidence
 from ai_quant_os.daily_execution_aggregation import aggregate_daily_execution
@@ -36,6 +37,14 @@ class DailyShadowComparisonInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     shadow_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
     sequence: int = Field(strict=True, ge=2, le=1000)
+
+
+class ShadowCounterfactualInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    replay_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
+    sequence: int = Field(strict=True, ge=1, le=1000)
+    report_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    variants: tuple[ReplayVariant, ...] = Field(min_length=1, max_length=7)
 
 
 def install_daily_routes(
@@ -267,3 +276,75 @@ def install_daily_routes(
             raise
         except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
             raise HTTPException(503, "Shadow alert evidence could not be verified") from error
+
+    @app.post(
+        "/api/v1/paper/shadows/{shadow_id}/counterfactual",
+        dependencies=[Depends(require_operator)],
+    )
+    def shadow_counterfactual(shadow_id: str, payload: ShadowCounterfactualInput):
+        if research_workspace is None:
+            raise HTTPException(503, "Shadow evidence workspace is disabled")
+        shadow_path = research_workspace / "shadow.sqlite3"
+        if not shadow_path.is_file():
+            raise HTTPException(404, "Unknown shadow portfolio")
+        try:
+            from ai_quant_os.shadow_store import ShadowStore
+
+            shadow_store = ShadowStore(shadow_path)
+            assignment = shadow_store.lookup(shadow_id)
+            if assignment is None:
+                raise HTTPException(404, "Unknown shadow portfolio")
+            history = shadow_store.history(shadow_id)
+        except HTTPException:
+            raise
+        except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Shadow source history could not be verified") from error
+        if payload.sequence > len(history):
+            raise HTTPException(404, "Unknown shadow observation sequence")
+        source_report = history[payload.sequence - 1]
+        try:
+            from ai_quant_os.shadow_counterfactual import (
+                ShadowCounterfactualInputs,
+                ShadowCounterfactualConflictError,
+                ShadowCounterfactualIntegrityError,
+                ShadowCounterfactualPlan,
+                ShadowCounterfactualStore,
+                run_shadow_counterfactual,
+            )
+            from ai_quant_os.strategy_registry import StrategyRegistry
+
+            plan = ShadowCounterfactualPlan(
+                payload.replay_id,
+                shadow_id,
+                payload.sequence,
+                payload.report_sha256,
+                payload.variants,
+            )
+            inputs = ShadowCounterfactualInputs(plan, source_report)
+        except ValueError as error:
+            raise HTTPException(
+                409, "Counterfactual declaration does not match shadow evidence"
+            ) from error
+        try:
+            counterfactual_store = ShadowCounterfactualStore(
+                research_workspace / "shadow-counterfactual.sqlite3"
+            )
+            return response(
+                run_shadow_counterfactual(
+                    inputs,
+                    StrategyRegistry(research_workspace / "strategies"),
+                    counterfactual_store,
+                )
+            )
+        except HTTPException:
+            raise
+        except ShadowCounterfactualIntegrityError as error:
+            raise HTTPException(
+                503, "Retained counterfactual evidence could not be verified"
+            ) from error
+        except ShadowCounterfactualConflictError as error:
+            raise HTTPException(
+                409, "Counterfactual replay conflicts with retained evidence"
+            ) from error
+        except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Counterfactual replay could not be verified") from error
