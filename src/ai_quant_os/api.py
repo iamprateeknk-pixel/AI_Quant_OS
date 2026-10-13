@@ -166,7 +166,7 @@ from ai_quant_os.meta_allocator_sources import AllocationInputs, allocator_sourc
 from ai_quant_os.counterfactual_agent import counterfactual_implementation
 from ai_quant_os.counterfactual_sources import counterfactual_sources
 from ai_quant_os.health_repair_agent import repair_implementation
-from ai_quant_os.health_repair_sources import RepairInputs, repair_sources
+from ai_quant_os.health_repair_sources import RepairInputs, RepairTrace, repair_sources
 from ai_quant_os.evolution_director_agent import evolution_implementation
 from ai_quant_os.evolution_director_sources import evolution_sources
 from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
@@ -684,6 +684,7 @@ def create_app(
                     ("A15", "0.2.0"): counterfactual_implementation(agent_registry),
                     ("A16", "0.2.0"): repair_implementation(agent_registry),
                     ("A16", "0.3.0"): repair_implementation(agent_registry, "0.3.0"),
+                    ("A16", "0.4.0"): repair_implementation(agent_registry, "0.4.0"),
                     ("A17", "0.2.0"): evolution_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
@@ -1481,6 +1482,10 @@ def create_app(
             "A16",
             "0.3.0",
         )
+        repair_trace_mission = (payload.agent_id, payload.agent_version) == (
+            "A16",
+            "0.4.0",
+        )
         evolution_mission = (payload.agent_id, payload.agent_version) == ("A17", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
@@ -1600,16 +1605,53 @@ def create_app(
                 sources = counterfactual_sources(
                     report, replay_id=payload.task_id, now=current_time()
                 )
-            elif repair_mission or repair_details_mission:
+            elif repair_mission or repair_details_mission or repair_trace_mission:
                 try:
                     health = (
                         await asyncio.to_thread(health_worker.status) if health_worker else None
                     )
                     incidents = (
                         await asyncio.to_thread(health_worker.store.incidents)
-                        if health_worker and repair_details_mission
+                        if health_worker and (repair_details_mission or repair_trace_mission)
                         else None
                     )
+                    traces = None
+                    runtime = app.state.graph_runtime
+                    if repair_trace_mission and incidents is not None and runtime is not None:
+                        selected_incidents = sorted(
+                            incidents,
+                            key=lambda item: (item.detected_at, item.incident_id),
+                            reverse=True,
+                        )[:8]
+                        trace_rows = []
+                        expected_status = {
+                            "AGENT_FAILED": "FAILED",
+                            "AGENT_TIMEOUT": "TIMEOUT",
+                            "AGENT_INVALID": "INVALID",
+                            "AGENT_UNCERTAIN": "UNCERTAIN",
+                        }
+                        for incident in selected_incidents:
+                            if incident.code not in expected_status:
+                                continue
+                            try:
+                                trace = await asyncio.to_thread(runtime.trace, incident.subject)
+                            except KeyError:
+                                continue
+                            trace_rows.append(
+                                RepairTrace(
+                                    incident_id=incident.incident_id,
+                                    trace_id=trace.trace_id,
+                                    scope=trace.scope,
+                                    context_ref=trace.context_ref,
+                                    agent_id=trace.agent_id,
+                                    agent_version=trace.agent_version,
+                                    manifest_ref=trace.manifest_ref,
+                                    status=trace.status,
+                                    event_hashes=tuple(event.event_hash for event in trace.events),
+                                    output_sha256=trace.output_sha256,
+                                )
+                            )
+                        traces = tuple(trace_rows)
                 except (ValueError, OSError, sqlite3.Error) as error:
                     raise HTTPException(503, "Health evidence unavailable") from error
                 sources = repair_sources(
@@ -1623,15 +1665,18 @@ def create_app(
                         else "RESTORED_ONLY",
                         open_incidents=(
                             len(incidents)
-                            if repair_details_mission and incidents is not None
+                            if (repair_details_mission or repair_trace_mission)
+                            and incidents is not None
                             else health["open_incidents"]
                             if health
                             else None
                         ),
                         incidents=incidents,
+                        traces=traces,
                     ),
                     now=current_time(),
-                    include_incidents=repair_details_mission,
+                    include_incidents=repair_details_mission or repair_trace_mission,
+                    include_traces=repair_trace_mission,
                 )
             elif evolution_mission:
                 sources = evolution_sources(agent_registry, now=current_time())

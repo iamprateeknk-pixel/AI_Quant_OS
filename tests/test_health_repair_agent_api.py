@@ -6,6 +6,7 @@ import json
 from fastapi.testclient import TestClient
 
 from ai_quant_os.api import create_app
+from ai_quant_os.agent_registry import load_agent_catalog
 from ai_quant_os.health_contracts import HealthIncident
 from ai_quant_os.health_store import HealthStore
 
@@ -124,6 +125,144 @@ def test_a16_v3_reads_verified_bounded_incident_details_from_health_store(tmp_pa
             "CODE_TEST_EVIDENCE_UNAVAILABLE",
             "TRACE_EVIDENCE_UNAVAILABLE",
         ]
+        assert output["state"] == "WAIT_FOR_EVIDENCE"
+        assert output["repair_candidate_created"] is False
+        assert output["promotion_allowed"] is False
+
+
+def test_a16_v4_marks_missing_graph_trace_as_partial_and_keeps_repair_blocked(tmp_path):
+    manifest = load_agent_catalog().get("A02", "0.2.0")
+    incident = HealthIncident(
+        "AGENT_FAILED",
+        "missing-graph-run",
+        "{}",
+        NOW,
+        agent_id="A02",
+        agent_version="0.2.0",
+        manifest_ref=manifest.manifest_ref,
+    )
+    store = HealthStore(tmp_path / "paper.health.sqlite3")
+    store.record(incident)
+
+    with TestClient(
+        create_app(
+            operator_token="fixture-a16",
+            clock=lambda: NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+            health_watchdog_enabled=True,
+        )
+    ) as client:
+        compiled = client.post(
+            "/api/v1/paper/agents/context",
+            headers=HEADERS,
+            json={"agent_id": "A16", "agent_version": "0.4.0", "task_id": "repair-v4"},
+        )
+        assert compiled.status_code == 200, compiled.text
+        result = client.post(
+            "/api/v1/paper/agents/execute",
+            headers=HEADERS,
+            json={"run_id": "repair-v4", "context_ref": compiled.json()["context_ref"]},
+        )
+        assert result.status_code == 200, result.text
+        output = json.loads(result.json()["receipt"]["output_json"])
+        assert output["trace_context_state"] == "PARTIAL"
+        assert output["trace_refs"] == []
+        assert output["incident_ids"] == [incident.incident_id]
+        assert output["blockers"] == [
+            "CODE_TEST_EVIDENCE_UNAVAILABLE",
+            "TRACE_EVIDENCE_UNAVAILABLE",
+        ]
+        assert output["state"] == "WAIT_FOR_EVIDENCE"
+        assert output["repair_candidate_created"] is False
+        assert output["promotion_allowed"] is False
+
+
+def test_a16_v4_binds_audit_verified_trace_to_its_health_incident(tmp_path):
+    import asyncio
+
+    from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
+    from ai_quant_os.graph_runtime import AgentImplementation, GraphRuntime
+    from test_graph_runtime import NOW as GRAPH_NOW, RegimeDistribution, context as graph_context
+
+    registry = load_agent_catalog()
+    graph_path = tmp_path / "paper.agents.sqlite3"
+    trace_run_id = "a16-linked-failure"
+
+    async def seed_failed_trace():
+        evidence = await graph_context(registry)
+
+        async def fail(invocation):
+            raise RuntimeError("private failure detail")
+
+        implementation = AgentImplementation(
+            manifest_ref=registry.get("A02", "0.1.0").manifest_ref,
+            output_schema=RegimeDistribution,
+            invoke=fail,
+        )
+        async with GraphRuntime.open(
+            graph_path,
+            registry=registry,
+            implementations={("A02", "0.1.0"): implementation},
+            tools=AgentToolBoundary(registry, {}),
+            clock=lambda: GRAPH_NOW,
+        ) as runtime:
+            receipt = await runtime.run(trace_run_id, evidence)
+            assert receipt.status == "FAILED"
+            return runtime.trace(trace_run_id), receipt
+
+    trace, receipt = asyncio.run(seed_failed_trace())
+    manifest = registry.get("A02", "0.1.0")
+    incident = HealthIncident(
+        "AGENT_FAILED",
+        trace_run_id,
+        json.dumps(
+            json.loads(receipt.model_dump_json()),
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
+        GRAPH_NOW,
+        agent_id="A02",
+        agent_version="0.1.0",
+        manifest_ref=manifest.manifest_ref,
+    )
+    HealthStore(tmp_path / "paper.health.sqlite3").record(incident)
+
+    with TestClient(
+        create_app(
+            operator_token="fixture-a16",
+            clock=lambda: GRAPH_NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+            health_watchdog_enabled=True,
+        )
+    ) as client:
+        compiled = client.post(
+            "/api/v1/paper/agents/context",
+            headers=HEADERS,
+            json={"agent_id": "A16", "agent_version": "0.4.0", "task_id": "repair-linked"},
+        )
+        assert compiled.status_code == 200, compiled.text
+        trace_input = next(
+            row for row in compiled.json()["inputs"] if row["input_name"] == "traces"
+        )
+        assert trace.trace_id in trace_input["payload_json"]
+        assert trace_run_id not in trace_input["payload_json"]
+        assert "private failure detail" not in trace_input["payload_json"]
+        result = client.post(
+            "/api/v1/paper/agents/execute",
+            headers=HEADERS,
+            json={
+                "run_id": "repair-linked",
+                "context_ref": compiled.json()["context_ref"],
+            },
+        )
+        assert result.status_code == 200, result.text
+        output = json.loads(result.json()["receipt"]["output_json"])
+        assert output["trace_context_state"] == "AVAILABLE"
+        assert output["trace_refs"] == [
+            {"incident_id": incident.incident_id, "trace_id": trace.trace_id}
+        ]
+        assert output["incident_ids"] == [incident.incident_id]
+        assert output["blockers"] == ["CODE_TEST_EVIDENCE_UNAVAILABLE"]
         assert output["state"] == "WAIT_FOR_EVIDENCE"
         assert output["repair_candidate_created"] is False
         assert output["promotion_allowed"] is False

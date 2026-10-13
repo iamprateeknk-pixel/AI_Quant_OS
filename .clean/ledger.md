@@ -78,6 +78,10 @@ P00-P13 and overall release gates remain incomplete. Continue with the next expl
 
 Added A16 0.3.0 while preserving the 0.2.0 contract. The new version projects at most eight verified health incident IDs, codes, timestamps, and agent manifest pins; raw evidence and subjects are omitted. It still blocks on missing trace/test receipts and cannot create or promote repairs. Finish full-suite, lint, format, and diff verification, then continue the remaining P10 and P00-P13 requirements. See ADR 0203.
 
+### A16 incident-bound graph trace increment
+
+Added A16 0.4.0 using the audited graph ledger to recover failed-run traces and pair each trace ID with its health incident ID. Missing runs stay partial, mismatched pins are refused, and code-test receipts remain a hard blocker. Finish full-suite and quality verification before continuing P10 independent verification and the remaining P00-P13 requirements. See ADR 0204.
+
 ## Rollback
 
 Revert the specific increment commit to remove its API and admission path. The candidate assignment database change is additive; rollback leaves its records inert, and those records must not be deleted as part of code rollback. The daily comparison and reality-gap alert increments read retained evidence and do not rewrite those archives. The multi-batch comparison change has no persisted state; rollback only restores the prior route/domain selection behavior.

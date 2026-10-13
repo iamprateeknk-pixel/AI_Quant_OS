@@ -6,6 +6,7 @@ from typing import Literal
 from uuid import uuid4
 
 from pydantic import Field
+from pydantic import BaseModel, ConfigDict
 
 from ai_quant_os.agent_context import CompiledContext, verify_context
 from ai_quant_os.agent_envelope import AgentEnvelope
@@ -17,6 +18,7 @@ from ai_quant_os.health_repair_sources import (
     INPUT_NAMES,
     IncidentContextObservation,
     MissingRepairEvidence,
+    TraceEvidenceObservation,
 )
 
 
@@ -82,6 +84,53 @@ class RepairCandidateV3(AgentEnvelope):
             or self.blockers != blockers
         ):
             raise ValueError("Repair readiness output differs from health evidence")
+
+
+class RepairTraceReference(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    incident_id: str = Field(pattern=r"^[a-f0-9]{64}$")
+    trace_id: str = Field(pattern=r"^graph-trace:[a-f0-9]{64}$")
+
+
+class RepairCandidateV4(AgentEnvelope):
+    agent_id: Literal["A16"] = "A16"
+    agent_version: Literal["0.4.0"] = "0.4.0"
+    output_type: Literal["RepairCandidateV4"] = "RepairCandidateV4"
+    confidence: Decimal = Field(ge=0, le=0, default=Decimal(0))
+    uncertainty: Decimal = Field(ge=1, le=1, default=Decimal(1))
+    model_route: Literal["DETERMINISTIC_ONLY"] = "DETERMINISTIC_ONLY"
+    state: Literal["WAIT_FOR_EVIDENCE"] = "WAIT_FOR_EVIDENCE"
+    health_status: Literal["UNAVAILABLE", "RESTORED_ONLY", "MONITORED", "ERROR"]
+    open_incidents: int | None = Field(default=None, ge=0, le=10000)
+    incident_context_state: Literal["UNAVAILABLE", "DETAILS", "TRUNCATED"]
+    incident_ids: tuple[str, ...] = Field(max_length=8)
+    trace_context_state: Literal["UNAVAILABLE", "PARTIAL", "AVAILABLE"]
+    trace_refs: tuple["RepairTraceReference", ...] = Field(max_length=8)
+    repair_candidate_created: Literal[False] = False
+    repair_plan: tuple[str, ...] = Field(max_length=8)
+    blockers: tuple[str, ...] = Field(min_length=1, max_length=16)
+    promotion_allowed: Literal[False] = False
+
+    def require_context(self, context: CompiledContext) -> None:
+        super().require_context(context)
+        health, incidents, traces, blockers = _observations_v4(context)
+        if (
+            self.state != "WAIT_FOR_EVIDENCE"
+            or self.health_status != health.status
+            or self.open_incidents != health.open_incidents
+            or self.incident_context_state != incidents.availability
+            or self.incident_ids != tuple(row.incident_id for row in incidents.incidents)
+            or self.trace_context_state != traces.availability
+            or self.trace_refs
+            != tuple(
+                RepairTraceReference(incident_id=row.incident_id, trace_id=row.trace_id)
+                for row in traces.traces
+            )
+            or self.repair_candidate_created
+            or self.repair_plan
+            or self.blockers != blockers
+        ):
+            raise ValueError("Repair readiness output differs from health and trace evidence")
 
 
 def _observations(context: CompiledContext):
@@ -171,6 +220,51 @@ def _observations_v3(context: CompiledContext):
     return health, incident, tuple(sorted(blockers))
 
 
+def _observations_v4(context: CompiledContext):
+    verify_context(context)
+    if (
+        (context.agent_id, context.agent_version, context.scope, context.status)
+        != ("A16", "0.4.0", "PAPER", "READY")
+        or tuple(row.input_name for row in context.inputs) != INPUT_NAMES
+        or tuple(row.source_tool for row in context.inputs) != ("HEALTH_READ",) * 4
+        or tuple(row.resource_class for row in context.inputs) != ("GENERAL",) * 4
+    ):
+        raise ValueError("Repair reviewer requires its exact protected paper context")
+    health = HealthObservation.model_validate_json(context.inputs[0].payload_json)
+    traces = TraceEvidenceObservation.model_validate_json(context.inputs[1].payload_json)
+    tests = MissingRepairEvidence.model_validate_json(context.inputs[2].payload_json)
+    incidents = DetailedIncidentContextObservation.model_validate_json(
+        context.inputs[3].payload_json
+    )
+    if (
+        tuple(row.as_of for row in (health, traces, tests, incidents))
+        != tuple(row.as_of for row in context.inputs)
+        or any(row.as_of > context.created_at for row in context.inputs)
+        or tuple(row.source_id for row in context.inputs)
+        != tuple(
+            "health-repair:" + name + ":" + sha256(row.payload_json.encode()).hexdigest()
+            for name, row in zip(INPUT_NAMES, context.inputs, strict=True)
+        )
+        or health.open_incidents != incidents.total_incidents
+        or tests.input_name != "code_tests"
+        or tests.reason != "CODE_TEST_RECEIPTS_NOT_CONNECTED"
+        or traces.expected_count
+        != sum(row.code.startswith("AGENT_") for row in incidents.incidents)
+        and traces.availability != "UNAVAILABLE"
+    ):
+        raise ValueError("Repair readiness evidence is stale or inconsistent")
+    blockers = {"CODE_TEST_EVIDENCE_UNAVAILABLE"}
+    if traces.availability != "AVAILABLE":
+        blockers.add("TRACE_EVIDENCE_UNAVAILABLE")
+    if incidents.availability in {"UNAVAILABLE", "TRUNCATED"}:
+        blockers.add("INCIDENT_DETAILS_UNAVAILABLE")
+    if health.status == "UNAVAILABLE":
+        blockers.add("HEALTH_EVIDENCE_UNAVAILABLE")
+    elif health.status != "MONITORED":
+        blockers.add("CONTINUOUS_HEALTH_MONITOR_UNAVAILABLE")
+    return health, incidents, traces, tuple(sorted(blockers))
+
+
 async def assess_repair_readiness(invocation: AgentInvocation) -> RepairCandidate:
     context = invocation.context
     health, incident, blockers = _observations(context)
@@ -214,7 +308,40 @@ async def assess_repair_readiness_v3(invocation: AgentInvocation) -> RepairCandi
     )
 
 
+async def assess_repair_readiness_v4(invocation: AgentInvocation) -> RepairCandidateV4:
+    context = invocation.context
+    health, incidents, traces, blockers = _observations_v4(context)
+    return RepairCandidateV4(
+        task_id=context.task_id,
+        input_refs=context.input_refs,
+        evidence_refs=context.input_refs,
+        created_at=context.created_at,
+        valid_until=context.valid_until,
+        trace_id=str(uuid4()),
+        contradictions=(),
+        state="WAIT_FOR_EVIDENCE",
+        health_status=health.status,
+        open_incidents=health.open_incidents,
+        incident_context_state=incidents.availability,
+        incident_ids=tuple(row.incident_id for row in incidents.incidents),
+        trace_context_state=traces.availability,
+        trace_refs=tuple(
+            RepairTraceReference(incident_id=row.incident_id, trace_id=row.trace_id)
+            for row in traces.traces
+        ),
+        repair_candidate_created=False,
+        repair_plan=(),
+        blockers=blockers,
+    )
+
+
 def repair_implementation(registry: AgentRegistry, version: str = "0.2.0") -> AgentImplementation:
+    if version == "0.4.0":
+        return AgentImplementation(
+            registry.get("A16", version).manifest_ref,
+            RepairCandidateV4,
+            assess_repair_readiness_v4,
+        )
     if version == "0.3.0":
         return AgentImplementation(
             registry.get("A16", version).manifest_ref,
