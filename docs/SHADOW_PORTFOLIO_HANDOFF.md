@@ -35,7 +35,7 @@ Trusted built-ins run in the host Python process. Native accounts isolate simula
 Install the editable package with research/trading prerequisites. Register the candidate, then:
 
 ```powershell
-ai-quant-shadow --workspace data-local/research-adversarial-a assign eurusd-shadow --candidate-id aa8c5d53f15133b8b1b391af0123a9b50cd047e067112e989fa56bef5126d4c6
+ai-quant-shadow --workspace data-local/research-adversarial-a assign eurusd-shadow --candidate-id aa8c5d53f15133b8b1b391af0123a9b50cd047e067112e989fa56bef5126d4c6 --reality-gap-threshold-bps 100 --minimum-shadow-bars 60 --minimum-shadow-fills 2 --minimum-holdout-fills 2
 ai-quant-shadow --workspace data-local/research-adversarial-a observe eurusd-shadow --command-id first-observations --bars new-observations.csv
 ai-quant-shadow --workspace data-local/research-adversarial-a latest eurusd-shadow --output data-local/shadow-report.json
 ```
@@ -44,8 +44,15 @@ Use the full verified candidate ID from the registry. Observation CSV columns ma
 
 Exports use immutable atomic publication, protecting database/WAL/SHM paths and archive/strategy subtrees. No HTTP endpoint or new agent tool permission is added. Console output and retained reports are the current operator surface; Mission Control integration remains unfinished.
 
+
+## Forward-shadow reality-gap demotion
+
+An operator may bind a holdout-to-forward reality-gap policy when assigning a shadow using `--reality-gap-threshold-bps`, `--minimum-shadow-bars`, `--minimum-shadow-fills` and `--minimum-holdout-fills`. The policy is stored with the immutable assignment and cannot be added later or changed on retry; existing assignments migrate as disabled. The evaluator compares frozen native holdout net return with cumulative forward-shadow net return, both normalized by their own filled gross notional in quote-currency basis points. It reports `UNASSESSED` until every declared sample floor is met. An adverse gap at or beyond the configured threshold appends `DEMOTED` to the candidate journal with the source shadow-report hash, policy hash and inputs, measured returns and threshold. The operation uses a revision-checked SQLite transaction; repeated commands are idempotent, and the candidate cannot enter a new shadow observation after demotion. Existing assignments and reports remain available for review.
+
+This is a holdout-to-forward-shadow diagnostic. It is not a live-versus-shadow comparison and it does not measure broker execution; actual PAPER comparison, alerts, and candidate-bound paper order assignment remain open. The policy is disabled unless an operator supplies a threshold at assignment. Demotion never promotes a candidate or enables a broker route.
+
 ## Verified fixture and remaining P09 scope
 
 Two independent workspaces each ran two native cumulative windows and exported identical first/final reports. The synthetic logical-clock fixture retains three then six EURUSD bars after its archived holdout. The first window has an open 100-unit position and -0.10 USD marked PnL; the second ends flat with -20.20 USD PnL. Both saved reports validate with the report schema, typed decoding and canonical reencoding, and their sequence/hash/prefix chain replays from SQLite. This proves the mechanism under controlled inputs, not prospective performance or independent calibration.
 
-P09 still requires production shadow ingress/scheduling, lifecycle recovery/retirement, candidate-bound paper assignments, live/shadow comparison, linkage to the separate daily opening-mark/accounting workflow, agent attribution, recorded fill-time/latency evidence, reality-gap alerts and demotion. Research shadow, sandbox and independent-review gates remain pending. Hosted CI is configured but unverified. No paid provider or live broker was exercised.
+P09 still requires production shadow ingress/scheduling, lifecycle recovery/retirement, candidate-bound paper assignments, live/shadow comparison, linkage to the separate daily opening-mark/accounting workflow, agent attribution, recorded fill-time/latency evidence, PAPER-versus-shadow comparison, reality-gap alerts and market-ingress scheduling/recovery. Research shadow, sandbox and independent-review gates remain pending. Hosted CI is configured but unverified. No paid provider or live broker was exercised.

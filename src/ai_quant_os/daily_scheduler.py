@@ -21,7 +21,7 @@ def boundary_id(day):
 
 
 class DailyScheduler:
-    def __init__(self, archive, ledger, quotes, catalog, clock, integrity):
+    def __init__(self, archive, ledger, quotes, catalog, clock, integrity, execution_ledger=None):
         self.archive, self.ledger, self.quotes, self.catalog, self.clock, self.integrity = (
             archive,
             ledger,
@@ -30,6 +30,10 @@ class DailyScheduler:
             clock,
             integrity,
         )
+        self.execution_ledger = execution_ledger
+        self._execution_pending = []
+        self._execution_queue_loaded = False
+        self.execution_last_error = None
         self.schedule = EvidenceScheduleStore(archive)
         self.last_error = None
         self._last_clock = None
@@ -66,7 +70,49 @@ class DailyScheduler:
             last_receipt=None if not receipts else asdict(receipts[-1]),
             last_error=self.last_error,
             current_boundary_captured_at=None if boundary is None else boundary.captured_at,
+            execution_attribution_pending_days=len(self._execution_pending),
+            execution_attribution_error=self.execution_last_error,
         )
+
+    def _load_execution_queue(self, receipts):
+        if self.execution_ledger is None or self._execution_queue_loaded:
+            return
+        self._execution_pending = [
+            receipt.day
+            for receipt in receipts
+            if receipt.outcome == "PUBLISHED" and self.archive.daily_execution(receipt.day) is None
+        ]
+        self._execution_queue_loaded = True
+
+    def _publish_pending_execution(self):
+        if self.execution_ledger is None or not self._execution_pending:
+            return
+        day = self._execution_pending[0]
+        try:
+            daily = self.archive.daily(day)
+            if daily is None:
+                raise ValueError("Published daily execution source is missing")
+            owners, fills, benchmarks = self.execution_ledger()
+            from ai_quant_os.daily_execution_evidence import build_daily_execution_evidence
+
+            evidence = build_daily_execution_evidence(
+                daily, owners, fills, benchmarks, published_at=self.clock()
+            )
+            self.archive.publish_daily_execution(evidence)
+            self._execution_pending.pop(0)
+            self.execution_last_error = None
+        except Exception as error:
+            if self.execution_last_error is None:
+                LOGGER.error(
+                    json.dumps(
+                        {
+                            "event": "daily_execution_attribution_pending",
+                            "reason": "SOURCE_OR_PUBLICATION_UNAVAILABLE",
+                            "exception_type": type(error).__name__,
+                        }
+                    )
+                )
+            self.execution_last_error = "EXECUTION_ATTRIBUTION_PENDING"
 
     def _capture(self, day):
         identifier = boundary_id(day)
@@ -95,17 +141,23 @@ class DailyScheduler:
         if self._last_clock is not None and now < self._last_clock:
             raise ValueError("Scheduler clock regressed")
         self._last_clock = now
+        if self.execution_ledger is not None and not self._execution_queue_loaded:
+            _, receipts = self.schedule.state()
+            self._load_execution_queue(receipts)
+        if not self.integrity():
+            self.last_error = "PAPER_AUDIT_INTEGRITY_FAILED"
+            return {**self.status(), "state": "HALTED_AUDIT"}
         if (
             self._waiting_day == now.date()
             and self._cached_status is not None
             and self.last_error is None
         ):
+            self._publish_pending_execution()
+            self._cached_status = self.status()
             return self._cached_status
-        if not self.integrity():
-            self.last_error = "PAPER_AUDIT_INTEGRITY_FAILED"
-            return {**self.status(), "state": "HALTED_AUDIT"}
         started = self.schedule.start(now)
         _, receipts = self.schedule.state()
+        self._load_execution_queue(receipts)
         if now < started.started_at or now.date() < started.started_at.date() + timedelta(
             days=len(receipts)
         ):
@@ -139,6 +191,8 @@ class DailyScheduler:
                         next_day, now, "FAILED", "PUBLICATION_CONFLICT_OR_LINEAGE_ERROR", None
                     )
             self.schedule.record(receipt)
+            if receipt.outcome == "PUBLISHED" and self.execution_ledger is not None:
+                self._execution_pending.append(next_day)
             LOGGER.info(
                 json.dumps(
                     {
@@ -151,6 +205,7 @@ class DailyScheduler:
             )
             next_day += timedelta(days=1)
         self.last_error = None
+        self._publish_pending_execution()
         status = self.status()
         self._waiting_day = now.date() if status["pending_days"] == 0 else None
         self._cached_status = status

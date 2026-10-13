@@ -5,7 +5,7 @@ export function DossierPanel({ result }: { result: {ok:true;value:unknown} | {ok
   const page=result.ok ? parseDossiers(result.value) : null;
   return <section className="panel content-panel">
     <div className="panel-heading"><h2>Archived candidate dossiers</h2><span>{page ? `${page.total} RETAINED` : "UNAVAILABLE"}</span></div>
-    <p className="panel-muted">These are saved research results. CHALLENGER means validation is incomplete. Gate PASS is historical evidence for that gate; it grants no deployment, allocation or promotion authority.</p>
+    <p className="panel-muted">These are saved research results. CHALLENGER means validation is incomplete; DEMOTED means a declared forward-shadow reality-gap threshold was exceeded. Gate PASS is historical evidence for that gate; it grants no deployment, allocation or promotion authority.</p>
     {page ? <>
       {page.candidates.map((row) => <article className="research-dossier" key={row.candidate_id}>
         <header><h3>{row.experiment_id}</h3><span>{row.state} · revision {row.revision}</span></header>

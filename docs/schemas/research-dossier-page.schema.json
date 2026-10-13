@@ -3,42 +3,14 @@
     "DossierPreview": {
       "additionalProperties": false,
       "properties": {
-        "attempt_count": {
-          "maximum": 128,
-          "minimum": 0,
-          "title": "Attempt Count",
-          "type": "integer"
-        },
         "candidate_id": {
           "pattern": "^[a-f0-9]{64}$",
           "title": "Candidate Id",
           "type": "string"
         },
-        "details_truncated": {
-          "title": "Details Truncated",
-          "type": "boolean"
-        },
         "experiment_id": {
           "maxLength": 64,
           "title": "Experiment Id",
-          "type": "string"
-        },
-        "fold_count": {
-          "minimum": 0,
-          "title": "Fold Count",
-          "type": "integer"
-        },
-        "gates": {
-          "items": {
-            "$ref": "#/$defs/GatePreview"
-          },
-          "maxItems": 16,
-          "title": "Gates",
-          "type": "array"
-        },
-        "hypothesis": {
-          "maxLength": 1024,
-          "title": "Hypothesis",
           "type": "string"
         },
         "hypothesis_id": {
@@ -46,9 +18,20 @@
           "title": "Hypothesis Id",
           "type": "string"
         },
-        "last_event_sha256": {
-          "pattern": "^[a-f0-9]{64}$",
-          "title": "Last Event Sha256",
+        "hypothesis": {
+          "maxLength": 1024,
+          "title": "Hypothesis",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "CHALLENGER",
+            "FAILED",
+            "REJECTED",
+            "WITHDRAWN",
+            "DEMOTED"
+          ],
+          "title": "State",
           "type": "string"
         },
         "outcome": {
@@ -60,44 +43,24 @@
           "title": "Outcome",
           "type": "string"
         },
-        "plan_sha256": {
-          "pattern": "^[a-f0-9]{64}$",
-          "title": "Plan Sha256",
-          "type": "string"
-        },
-        "promotion_allowed": {
-          "const": false,
-          "default": false,
-          "title": "Promotion Allowed",
-          "type": "boolean"
-        },
-        "reasons": {
-          "items": {
-            "maxLength": 256,
-            "type": "string"
-          },
-          "maxItems": 16,
-          "title": "Reasons",
-          "type": "array"
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
         },
         "report_sha256": {
           "pattern": "^[a-f0-9]{64}$",
           "title": "Report Sha256",
           "type": "string"
         },
-        "revision": {
-          "minimum": 1,
-          "title": "Revision",
-          "type": "integer"
+        "plan_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Plan Sha256",
+          "type": "string"
         },
-        "state": {
-          "enum": [
-            "CHALLENGER",
-            "FAILED",
-            "REJECTED",
-            "WITHDRAWN"
-          ],
-          "title": "State",
+        "last_event_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Last Event Sha256",
           "type": "string"
         },
         "strategy_ref": {
@@ -111,6 +74,44 @@
             }
           ],
           "title": "Strategy Ref"
+        },
+        "fold_count": {
+          "minimum": 0,
+          "title": "Fold Count",
+          "type": "integer"
+        },
+        "attempt_count": {
+          "maximum": 128,
+          "minimum": 0,
+          "title": "Attempt Count",
+          "type": "integer"
+        },
+        "gates": {
+          "items": {
+            "$ref": "#/$defs/GatePreview"
+          },
+          "maxItems": 16,
+          "title": "Gates",
+          "type": "array"
+        },
+        "reasons": {
+          "items": {
+            "maxLength": 256,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "details_truncated": {
+          "title": "Details Truncated",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
         }
       },
       "required": [
@@ -142,11 +143,6 @@
           "title": "Name",
           "type": "string"
         },
-        "reason": {
-          "maxLength": 256,
-          "title": "Reason",
-          "type": "string"
-        },
         "state": {
           "enum": [
             "PASS",
@@ -154,6 +150,11 @@
             "PENDING"
           ],
           "title": "State",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 256,
+          "title": "Reason",
           "type": "string"
         }
       },
@@ -168,30 +169,40 @@
   },
   "additionalProperties": false,
   "properties": {
-    "candidates": {
-      "items": {
-        "$ref": "#/$defs/DossierPreview"
-      },
-      "maxItems": 2,
-      "title": "Candidates",
-      "type": "array"
-    },
-    "head_hash": {
-      "pattern": "^[a-f0-9]{64}$",
-      "title": "Head Hash",
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
       "type": "string"
-    },
-    "limit": {
-      "maximum": 2,
-      "minimum": 1,
-      "title": "Limit",
-      "type": "integer"
     },
     "mode": {
       "const": "PAPER",
       "default": "PAPER",
       "title": "Mode",
       "type": "string"
+    },
+    "head_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Head Hash",
+      "type": "string"
+    },
+    "total": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    },
+    "offset": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Offset",
+      "type": "integer"
+    },
+    "limit": {
+      "maximum": 2,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
     },
     "next_offset": {
       "anyOf": [
@@ -204,23 +215,13 @@
       ],
       "title": "Next Offset"
     },
-    "offset": {
-      "maximum": 1000,
-      "minimum": 0,
-      "title": "Offset",
-      "type": "integer"
-    },
-    "schema_version": {
-      "const": "1.0",
-      "default": "1.0",
-      "title": "Schema Version",
-      "type": "string"
-    },
-    "total": {
-      "maximum": 1000,
-      "minimum": 0,
-      "title": "Total",
-      "type": "integer"
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/DossierPreview"
+      },
+      "maxItems": 2,
+      "title": "Candidates",
+      "type": "array"
     }
   },
   "required": [

@@ -17,7 +17,7 @@ class DossierPreview(BaseModel):
     experiment_id: str = Field(max_length=64)
     hypothesis_id: str = Field(max_length=64)
     hypothesis: str = Field(max_length=1024)
-    state: Literal["CHALLENGER", "FAILED", "REJECTED", "WITHDRAWN"]
+    state: Literal["CHALLENGER", "FAILED", "REJECTED", "WITHDRAWN", "DEMOTED"]
     outcome: Literal["FAILED", "REJECTED", "VALIDATION_INCOMPLETE"]
     revision: int = Field(strict=True, ge=1)
     report_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")

@@ -357,11 +357,74 @@ def test_daily_api_captures_server_sources_publishes_and_restarts(tmp_path):
     assert result.status_code == 200, result.text
     assert Decimal(result.json()["report"]["instruments"][0]["daily_pnl_quote"]) == Decimal("1.4")
     assert client.post(publish, headers=headers, json=request).json() == result.json()
+    execution_url = f"/api/v1/paper/evidence/daily/{DAY.isoformat()}/execution-attribution"
+    assert client.post(execution_url).status_code == 401
+    execution_result = client.post(execution_url, headers=headers)
+    assert execution_result.status_code == 200, execution_result.text
+    assert execution_result.headers["cache-control"] == "no-store"
+    assert execution_result.json()["report"]["contribution"]["coverage"] == "COMPLETE"
+    assert Decimal(
+        execution_result.json()["report"]["contribution"]["instruments"][0][
+            "actual_cash_flow_quote"
+        ]
+    ) == Decimal("4.6")
+    from jsonschema import Draft202012Validator, ValidationError
+
+    execution_schema = json.loads(
+        (
+            Path(__file__).parents[1] / "docs/schemas/daily-execution-evidence.schema.json"
+        ).read_text()
+    )
+    Draft202012Validator.check_schema(execution_schema)
+    Draft202012Validator(execution_schema).validate(execution_result.json())
+    with pytest.raises(ValidationError):
+        Draft202012Validator(execution_schema).validate(
+            {**execution_result.json(), "unknown": True}
+        )
+    assert client.post(execution_url, headers=headers).json() == execution_result.json()
+    aggregate_url = (
+        f"/api/v1/paper/evidence/daily-execution-attribution?start={DAY.isoformat()}"
+        f"&end={DAY.isoformat()}"
+    )
+    assert client.get(aggregate_url).status_code == 401
+    aggregate_result = client.get(aggregate_url, headers=headers)
+    assert aggregate_result.status_code == 200, aggregate_result.text
+    assert aggregate_result.headers["cache-control"] == "no-store"
+    assert aggregate_result.json()["coverage"] == "COMPLETE"
+    assert aggregate_result.json()["covered_days"] == [DAY.isoformat()]
+    assert aggregate_result.json()["missing_days"] == []
+    assert Decimal(aggregate_result.json()["strategies"][0]["actual_cash_flow_quote"]) == Decimal(
+        "4.6"
+    )
+    aggregate_schema = json.loads(
+        (
+            Path(__file__).parents[1] / "docs/schemas/daily-execution-aggregate.schema.json"
+        ).read_text()
+    )
+    Draft202012Validator.check_schema(aggregate_schema)
+    Draft202012Validator(aggregate_schema).validate(aggregate_result.json())
+    with pytest.raises(ValidationError):
+        Draft202012Validator(aggregate_schema).validate(
+            {**aggregate_result.json(), "unreviewed": True}
+        )
+    assert (
+        client.get(
+            f"/api/v1/paper/evidence/daily-execution-attribution?start={DAY.isoformat()}&end=2027-02-02",
+            headers=headers,
+        ).status_code
+        == 422
+    )
     restarted = TestClient(
         create_app(operator_token="daily-test", paper_db_path=path, clock=lambda: END)
     )
     assert restarted.get(publish + "/" + DAY.isoformat(), headers=headers).json() == result.json()
+    assert restarted.get(execution_url, headers=headers).json() == execution_result.json()
     assert restarted.get(publish + "/" + DAY.isoformat()).status_code == 401
+    with sqlite3.connect(path.with_name("paper.evidence.sqlite3")) as db:
+        db.execute("UPDATE daily_execution_evidence SET blob=?", (b"{}",))
+    assert restarted.get(execution_url, headers=headers).status_code == 503
+    assert restarted.post(execution_url, headers=headers).status_code == 503
+    assert restarted.get(aggregate_url, headers=headers).status_code == 503
     with sqlite3.connect(path.with_name("paper.evidence.sqlite3")) as db:
         db.execute(
             "UPDATE evidence_checkpoints SET blob=? WHERE checkpoint_id='api-open'", (b"{}",)

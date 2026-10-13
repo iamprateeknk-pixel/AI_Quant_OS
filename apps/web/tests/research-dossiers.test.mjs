@@ -12,6 +12,10 @@ test('retains archived gate states and explicit truncated preview status',()=>{
   assert.deepEqual(parseDossiers(page).candidates,[row]);
   assert.equal(parseDossiers({...page,candidates:[{...row,details_truncated:true}]}).candidates[0].details_truncated,true);
 });
+test('renders a threshold-demoted candidate as retained diagnostic metadata',()=>{
+  const demoted={...row,state:'DEMOTED',revision:2};
+  assert.deepEqual(parseDossiers({...page,candidates:[demoted]}).candidates,[demoted]);
+});
 test('withholds malformed and capital-authorizing dossier responses',()=>{
   for(const payload of [{...page,mode:'LIVE'},{...page,total:0},{...page,next_offset:2},{...page,candidates:[{...row,promotion_allowed:true}]},{...page,candidates:[{...row,state:'LIVE'}]},{...page,candidates:[{...row,gates:[{name:'SANDBOX',state:'READY',reason:'x'}]}]}]) assert.equal(parseDossiers(payload),null);
 });

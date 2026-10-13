@@ -567,6 +567,7 @@ def create_app(
             PAPER_INSTRUMENTS,
             current_time,
             lambda: state_store.audit_integrity().valid,
+            execution_ledger=lambda: execution.execution_evidence_ledger,
         )
 
     @asynccontextmanager
@@ -2296,6 +2297,7 @@ def create_app(
         configured_path,
         require_operator,
         lambda: execution.attribution_ledger,
+        lambda: execution.execution_evidence_ledger,
         lambda: tuple(quotes.copy().values()),
         PAPER_INSTRUMENTS,
         current_time,

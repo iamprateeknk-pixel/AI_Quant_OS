@@ -1,5 +1,5 @@
 export type Gate = { name: string; state: "PASS" | "FAIL" | "PENDING"; reason: string };
-export type Dossier = { candidate_id: string; experiment_id: string; hypothesis_id: string; hypothesis: string; state: "CHALLENGER" | "FAILED" | "REJECTED" | "WITHDRAWN"; outcome: "FAILED" | "REJECTED" | "VALIDATION_INCOMPLETE"; revision: number; report_sha256: string; plan_sha256: string; last_event_sha256: string; strategy_ref: string | null; fold_count: number; attempt_count: number; gates: Gate[]; reasons: string[]; details_truncated: boolean; promotion_allowed: false };
+export type Dossier = { candidate_id: string; experiment_id: string; hypothesis_id: string; hypothesis: string; state: "CHALLENGER" | "FAILED" | "REJECTED" | "WITHDRAWN" | "DEMOTED"; outcome: "FAILED" | "REJECTED" | "VALIDATION_INCOMPLETE"; revision: number; report_sha256: string; plan_sha256: string; last_event_sha256: string; strategy_ref: string | null; fold_count: number; attempt_count: number; gates: Gate[]; reasons: string[]; details_truncated: boolean; promotion_allowed: false };
 export type DossierPage = { head_hash: string; total: number; offset: number; limit: number; next_offset: number | null; candidates: Dossier[] };
 function record(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function text(value: unknown, maximum: number): value is string { return typeof value === "string" && value.length <= maximum; }
@@ -9,7 +9,7 @@ function integer(value: unknown, maximum: number): value is number { return type
 function parseDossier(value: unknown): Dossier | null {
   if (!record(value) || !digest(value.candidate_id) || !digest(value.report_sha256) || !digest(value.plan_sha256) || !digest(value.last_event_sha256) || !text(value.experiment_id,64) || !/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(value.experiment_id) || !text(value.hypothesis_id,64) || !/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(value.hypothesis_id) || !text(value.hypothesis,1024)) return null;
   const state=value.state, outcome=value.outcome;
-  if (state !== "CHALLENGER" && state !== "FAILED" && state !== "REJECTED" && state !== "WITHDRAWN") return null;
+  if (state !== "CHALLENGER" && state !== "FAILED" && state !== "REJECTED" && state !== "WITHDRAWN" && state !== "DEMOTED") return null;
   if (outcome !== "FAILED" && outcome !== "REJECTED" && outcome !== "VALIDATION_INCOMPLETE") return null;
   if ((state === "FAILED" || state === "REJECTED") ? outcome !== state : outcome !== "VALIDATION_INCOMPLETE") return null;
   if (!integer(value.revision,100000) || value.revision < 1 || !integer(value.fold_count,1000) || !integer(value.attempt_count,128) || (value.strategy_ref !== null && !text(value.strategy_ref,128)) || value.promotion_allowed !== false || typeof value.details_truncated !== "boolean") return null;

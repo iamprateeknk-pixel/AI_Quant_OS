@@ -6,7 +6,7 @@ import pytest
 START = datetime(2026, 1, 2, tzinfo=timezone.utc)
 
 
-def scheduler(tmp_path, clock):
+def scheduler(tmp_path, clock, execution_ledger=None):
     from ai_quant_os.daily_scheduler import DailyScheduler
     from ai_quant_os.evidence_store import EvidenceStore
     from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
@@ -18,6 +18,7 @@ def scheduler(tmp_path, clock):
         PAPER_INSTRUMENTS,
         lambda: clock[0],
         lambda: True,
+        execution_ledger=execution_ledger,
     )
 
 
@@ -33,6 +34,76 @@ def test_automatic_boundary_publication_is_idempotent_and_survives_restart(tmp_p
     assert report.report.promotion_allowed is False
     assert scheduler(tmp_path, clock).step()["completed_days"] == 1
     assert worker.archive.daily(START.date()) == report
+
+
+def test_automatic_execution_publication_retries_after_transient_ledger_failure(tmp_path):
+    clock = [START]
+    calls = 0
+
+    def execution_ledger():
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OSError("temporary ledger read failure")
+        return (), (), ()
+
+    worker = scheduler(tmp_path, clock, execution_ledger)
+    worker.step()
+    clock[0] += timedelta(days=1)
+    status = worker.step()
+    assert status["published_days"] == 1
+    assert status["execution_attribution_pending_days"] == 1
+    assert status["execution_attribution_error"] == "EXECUTION_ATTRIBUTION_PENDING"
+    assert worker.archive.daily_execution(START.date()) is None
+
+    status = worker.step()
+    assert status["execution_attribution_pending_days"] == 0
+    assert status["execution_attribution_error"] is None
+    assert worker.archive.daily_execution(START.date()).report.contribution.coverage == "EMPTY"
+    assert calls == 2
+
+
+def test_execution_retry_queue_is_reconstructed_after_restart(tmp_path):
+    clock = [START]
+
+    def unavailable_ledger():
+        raise OSError("temporary ledger read failure")
+
+    first = scheduler(tmp_path, clock, unavailable_ledger)
+    first.step()
+    clock[0] += timedelta(days=1)
+    assert first.step()["execution_attribution_pending_days"] == 1
+
+    restarted = scheduler(tmp_path, clock, lambda: ((), (), ()))
+    status = restarted.step()
+    assert status["execution_attribution_pending_days"] == 0
+    assert status["execution_attribution_error"] is None
+    assert restarted.archive.daily_execution(START.date()).report.contribution.coverage == "EMPTY"
+
+
+def test_cached_execution_retry_halts_when_paper_audit_integrity_fails(tmp_path):
+    clock = [START]
+    reads = 0
+
+    def execution_ledger():
+        nonlocal reads
+        reads += 1
+        if reads == 1:
+            raise OSError("temporary ledger read failure")
+        return (), (), ()
+
+    worker = scheduler(tmp_path, clock, execution_ledger)
+    worker.step()
+    clock[0] += timedelta(days=1)
+    assert worker.step()["execution_attribution_pending_days"] == 1
+    assert reads == 1
+
+    worker.integrity = lambda: False
+    status = worker.step()
+    assert status["state"] == "HALTED_AUDIT"
+    assert status["execution_attribution_pending_days"] == 1
+    assert worker.archive.daily_execution(START.date()) is None
+    assert reads == 1
 
 
 def test_downtime_records_missed_boundaries_without_fake_capture(tmp_path):
@@ -123,6 +194,12 @@ def test_enabled_application_runs_and_stops_worker_with_protected_status(tmp_pat
         assert (
             client.get("/api/v1/paper/evidence/daily/2026-01-02", headers=headers).status_code
             == 200
+        )
+        execution_url = "/api/v1/paper/evidence/daily/2026-01-02/execution-attribution"
+        assert client.get(execution_url, headers=headers).status_code == 200
+        assert (
+            client.get(execution_url, headers=headers).json()["report"]["contribution"]["coverage"]
+            == "EMPTY"
         )
     assert app.state.daily_task is None
 

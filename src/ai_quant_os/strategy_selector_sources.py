@@ -18,7 +18,9 @@ INPUT_NAMES = ("approved_strategy_registry", "world_state", "performance", "drif
 class CandidateRegistryRow(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     candidate_id: str = Field(pattern=r"^[a-f0-9]{64}$")
-    state: Literal["APPROVED", "CHALLENGER", "FAILED", "REJECTED", "WITHDRAWN"]
+    state: Literal[
+        "APPROVED", "CHALLENGER", "FAILED", "REJECTED", "WITHDRAWN", "DEMOTED", "DEMOTED"
+    ]
     research_outcome: Literal["FAILED", "REJECTED", "VALIDATION_INCOMPLETE", "VALIDATED"]
     blocking_gates: tuple[str, ...] = Field(max_length=15)
     revision: int = Field(strict=True, ge=1, le=100000)

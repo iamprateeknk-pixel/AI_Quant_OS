@@ -1,0 +1,1236 @@
+{
+  "$defs": {
+    "CurrencyInstrument": {
+      "additionalProperties": false,
+      "properties": {
+        "base_currency": {
+          "title": "Base Currency",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "base_currency",
+        "quote_currency"
+      ],
+      "title": "CurrencyInstrument",
+      "type": "object"
+    },
+    "DailyEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "closing": {
+          "$ref": "#/$defs/EvidenceCheckpoint"
+        },
+        "opening": {
+          "$ref": "#/$defs/EvidenceCheckpoint"
+        },
+        "published_at": {
+          "format": "date-time",
+          "title": "Published At",
+          "type": "string"
+        },
+        "report": {
+          "$ref": "#/$defs/PaperDailyReport"
+        }
+      },
+      "required": [
+        "opening",
+        "closing",
+        "report",
+        "published_at"
+      ],
+      "title": "DailyEvidence",
+      "type": "object"
+    },
+    "DailyExecutionAttribution": {
+      "additionalProperties": false,
+      "properties": {
+        "closing_checkpoint_id": {
+          "title": "Closing Checkpoint Id",
+          "type": "string"
+        },
+        "closing_ledger_sha256": {
+          "title": "Closing Ledger Sha256",
+          "type": "string"
+        },
+        "contribution": {
+          "$ref": "#/$defs/ExecutionContributionReport"
+        },
+        "day": {
+          "format": "date",
+          "title": "Day",
+          "type": "string"
+        },
+        "mode": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        },
+        "opening_checkpoint_id": {
+          "title": "Opening Checkpoint Id",
+          "type": "string"
+        },
+        "opening_ledger_sha256": {
+          "title": "Opening Ledger Sha256",
+          "type": "string"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "day",
+        "opening_checkpoint_id",
+        "closing_checkpoint_id",
+        "opening_ledger_sha256",
+        "closing_ledger_sha256",
+        "contribution"
+      ],
+      "title": "DailyExecutionAttribution",
+      "type": "object"
+    },
+    "DailyInstrumentContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "cash_flow_before_fees_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Cash Flow Before Fees Quote"
+        },
+        "cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Cash Flow Quote"
+        },
+        "closing_inventory_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Closing Inventory Quote"
+        },
+        "closing_mark_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Closing Mark Price"
+        },
+        "closing_mark_state": {
+          "title": "Closing Mark State",
+          "type": "string"
+        },
+        "closing_quantity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Closing Quantity"
+        },
+        "daily_pnl_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Daily Pnl Quote"
+        },
+        "fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee Cash Flow Quote"
+        },
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "opening_inventory_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Opening Inventory Quote"
+        },
+        "opening_mark_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Opening Mark Price"
+        },
+        "opening_mark_state": {
+          "title": "Opening Mark State",
+          "type": "string"
+        },
+        "opening_quantity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Opening Quantity"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_count",
+        "opening_quantity",
+        "closing_quantity",
+        "cash_flow_before_fees_quote",
+        "fee_cash_flow_quote",
+        "cash_flow_quote",
+        "opening_inventory_quote",
+        "closing_inventory_quote",
+        "daily_pnl_quote",
+        "instrument_id",
+        "quote_currency",
+        "opening_mark_price",
+        "closing_mark_price",
+        "opening_mark_state",
+        "closing_mark_state"
+      ],
+      "title": "DailyInstrumentContribution",
+      "type": "object"
+    },
+    "DailyStrategyContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "cash_flow_before_fees_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Cash Flow Before Fees Quote"
+        },
+        "cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Cash Flow Quote"
+        },
+        "closing_inventory_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Closing Inventory Quote"
+        },
+        "closing_quantity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Closing Quantity"
+        },
+        "daily_pnl_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Daily Pnl Quote"
+        },
+        "fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee Cash Flow Quote"
+        },
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "opening_inventory_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Opening Inventory Quote"
+        },
+        "opening_quantity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Opening Quantity"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_count",
+        "opening_quantity",
+        "closing_quantity",
+        "cash_flow_before_fees_quote",
+        "fee_cash_flow_quote",
+        "cash_flow_quote",
+        "opening_inventory_quote",
+        "closing_inventory_quote",
+        "daily_pnl_quote",
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "quote_currency"
+      ],
+      "title": "DailyStrategyContribution",
+      "type": "object"
+    },
+    "DecisionPriceBenchmark": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_at": {
+          "format": "date-time",
+          "title": "Decision At",
+          "type": "string"
+        },
+        "intent_id": {
+          "title": "Intent Id",
+          "type": "string"
+        },
+        "market": {
+          "$ref": "#/$defs/MarketSnapshot"
+        },
+        "order_id": {
+          "title": "Order Id",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "RISK_KERNEL_INITIAL_DECISION_V1",
+          "default": "RISK_KERNEL_INITIAL_DECISION_V1",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "risk_id": {
+          "title": "Risk Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "intent_id",
+        "risk_id",
+        "decision_at",
+        "market"
+      ],
+      "title": "DecisionPriceBenchmark",
+      "type": "object"
+    },
+    "EvidenceCheckpoint": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "catalog": {
+          "items": {
+            "$ref": "#/$defs/CurrencyInstrument"
+          },
+          "title": "Catalog",
+          "type": "array"
+        },
+        "checkpoint_id": {
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "fills": {
+          "items": {
+            "$ref": "#/$defs/PaperFill"
+          },
+          "title": "Fills",
+          "type": "array"
+        },
+        "mode": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        },
+        "owners": {
+          "items": {
+            "$ref": "#/$defs/OrderAttribution"
+          },
+          "title": "Owners",
+          "type": "array"
+        },
+        "quotes": {
+          "items": {
+            "$ref": "#/$defs/MarketSnapshot"
+          },
+          "title": "Quotes",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "checkpoint_id",
+        "captured_at",
+        "owners",
+        "fills",
+        "quotes",
+        "catalog"
+      ],
+      "title": "EvidenceCheckpoint",
+      "type": "object"
+    },
+    "ExecutionContributionReport": {
+      "additionalProperties": false,
+      "properties": {
+        "as_of": {
+          "format": "date-time",
+          "title": "As Of",
+          "type": "string"
+        },
+        "benchmark_method": {
+          "const": "INITIAL_DECISION_MID_SIDE_QUOTE_V1",
+          "title": "Benchmark Method",
+          "type": "string"
+        },
+        "benchmarks_sha256": {
+          "title": "Benchmarks Sha256",
+          "type": "string"
+        },
+        "coverage": {
+          "enum": [
+            "COMPLETE",
+            "PARTIAL",
+            "NONE",
+            "EMPTY"
+          ],
+          "title": "Coverage",
+          "type": "string"
+        },
+        "evidence_gaps": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Gaps",
+          "type": "array"
+        },
+        "instruments": {
+          "items": {
+            "$ref": "#/$defs/InstrumentExecutionContribution"
+          },
+          "title": "Instruments",
+          "type": "array"
+        },
+        "ledger_sha256": {
+          "title": "Ledger Sha256",
+          "type": "string"
+        },
+        "missing_benchmark_order_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Benchmark Order Ids",
+          "type": "array"
+        },
+        "mode": {
+          "const": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        },
+        "reconciled": {
+          "const": true,
+          "title": "Reconciled",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "strategies": {
+          "items": {
+            "$ref": "#/$defs/StrategyExecutionContribution"
+          },
+          "title": "Strategies",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "mode",
+        "as_of",
+        "ledger_sha256",
+        "benchmarks_sha256",
+        "benchmark_method",
+        "coverage",
+        "strategies",
+        "instruments",
+        "missing_benchmark_order_ids",
+        "reconciled",
+        "evidence_gaps"
+      ],
+      "title": "ExecutionContributionReport",
+      "type": "object"
+    },
+    "InstrumentExecutionContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Actual Cash Flow Quote"
+        },
+        "benchmark_fill_count": {
+          "title": "Benchmark Fill Count",
+          "type": "integer"
+        },
+        "decision_to_fill_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Decision To Fill Cash Adjustment Quote"
+        },
+        "fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee Cash Flow Quote"
+        },
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "reference_mid_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reference Mid Cash Flow Quote"
+        },
+        "spread_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Cash Adjustment Quote"
+        }
+      },
+      "required": [
+        "fill_count",
+        "benchmark_fill_count",
+        "reference_mid_cash_flow_quote",
+        "spread_cash_adjustment_quote",
+        "decision_to_fill_cash_adjustment_quote",
+        "fee_cash_flow_quote",
+        "actual_cash_flow_quote",
+        "instrument_id",
+        "quote_currency"
+      ],
+      "title": "InstrumentExecutionContribution",
+      "type": "object"
+    },
+    "MarketSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "ask": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Ask"
+        },
+        "bid": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Bid"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "trusted": {
+          "title": "Trusted",
+          "type": "boolean"
+        },
+        "world_state_version": {
+          "title": "World State Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument_id",
+        "bid",
+        "ask",
+        "observed_at",
+        "world_state_version",
+        "trusted"
+      ],
+      "title": "MarketSnapshot",
+      "type": "object"
+    },
+    "OrderAttribution": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "intent_id": {
+          "title": "Intent Id",
+          "type": "string"
+        },
+        "intent_sha256": {
+          "title": "Intent Sha256",
+          "type": "string"
+        },
+        "order_id": {
+          "title": "Order Id",
+          "type": "string"
+        },
+        "order_sha256": {
+          "title": "Order Sha256",
+          "type": "string"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Quantity"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "intent_id",
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "side",
+        "quantity",
+        "status",
+        "created_at",
+        "expires_at",
+        "intent_sha256",
+        "order_sha256"
+      ],
+      "title": "OrderAttribution",
+      "type": "object"
+    },
+    "PaperDailyReport": {
+      "additionalProperties": false,
+      "properties": {
+        "accounting_method": {
+          "const": "UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1",
+          "default": "UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1",
+          "title": "Accounting Method",
+          "type": "string"
+        },
+        "closing_ledger_sha256": {
+          "title": "Closing Ledger Sha256",
+          "type": "string"
+        },
+        "day": {
+          "format": "date",
+          "title": "Day",
+          "type": "string"
+        },
+        "evidence_gaps": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Gaps",
+          "type": "array"
+        },
+        "instruments": {
+          "items": {
+            "$ref": "#/$defs/DailyInstrumentContribution"
+          },
+          "title": "Instruments",
+          "type": "array"
+        },
+        "marking_method": {
+          "const": "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
+          "default": "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
+          "title": "Marking Method",
+          "type": "string"
+        },
+        "mode": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        },
+        "opening_ledger_sha256": {
+          "title": "Opening Ledger Sha256",
+          "type": "string"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        },
+        "reconciled": {
+          "const": true,
+          "default": true,
+          "title": "Reconciled",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "COMPLETE_ACCOUNTING",
+            "INCOMPLETE_MARKS"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "strategies": {
+          "items": {
+            "$ref": "#/$defs/DailyStrategyContribution"
+          },
+          "title": "Strategies",
+          "type": "array"
+        }
+      },
+      "required": [
+        "day",
+        "opening_ledger_sha256",
+        "closing_ledger_sha256",
+        "strategies",
+        "instruments",
+        "state",
+        "evidence_gaps"
+      ],
+      "title": "PaperDailyReport",
+      "type": "object"
+    },
+    "PaperFill": {
+      "additionalProperties": false,
+      "properties": {
+        "fee": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee"
+        },
+        "fill_id": {
+          "title": "Fill Id",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "order_id": {
+          "title": "Order Id",
+          "type": "string"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Price"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Quantity"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "source": {
+          "default": "PAPER_MANUAL",
+          "enum": [
+            "PAPER_MANUAL",
+            "PAPER_BROKER"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_id",
+        "order_id",
+        "instrument_id",
+        "side",
+        "quantity",
+        "price",
+        "fee",
+        "observed_at"
+      ],
+      "title": "PaperFill",
+      "type": "object"
+    },
+    "StrategyExecutionContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Actual Cash Flow Quote"
+        },
+        "benchmark_fill_count": {
+          "title": "Benchmark Fill Count",
+          "type": "integer"
+        },
+        "decision_to_fill_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Decision To Fill Cash Adjustment Quote"
+        },
+        "fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee Cash Flow Quote"
+        },
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "reference_mid_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reference Mid Cash Flow Quote"
+        },
+        "spread_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Cash Adjustment Quote"
+        },
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_count",
+        "benchmark_fill_count",
+        "reference_mid_cash_flow_quote",
+        "spread_cash_adjustment_quote",
+        "decision_to_fill_cash_adjustment_quote",
+        "fee_cash_flow_quote",
+        "actual_cash_flow_quote",
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "quote_currency"
+      ],
+      "title": "StrategyExecutionContribution",
+      "type": "object"
+    }
+  },
+  "$id": "urn:ai-quant-os:contract:daily-execution-evidence:1.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable daily execution attribution bound to a published daily PAPER accounting report.",
+  "properties": {
+    "benchmarks": {
+      "items": {
+        "$ref": "#/$defs/DecisionPriceBenchmark"
+      },
+      "title": "Benchmarks",
+      "type": "array"
+    },
+    "daily": {
+      "$ref": "#/$defs/DailyEvidence"
+    },
+    "fills": {
+      "items": {
+        "$ref": "#/$defs/PaperFill"
+      },
+      "title": "Fills",
+      "type": "array"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "owners": {
+      "items": {
+        "$ref": "#/$defs/OrderAttribution"
+      },
+      "title": "Owners",
+      "type": "array"
+    },
+    "published_at": {
+      "format": "date-time",
+      "title": "Published At",
+      "type": "string"
+    },
+    "report": {
+      "$ref": "#/$defs/DailyExecutionAttribution"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "daily",
+    "owners",
+    "fills",
+    "benchmarks",
+    "report",
+    "published_at"
+  ],
+  "title": "Daily Paper Execution Evidence v1.0",
+  "type": "object"
+}

@@ -1,0 +1,220 @@
+{
+  "$defs": {
+    "DailyExecutionSource": {
+      "properties": {
+        "day": {
+          "format": "date",
+          "title": "Day",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "day",
+        "sha256"
+      ],
+      "title": "DailyExecutionSource",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "StrategyExecutionAggregate": {
+      "properties": {
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "benchmark_fill_count": {
+          "title": "Benchmark Fill Count",
+          "type": "integer"
+        },
+        "actual_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Actual Cash Flow Quote"
+        },
+        "fee_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            }
+          ],
+          "title": "Fee Cash Flow Quote"
+        },
+        "reference_mid_cash_flow_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reference Mid Cash Flow Quote"
+        },
+        "spread_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spread Cash Adjustment Quote"
+        },
+        "decision_to_fill_cash_adjustment_quote": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Decision To Fill Cash Adjustment Quote"
+        }
+      },
+      "required": [
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "quote_currency",
+        "fill_count",
+        "benchmark_fill_count",
+        "actual_cash_flow_quote",
+        "fee_cash_flow_quote",
+        "reference_mid_cash_flow_quote",
+        "spread_cash_adjustment_quote",
+        "decision_to_fill_cash_adjustment_quote"
+      ],
+      "title": "StrategyExecutionAggregate",
+      "type": "object",
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "start_day": {
+      "format": "date",
+      "title": "Start Day",
+      "type": "string"
+    },
+    "end_day": {
+      "format": "date",
+      "title": "End Day",
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/DailyExecutionSource"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "covered_days": {
+      "items": {
+        "format": "date",
+        "type": "string"
+      },
+      "title": "Covered Days",
+      "type": "array"
+    },
+    "missing_days": {
+      "items": {
+        "format": "date",
+        "type": "string"
+      },
+      "title": "Missing Days",
+      "type": "array"
+    },
+    "strategies": {
+      "items": {
+        "$ref": "#/$defs/StrategyExecutionAggregate"
+      },
+      "title": "Strategies",
+      "type": "array"
+    },
+    "coverage": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "NO_EVIDENCE"
+      ],
+      "title": "Coverage",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mode": {
+      "const": "PAPER",
+      "default": "PAPER",
+      "title": "Mode",
+      "type": "string"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "start_day",
+    "end_day",
+    "sources",
+    "covered_days",
+    "missing_days",
+    "strategies",
+    "coverage"
+  ],
+  "title": "DailyExecutionAggregateReport",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-quant-os.invalid/schemas/daily-execution-aggregate.schema.json",
+  "additionalProperties": false
+}

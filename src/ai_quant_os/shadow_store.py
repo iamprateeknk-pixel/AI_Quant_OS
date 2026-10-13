@@ -15,6 +15,7 @@ from ai_quant_os.shadow_portfolio import (
 )
 
 ZERO = "0" * 64
+DISABLED_REALITY_GAP_POLICY = b"DISABLED"
 
 
 class ShadowStore:
@@ -36,7 +37,15 @@ class ShadowStore:
                 CREATE TABLE IF NOT EXISTS shadow_heads (
                     shadow_id TEXT PRIMARY KEY, sequence INTEGER NOT NULL, sha256 TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS shadow_reality_gap_policies (
+                    shadow_id TEXT PRIMARY KEY, blob BLOB NOT NULL, sha256 TEXT NOT NULL
+                );
             """)
+            db.execute(
+                "INSERT OR IGNORE INTO shadow_reality_gap_policies "
+                "SELECT shadow_id,?,? FROM shadow_assignments",
+                (DISABLED_REALITY_GAP_POLICY, sha256(DISABLED_REALITY_GAP_POLICY).hexdigest()),
+            )
             db.commit()
 
     @staticmethod
@@ -47,8 +56,32 @@ class ShadowStore:
         batches, batch_count = db.execute(
             "SELECT COALESCE(SUM(length(request)+COALESCE(length(report),0)),0), COUNT(*) FROM shadow_batches"
         ).fetchone()
-        if size + batches + additional > 64 * 1024 * 1024 or count > 1000 or batch_count > 1000:
+        policies = db.execute(
+            "SELECT COALESCE(SUM(length(blob)),0) FROM shadow_reality_gap_policies"
+        ).fetchone()[0]
+        if (
+            size + batches + policies + additional > 64 * 1024 * 1024
+            or count > 1000
+            or batch_count > 1000
+        ):
             raise ValueError("Shadow archive capacity exceeded")
+
+    @staticmethod
+    def _decode_reality_gap_policy(db, shadow_id):
+        from ai_quant_os.shadow_reality_gap import RealityGapPolicy
+
+        row = db.execute(
+            "SELECT blob,sha256 FROM shadow_reality_gap_policies WHERE shadow_id=?",
+            (shadow_id,),
+        ).fetchone()
+        if row is None:
+            raise ValueError("Shadow reality-gap policy record is missing")
+        raw, digest = row
+        if not isinstance(raw, bytes) or sha256(raw).hexdigest() != digest:
+            raise ValueError("Shadow reality-gap policy fingerprint mismatch")
+        if raw == DISABLED_REALITY_GAP_POLICY:
+            return None
+        return _decode(raw, digest, RealityGapPolicy)
 
     def _verified(self, db, shadow_id):
         row = db.execute(
@@ -59,6 +92,7 @@ class ShadowStore:
         assignment = _decode(*row, ShadowAssignment)
         if assignment.shadow_id != shadow_id:
             raise ValueError("Shadow assignment identity mismatch")
+        self._decode_reality_gap_policy(db, shadow_id)
         rows = db.execute(
             "SELECT command_id,sequence,owner_token,request,request_sha256,report,report_sha256 FROM shadow_batches WHERE shadow_id=? ORDER BY sequence",
             (shadow_id,),
@@ -119,7 +153,17 @@ class ShadowStore:
             ):
                 raise ValueError("Shadow prior fill prefix cannot change")
 
-    def assign(self, assignment):
+    def assign(self, assignment, *, reality_gap_policy=None):
+        from ai_quant_os.shadow_reality_gap import RealityGapPolicy
+
+        if reality_gap_policy is not None and type(reality_gap_policy) is not RealityGapPolicy:
+            raise ValueError("Typed shadow reality-gap policy required")
+        policy_raw = (
+            DISABLED_REALITY_GAP_POLICY
+            if reality_gap_policy is None
+            else encode_research(reality_gap_policy)
+        )
+        policy_digest = sha256(policy_raw).hexdigest()
         raw = encode_research(assignment)
         assignment = _decode(raw, sha256(raw).hexdigest(), ShadowAssignment)
         with closing(sqlite3.connect(self.path, timeout=10)) as db:
@@ -129,10 +173,20 @@ class ShadowStore:
             ).fetchone()
             if prior is not None:
                 existing, _, _ = self._verified(db, assignment.shadow_id)
-                if existing != assignment or prior[0] != raw:
-                    raise ValueError("Immutable shadow assignment cannot change")
+                bound_policy = db.execute(
+                    "SELECT blob,sha256 FROM shadow_reality_gap_policies WHERE shadow_id=?",
+                    (assignment.shadow_id,),
+                ).fetchone()
+                if (
+                    existing != assignment
+                    or prior[0] != raw
+                    or bound_policy != (policy_raw, policy_digest)
+                ):
+                    raise ValueError(
+                        "Immutable shadow assignment or reality-gap policy cannot change"
+                    )
                 return existing
-            self._capacity(db, len(raw))
+            self._capacity(db, len(raw) + len(policy_raw))
             if db.execute("SELECT COUNT(*) FROM shadow_assignments").fetchone()[0] >= 1000:
                 raise ValueError("Shadow assignment capacity exceeded")
             db.execute(
@@ -140,6 +194,10 @@ class ShadowStore:
                 (assignment.shadow_id, raw, sha256(raw).hexdigest()),
             )
             db.execute("INSERT INTO shadow_heads VALUES (?,0,?)", (assignment.shadow_id, ZERO))
+            db.execute(
+                "INSERT INTO shadow_reality_gap_policies VALUES (?,?,?)",
+                (assignment.shadow_id, policy_raw, policy_digest),
+            )
             db.commit()
             return assignment
 
@@ -147,6 +205,12 @@ class ShadowStore:
         with closing(sqlite3.connect(self.path, timeout=10)) as db:
             db.execute("BEGIN")
             return self._verified(db, shadow_id)[0]
+
+    def reality_gap_policy(self, shadow_id):
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN")
+            self._verified(db, shadow_id)
+            return self._decode_reality_gap_policy(db, shadow_id)
 
     def latest(self, shadow_id):
         with closing(sqlite3.connect(self.path, timeout=10)) as db:
