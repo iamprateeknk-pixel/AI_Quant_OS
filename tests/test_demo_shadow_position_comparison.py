@@ -120,6 +120,43 @@ def test_demo_shadow_position_comparison_distinguishes_hedged_neutral_from_flat(
     assert comparison.demo_has_instrument_positions is True
 
 
+def test_demo_shadow_comparison_withholds_when_history_starts_inside_shadow_interval(tmp_path):
+    from ai_quant_os.mt5_portfolio_observation import build_portfolio_publication
+    from ai_quant_os.shadow_pipeline import assign_shadow, observe_shadow
+    from ai_quant_os.demo_shadow_position_comparison import compare_demo_shadow_position
+
+    assignment, store, candidates, strategies = shadow_fixture(tmp_path)
+    assign_shadow(assignment, store, candidates, strategies)
+    bars = forward_bars(assignment)
+    bars = tuple(
+        replace(bar, observed_at=NOW - timedelta(minutes=len(bars) - index - 1))
+        for index, bar in enumerate(bars)
+    )
+    report = observe_shadow(
+        assignment.shadow_id,
+        "broker-comparison",
+        bars,
+        store,
+        candidates,
+        strategies,
+    )
+    _, controller, _, _, _, _, _, _ = setup(tmp_path)
+    controller.tick()
+    portfolio = build_portfolio_publication(
+        controller, "84f8730b-d1bd-45e2-9fb5-4d89f6324dcc", clock=lambda: NOW
+    )
+    incomplete_demo = portfolio.record.model_copy(
+        update={"history_start": bars[0].observed_at + timedelta(seconds=1)}
+    )
+
+    comparison = compare_demo_shadow_position(incomplete_demo, report)
+
+    assert comparison.state == "WITHHELD"
+    assert comparison.code == "HISTORY_WINDOW_MISMATCH"
+    assert comparison.demo_position_current_contract_units is None
+    assert comparison.shadow_position_strategy_units is None
+
+
 def test_protected_demo_shadow_endpoint_withholds_noncontemporaneous_sources(tmp_path):
     from fastapi.testclient import TestClient
     from ai_quant_os.api import create_app

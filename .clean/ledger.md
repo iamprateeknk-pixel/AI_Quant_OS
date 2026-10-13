@@ -46,6 +46,10 @@ Current increment: a new protected no-store v2 route adds marked inventory and P
 
 Current increment: a protected PAPER endpoint accepts bounded declared alternatives for an exact verified shadow report, reruns the retained configuration as a reproducibility baseline, and archives the immutable report and source in its own SQLite store. No broker, candidate lifecycle, causal claim, or promotion authority is included. Five focused tests pass; the full suite passed 2,971 tests with 36 skipped in 2,120.09 seconds; Ruff and Bugbot checks pass. See `docs/SHADOW_COUNTERFACTUAL_HANDOFF.md`.
 
+### P09 demo/shadow interval coverage
+
+Current increment: the exact-time demo/shadow direction observation now also requires the declared MT5 history interval to cover every source bar in the selected shadow report. If demo history begins after the first shadow bar, the no-store response withholds both quantities and reports `HISTORY_WINDOW_MISMATCH`; the response exposes both source intervals. Focused demo/shadow, shadow archive and MT5 comparison tests pass (60); the full locked Windows suite passes (2,986 passed, 36 skipped in 1,085.55 seconds); Ruff and formatting pass; Bugbot found no actionable findings. This remains a single-instrument final-position direction observation with unverified native history; fill, PnL, financing, ownership and full live-broker comparison remain open. See `docs/DEMO_SHADOW_POSITION_COMPARISON_HANDOFF.md`.
+
 ## Remaining P09 work
 
 - Full live-broker-versus-shadow comparison with complete candidate/genome and interval coverage.

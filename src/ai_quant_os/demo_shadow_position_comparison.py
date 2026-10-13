@@ -19,7 +19,7 @@ class DemoShadowPositionComparison(ObservationModel):
         "DEMO_HEDGED_NEUTRAL",
         "WITHHELD",
     ]
-    code: Literal["SOURCE_TIME_MISMATCH"] | None
+    code: Literal["SOURCE_TIME_MISMATCH", "HISTORY_WINDOW_MISMATCH"] | None
     broker_id: Literal["EXNESS_MT5_DEMO"]
     mode: Literal["DEMO_OBSERVATION"]
     shadow_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
@@ -29,7 +29,11 @@ class DemoShadowPositionComparison(ObservationModel):
     genome_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     instrument_id: str = Field(min_length=1, max_length=64)
     source_time: AwareDatetime
+    shadow_interval_start: AwareDatetime
+    shadow_interval_end: AwareDatetime
     demo_observed_at: AwareDatetime
+    demo_history_start: AwareDatetime
+    demo_history_through: AwareDatetime
     shadow_source_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     demo_source_receipt_ref: str = Field(pattern=r"^[a-f0-9]{64}$")
     demo_account_scope_ref: str = Field(pattern=r"^[a-f0-9]{64}$")
@@ -64,7 +68,7 @@ class DemoShadowPositionComparison(ObservationModel):
             self.demo_position_current_contract_units,
         )
         if self.state == "WITHHELD":
-            if self.code != "SOURCE_TIME_MISMATCH" or any(
+            if self.code not in {"SOURCE_TIME_MISMATCH", "HISTORY_WINDOW_MISMATCH"} or any(
                 value is not None for value in quantities
             ):
                 raise ValueError("Withheld demo/shadow comparison must omit position values")
@@ -73,6 +77,9 @@ class DemoShadowPositionComparison(ObservationModel):
             self.code is not None
             or any(value is None for value in quantities)
             or self.source_time != self.demo_observed_at
+            or self.shadow_interval_end != self.source_time
+            or self.demo_history_start > self.shadow_interval_start
+            or self.demo_history_through < self.shadow_interval_end
         ):
             raise ValueError("Inconsistent demo/shadow direction comparison")
         shadow_sign = (self.shadow_position_strategy_units > 0) - (
@@ -114,6 +121,8 @@ def compare_demo_shadow_position(
     instrument_positions = tuple(
         position for position in demo.positions if position.instrument_id == instrument_id
     )
+    interval_start = shadow.source_bars[0].observed_at
+    interval_end = shadow.source_bars[-1].observed_at
     identity = {
         "broker_id": demo.broker_id,
         "mode": "DEMO_OBSERVATION",
@@ -124,7 +133,11 @@ def compare_demo_shadow_position(
         "genome_sha256": shadow.assignment.candidate.report.holdout.binding.genome.fingerprint,
         "instrument_id": instrument_id,
         "source_time": source_time,
+        "shadow_interval_start": interval_start,
+        "shadow_interval_end": interval_end,
         "demo_observed_at": demo.observed_at,
+        "demo_history_start": demo.history_start,
+        "demo_history_through": demo.history_through,
         "shadow_source_sha256": shadow.fingerprint,
         "demo_source_receipt_ref": demo.source_receipt_ref,
         "demo_account_scope_ref": demo.account_scope_ref,
@@ -143,6 +156,14 @@ def compare_demo_shadow_position(
         return DemoShadowPositionComparison(
             state="WITHHELD",
             code="SOURCE_TIME_MISMATCH",
+            shadow_position_strategy_units=None,
+            demo_position_current_contract_units=None,
+            **identity,
+        )
+    if demo.history_start > interval_start or demo.history_through < interval_end:
+        return DemoShadowPositionComparison(
+            state="WITHHELD",
+            code="HISTORY_WINDOW_MISMATCH",
             shadow_position_strategy_units=None,
             demo_position_current_contract_units=None,
             **identity,

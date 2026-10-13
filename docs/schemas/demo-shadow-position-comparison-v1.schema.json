@@ -17,7 +17,10 @@
     "code": {
       "anyOf": [
         {
-          "const": "SOURCE_TIME_MISMATCH",
+          "enum": [
+            "SOURCE_TIME_MISMATCH",
+            "HISTORY_WINDOW_MISMATCH"
+          ],
           "type": "string"
         },
         {
@@ -73,9 +76,29 @@
       "title": "Source Time",
       "type": "string"
     },
+    "shadow_interval_start": {
+      "format": "date-time",
+      "title": "Shadow Interval Start",
+      "type": "string"
+    },
+    "shadow_interval_end": {
+      "format": "date-time",
+      "title": "Shadow Interval End",
+      "type": "string"
+    },
     "demo_observed_at": {
       "format": "date-time",
       "title": "Demo Observed At",
+      "type": "string"
+    },
+    "demo_history_start": {
+      "format": "date-time",
+      "title": "Demo History Start",
+      "type": "string"
+    },
+    "demo_history_through": {
+      "format": "date-time",
+      "title": "Demo History Through",
       "type": "string"
     },
     "shadow_source_sha256": {
@@ -203,7 +226,11 @@
     "genome_sha256",
     "instrument_id",
     "source_time",
+    "shadow_interval_start",
+    "shadow_interval_end",
     "demo_observed_at",
+    "demo_history_start",
+    "demo_history_through",
     "shadow_source_sha256",
     "demo_source_receipt_ref",
     "demo_account_scope_ref",
