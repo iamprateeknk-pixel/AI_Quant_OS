@@ -5,6 +5,7 @@ export type RealtimeFrame = {
   instruments: {instrument_id: string; quote_status: string; history_status: string; bar_count: number; regime: string; mid_price:string|null; spread_bps:string|null; return_bps:string|null; realized_volatility_bps:string|null}[];
   currency_twins:{currency:string;instrument_ids:string[];fresh_quote_count:number;macro_available:boolean}[];
 };
+const MAX_FUTURE_CLOCK_SKEW_MS=25;
 function record(v: unknown): v is Record<string,unknown> { return v !== null && typeof v === "object" && !Array.isArray(v); }
 function stamp(v: unknown): v is string {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|\+00:00)$/.test(v) && Number(v.slice(0,4)) >= 1 && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0,19) === v.slice(0,19);
@@ -17,7 +18,7 @@ function numeric(value:unknown,sign:"POSITIVE"|"NONNEGATIVE"|"SIGNED"):value is 
   return Number.isFinite(number) && !(number===0 && nonzero) && (sign==="SIGNED" || (sign==="POSITIVE"?number>0:number>=0));
 }
 export function frameCurrent(frame: RealtimeFrame, now: number): boolean {
-  return Number.isFinite(now) && Date.parse(frame.captured_at) <= now && now < Date.parse(frame.valid_until);
+  return Number.isFinite(now) && Date.parse(frame.captured_at) <= now+MAX_FUTURE_CLOCK_SKEW_MS && now < Date.parse(frame.valid_until);
 }
 export function parseRealtimeFrame(value: unknown, now: number): RealtimeFrame | null {
   if (!record(value) || value.schema_version !== "1.0" || value.mode !== "PAPER" || typeof value.epoch !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(value.epoch) || !Number.isSafeInteger(value.sequence) || (value.sequence as number)<1 || !stamp(value.captured_at) || !stamp(value.valid_until) || !includes(["NORMAL","NO_NEW_RISK","FLATTEN_ONLY","HALT"],value.safety_state) || !Number.isSafeInteger(value.order_count) || (value.order_count as number)<0 || (value.order_count as number)>100000 || !record(value.world)) return null;

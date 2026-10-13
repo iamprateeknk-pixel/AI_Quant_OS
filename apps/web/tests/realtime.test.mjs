@@ -20,6 +20,11 @@ test('realtime parser rejects expired/future/invalid leases and unsafe numbers',
  const m=await module();for(const patch of [{sequence:true},{sequence:2**53},{order_count:-1},{safety_state:'APPROVED'},{mode:'LIVE'},{captured_at:'2026-10-10T00:00:01Z'},{valid_until:'2026-10-10T00:00:04Z'}]) assert.equal(m.parseRealtimeFrame({...frame(),...patch},Date.parse(now)),null);
  assert.equal(m.parseRealtimeFrame(frame(),Date.parse(now)+3000),null);
 });
+test('realtime frame allows only a bounded 25ms same-host future clock skew',async()=>{
+ const m=await module(),raw=frame(),parsed=m.parseRealtimeFrame(raw,Date.parse(now)-25);assert(parsed);
+ assert.equal(m.parseRealtimeFrame(raw,Date.parse(now)-26),null);
+ assert.equal(m.frameCurrent(parsed,Date.parse(raw.valid_until)),false);
+});
 test('sequence regressions and unexpected epochs cannot replace accepted state',async()=>{
  const m=await module(),first=m.parseRealtimeFrame(frame(),Date.parse(now));assert(first);
  assert.equal(m.acceptRealtimeFrame(first,first,false),false);
@@ -65,6 +70,9 @@ test('populated protected backend features survive proxy validation without roun
 test('stream proxy identifies stale frame leases and mismatched event IDs without echoing payloads',async()=>{
  const proxy=await proxyModule(),raw=frame();
  const event=(id)=>new Response(`id: ${id}\nevent: reset\ndata: ${JSON.stringify(raw)}\n\n`,{headers:{'Content-Type':'text/event-stream'}});
- await assert.rejects(proxy.proxyRealtimeResponse(event(`${raw.epoch}:1`),new AbortController().signal,()=>Date.parse(now)+3001).text(),/Realtime frame is invalid or expired/);
+ const tolerated=await proxy.proxyRealtimeResponse(event(`${raw.epoch}:1`),new AbortController().signal,()=>Date.parse(now)-8).text();assert(tolerated.includes('event: reset'));
+ await assert.rejects(proxy.proxyRealtimeResponse(event(`${raw.epoch}:1`),new AbortController().signal,()=>Date.parse(now)+3001).text(),/Realtime frame expired by 1ms/);
+ const future={...raw,captured_at:'2026-10-10T00:00:00.001Z'};
+ await assert.rejects(proxy.proxyRealtimeResponse(new Response(`id: ${future.epoch}:1\nevent: reset\ndata: ${JSON.stringify(future)}\n\n`,{headers:{'Content-Type':'text/event-stream'}}),new AbortController().signal,()=>Date.parse(now)).text(),/Realtime frame timestamp is in the future by 1ms/);
  await assert.rejects(proxy.proxyRealtimeResponse(event(`${raw.epoch}:2`),new AbortController().signal,()=>Date.parse(now)).text(),/Realtime event ID mismatch/);
 });

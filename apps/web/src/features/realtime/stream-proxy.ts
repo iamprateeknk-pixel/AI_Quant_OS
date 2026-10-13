@@ -29,8 +29,14 @@ export function proxyRealtimeResponse(upstream: Response, signal: AbortSignal, c
             }
             const reset=fields.get("event")==="reset";
             if(!reset && fields.get("event")!=="snapshot") throw new Error("Invalid realtime event type");
-            const raw=JSON.parse(fields.get("data")??"null"), frame=parseRealtimeFrame(raw,clock());
-            if(!frame) throw new Error("Realtime frame is invalid or expired");
+            const raw=JSON.parse(fields.get("data")??"null"), now=clock(), frame=parseRealtimeFrame(raw,now);
+            if(!frame){
+              const capturedAt=raw&&typeof raw==="object"&&typeof raw.captured_at==="string"?Date.parse(raw.captured_at):Number.NaN;
+              const validUntil=raw&&typeof raw==="object"&&typeof raw.valid_until==="string"?Date.parse(raw.valid_until):Number.NaN;
+              if(Number.isFinite(validUntil)&&now>=validUntil) throw new Error(`Realtime frame expired by ${Math.max(1,Math.ceil(now-validUntil))}ms`);
+              if(Number.isFinite(capturedAt)&&capturedAt>now) throw new Error(`Realtime frame timestamp is in the future by ${Math.max(1,Math.ceil(capturedAt-now))}ms`);
+              throw new Error("Realtime frame contract rejected");
+            }
             if(fields.get("id")!==`${frame.epoch}:${frame.sequence}`) throw new Error("Realtime event ID mismatch");
             if(!acceptRealtimeFrame(previous,frame,reset)) throw new Error("Realtime event order rejected");
             previous=frame;
