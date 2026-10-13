@@ -31,8 +31,22 @@ class DailyPublicationInput(BaseModel):
     closing_checkpoint_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
 
 
+class DailyShadowComparisonInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    shadow_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
+    sequence: int = Field(strict=True, ge=2, le=1000)
+
+
 def install_daily_routes(
-    app, paper_path: Path | None, require_operator, ledger, execution_ledger, quotes, catalog, clock
+    app,
+    paper_path: Path | None,
+    require_operator,
+    ledger,
+    execution_ledger,
+    quotes,
+    catalog,
+    clock,
+    research_workspace: Path | None = None,
 ):
     def store():
         if paper_path is None:
@@ -164,3 +178,46 @@ def install_daily_routes(
             return response(value)
         except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
             raise HTTPException(503, "Daily execution attribution could not be verified") from error
+
+    @app.post(
+        "/api/v1/paper/evidence/daily/{day}/shadow-comparison",
+        dependencies=[Depends(require_operator)],
+    )
+    def daily_shadow_comparison(day: date, payload: DailyShadowComparisonInput):
+        try:
+            daily_execution = store().daily_execution(day)
+        except EvidenceIntegrityError as error:
+            raise HTTPException(503, "Daily execution evidence could not be verified") from error
+        except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Daily execution evidence could not be verified") from error
+        if daily_execution is None:
+            raise HTTPException(404, "Unknown daily execution attribution")
+        if research_workspace is None:
+            raise HTTPException(503, "Shadow evidence workspace is disabled")
+        shadow_path = research_workspace / "shadow.sqlite3"
+        if not shadow_path.is_file():
+            raise HTTPException(404, "Unknown shadow portfolio")
+        try:
+            from ai_quant_os.shadow_store import ShadowStore
+
+            shadow_store = ShadowStore(shadow_path)
+            if shadow_store.lookup(payload.shadow_id) is None:
+                raise HTTPException(404, "Unknown shadow portfolio")
+            history = shadow_store.history(payload.shadow_id)
+        except HTTPException:
+            raise
+        except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Shadow evidence could not be verified") from error
+        if payload.sequence > len(history):
+            raise HTTPException(404, "Unknown shadow observation sequence")
+        prior, current = history[payload.sequence - 2 : payload.sequence]
+        try:
+            from ai_quant_os.paper_shadow_comparison import compare_daily_paper_to_shadow
+
+            return response(compare_daily_paper_to_shadow(daily_execution, prior, current))
+        except ValueError as error:
+            raise HTTPException(
+                409, "PAPER/shadow evidence does not link to this UTC day"
+            ) from error
+        except ArithmeticError as error:
+            raise HTTPException(409, "PAPER/shadow amounts cannot be compared exactly") from error

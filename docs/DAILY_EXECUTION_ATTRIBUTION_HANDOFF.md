@@ -26,6 +26,8 @@ The embedded `ExecutionContributionReport` uses the existing midpoint, side-quot
 
 This does not provide fill-time market quotes, latency attribution, financing, restatements or shadow aggregation. Manual paper fills remain labelled as such. An empty day can publish an `EMPTY` report. None of these records approve a candidate, change risk, or grant broker/live authority.
 
+For candidate-bound fill cash/fee comparison against an exact same-day shadow batch, see `PAPER_SHADOW_COMPARISON_HANDOFF.md`. That diagnostic requires two consecutive linked shadow reports and does not compare marked equity or infer causality.
+
 ## Verification and rollback
 
 `pytest -q tests/test_daily_execution_aggregation.py tests/test_daily_execution_evidence.py tests/test_daily_evidence.py tests/test_daily_scheduler.py` covers exact decomposition, missing and lookahead benchmarks, changed historical sources, immutable retries, restart/corruption, authorization and the actual API/schema response.

@@ -303,6 +303,17 @@ class ShadowStore:
             db.execute("BEGIN")
             return self._verified(db, shadow_id)[1]
 
+    def history(self, shadow_id):
+        """Return the verified completed shadow reports in sequence order."""
+        with closing(sqlite3.connect(self.path, timeout=10)) as db:
+            db.execute("BEGIN")
+            _, _, entries = self._verified(db, shadow_id)
+            ordered = sorted(entries.values(), key=lambda entry: entry[3])
+            reports = tuple(entry[2] for entry in ordered)
+            if any(report is None for report in reports):
+                raise ValueError("Unfinished shadow reservation blocks history reads")
+            return reports
+
     def retirement(self, shadow_id):
         with closing(sqlite3.connect(self.path, timeout=10)) as db:
             db.execute("BEGIN")

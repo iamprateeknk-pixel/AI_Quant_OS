@@ -97,6 +97,23 @@ def test_shadow_cached_restart_and_changed_command_refusal(tmp_path, monkeypatch
         )
 
 
+def test_shadow_store_returns_a_verified_history_for_period_comparison(tmp_path):
+    from ai_quant_os.shadow_pipeline import assign_shadow, observe_shadow
+    from ai_quant_os.shadow_store import ShadowStore
+
+    assignment, store, candidates, strategies = shadow_fixture(tmp_path)
+    assign_shadow(assignment, store, candidates, strategies)
+    bars = forward_bars(assignment)
+    first = observe_shadow(
+        assignment.shadow_id, "batch-one", bars[:3], store, candidates, strategies
+    )
+    second = observe_shadow(
+        assignment.shadow_id, "batch-two", bars[3:], store, candidates, strategies
+    )
+
+    assert ShadowStore(store.path).history(assignment.shadow_id) == (first, second)
+
+
 def test_shadow_retirement_is_durable_idempotent_and_blocks_new_observations(tmp_path):
     from ai_quant_os.shadow_pipeline import assign_shadow, observe_shadow
     from ai_quant_os.shadow_store import ShadowStore

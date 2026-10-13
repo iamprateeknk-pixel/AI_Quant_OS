@@ -2448,6 +2448,7 @@ def create_app(
         lambda: tuple(quotes.copy().values()),
         PAPER_INSTRUMENTS,
         current_time,
+        configured_research_workspace,
     )
     install_research_routes(
         app,
