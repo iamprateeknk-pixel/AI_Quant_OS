@@ -12,7 +12,7 @@ The backend accepts only the PAPER broker ID, requires durable state storage, se
 - Web suite passes 179 tests; ESLint and the production build with TypeScript pass.
 - Full backend suite status is recorded in `BUILD_STATUS.md`; failures outside this feature must be triaged before release.
 - Authenticated production-build browser acceptance passed in the isolated PAPER database: the operator disabled new-order admission with a reason and reauthentication, received a durable receipt, then enabled it again and received a second receipt. The final displayed state was ENABLED. Screenshot: `apps/web/output/playwright/broker-route-control-smoke/broker-route-control-enabled.png` (local ignored output).
-- The same browser run exposed intermittent errors in the separate realtime SSE proxy (`Invalid realtime state`). The proxy now reports the rejected validation category to server diagnostics without logging or returning payloads, and tests cover expired leases and mismatched event IDs. A fresh live reproduction is still needed to identify the category and confirm the stream fix; realtime acceptance is not claimed.
+- The same browser run exposed intermittent errors in the separate realtime SSE proxy (`Invalid realtime state`). The proxy now reports the rejected validation category to server diagnostics without logging or returning payloads, and tests cover expired leases and mismatched event IDs. In a fresh production-build run, the authenticated Next.js proxy delivered all 20 backend frames over 19.2 seconds. The signed-in dashboard continued updating over two stream cycles during a 45-second browser observation, and neither server logged the earlier error. Its original cause remains unknown; the failure was not reproduced.
 
 ## Remaining release work
 
