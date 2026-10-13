@@ -1436,7 +1436,7 @@ Broker/agent and deterministic-domain import checks now report non-literal impor
 
 
 ### P00 agent and strategy broker boundary coverage (2026-10-12)
-The broker/execution import guard now discovers every package module whose filename contains gent or strategy, including strategy implementations and contracts previously omitted from the explicit list. Non-literal dynamic import attempts are rejected as unresolved across the discovered sources. Fresh isolated archive verification: 6 architecture tests passed; Ruff check and format passed. Static import scanning still does not prove the full runtime call graph. P00 remains open.
+The broker/execution import guard now discovers every package module whose filename contains agent or strategy, including strategy implementations and contracts previously omitted from the explicit list. Non-literal dynamic import attempts are rejected as unresolved across the discovered sources. Fresh isolated archive verification: 6 architecture tests passed; Ruff check and format passed. Static import scanning still does not prove the full runtime call graph. P00 remains open.
 
 
 ### P00 strict agent output schema admission (2026-10-12)
