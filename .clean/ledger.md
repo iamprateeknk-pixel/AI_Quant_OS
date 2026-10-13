@@ -18,11 +18,15 @@ Current increment: a protected operator API compares observed fill cash and fees
 
 Focused API, comparison, archive-integrity, shadow history, daily evidence, architecture and schema tests pass. Bugbot review reported no remaining actionable findings. The full suite passed 2,965 tests with 36 skipped in 1,064.95 seconds. Ruff and formatting checks passed earlier in the increment; rerun final checks before commit.
 
+### P09 reality-gap alert polling feed
+
+Current increment: a protected no-cache operator endpoint derives `DEMOTION_REQUIRED` alerts from verified retained shadow reports and the immutable assignment policy. It stays readable after restart and returns source hashes and the measured threshold. The API has no external notification or acknowledgement semantics. Twenty focused reality-gap, shadow, and API tests pass. Bugbot found no actionable findings. The full suite passed 2,966 tests with 36 skipped in 1,150.98 seconds; Ruff lint/format checks and BUILD_STATUS.md CP1252/CRLF validation pass.
+
 ## Remaining P09 work
 
 - Full live-broker-versus-shadow comparison with complete candidate/genome and interval coverage.
 - Agent contribution attribution; do not infer agent causality because advisory A12/A13 are disconnected from order creation.
-- Reality-gap alert delivery and production shadow market ingress/scheduling.
+- External reality-gap notification delivery and production shadow market ingress/scheduling.
 - Financing/restatements and production schedule retention/recovery evidence.
 - Broader daily execution/shadow attribution, forward counterfactual integration, complete P09 acceptance checklist and independent release evidence.
 
@@ -32,4 +36,4 @@ P00-P13 and overall release gates remain incomplete. Continue with the next expl
 
 ## Rollback
 
-Revert the specific increment commit to remove its API and admission path. The candidate assignment database change is additive; rollback leaves its records inert, and those records must not be deleted as part of code rollback. The current daily comparison increment reads existing daily and shadow evidence and does not rewrite those archives.
+Revert the specific increment commit to remove its API and admission path. The candidate assignment database change is additive; rollback leaves its records inert, and those records must not be deleted as part of code rollback. The daily comparison and reality-gap alert increments read retained evidence and do not rewrite those archives.

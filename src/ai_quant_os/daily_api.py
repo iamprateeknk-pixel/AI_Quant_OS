@@ -1,6 +1,7 @@
 """Operator-protected captures and publication from server-owned paper sources."""
 
 from datetime import date
+import json
 from pathlib import Path
 import sqlite3
 
@@ -221,3 +222,48 @@ def install_daily_routes(
             ) from error
         except ArithmeticError as error:
             raise HTTPException(409, "PAPER/shadow amounts cannot be compared exactly") from error
+
+    @app.get(
+        "/api/v1/paper/shadows/{shadow_id}/reality-gap-alerts",
+        dependencies=[Depends(require_operator)],
+    )
+    def shadow_reality_gap_alerts(shadow_id: str):
+        if research_workspace is None:
+            raise HTTPException(503, "Shadow evidence workspace is disabled")
+        shadow_path = research_workspace / "shadow.sqlite3"
+        if not shadow_path.is_file():
+            raise HTTPException(404, "Unknown shadow portfolio")
+        try:
+            from ai_quant_os.shadow_reality_gap import assess_shadow_reality_gap
+            from ai_quant_os.shadow_store import ShadowStore
+
+            shadow_store = ShadowStore(shadow_path)
+            if shadow_store.lookup(shadow_id) is None:
+                raise HTTPException(404, "Unknown shadow portfolio")
+            policy = shadow_store.reality_gap_policy(shadow_id)
+            alerts = []
+            if policy is not None:
+                for report in shadow_store.history(shadow_id):
+                    assessment = assess_shadow_reality_gap(report, policy)
+                    if assessment.state == "DEMOTION_REQUIRED":
+                        alerts.append(
+                            {
+                                "candidate_id": assessment.candidate_id,
+                                "shadow_id": assessment.shadow_id,
+                                "sequence": report.sequence,
+                                "report_sha256": assessment.report_sha256,
+                                "policy_ref": policy.content_ref,
+                                "gap_bps": str(assessment.gap_bps),
+                                "threshold_bps": str(policy.adverse_gap_threshold_bps),
+                                "state": assessment.state,
+                            }
+                        )
+            return Response(
+                json.dumps({"alerts": alerts}, sort_keys=True, separators=(",", ":")),
+                media_type="application/json",
+                headers={"Cache-Control": "no-store"},
+            )
+        except HTTPException:
+            raise
+        except (ValueError, TypeError, KeyError, ArithmeticError, OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Shadow alert evidence could not be verified") from error

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-quant-os.local/schemas/paper-shadow-reality-gap-alerts-v1.schema.json",
+  "title": "Paper shadow reality gap alerts v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["alerts"],
+  "properties": {
+    "alerts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "shadow_id",
+          "sequence",
+          "report_sha256",
+          "policy_ref",
+          "gap_bps",
+          "threshold_bps",
+          "state"
+        ],
+        "properties": {
+          "candidate_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "shadow_id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"},
+          "sequence": {"type": "integer", "minimum": 1, "maximum": 1000},
+          "report_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "policy_ref": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "gap_bps": {"type": "string", "pattern": "^-?[0-9]+\\.[0-9]{6}$"},
+          "threshold_bps": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{6}$"},
+          "state": {"const": "DEMOTION_REQUIRED"}
+        }
+      }
+    }
+  }
+}
