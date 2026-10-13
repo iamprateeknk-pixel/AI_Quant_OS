@@ -282,4 +282,13 @@ def load_agent_catalog() -> AgentRegistry:
             }
         )
     )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A16", "0.2.0").model_dump(),
+                "agent_version": "0.3.0",
+                "output_type": "RepairCandidateV3",
+            }
+        )
+    )
     return registry

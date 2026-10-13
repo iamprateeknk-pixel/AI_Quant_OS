@@ -2,21 +2,21 @@
 
 ## Current state
 
-A16 0.2.0 is PARTIAL/SHADOW in the protected paper agent graph. It returns a bounded health and repair readiness report from the current watchdog status. It never creates a repair candidate, stages a workspace, launches a verifier, changes service state, or promotes code.
+A16 0.2.0 remains PARTIAL/SHADOW with its original summary-only contract. A16 0.3.0 adds a bounded, read-only view of the verified health incident journal and is also PARTIAL/SHADOW. Neither version creates a repair candidate, stages a workspace, launches a verifier, changes service state, or promotes code.
 
 ## Evidence limits
 
-- Health is `UNAVAILABLE`, `RESTORED_ONLY`, `MONITORED`, or `ERROR`; only the status and open incident count are exposed.
+- Health is `UNAVAILABLE`, `RESTORED_ONLY`, `MONITORED`, or `ERROR`. A16 0.3.0 binds the count to one verified incident-store snapshot.
 - Trace history and code-test receipts are explicit unavailable markers.
-- Incident context may include only a summary count, never incident details.
-- The agent always returns `WAIT_FOR_EVIDENCE`, zero confidence, and an empty repair plan.
+- A16 0.2.0 receives only an incident count. A16 0.3.0 receives at most eight most-recent incident IDs, failure codes, detection times, and exact agent manifest pins. Incident subjects and raw evidence are omitted. Missing or truncated incident details remain blockers.
+- Both versions always return `WAIT_FOR_EVIDENCE`, zero confidence, and an empty repair plan.
 
 The existing repair workspace, verifier, and container ownership machinery remain separate. A16 does not invoke those facilities and does not infer that they prove a repair is safe.
 
 ## Acceptance evidence
 
-The focused locked Windows suite covers the A16 source/output contract, protected graph route, catalog and context admission, and neighboring repair preparation/replay boundaries. See `docs/evaluations/health-repair-agent-0172.json`.
+The A16 0.2.0 acceptance record is `docs/evaluations/health-repair-agent-0172.json`. The 0.3.0 increment adds source/output bounds and protected graph tests; see `docs/evaluations/health-repair-agent-0203.json` and ADR 0203.
 
 ## Remaining work
 
-Connect attributable traces, test receipts, and bounded incident context; produce isolated repair proposals with explicit regression plans; and add independent behavior and cleanup acceptance. Shadow/canary release and all remaining P00–P13 gates stay open.
+Connect attributable traces and test receipts; produce isolated repair proposals with explicit regression plans; and add independent behavior and cleanup acceptance. Shadow/canary release and all remaining P00–P13 gates stay open.

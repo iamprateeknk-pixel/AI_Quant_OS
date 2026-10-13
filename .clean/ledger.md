@@ -74,6 +74,10 @@ Current increment: an opt-in application-lifespan worker advances verified, non-
 
 P00-P13 and overall release gates remain incomplete. Continue with the next explicitly listed phase gaps after this P09 increment; preserve paper-only boundaries and do not claim production, promotion, or live-broker evidence without it.
 
+### A16 verified incident context increment
+
+Added A16 0.3.0 while preserving the 0.2.0 contract. The new version projects at most eight verified health incident IDs, codes, timestamps, and agent manifest pins; raw evidence and subjects are omitted. It still blocks on missing trace/test receipts and cannot create or promote repairs. Finish full-suite, lint, format, and diff verification, then continue the remaining P10 and P00-P13 requirements. See ADR 0203.
+
 ## Rollback
 
 Revert the specific increment commit to remove its API and admission path. The candidate assignment database change is additive; rollback leaves its records inert, and those records must not be deleted as part of code rollback. The daily comparison and reality-gap alert increments read retained evidence and do not rewrite those archives. The multi-batch comparison change has no persisted state; rollback only restores the prior route/domain selection behavior.

@@ -683,6 +683,7 @@ def create_app(
                     ("A14", "0.2.0"): drift_implementation(agent_registry),
                     ("A15", "0.2.0"): counterfactual_implementation(agent_registry),
                     ("A16", "0.2.0"): repair_implementation(agent_registry),
+                    ("A16", "0.3.0"): repair_implementation(agent_registry, "0.3.0"),
                     ("A17", "0.2.0"): evolution_implementation(agent_registry),
                     ("A18", "0.2.0"): incident_implementation(agent_registry),
                 },
@@ -1476,6 +1477,10 @@ def create_app(
             "0.2.0",
         )
         repair_mission = (payload.agent_id, payload.agent_version) == ("A16", "0.2.0")
+        repair_details_mission = (payload.agent_id, payload.agent_version) == (
+            "A16",
+            "0.3.0",
+        )
         evolution_mission = (payload.agent_id, payload.agent_version) == ("A17", "0.2.0")
         context_quotes = tuple(quotes.copy().values())
         snapshot = (
@@ -1595,10 +1600,15 @@ def create_app(
                 sources = counterfactual_sources(
                     report, replay_id=payload.task_id, now=current_time()
                 )
-            elif repair_mission:
+            elif repair_mission or repair_details_mission:
                 try:
                     health = (
                         await asyncio.to_thread(health_worker.status) if health_worker else None
+                    )
+                    incidents = (
+                        await asyncio.to_thread(health_worker.store.incidents)
+                        if health_worker and repair_details_mission
+                        else None
                     )
                 except (ValueError, OSError, sqlite3.Error) as error:
                     raise HTTPException(503, "Health evidence unavailable") from error
@@ -1611,9 +1621,17 @@ def create_app(
                         else "MONITORED"
                         if enabled_health
                         else "RESTORED_ONLY",
-                        open_incidents=health["open_incidents"] if health else None,
+                        open_incidents=(
+                            len(incidents)
+                            if repair_details_mission and incidents is not None
+                            else health["open_incidents"]
+                            if health
+                            else None
+                        ),
+                        incidents=incidents,
                     ),
                     now=current_time(),
+                    include_incidents=repair_details_mission,
                 )
             elif evolution_mission:
                 sources = evolution_sources(agent_registry, now=current_time())

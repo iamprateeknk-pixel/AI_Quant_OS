@@ -1,0 +1,33 @@
+{
+  "increment": "0203",
+  "mission": "A16 Health & Repair Agent 0.3.0",
+  "scope": "Read-only verified incident identity context, bounded to eight records",
+  "checks": {
+    "focused_tests": {
+      "result": "PASS",
+      "passed": 156,
+      "failed": 0,
+      "groups": [
+        "A16 source and output contracts across 0.2.0 and 0.3.0",
+        "protected graph execution with unavailable and verified incident context",
+        "registry, context, and graph runtime contracts"
+      ]
+    },
+    "ruff_check": "PASS",
+    "ruff_format": "PASS",
+    "full_suite": {
+      "result": "PASS",
+      "passed": 3009,
+      "skipped": 36,
+      "elapsed_seconds": 1151.23
+    }
+  },
+  "limitations": [
+    "Trace archives and code-test receipts are not connected.",
+    "Incident subjects and raw evidence are intentionally excluded.",
+    "The mission creates no repair candidate and always returns WAIT_FOR_EVIDENCE.",
+    "No verifier, replacement code, repair workspace, deployment, or promotion is invoked.",
+    "Independent A16 acceptance and all P00-P13 release gates remain open."
+  ],
+  "promotion": "NOT_AUTHORIZED"
+}

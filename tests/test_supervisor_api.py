@@ -132,7 +132,7 @@ def test_supervisor_calls_six_actual_specialists_and_retains_receipts_after_rest
 def test_supervisor_manifest_is_partial_and_original_is_still_planned(tmp_path):
     with TestClient(create_app(paper_db_path=tmp_path / "paper.sqlite3")) as client:
         agents = client.get("/api/v1/agents/registry").json()["agents"]
-        assert len(agents) == 38
+        assert len(agents) == 39
         rows = {row["agent_version"]: row for row in agents if row["agent_id"] == "A01"}
         assert rows["0.1.0"]["implementation_status"] == "PLANNED"
         assert rows["0.2.0"]["implementation_status"] == "PARTIAL"
