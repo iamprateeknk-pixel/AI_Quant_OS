@@ -71,9 +71,7 @@ class OperatorAuthorization:
         if not token:
             raise HTTPException(401, "Operator session required")
         try:
-            grant = self._available_store().authenticate(
-                token, self._clock(), self._epoch
-            )
+            grant = self._available_store().authenticate(token, self._clock(), self._epoch)
         except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
             raise HTTPException(503, "Operator session journal could not be verified") from error
         if grant is None:

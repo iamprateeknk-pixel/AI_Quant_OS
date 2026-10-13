@@ -61,7 +61,9 @@ class PaperStateStore:
                     receipt_json TEXT NOT NULL
                 )"""
             )
-            self._connection.execute("CREATE TABLE IF NOT EXISTS operator_reservations (action_key TEXT PRIMARY KEY, pending_json TEXT NOT NULL)")
+            self._connection.execute(
+                "CREATE TABLE IF NOT EXISTS operator_reservations (action_key TEXT PRIMARY KEY, pending_json TEXT NOT NULL)"
+            )
             self._connection.execute(
                 """CREATE TABLE IF NOT EXISTS broker_route_state (
                     broker_id TEXT PRIMARY KEY,
@@ -239,11 +241,7 @@ class PaperStateStore:
                 raise ValueError("Broker route runtime and durable state differ")
             accepted = expected_enabled is current_enabled and rejection_reason is None
             authoritative_enabled = requested_enabled if accepted else current_enabled
-            denied_reason = (
-                None
-                if accepted
-                else rejection_reason or "STALE_STATE"
-            )
+            denied_reason = None if accepted else rejection_reason or "STALE_STATE"
             result = {
                 **receipt,
                 "decision": "ACCEPTED" if accepted else "REJECTED",
@@ -361,14 +359,23 @@ class PaperStateStore:
                 event = self._connection.execute(
                     "SELECT event_json FROM audit_events WHERE event_key=?", (f"control:{key}",)
                 ).fetchone()
-                if event is None or json.loads(event[0]).get("receipt_sha256") != sha256(row[0].encode()).hexdigest():
+                if (
+                    event is None
+                    or json.loads(event[0]).get("receipt_sha256")
+                    != sha256(row[0].encode()).hexdigest()
+                ):
                     raise ValueError("Operator receipt audit binding mismatch")
                 return json.loads(row[0])
             return None
 
     def record_control(
-        self, key: str, state: SafetyState, reason: str, receipt: dict[str, str],
-        *, expected_state: SafetyState | None = None,
+        self,
+        key: str,
+        state: SafetyState,
+        reason: str,
+        receipt: dict[str, str],
+        *,
+        expected_state: SafetyState | None = None,
     ) -> None:
         event = {
             "action": state.value,
@@ -380,14 +387,18 @@ class PaperStateStore:
             self._connection.execute("BEGIN IMMEDIATE")
             if expected_state is not None:
                 self._check_operator_reservation(key, receipt)
-                current = SafetyState(self._connection.execute(
-                    "SELECT safety_state FROM safety_current WHERE singleton=1"
-                ).fetchone()[0])
+                current = SafetyState(
+                    self._connection.execute(
+                        "SELECT safety_state FROM safety_current WHERE singleton=1"
+                    ).fetchone()[0]
+                )
                 if current != expected_state:
                     raise ValueError("Expected safety state does not match current state")
                 if list(SafetyState).index(state) < list(SafetyState).index(current):
                     raise ValueError("Safety state recovery requires a separate gated workflow")
-                event["receipt_sha256"] = sha256(json.dumps(receipt, sort_keys=True).encode()).hexdigest()
+                event["receipt_sha256"] = sha256(
+                    json.dumps(receipt, sort_keys=True).encode()
+                ).hexdigest()
             self._escalate(state)
             self._connection.execute(
                 "INSERT INTO control_receipts VALUES (?, ?, ?, ?)",
@@ -396,19 +407,35 @@ class PaperStateStore:
             self._audit_chain.append(f"control:{key}", event)
 
     def _operator_pending(self, key: str) -> dict | None:
-        row = self._connection.execute("SELECT pending_json FROM operator_reservations WHERE action_key=?", (key,)).fetchone()
-        event = self._connection.execute("SELECT event_json FROM audit_events WHERE event_key=?", ("operator-reserved:" + key,)).fetchone()
+        row = self._connection.execute(
+            "SELECT pending_json FROM operator_reservations WHERE action_key=?", (key,)
+        ).fetchone()
+        event = self._connection.execute(
+            "SELECT event_json FROM audit_events WHERE event_key=?", ("operator-reserved:" + key,)
+        ).fetchone()
         if row is None and event is None:
             return None
-        if row is None or event is None or len(row[0]) > 2048 or json.loads(event[0]).get("receipt_sha256") != sha256(row[0].encode()).hexdigest():
+        if (
+            row is None
+            or event is None
+            or len(row[0]) > 2048
+            or json.loads(event[0]).get("receipt_sha256") != sha256(row[0].encode()).hexdigest()
+        ):
             raise ValueError("Operator reservation audit binding mismatch")
         return json.loads(row[0])
 
     def _check_operator_reservation(self, key: str, receipt: dict) -> None:
         pending = self._operator_pending(key)
-        if pending is not None and any(pending[field] != receipt[field] for field in (
-            "receipt_id", "action_id", "operator_session_id", "request_sha256", "trace_id"
-        )):
+        if pending is not None and any(
+            pending[field] != receipt[field]
+            for field in (
+                "receipt_id",
+                "action_id",
+                "operator_session_id",
+                "request_sha256",
+                "trace_id",
+            )
+        ):
             raise ValueError("Terminal receipt does not match original reservation")
 
     def operator_pending(self, key: str) -> dict | None:
@@ -421,25 +448,40 @@ class PaperStateStore:
         with self._lock, self._connection:
             self._connection.execute("BEGIN IMMEDIATE")
             self._audit_chain.require_valid()
-            if self._connection.execute("SELECT 1 FROM control_receipts WHERE idempotency_key=?", (key,)).fetchone():
+            if self._connection.execute(
+                "SELECT 1 FROM control_receipts WHERE idempotency_key=?", (key,)
+            ).fetchone():
                 return None
             prior = self._operator_pending(key)
             if prior is not None:
                 if prior["request_sha256"] != receipt["request_sha256"]:
-                    raise OperatorReservationConflict("Action identity reused with a different command")
+                    raise OperatorReservationConflict(
+                        "Action identity reused with a different command"
+                    )
                 return prior
-            if self._connection.execute("SELECT COUNT(*) FROM operator_reservations").fetchone()[0] >= 4096:
+            if (
+                self._connection.execute("SELECT COUNT(*) FROM operator_reservations").fetchone()[0]
+                >= 4096
+            ):
                 raise ValueError("Operator reservation capacity exceeded")
-            current = self._connection.execute("SELECT safety_state FROM safety_current WHERE singleton=1").fetchone()[0]
+            current = self._connection.execute(
+                "SELECT safety_state FROM safety_current WHERE singleton=1"
+            ).fetchone()[0]
             result = {**receipt, "previous_state": current, "authoritative_state": current}
             raw = json.dumps(result, sort_keys=True)
             if len(raw.encode()) > 2048 or result["decision"] != "PENDING":
                 raise ValueError("Bounded pending receipt required")
             self._connection.execute("INSERT INTO operator_reservations VALUES (?,?)", (key, raw))
-            self._audit_chain.append("operator-reserved:" + key, {
-                "action": "OPERATOR_CONTROL_RESERVED", "intent_id": "", "reason": reason,
-                "trace_id": result["receipt_id"], "receipt_sha256": sha256(raw.encode()).hexdigest(),
-            })
+            self._audit_chain.append(
+                "operator-reserved:" + key,
+                {
+                    "action": "OPERATOR_CONTROL_RESERVED",
+                    "intent_id": "",
+                    "reason": reason,
+                    "trace_id": result["receipt_id"],
+                    "receipt_sha256": sha256(raw.encode()).hexdigest(),
+                },
+            )
             return result
 
     def record_operator_rejection(self, key: str, reason: str, receipt: dict) -> None:
@@ -455,11 +497,19 @@ class PaperStateStore:
             ).fetchone()[0]
             if receipt["previous_state"] != current or receipt["authoritative_state"] != current:
                 raise ValueError("Safety state changed before rejection publication")
-            self._connection.execute("INSERT INTO control_receipts VALUES (?,?,?,?)", (key, current, reason, raw))
-            self._audit_chain.append(f"control:{key}", {
-                "action": "OPERATOR_CONTROL_REJECTED", "intent_id": "", "reason": reason,
-                "trace_id": receipt["receipt_id"], "receipt_sha256": sha256(raw.encode()).hexdigest(),
-            })
+            self._connection.execute(
+                "INSERT INTO control_receipts VALUES (?,?,?,?)", (key, current, reason, raw)
+            )
+            self._audit_chain.append(
+                f"control:{key}",
+                {
+                    "action": "OPERATOR_CONTROL_REJECTED",
+                    "intent_id": "",
+                    "reason": reason,
+                    "trace_id": receipt["receipt_id"],
+                    "receipt_sha256": sha256(raw.encode()).hexdigest(),
+                },
+            )
 
     def recovery_receipt(self, key: str) -> tuple[str, dict[str, str]] | None:
         with self._lock:
@@ -525,7 +575,6 @@ class PaperStateStore:
             run = self._agent_runs.get(run_id)
             self._agent_trace_bindings.get(run_id, run)
             return run
-
 
     def agent_trace_binding(self, run_id: str) -> AgentTraceBinding | None:
         with self._lock, self._connection:

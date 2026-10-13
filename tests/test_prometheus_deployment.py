@@ -239,9 +239,7 @@ def test_actual_prometheus_ingests_sdk_buckets_and_reports_revoked_scrape_withou
                             assert login.status_code == 201
                             history_response = operator.get(
                                 paper_base + "/api/v1/observability/incidents",
-                                headers={
-                                    "X-Operator-Session": login.json()["session_token"]
-                                },
+                                headers={"X-Operator-Session": login.json()["session_token"]},
                             )
                             assert history_response.status_code == 200
                             history = history_response.json()

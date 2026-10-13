@@ -517,9 +517,7 @@ def create_app(
         ]
     )
     try:
-        router.set_enabled(
-            "PAPER", state_store.broker_route_enabled("PAPER", default_enabled=True)
-        )
+        router.set_enabled("PAPER", state_store.broker_route_enabled("PAPER", default_enabled=True))
     except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
         raise ValueError("Persistent PAPER broker route state could not be verified") from error
     execution = PaperExecutionGateway(

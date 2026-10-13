@@ -41,9 +41,12 @@ def test_broker_route_control_is_durable_idempotent_and_audited(tmp_path):
     assert accepted["previous_enabled"] is True
     assert accepted["authoritative_enabled"] is False
     assert store.broker_route_enabled("PAPER", default_enabled=True) is False
-    assert store.record_broker_route_control(
-        "broker-route:" + receipt["action_id"], "maintenance", receipt, current_enabled=False
-    ) == accepted
+    assert (
+        store.record_broker_route_control(
+            "broker-route:" + receipt["action_id"], "maintenance", receipt, current_enabled=False
+        )
+        == accepted
+    )
     reopened = PaperStateStore(path)
     assert reopened.broker_route_enabled("PAPER", default_enabled=True) is False
     assert reopened.broker_route_control_receipt(receipt["action_id"]) == accepted
@@ -66,7 +69,10 @@ def test_route_state_tampering_and_action_identity_reuse_are_rejected(tmp_path):
     reused = {**receipt, "request_sha256": "b" * 64}
     with pytest.raises(OperatorReservationConflict):
         store.record_broker_route_control(
-            "broker-route:" + receipt["action_id"], "different request", reused, current_enabled=False
+            "broker-route:" + receipt["action_id"],
+            "different request",
+            reused,
+            current_enabled=False,
         )
 
     with sqlite3.connect(path) as connection:

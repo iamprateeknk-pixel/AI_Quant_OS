@@ -12,6 +12,7 @@ from ai_quant_os.strategy_registry import StrategyRegistry, prepare_builtin, ver
 from ai_quant_os.tick_data import TickDataset
 from ai_quant_os.directional_strategy import DIRECTIONAL_REF
 
+
 @dataclass(frozen=True)
 class RegisteredBacktest:
     result: NautilusResult

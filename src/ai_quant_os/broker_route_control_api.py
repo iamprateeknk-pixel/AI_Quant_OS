@@ -64,13 +64,16 @@ class BrokerRouteControlReceipt(BaseModel):
         ],
         ...,
     ]
-    rejection_reason: Literal[
-        "STALE_STATE",
-        "STALE_COMMAND",
-        "BROKER_DISCONNECTED",
-        "BROKER_NOT_ELIGIBLE",
-        "SAFETY_STATE_BLOCKS_ENABLE",
-    ] | None
+    rejection_reason: (
+        Literal[
+            "STALE_STATE",
+            "STALE_COMMAND",
+            "BROKER_DISCONNECTED",
+            "BROKER_NOT_ELIGIBLE",
+            "SAFETY_STATE_BLOCKS_ENABLE",
+        ]
+        | None
+    )
 
     @model_validator(mode="after")
     def receipt_reflects_authoritative_result(self):
@@ -137,7 +140,9 @@ def install_broker_route_control_routes(
             raise HTTPException(503, "Broker route journal could not be verified") from error
         if prior is not None:
             if prior["request_sha256"] != fingerprint:
-                raise HTTPException(409, "Route action identity was reused with a different command")
+                raise HTTPException(
+                    409, "Route action identity was reused with a different command"
+                )
             response.headers["Cache-Control"] = "no-store"
             return BrokerRouteControlReceipt.model_validate(prior)
 
@@ -191,7 +196,9 @@ def install_broker_route_control_routes(
                 except OperatorReservationConflict as error:
                     raise HTTPException(409, "Route action identity is already assigned") from error
                 except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
-                    raise HTTPException(503, "Broker route decision could not be committed") from error
+                    raise HTTPException(
+                        503, "Broker route decision could not be committed"
+                    ) from error
                 return result["authoritative_enabled"]
 
             try:

@@ -30,17 +30,22 @@ def send(client, session, payload, *, reauth=OPERATOR):
 
 def test_route_control_requires_session_and_fresh_reauthentication(tmp_path):
     client = TestClient(
-        create_app(operator_token=OPERATOR, paper_db_path=tmp_path / "paper.sqlite3", clock=lambda: NOW)
+        create_app(
+            operator_token=OPERATOR, paper_db_path=tmp_path / "paper.sqlite3", clock=lambda: NOW
+        )
     )
     session = login(client)
     payload = command(session, requested_enabled=False, expected_enabled=True)
 
     assert send(client, session, payload, reauth=None).status_code == 401
-    assert client.post(
-        "/api/v1/brokers/PAPER/route-controls",
-        json=payload,
-        headers={"X-Operator-Reauth": OPERATOR},
-    ).status_code == 401
+    assert (
+        client.post(
+            "/api/v1/brokers/PAPER/route-controls",
+            json=payload,
+            headers={"X-Operator-Reauth": OPERATOR},
+        ).status_code
+        == 401
+    )
 
 
 def test_route_disable_receipt_is_durable_idempotent_and_does_not_change_safety(tmp_path):
@@ -83,7 +88,9 @@ def test_route_disable_receipt_is_durable_idempotent_and_does_not_change_safety(
 
 def test_stale_route_command_is_recorded_without_enabling_route(tmp_path):
     client = TestClient(
-        create_app(operator_token=OPERATOR, paper_db_path=tmp_path / "paper.sqlite3", clock=lambda: NOW)
+        create_app(
+            operator_token=OPERATOR, paper_db_path=tmp_path / "paper.sqlite3", clock=lambda: NOW
+        )
     )
     session = login(client)
     payload = command(

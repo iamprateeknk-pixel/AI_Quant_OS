@@ -330,6 +330,7 @@ class BrokerRouter:
             expected_enabled is not None and type(expected_enabled) is not bool
         ):
             raise ValueError("Broker route state must be boolean")
+
         def apply(current: bool) -> bool:
             if expected_enabled is not None and current is not expected_enabled:
                 raise BrokerRouteStateConflict("Broker route state changed")
