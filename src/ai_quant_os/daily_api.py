@@ -1,6 +1,6 @@
 """Operator-protected captures and publication from server-owned paper sources."""
 
-from datetime import date
+from datetime import date, datetime, time, timedelta, timezone
 import json
 from pathlib import Path
 import sqlite3
@@ -220,11 +220,24 @@ def install_daily_routes(
             raise HTTPException(503, "Shadow evidence could not be verified") from error
         if payload.sequence > len(history):
             raise HTTPException(404, "Unknown shadow observation sequence")
-        prior, current = history[payload.sequence - 2 : payload.sequence]
+        start_index = payload.sequence - 1
+        day_start = datetime.combine(day, time.min, tzinfo=timezone.utc)
+        day_end = day_start + timedelta(days=1)
+        while start_index > 1:
+            previous_batch = history[start_index - 1]
+            if not previous_batch.request.bars or any(
+                not day_start <= bar.observed_at < day_end for bar in previous_batch.request.bars
+            ):
+                break
+            start_index -= 1
+        prior = history[start_index - 1]
+        batches = history[start_index : payload.sequence]
         try:
-            from ai_quant_os.paper_shadow_comparison import compare_daily_paper_to_shadow
+            from ai_quant_os.paper_shadow_comparison import (
+                compare_daily_paper_to_shadow_batches,
+            )
 
-            return response(compare_daily_paper_to_shadow(daily_execution, prior, current))
+            return response(compare_daily_paper_to_shadow_batches(daily_execution, prior, batches))
         except ValueError as error:
             raise HTTPException(
                 409, "PAPER/shadow evidence does not link to this UTC day"

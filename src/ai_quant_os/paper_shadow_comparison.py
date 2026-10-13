@@ -98,34 +98,48 @@ def compare_daily_paper_to_shadow(daily_execution, prior, current):
     This compares observed fills only. It does not claim complete market coverage,
     explain causality, or grant promotion authority.
     """
+    return compare_daily_paper_to_shadow_batches(daily_execution, prior, (current,))
+
+
+def compare_daily_paper_to_shadow_batches(daily_execution, prior, batches):
+    """Compare a day's PAPER evidence with every linked shadow batch in that day."""
     if (
         type(daily_execution) is not DailyExecutionEvidence
         or type(prior) is not ShadowReport
-        or type(current) is not ShadowReport
+        or type(batches) is not tuple
+        or not batches
+        or any(type(report) is not ShadowReport for report in batches)
         or prior.outcome != "OBSERVED"
-        or current.outcome != "OBSERVED"
         or prior.run is None
-        or current.run is None
+        or any(report.outcome != "OBSERVED" or report.run is None for report in batches)
     ):
         raise ValueError("Observed daily PAPER and shadow evidence is required")
 
     day = daily_execution.daily.report.day
     start = datetime.combine(day, time.min, tzinfo=timezone.utc)
     end = start + timedelta(days=1)
+    current = batches[-1]
     assignment = current.assignment
     candidate_id = assignment.candidate.manifest.candidate_id
     genome = assignment.candidate.report.holdout.binding.genome
-    if (
-        prior.assignment != assignment
-        or prior.sequence + 1 != current.sequence
-        or current.previous_sha256 != prior.fingerprint
-        or current.source_bars[: len(prior.source_bars)] != prior.source_bars
-        or len(current.source_bars) != len(prior.source_bars) + len(current.request.bars)
-        or prior.source_bars[-1].observed_at >= start
-        or not current.request.bars
-        or any(not start <= bar.observed_at < end for bar in current.request.bars)
-        or current.source_bars[-len(current.request.bars) :] != current.request.bars
-    ):
+    if prior.assignment != assignment:
+        raise ValueError("Shadow reports must link the same UTC day interval")
+    previous = prior
+    for report in batches:
+        appended = report.request.bars
+        if (
+            report.assignment != assignment
+            or report.sequence != previous.sequence + 1
+            or report.previous_sha256 != previous.fingerprint
+            or report.source_bars[: len(previous.source_bars)] != previous.source_bars
+            or len(report.source_bars) != len(previous.source_bars) + len(appended)
+            or not appended
+            or any(not start <= bar.observed_at < end for bar in appended)
+            or report.source_bars[-len(appended) :] != appended
+        ):
+            raise ValueError("Shadow reports must link the same UTC day interval")
+        previous = report
+    if not prior.source_bars or prior.source_bars[-1].observed_at >= start:
         raise ValueError("Shadow reports must link the same UTC day interval")
     prior_fills = prior.run.result.fills
     current_fills = current.run.result.fills

@@ -167,3 +167,5 @@
 - 2026-10-13: Enforce exact safety and EURUSD risk API projections in the browser, rejecting unsupported safety states, negative counts/ceilings, malformed quantities, unknown fields and instrument mismatch. Full web suite and production build pass. See ADR 0196 and RISK_READ_UI_HANDOFF.md.
 
 - 2026-10-13: Candidate paper assignment identity stays alongside the persisted paper order, not in `TradeIntent`. The registered strategy source closure fingerprints `contracts.py`; adding metadata there invalidates archived candidate provenance. Assignment admission instead stores an immutable assignment reference in the order record and rechecks the live candidate snapshot at admission.
+
+- 2026-10-13: Keep the daily PAPER/shadow API input stable by treating its sequence as the final retained report for the day and walking backward over consecutive same-day batches. The API still obtains amounts and bars only from verified archives; a UTC-boundary-crossing batch is refused. The final report hash commits to the intermediate report chain.

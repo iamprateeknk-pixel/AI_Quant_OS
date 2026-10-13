@@ -22,6 +22,10 @@ Focused API, comparison, archive-integrity, shadow history, daily evidence, arch
 
 Current increment: a protected no-cache operator endpoint derives `DEMOTION_REQUIRED` alerts from verified retained shadow reports and the immutable assignment policy. It stays readable after restart and returns source hashes and the measured threshold. The API has no external notification or acknowledgement semantics. Twenty focused reality-gap, shadow, and API tests pass. Bugbot found no actionable findings. The full suite passed 2,966 tests with 36 skipped in 1,150.98 seconds; Ruff lint/format checks and BUILD_STATUS.md CP1252/CRLF validation pass.
 
+### P09 daily multi-batch PAPER/shadow comparison
+
+Committed next increment: the protected daily comparison now aggregates all consecutive verified shadow batches appended within the selected UTC day, from the prior pre-day report through the requested final sequence. Source amounts remain server-owned, and the result retains initial/final hashes that commit to the complete chain. A mid-day batch crossing a UTC boundary is refused. The affected shadow/daily/aggregation suites pass (33); the full suite passes (2,971 passed, 36 skipped in 1,902.01 seconds); Ruff and format checks pass; Bugbot found no actionable issues. The structure map reports no misplaced/unreferenced source. The boundary checker cannot parse the repository’s descriptive Markdown declaration, so the changed imports were manually checked; no framework dependency entered the domain module. Rollback is code-only: revert this increment’s route/domain edits; no persisted format or archive changed.
+
 ### P09 forward-shadow counterfactual replay
 
 Current increment: a protected PAPER endpoint accepts bounded declared alternatives for an exact verified shadow report, reruns the retained configuration as a reproducibility baseline, and archives the immutable report and source in its own SQLite store. No broker, candidate lifecycle, causal claim, or promotion authority is included. Five focused tests pass; the full suite passed 2,971 tests with 36 skipped in 2,120.09 seconds; Ruff and Bugbot checks pass. See `docs/SHADOW_COUNTERFACTUAL_HANDOFF.md`.
@@ -32,7 +36,7 @@ Current increment: a protected PAPER endpoint accepts bounded declared alternati
 - Agent contribution attribution; do not infer agent causality because advisory A12/A13 are disconnected from order creation.
 - External reality-gap notification delivery and production shadow market ingress/scheduling.
 - Financing/restatements and production schedule retention/recovery evidence.
-- Broader daily execution/shadow attribution and full P09 acceptance checklist/independent release evidence.
+- Multi-day execution/shadow aggregation, financing/restatements, and the full P09 acceptance checklist/independent release evidence.
 
 ## Broader project
 
@@ -40,4 +44,4 @@ P00-P13 and overall release gates remain incomplete. Continue with the next expl
 
 ## Rollback
 
-Revert the specific increment commit to remove its API and admission path. The candidate assignment database change is additive; rollback leaves its records inert, and those records must not be deleted as part of code rollback. The daily comparison and reality-gap alert increments read retained evidence and do not rewrite those archives.
+Revert the specific increment commit to remove its API and admission path. The candidate assignment database change is additive; rollback leaves its records inert, and those records must not be deleted as part of code rollback. The daily comparison and reality-gap alert increments read retained evidence and do not rewrite those archives. The multi-batch comparison change has no persisted state; rollback only restores the prior route/domain selection behavior.

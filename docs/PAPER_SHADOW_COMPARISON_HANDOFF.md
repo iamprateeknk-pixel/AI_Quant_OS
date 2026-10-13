@@ -1,6 +1,6 @@
 # Daily PAPER and candidate shadow comparison
 
-The protected comparison endpoint links one published daily PAPER execution report to a consecutive pair of retained candidate shadow reports. It reports fill counts and exact quote-currency cash and fee flows for the matching candidate, genome, strategy, instrument, and UTC day.
+The protected comparison endpoint links one published daily PAPER execution report to a verified chain of retained candidate shadow reports. It reports fill counts and exact quote-currency cash and fee flows for the matching candidate, genome, strategy, instrument, and UTC day, including every consecutive shadow batch appended during that day.
 
 ## API
 
@@ -13,7 +13,7 @@ The protected comparison endpoint links one published daily PAPER execution repo
 }
 ```
 
-The referenced sequence must be at least 2. The prior report must end before the UTC day; the selected report must be its immediate hash-linked successor, and all bars in its appended batch must fall within that day. PAPER source data comes only from the immutable daily execution evidence archive. Shadow data comes only from the verified shadow archive. The endpoint returns `no-store` evidence and recomputes it on each request; it does not accept source amounts, fills, prices, or timestamps from the caller.
+The referenced sequence must be at least 2 and names the final shadow report to include. The endpoint walks backward across consecutive hash-linked batches whose appended bars fall within the UTC day, stopping at the retained report before the first same-day batch. That baseline report must end before the day, and every included batch must contain bars only from that day. The final report hash commits to the intermediate chain. A batch crossing a UTC-day boundary is refused. PAPER source data comes only from the immutable daily execution evidence archive. Shadow data comes only from the verified shadow archive. The endpoint returns `no-store` evidence and recomputes it on each request; it does not accept source amounts, fills, prices, or timestamps from the caller.
 
 The response includes hashes for the daily PAPER artifact and both shadow reports, candidate/genome/strategy/instrument identities, fill counts, actual fill cash flow, fee cash flow, and shadow-minus-PAPER differences. Cash flow is `-signed quantity × fill price - fee`, in the retained quote currency.
 

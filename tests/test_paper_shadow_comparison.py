@@ -37,10 +37,18 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
         )
         for index, price in enumerate(("1.1", "1.2", "1.3", "1.2"), start=1)
     )
+    first_batch = observe_shadow(
+        assignment.shadow_id,
+        "daily-period-first-batch",
+        day_bars[:2],
+        shadow_store,
+        candidates,
+        strategies,
+    )
     current = observe_shadow(
         assignment.shadow_id,
-        "daily-period",
-        day_bars,
+        "daily-period-second-batch",
+        day_bars[2:],
         shadow_store,
         candidates,
         strategies,
@@ -71,7 +79,7 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
 
     from ai_quant_os.paper_shadow_comparison import compare_daily_paper_to_shadow
 
-    comparison = compare_daily_paper_to_shadow(daily_execution, prior, current)
+    comparison = compare_daily_paper_to_shadow(daily_execution, prior, first_batch)
 
     assert comparison.day == START.date()
     assert comparison.candidate_id == candidate_id
@@ -79,13 +87,13 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
     assert comparison.paper_fill_count == 1
     assert comparison.paper_cash_flow_quote == Decimal("4.6")
     assert comparison.paper_fee_cash_flow_quote == Decimal("-0.2")
-    assert comparison.shadow_fill_count == len(current.run.result.fills) - len(
+    assert comparison.shadow_fill_count == len(first_batch.run.result.fills) - len(
         prior.run.result.fills
     )
     assert comparison.shadow_cash_flow_quote == sum(
         (
             -(fill.quantity if fill.side == "BUY" else -fill.quantity) * fill.price - fill.fee
-            for fill in current.run.result.fills[len(prior.run.result.fills) :]
+            for fill in first_batch.run.result.fills[len(prior.run.result.fills) :]
         ),
         Decimal(0),
     )
@@ -111,31 +119,38 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
     with TestClient(app) as client:
         unauthorized = client.post(
             f"/api/v1/paper/evidence/daily/{START.date()}/shadow-comparison",
-            json={"shadow_id": assignment.shadow_id, "sequence": 2},
+            json={"shadow_id": assignment.shadow_id, "sequence": 3},
         )
         response = client.post(
             f"/api/v1/paper/evidence/daily/{START.date()}/shadow-comparison",
             headers={"X-Operator-Token": "operator"},
-            json={"shadow_id": assignment.shadow_id, "sequence": 2},
+            json={"shadow_id": assignment.shadow_id, "sequence": 3},
         )
         missing_shadow = client.post(
             f"/api/v1/paper/evidence/daily/{START.date()}/shadow-comparison",
             headers={"X-Operator-Token": "operator"},
-            json={"shadow_id": "unknown-shadow", "sequence": 2},
+            json={"shadow_id": "unknown-shadow", "sequence": 3},
         )
         extra_input = client.post(
             f"/api/v1/paper/evidence/daily/{START.date()}/shadow-comparison",
             headers={"X-Operator-Token": "operator"},
-            json={"shadow_id": assignment.shadow_id, "sequence": 2, "cash": "999"},
+            json={"shadow_id": assignment.shadow_id, "sequence": 3, "cash": "999"},
         )
     assert unauthorized.status_code == 401
     assert response.status_code == 200, response.text
     assert missing_shadow.status_code == 404
     assert extra_input.status_code == 422
     assert response.json()["paper_evidence_sha256"] == comparison.paper_evidence_sha256
-    assert response.json()["shadow_minus_paper_cash_flow_quote"] == str(
-        comparison.shadow_minus_paper_cash_flow_quote
+    expected_shadow_fills = current.run.result.fills[len(prior.run.result.fills) :]
+    expected_shadow_cash = sum(
+        (
+            -(fill.quantity if fill.side == "BUY" else -fill.quantity) * fill.price - fill.fee
+            for fill in expected_shadow_fills
+        ),
+        Decimal(0),
     )
+    assert response.json()["shadow_fill_count"] == len(expected_shadow_fills)
+    assert response.json()["shadow_cash_flow_quote"] == str(expected_shadow_cash)
     assert response.headers["cache-control"] == "no-store"
 
     import json
@@ -178,13 +193,13 @@ def test_daily_comparison_binds_paper_and_shadow_to_same_candidate_and_interval(
     with sqlite3.connect(tmp_path / "shadow.sqlite3") as database:
         database.execute(
             "UPDATE shadow_batches SET report=? WHERE command_id=?",
-            (b"{}", "daily-period"),
+            (b"{}", "daily-period-first-batch"),
         )
     with TestClient(app) as client:
         corrupt_response = client.post(
             f"/api/v1/paper/evidence/daily/{START.date()}/shadow-comparison",
             headers={"X-Operator-Token": "operator"},
-            json={"shadow_id": assignment.shadow_id, "sequence": 2},
+            json={"shadow_id": assignment.shadow_id, "sequence": 3},
         )
     assert corrupt_response.status_code == 503
 
