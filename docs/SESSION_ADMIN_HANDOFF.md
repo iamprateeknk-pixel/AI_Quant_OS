@@ -62,11 +62,17 @@ new journal reader; older code intentionally rejects it. Preserve this reader fo
 rollback or use a compatible release. Do not delete/reseed history to make older
 code accept it. Existing ordinary sign-out/expiry events remain readable.
 
-Read-only metadata and single-owner revocation are implemented. Display/timezone/
-notification preferences, integration administration, environment feature flags,
-broader session/role policy, retention/export, independent security review and
-browser acceptance remain pending. Browser preview was not retried after the
-prior launch rejection. The full release suite has not passed acceptance.
+Read-only metadata and single-owner revocation are implemented. A production-build
+browser acceptance run now covers owner sign-in, inventory of a second independent
+session, explicit single-target confirmation, fresh credential entry, receipt
+display, refreshed inventory, and denial of the revoked session after reload. See
+`evaluations/mission-control-session-admin-browser-2026-10-19.json`; screenshot
+artifacts are locally ignored under `apps/web/output/playwright/`.
+
+Display/timezone/notification preferences, integration administration, environment
+feature flags, broader session/role policy, retention/export, other authenticated
+workflows, independent security review and broader browser acceptance remain
+pending. The full release suite has not passed acceptance.
 
 See evaluations/session-admin-0104.json for fresh focused verification. No paid
 provider, external broker, candidate SDK or proposed source was executed.
