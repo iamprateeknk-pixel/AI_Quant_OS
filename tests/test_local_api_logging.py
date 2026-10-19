@@ -5,7 +5,11 @@ import logging
 import subprocess
 import sys
 
-from ai_quant_os.local_api import RedactedServerExceptionFilter, _server_log_config
+from ai_quant_os.local_api import (
+    RedactedServerExceptionFilter,
+    _server_log_config,
+)
+from ai_quant_os.paper_telemetry import FailureLogLimiter
 
 
 def test_uvicorn_exception_filter_removes_exception_message_and_stack():
@@ -68,3 +72,14 @@ except RuntimeError:
     assert "ASGI exception details withheld" in result.stderr
     assert "operator-token-private-value" not in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_failure_log_limiter_bounds_output_and_reopens_after_its_window():
+    now = [100.0]
+    limiter = FailureLogLimiter(max_events=2, window_seconds=60, clock=lambda: now[0])
+    assert limiter.admit()
+    now[0] += 1
+    assert limiter.admit()
+    assert not limiter.admit()
+    now[0] = 160.0
+    assert limiter.admit()

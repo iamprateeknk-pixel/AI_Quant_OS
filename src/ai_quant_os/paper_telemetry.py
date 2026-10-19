@@ -9,12 +9,47 @@ from threading import RLock
 from time import monotonic, monotonic_ns
 from uuid import uuid4
 from importlib.metadata import version
+from math import isfinite
 
 from urllib.parse import urlsplit
 
 import httpx
 
 LOGGER = logging.getLogger(__name__)
+
+
+class FailureLogLimiter:
+    """Bound one process's local request-failure summaries without changing metrics."""
+
+    def __init__(self, *, max_events=60, window_seconds=60.0, clock=monotonic):
+        if type(max_events) is not int or max_events < 1:
+            raise ValueError("Failure log limit must be a positive integer")
+        if (
+            type(window_seconds) not in {int, float}
+            or not isfinite(window_seconds)
+            or window_seconds <= 0
+        ):
+            raise ValueError("Failure log window must be positive")
+        self._max_events = max_events
+        self._window_seconds = float(window_seconds)
+        self._clock = clock
+        self._window_start = clock()
+        self._events = 0
+        self._lock = RLock()
+
+    def admit(self):
+        now = self._clock()
+        with self._lock:
+            if now - self._window_start >= self._window_seconds:
+                self._window_start = now
+                self._events = 0
+            if self._events >= self._max_events:
+                return False
+            self._events += 1
+            return True
+
+
+_FAILURE_LOG_LIMITER = FailureLogLimiter()
 
 
 class PaperSpan:
@@ -399,7 +434,7 @@ class PaperTraceMiddleware:
                     monotonic_ns() - started,
                     request_failed,
                 )
-                if request_failed:
+                if request_failed and _FAILURE_LOG_LIMITER.admit():
                     try:
                         LOGGER.error(
                             "paper_http_request_failed trace_id=%s route=%s method=%s status_code=%s",

@@ -7,6 +7,8 @@ returns an incomplete response, or completes with a 5xx status. Include only the
 runtime-generated PAPER trace ID (when enabled), a validated route template, a
 fixed method enum, and a bounded status. Keep route failure counts in the existing
 finite-label Prometheus histogram/counter. Do not export IDs as metric labels.
+Limit summaries to 60 per monotonic one-minute process window; trace and metric
+recording continue when a summary is suppressed.
 
 The middleware remains fail-open: logging failure cannot change the response,
 control decision, order result, or risk state. Client trace context is not adopted.

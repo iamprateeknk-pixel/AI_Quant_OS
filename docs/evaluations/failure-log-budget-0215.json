@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "failure-log-budget-0215",
+  "date": "2026-10-19",
+  "started_at": "2026-10-19T18:18:26Z",
+  "completed_at": "2026-10-19T18:18:39Z",
+  "source_revision": "c7645bd0a28e4ef0e30587f6b062f3dc4a67fce1",
+  "scope": "LOCAL_PAPER_HTTP_FAILURE_LOG_RATE_LIMIT",
+  "test_command_scope": [
+    "tests/test_local_api_logging.py",
+    "tests/test_paper_http_metrics.py",
+    "tests/test_paper_telemetry.py",
+    "tests/test_paper_trace_context.py"
+  ],
+  "result": {
+    "passed": 38,
+    "failed": 0,
+    "duration_seconds": 7.98,
+    "status": "PASS"
+  },
+  "verified": [
+    "The local process emits at most 60 HTTP failure summary lines in a monotonic 60-second window.",
+    "The limit reopens at the next window, and a suppressed summary does not suppress trace or metric recording.",
+    "Existing tests verify trace ID correlation, 5xx failure counters, sanitized Uvicorn exception output, and fail-open response behavior.",
+    "Ruff lint and format checks pass for all changed Python files."
+  ],
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "The limit is process-local and summaries are not persisted or externally collected.",
+    "Independent security acceptance and all P00-P13 release gates remain open."
+  ]
+}
