@@ -49,6 +49,16 @@ selector. The synthetic session was signed out, the protected session read retur
 
 The local screenshot folder is ignored by Git. Preserve it locally when reviewing the states; it is not part of a commit.
 
+## Local visual comparison
+
+`apps/web/scripts/compare-visual.mjs` compares two PNG captures at the same dimensions, reports the changed-pixel ratio, and writes a magenta diff image. It accepts an optional per-channel pixel threshold and explicit masks for dynamic rectangles. Example:
+
+```powershell
+npm run visual:compare -- --reference output/playwright/visual-states/normal-paper-dashboard.png --current output/playwright/visual-states/normal-paper-dashboard.png --diff output/playwright/visual-states/normal-paper-dashboard.diff.png --max-diff 0.01 --pixel-threshold 8
+```
+
+The retained six screenshots are local inspection captures, not deterministic CI baselines. They contain session-specific IDs and timestamps and were produced with varying viewport heights. Compare a fresh capture against a matching local reference at the same viewport; mask only known dynamic regions. CI-quality pixel regression still needs reproducible seed data, fixed time/session values, and a browser/viewport pin. The illustrative execution-pack dashboard is not a valid baseline because its trading values are fabricated.
+
 On 2026-10-19, an additional production-build capture was taken at
 `apps/web/output/playwright/visual-states/agent-shadow-registry.png`. The Agents
 view showed 18 roles and 42 registered versions, each carrying the backend-owned
