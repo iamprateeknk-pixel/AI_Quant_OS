@@ -22,6 +22,7 @@ METHODS = {
     "TOOL_ERROR_RATE": "TOOL_FAILURE_RATE",
     "COST_USD": "ACTUAL_USAGE_USD",
     "REGIME_CORRECTNESS": "REGIME_EXACT_OBJECT_MATCH",
+    "INTEGRITY_CORRECTNESS": "INTEGRITY_EVIDENCE_MATCH",
 }
 
 
@@ -108,6 +109,7 @@ class ProtocolCriterion(BaseModel):
         "TOOL_FAILURE_RATE",
         "ACTUAL_USAGE_USD",
         "REGIME_EXACT_OBJECT_MATCH",
+        "INTEGRITY_EVIDENCE_MATCH",
     ]
     maximum_regression: Decimal = Field(ge=0, le=1000000, allow_inf_nan=False)
 
@@ -123,6 +125,7 @@ class ProtocolCriterion(BaseModel):
                 "RELIABILITY",
                 "TOOL_ERROR_RATE",
                 "REGIME_CORRECTNESS",
+                "INTEGRITY_CORRECTNESS",
             }
             and self.maximum_regression > 1
         ):

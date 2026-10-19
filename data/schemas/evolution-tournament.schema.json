@@ -1,0 +1,123 @@
+{
+  "$defs": {
+    "TournamentRanking": {
+      "additionalProperties": false,
+      "properties": {
+        "rank": {
+          "maximum": 128,
+          "minimum": 1,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "challenger_genome_ref": {
+          "pattern": "^agent-genome:[a-f0-9]{64}$",
+          "title": "Challenger Genome Ref",
+          "type": "string"
+        },
+        "scorecard_ref": {
+          "pattern": "^evolution-scorecard:[a-f0-9]{64}$",
+          "title": "Scorecard Ref",
+          "type": "string"
+        },
+        "exact_matches": {
+          "maximum": 128,
+          "minimum": 0,
+          "title": "Exact Matches",
+          "type": "integer"
+        },
+        "case_count": {
+          "maximum": 128,
+          "minimum": 1,
+          "title": "Case Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "rank",
+        "challenger_genome_ref",
+        "scorecard_ref",
+        "exact_matches",
+        "case_count"
+      ],
+      "title": "TournamentRanking",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "const": "TRAINING_TOURNAMENT",
+      "default": "TRAINING_TOURNAMENT",
+      "title": "Scope",
+      "type": "string"
+    },
+    "period": {
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+      "title": "Period",
+      "type": "string"
+    },
+    "protocol_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Protocol Sha256",
+      "type": "string"
+    },
+    "dataset_ref": {
+      "pattern": "^evolution-dataset:[a-f0-9]{64}$",
+      "title": "Dataset Ref",
+      "type": "string"
+    },
+    "baseline_genome_ref": {
+      "pattern": "^agent-genome:[a-f0-9]{64}$",
+      "title": "Baseline Genome Ref",
+      "type": "string"
+    },
+    "primary_metric": {
+      "enum": [
+        "CORRECTNESS",
+        "REGIME_CORRECTNESS",
+        "INTEGRITY_CORRECTNESS"
+      ],
+      "title": "Primary Metric",
+      "type": "string"
+    },
+    "rankings": {
+      "items": {
+        "$ref": "#/$defs/TournamentRanking"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Rankings",
+      "type": "array"
+    },
+    "evaluation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Evaluation Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "period",
+    "protocol_sha256",
+    "dataset_ref",
+    "baseline_genome_ref",
+    "primary_metric",
+    "rankings"
+  ],
+  "title": "EvolutionTournament",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:evolution-tournament:1.0"
+}

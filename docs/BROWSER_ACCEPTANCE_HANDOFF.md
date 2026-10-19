@@ -34,9 +34,17 @@ The broker contract only exposes `CONNECTED`, `DISCONNECTED`, and `UNKNOWN`; it 
 
 These checks do not establish release readiness. The following remain open:
 
-- authenticated and modal focus trapping/restoration, responsive keyboard paths, and manual screen-reader review;
+- other authenticated workflows, responsive keyboard paths beyond the Risk Center and destination dialog, and manual screen-reader review;
 - the exact broker `DEGRADED` design state, if that state is added to the backend contract;
 - independent security and risk review, production identity/secret/compliance decisions, and all applicable P00-P13 release gates;
 - shadow and live acceptance; live execution remains unreleased.
+
+The local authenticated Risk Center keyboard path and destination dialog were
+rechecked against the production-built UI at 320px. Focus stayed inside the dialog,
+Escape restored the trigger, Ctrl+K reopened it without horizontal overflow, and
+the authenticated control fields followed keyboard order through the instrument
+selector. The synthetic session was signed out, the protected session read returned
+401, and no safety action was submitted. See
+`docs/evaluations/mission-control-authenticated-keyboard-2026-10-19.json`.
 
 The local screenshot folder is ignored by Git. Preserve it locally when reviewing the states; it is not part of a commit.

@@ -26,6 +26,10 @@ an existing session, with audit/health admission preserved.
 Every API instance has a random boot epoch and a globally increasing sequence
 for its snapshots. Every connection starts with a `reset` containing full state;
 later `snapshot` events also contain full state. IDs bind epoch and sequence.
+Sequence gaps are expected because the counter is shared across streams. Every
+event is a full state snapshot, so the next accepted snapshot replaces the view
+without replaying intermediate IDs. A reconnect starts with a new `reset`
+snapshot; a new epoch is rejected unless delivered as `reset`.
 The browser accepts strictly increasing sequences, refuses regressed observation
 times and requires a reset before accepting a new epoch. Sequence gaps are legal
 because other consumers share the instance counter. No delta replay or persistent
@@ -75,7 +79,9 @@ and joined at the end of the test. Other checks cover current-state agreement,
 restart epochs, source expiry, clock regression, connection capacity/release,
 duplicate intent inventory, durable inventory, proxy bounds/cancellation,
 private-field stripping and initial unknown-state rendering. The frontend fixture
-is checked against the actual protected backend, except its boot epoch.
+is checked against the actual protected backend, except its boot epoch. Regression
+tests cover skipped global sequence values, sequence regression, and new-epoch
+reset requirements.
 
 The machine evaluation records fresh staged-file regression, frontend/build,
 format and secret-scan evidence. The additive schema is

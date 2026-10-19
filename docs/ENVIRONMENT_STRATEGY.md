@@ -26,7 +26,7 @@ This document records the required environment sequence for AI Quant OS. It is a
 
 Promote only after the current tier's entry evidence is independently checked. A failed gate returns the system to the previous non-live tier, disables new risk, preserves original records, and records the reason and evidence. P13 remains the sole live-release authority; an environment variable, UI state, model output, broker-health observation, or shadow result cannot enable live execution.
 
-Current promotion evidence is represented by the fail-closed `PromotionDecision` v1 contract. It always returns `WAIT_FOR_EVIDENCE` with `approved_by_policy=false`; it does not evaluate gates or change lifecycle. See [CONTRACT_VERSIONING.md](CONTRACT_VERSIONING.md), [RELEASE_AND_ROLLBACK.md](RELEASE_AND_ROLLBACK.md), and the execution pack’s `99_RELEASE_GATES/GO_LIVE_GATE.md`.
+Current promotion evidence is represented by the fail-closed `PromotionDecision` v1 contract. It always returns `WAIT_FOR_EVIDENCE` with `approved_by_policy=false`; it does not evaluate gates or change lifecycle. See [CONTRACT_VERSIONING.md](CONTRACT_VERSIONING.md), [RELEASE_AND_ROLLBACK.md](RELEASE_AND_ROLLBACK.md), and the canonical [P13 restricted live rollout gate](99_RELEASE_GATES/GO_LIVE_GATE.md).
 
 ## Decisions still required
 

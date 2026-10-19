@@ -17,6 +17,19 @@ from ai_quant_os.local_processes import OwnedProcess
 from ai_quant_os.repair_transport import bounded_command
 
 
+def _isolated_module_command(module: str, source: Path, *arguments: str) -> list[str]:
+    return [
+        sys.executable,
+        "-I",
+        "-c",
+        "import runpy, sys; sys.path.insert(0, sys.argv.pop(1)); "
+        "module = sys.argv.pop(1); runpy.run_module(module, run_name='__main__')",
+        str(source),
+        module,
+        *arguments,
+    ]
+
+
 @dataclass(frozen=True)
 class LocalSettings:
     checkout: Path
@@ -38,6 +51,8 @@ class LocalSettings:
                 with socket.socket() as listener:
                     if os.name == "nt":
                         listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+                    else:
+                        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     listener.bind(("127.0.0.1", port))
             except OSError:
                 raise ValueError("Requested local port is already occupied") from None
@@ -124,7 +139,9 @@ def wait_ready(
             raise RuntimeError("Owned local service exited before readiness")
         try:
             response = bounded_command(
-                [sys.executable, "-I", "-m", "ai_quant_os.local_probe", url],
+                _isolated_module_command(
+                    "ai_quant_os.local_probe", Path(__file__).resolve().parents[1], url
+                ),
                 environment=probe_environment,
                 timeout=min(2, max(0.01, deadline - time.monotonic())),
                 output_limit=262144,
@@ -147,7 +164,9 @@ def local_application(settings: LocalSettings):
     backend_env["AI_QUANT_LOCAL_INSTANCE"] = nonce
     with ExitStack() as stack:
         api = OwnedProcess(
-            [sys.executable, "-I", "-m", "ai_quant_os.local_api", str(settings.api_port)],
+            _isolated_module_command(
+                "ai_quant_os.local_api", Path(__file__).resolve().parents[1], str(settings.api_port)
+            ),
             cwd=settings.checkout.resolve(),
             environment=backend_env,
         )

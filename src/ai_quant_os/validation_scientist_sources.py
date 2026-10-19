@@ -6,7 +6,13 @@ from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict
 
-from ai_quant_os.agent_context import CompiledContext, EvidenceRecord, SourceBinding, verify_context
+from ai_quant_os.agent_context import (
+    CompiledContext,
+    DatasetResourceCatalog,
+    EvidenceRecord,
+    SourceBinding,
+    verify_context,
+)
 from ai_quant_os.candidate_prerequisite_failure import CandidatePrerequisiteFailure
 from ai_quant_os.candidate_validation_contracts import CandidateValidationScorecard, GATE_NAMES
 from ai_quant_os.contracts import _require_aware
@@ -93,6 +99,8 @@ def validation_sources(
     _require_aware(now)
     if package.captured_at > now:
         raise PermissionError("Future validation packages cannot become archival evidence")
+    package = ValidationPackage.model_validate_json(package.model_dump_json())
+    catalog = DatasetResourceCatalog.from_receipts((package.holdout.receipt,))
     sources = {}
     for name in INPUT_NAMES:
         payload = ValidationObservation(as_of=now, input_name=name, summary=summary)
@@ -110,7 +118,13 @@ def validation_sources(
         async def fetch(record=record):
             return record
 
-        sources[name] = SourceBinding("HOLDOUT_READ", "HOLDOUT", fetch)
+        sources[name] = SourceBinding(
+            "HOLDOUT_READ",
+            "HOLDOUT",
+            fetch,
+            resource_refs=(package.holdout.receipt.dataset_ref,),
+            resource_catalog=catalog,
+        )
     return sources
 
 

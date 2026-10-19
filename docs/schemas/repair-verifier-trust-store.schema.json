@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Root-signed repair verifier trust store",
+  "description": "Canonical signer registry. Its root public key must be provisioned separately from the registry file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["store", "signature"],
+  "properties": {
+    "store": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "signers"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "signers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["verifier_id", "public_key", "verifier_source_sha256"],
+            "properties": {
+              "verifier_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$"},
+              "public_key": {"type": "string", "pattern": "^[A-Za-z0-9_-]{43}$"},
+              "verifier_source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+            }
+          }
+        }
+      }
+    },
+    "signature": {"type": "string", "pattern": "^[A-Za-z0-9_-]{86}$"}
+  }
+}

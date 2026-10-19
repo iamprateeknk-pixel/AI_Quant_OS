@@ -24,7 +24,7 @@
     },
     {
       "path": "strategy_builder_sources.py",
-      "sha256": "c26b973e68124380db7186fa963116934ddd4f511397e79ce4b7b050572df08f"
+      "sha256": "b0291b38701aa5316005ec51d118243a736412493a481074391e743517a25e0a"
     },
     {
       "path": "strategy_builder_agent.py",

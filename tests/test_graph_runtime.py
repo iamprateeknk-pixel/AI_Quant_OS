@@ -102,10 +102,14 @@ def test_real_graph_executes_once_and_survives_restart(tmp_path):
             assert result.output_json == '{"label":"TRENDING"}'
             assert result.context_ref == evidence.context_ref
             assert result.requires_escalation is True
+            observations = runtime.quality_receipts()
+            assert tuple(row.run_id for row in observations) == ("run-1",)
+            assert observations[0].status == "COMPLETED"
             assert runtime.graph.get_graph().nodes.keys() >= {"admit", "execute", "finalize"}
         async with await open_runtime(path, registry, handler) as runtime:
             assert await runtime.resume("run-1") == result
             assert await runtime.run("run-1", evidence) == result
+            assert runtime.quality_receipts() == observations
         assert calls == [evidence.context_ref]
 
     asyncio.run(run())

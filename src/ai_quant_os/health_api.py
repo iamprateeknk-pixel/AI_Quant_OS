@@ -5,8 +5,8 @@ import sqlite3
 from dataclasses import asdict
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Query
-from pydantic import BaseModel, ConfigDict
+from fastapi import Depends, Header, HTTPException, Query
+from pydantic import BaseModel, ConfigDict, Field
 
 from ai_quant_os.health_store import HealthPageChanged
 from ai_quant_os.health_timeline_contracts import HealthTimelinePage
@@ -14,6 +14,11 @@ from ai_quant_os.health_timeline_contracts import HealthTimelinePage
 
 class ScanInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+class CloseIncidentInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    reason: str = Field(min_length=1, max_length=256)
 
 
 def health_configuration(enabled, path, token):
@@ -27,7 +32,7 @@ def health_configuration(enabled, path, token):
     return enabled
 
 
-def incident_view(incident, *, evidence=False):
+def incident_view(incident, *, evidence=False, transitions=()):
     value = asdict(incident)
     value["detected_at"] = incident.detected_at.isoformat()
     if not evidence:
@@ -38,7 +43,8 @@ def incident_view(incident, *, evidence=False):
         "incident_id": incident.incident_id,
         "safety_state": incident.safety_state,
         "quarantine": incident.quarantine,
-        "status": "OPEN",
+        "status": "CLOSED" if transitions and transitions[-1]["action"] == "CLOSED" else "OPEN",
+        "transitions": list(transitions),
         "promotion_allowed": False,
     }
 
@@ -72,7 +78,33 @@ def install_health_routes(app, require_operator, worker, enabled):
 
     @app.get("/api/v1/paper/health/incidents", dependencies=[Depends(require_operator)])
     def incidents():
-        return {"incidents": [incident_view(i) for i in require_worker().store.incidents()]}
+        store = require_worker().store
+        rows = store.incidents()
+        transitions = store.transition_map(item.incident_id for item in rows)
+        return {
+            "incidents": [
+                incident_view(i, transitions=transitions.get(i.incident_id, ())) for i in rows
+            ]
+        }
+
+    @app.post(
+        "/api/v1/paper/health/incidents/{incident_id}/close",
+        dependencies=[Depends(require_operator)],
+    )
+    def close_incident(
+        incident_id: str,
+        payload: CloseIncidentInput,
+        idempotency_key: str = Header(alias="Idempotency-Key", min_length=1, max_length=128),
+    ):
+        try:
+            event = require_worker().close_quote_incident(
+                incident_id, command_id=idempotency_key, reason=payload.reason.strip()
+            )
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from error
+        except (OSError, sqlite3.Error) as error:
+            raise HTTPException(503, "Health incident closure failed closed") from error
+        return {"transition": event, "promotion_allowed": False}
 
     @app.get("/api/v1/paper/health/incidents/page", dependencies=[Depends(require_operator)])
     def incident_page(
@@ -90,6 +122,9 @@ def install_health_routes(app, require_operator, worker, enabled):
             ) from error
         except (ValueError, OSError, sqlite3.Error) as error:
             raise HTTPException(503, "Health journal could not be verified") from error
+        transitions = require_worker().store.transition_map(
+            item.incident_id for item in page.incidents
+        )
         return HealthTimelinePage.model_validate(
             {
                 "schema_version": "1.0",
@@ -99,7 +134,10 @@ def install_health_routes(app, require_operator, worker, enabled):
                 "offset": page.offset,
                 "limit": limit,
                 "next_offset": page.next_offset,
-                "incidents": [incident_view(incident) for incident in page.incidents],
+                "incidents": [
+                    incident_view(incident, transitions=transitions.get(incident.incident_id, ()))
+                    for incident in page.incidents
+                ],
             }
         )
 
@@ -111,4 +149,6 @@ def install_health_routes(app, require_operator, worker, enabled):
         value = next((i for i in rows if i.incident_id == incident_id), None)
         if value is None:
             raise HTTPException(404, "Unknown health incident")
-        return incident_view(value, evidence=True)
+        return incident_view(
+            value, evidence=True, transitions=require_worker().store.transitions(value.incident_id)
+        )

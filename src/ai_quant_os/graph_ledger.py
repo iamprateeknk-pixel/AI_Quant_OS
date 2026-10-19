@@ -30,6 +30,10 @@ RunStatus = Literal[
 ]
 
 
+class GraphQualityCapacityExceeded(ValueError):
+    """The bounded operational quality window cannot cover all retained runs."""
+
+
 class GraphReceipt(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     schema_version: Literal["1.0"] = "1.0"
@@ -231,6 +235,56 @@ class GraphLedger:
                 (after_run_id, limit),
             ).fetchall()
             return tuple(self._read(row[0]).receipt for row in rows)
+
+    def quality_receipts(self, *, limit: int = 512) -> tuple[GraphReceipt, ...]:
+        """Return checked current receipts used to rebuild operational metrics."""
+        if type(limit) is not int or not 1 <= limit <= 512:
+            raise ValueError("Invalid agent quality receipt bound")
+        with self._lock, self._db:
+            self._db.execute("BEGIN")
+            rows = self._db.execute(
+                "SELECT run_id FROM graph_runs ORDER BY run_id LIMIT ?", (limit + 1,)
+            ).fetchall()
+            count, largest = self._db.execute(
+                "SELECT COUNT(*),COALESCE(MAX(LENGTH(event_json)),0) FROM audit_events"
+            ).fetchone()
+            if len(rows) > limit or count > 30000 or largest > 4096:
+                raise GraphQualityCapacityExceeded(
+                    "Agent quality receipt inventory exceeds the covered window"
+                )
+            self._audit.require_valid()
+            run_ids = {row[0] for row in rows}
+            audited_ids = set()
+            for key, raw in self._db.execute("SELECT event_key,event_json FROM audit_events"):
+                try:
+                    event = json.loads(raw)
+                    run_id, status = event["run_id"], event["status"]
+                except (TypeError, ValueError, KeyError) as error:
+                    raise ValueError("Agent quality journal is malformed") from error
+                if (
+                    not isinstance(event, dict)
+                    or set(event)
+                    not in (
+                        {"action", "run_id", "status", "record_hash", "context_ref"},
+                        {
+                            "action",
+                            "run_id",
+                            "status",
+                            "record_hash",
+                            "context_ref",
+                            "observed_at",
+                        },
+                    )
+                    or event["action"] != "AGENT_GRAPH_TRANSITION"
+                    or not isinstance(run_id, str)
+                    or status not in get_args(RunStatus)
+                    or key != f"graph:{run_id}:{status}"
+                ):
+                    raise ValueError("Agent quality journal identity mismatch")
+                audited_ids.add(run_id)
+            if audited_ids != run_ids:
+                raise ValueError("Agent quality receipt/audit inventory mismatch")
+            return tuple(self._read(run_id).receipt for (run_id,) in rows)
 
     def records_for_agent(
         self, agent_id: str, agent_version: str, *, limit: int = 128

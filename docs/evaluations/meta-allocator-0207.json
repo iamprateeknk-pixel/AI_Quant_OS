@@ -1,0 +1,43 @@
+{
+  "increment": "0207",
+  "mission": "A13 Meta Allocator 0.3.0",
+  "scope": "Bind one explicit current A12 0.3.0 graph output into A13 paper evidence",
+  "checks": {
+    "windows_focused_tests": {
+      "result": "PASS",
+      "passed": 144,
+      "failed": 0,
+      "groups": [
+        "A12 selector contracts and API",
+        "A13 0.2.0 and 0.3.0 contracts and API",
+        "agent registry and supervisor manifest catalog",
+        "graph runtime and graph API"
+      ]
+    },
+    "linux_full_suite": {
+      "result": "PASS",
+      "passed": 3139,
+      "skipped": 42,
+      "duration_seconds": 1123.12,
+      "environment": "Pinned local Linux Docker image with locked dependencies and checksum-verified Temporal CLI v1.9.1"
+    },
+    "linux_ruff": "PASS",
+    "linux_format": "PASS",
+    "linux_pip_check": "PASS"
+  },
+  "behavior": {
+    "requires_explicit_upstream_run_id": true,
+    "requires_current_completed_a12_0_3_0": true,
+    "binds_upstream_context_and_canonical_output_digest": true,
+    "rejects_missing_and_wrong_version_upstream_runs": true,
+    "allocation_weights": [],
+    "execution_authorized": false,
+    "promotion_allowed": false
+  },
+  "limitations": [
+    "Current A12 output has no eligible strategy candidates because performance qualification, drift, and approval evidence remain incomplete.",
+    "Covariance, calibrated allocation risk budget, and complete cross-instrument exposure remain unavailable.",
+    "Independent A13 acceptance, P00-P12 signed acceptance, and every P13 release gate remain open."
+  ],
+  "promotion": "NOT_AUTHORIZED"
+}

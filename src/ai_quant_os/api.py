@@ -158,11 +158,26 @@ from ai_quant_os.validation_scientist_api import install_validation_scientist_ro
 from ai_quant_os.adversarial_agent import adversarial_implementation, adversarial_sources
 from ai_quant_os.adversarial_api import install_adversarial_routes
 from ai_quant_os.adversarial_service import StressRun as AdversarialStressRun
-from ai_quant_os.strategy_selector_agent import selector_implementation
+from ai_quant_os.strategy_selector_agent import (
+    EligibleStrategySetV3,
+    selector_implementation,
+    selector_implementation_v3,
+)
 from ai_quant_os.strategy_selector_service import StrategyRegistryRead
-from ai_quant_os.strategy_selector_sources import RegistrySnapshot, selector_sources
-from ai_quant_os.meta_allocator_agent import allocator_implementation
-from ai_quant_os.meta_allocator_sources import AllocationInputs, allocator_sources
+from ai_quant_os.strategy_selector_sources import (
+    RegistrySnapshot,
+    selector_sources,
+    selector_sources_v3,
+)
+from ai_quant_os.meta_allocator_agent import (
+    allocator_implementation,
+    allocator_implementation_v3,
+)
+from ai_quant_os.meta_allocator_sources import (
+    AllocationInputs,
+    allocator_sources,
+    allocator_sources_v3,
+)
 from ai_quant_os.counterfactual_agent import counterfactual_implementation
 from ai_quant_os.counterfactual_sources import counterfactual_sources
 from ai_quant_os.health_repair_agent import repair_implementation
@@ -213,6 +228,17 @@ def _candidate_registry_snapshot(workspace):
         available=store is not None,
         candidates=() if store is None else store.list(),
     )
+
+
+def _available_shadow_store(workspace):
+    if workspace is None:
+        return None
+    path = workspace / "shadow.sqlite3"
+    if not path.is_file():
+        return None
+    from ai_quant_os.shadow_store import ShadowStore
+
+    return ShadowStore(path)
 
 
 def _available_counterfactual_report(workspace, replay_id):
@@ -269,6 +295,7 @@ class AgentContextInput(BaseModel):
     agent_id: str = Field(pattern=r"^A(0[1-9]|1[0-8])$")
     agent_version: str = Field(min_length=1, max_length=32)
     task_id: str = Field(min_length=1, max_length=128)
+    upstream_run_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{1,128}$")
 
 
 class AgentGraphInput(BaseModel):
@@ -374,8 +401,13 @@ def create_app(
     drift_policy: DriftPolicy | None = None,
     daily_evidence_enabled: bool | None = None,
     shadow_scheduler_enabled: bool | None = None,
+    evolution_scheduler_enabled: bool | None = None,
     temporal_recovery_enabled: bool | None = None,
     temporal_recovery_target: str | None = None,
+    temporal_repair_enabled: bool | None = None,
+    temporal_repair_repository: Path | None = None,
+    temporal_repair_trust_store: Path | None = None,
+    temporal_repair_trust_root_public_key: bytes | None = None,
     health_watchdog_enabled: bool | None = None,
     demo_sync_state_dir: Path | None = None,
     telemetry: PaperTelemetry | None = None,
@@ -398,6 +430,11 @@ def create_app(
     configured_research_workspace = research_workspace or (
         Path(os.environ["AI_QUANT_RESEARCH_WORKSPACE"])
         if os.getenv("AI_QUANT_RESEARCH_WORKSPACE")
+        else None
+    )
+    configured_evolution_workspace = evolution_workspace or (
+        Path(os.environ["AI_QUANT_EVOLUTION_WORKSPACE"])
+        if os.getenv("AI_QUANT_EVOLUTION_WORKSPACE")
         else None
     )
     configured_demo_sync_state_dir = demo_sync_state_dir or (
@@ -462,6 +499,21 @@ def create_app(
             "Shadow scheduler requires persistent paper storage, an operator token, "
             "and a research workspace"
         )
+    evolution_scheduler_setting = os.getenv("AI_QUANT_EVOLUTION_SCHEDULER_ENABLED", "0")
+    if evolution_scheduler_enabled is None and evolution_scheduler_setting not in ("0", "1"):
+        raise ValueError("AI_QUANT_EVOLUTION_SCHEDULER_ENABLED must be 0 or 1")
+    enabled_evolution_scheduler = (
+        evolution_scheduler_setting == "1"
+        if evolution_scheduler_enabled is None
+        else evolution_scheduler_enabled
+    )
+    if type(enabled_evolution_scheduler) is not bool or (
+        enabled_evolution_scheduler
+        and (configured_evolution_workspace is None or not configured_token)
+    ):
+        raise ValueError(
+            "Evolution scheduler requires a persistent evolution workspace and operator token"
+        )
     if enabled_shadow_scheduler and configured_research_workspace is not None:
         required_shadow_inputs = (
             configured_research_workspace / "shadow.sqlite3",
@@ -474,6 +526,14 @@ def create_app(
             and required_shadow_inputs[2].is_dir()
         ):
             raise ValueError("Shadow scheduler requires existing shadow research stores")
+    evolution_scheduler = None
+    if enabled_evolution_scheduler:
+        from ai_quant_os.evolution_scheduler import EvolutionScheduler
+
+        evolution_scheduler = EvolutionScheduler(
+            configured_evolution_workspace / "evaluation.sqlite3",
+            current_time,
+        )
     from ai_quant_os.recovery_api import install_recovery_routes, recovery_configuration
 
     enabled_recovery, recovery_target = recovery_configuration(
@@ -483,6 +543,25 @@ def create_app(
 
     enabled_health = health_configuration(
         health_watchdog_enabled, configured_path, configured_token
+    )
+    from ai_quant_os.repair_temporal_api import (
+        install_repair_temporal_routes,
+        repair_configuration,
+    )
+
+    (
+        enabled_temporal_repair,
+        configured_repair_repository,
+        repair_verifier_trust_store,
+    ) = repair_configuration(
+        temporal_repair_enabled,
+        temporal_repair_repository,
+        paper_path=configured_path,
+        operator_token=configured_token,
+        health_enabled=enabled_health,
+        recovery_enabled=enabled_recovery,
+        trust_store_path=temporal_repair_trust_store,
+        trust_root_public_key=temporal_repair_trust_root_public_key,
     )
     state_store = PaperStateStore(configured_path)
     calibration_store = CalibrationStore(configured_path)
@@ -507,6 +586,14 @@ def create_app(
         else None
     )
     agent_registry = load_agent_catalog()
+    if configured_path is not None:
+        from ai_quant_os.agent_lifecycle_store import AgentLifecycleStore
+
+        agent_registry.bind_lifecycle_store(
+            AgentLifecycleStore(
+                configured_path.with_name(configured_path.stem + ".agent-lifecycle.sqlite3")
+            )
+        )
     classification_admission = ProviderCallAdmission(
         agent_registry,
         call_budget,
@@ -657,7 +744,22 @@ def create_app(
     async def service_lifespan(application: FastAPI):
         application.state.graph_runtime = None
         if configured_path is None:
-            yield
+            try:
+                if evolution_scheduler is not None:
+                    from ai_quant_os.evolution_scheduler import run_evolution_scheduler
+
+                    application.state.evolution_task = asyncio.create_task(
+                        run_evolution_scheduler(evolution_scheduler)
+                    )
+                yield
+            finally:
+                if application.state.evolution_task is not None:
+                    application.state.evolution_task.cancel()
+                    try:
+                        await application.state.evolution_task
+                    except asyncio.CancelledError:
+                        pass
+                    application.state.evolution_task = None
             return
         graph_path = configured_path.with_name(configured_path.stem + ".agents.sqlite3")
         async with (
@@ -679,7 +781,9 @@ def create_app(
                     ("A10", "0.2.0"): validation_implementation(agent_registry),
                     ("A11", "0.2.0"): adversarial_implementation(agent_registry),
                     ("A12", "0.2.0"): selector_implementation(agent_registry),
+                    ("A12", "0.3.0"): selector_implementation_v3(agent_registry),
                     ("A13", "0.2.0"): allocator_implementation(agent_registry),
+                    ("A13", "0.3.0"): allocator_implementation_v3(agent_registry),
                     ("A14", "0.2.0"): drift_implementation(agent_registry),
                     ("A15", "0.2.0"): counterfactual_implementation(agent_registry),
                     ("A16", "0.2.0"): repair_implementation(agent_registry),
@@ -709,6 +813,9 @@ def create_app(
                             agent_registry,
                             context=archived_agent_context,
                             clock=current_time,
+                            shadow_store=lambda: _available_shadow_store(
+                                configured_research_workspace
+                            ),
                         ),
                         "CANDIDATE_CREATE": CandidateCreate(
                             strategy_build_store,
@@ -751,6 +858,29 @@ def create_app(
                 if enabled_recovery:
                     from ai_quant_os.recovery_runtime import RecoveryRuntime
 
+                    repair_activities = None
+                    if enabled_temporal_repair:
+                        from ai_quant_os.repair_workspace import RepairWorkspace
+                        from ai_quant_os.temporal_repair import RepairRecoveryActivities
+
+                        if health_worker is None:
+                            raise ValueError(
+                                "Temporal repair recovery requires the health watchdog"
+                            )
+                        repair_root = configured_path.with_name(configured_path.stem + ".repairs")
+                        repair_workspace = RepairWorkspace(
+                            configured_repair_repository,
+                            repair_root,
+                            health_worker.store,
+                            agent_registry,
+                        )
+                        repair_activities = RepairRecoveryActivities(
+                            health_worker,
+                            repair_workspace,
+                            jobs_root=repair_root / "jobs",
+                            verifier_trust_store=repair_verifier_trust_store,
+                        )
+
                     application.state.recovery_runtime = await services.enter_async_context(
                         RecoveryRuntime.open(
                             recovery_target,
@@ -759,6 +889,7 @@ def create_app(
                             risk,
                             state_store,
                             control_lock,
+                            repair_activities=repair_activities,
                         )
                     )
                 if daily_worker is not None:
@@ -766,6 +897,12 @@ def create_app(
 
                     application.state.daily_task = asyncio.create_task(
                         run_daily_scheduler(daily_worker)
+                    )
+                if evolution_scheduler is not None:
+                    from ai_quant_os.evolution_scheduler import run_evolution_scheduler
+
+                    application.state.evolution_task = asyncio.create_task(
+                        run_evolution_scheduler(evolution_scheduler)
                     )
                 if shadow_worker is not None:
                     from ai_quant_os.shadow_scheduler import run_shadow_scheduler
@@ -800,15 +937,39 @@ def create_app(
                     except asyncio.CancelledError:
                         pass
                     application.state.shadow_task = None
+                if application.state.evolution_task is not None:
+                    application.state.evolution_task.cancel()
+                    try:
+                        await application.state.evolution_task
+                    except asyncio.CancelledError:
+                        pass
+                    application.state.evolution_task = None
                 application.state.graph_runtime = None
                 application.state.recovery_runtime = None
 
     @asynccontextmanager
     async def lifespan(application: FastAPI):
         try:
-            async with service_lifespan(application):
-                yield
+            if configured_path is None:
+                async with service_lifespan(application):
+                    yield
+            else:
+                from ai_quant_os.root_ownership import kernel_root_lock
+
+                with kernel_root_lock(
+                    configured_path.expanduser().resolve().parent,
+                    lock_name=".paper-api-owner.lock",
+                ):
+                    async with service_lifespan(application):
+                        yield
         finally:
+            if application.state.evolution_task is not None:
+                application.state.evolution_task.cancel()
+                try:
+                    await application.state.evolution_task
+                except asyncio.CancelledError:
+                    pass
+                application.state.evolution_task = None
             if telemetry is None:
                 await asyncio.to_thread(configured_telemetry.close)
 
@@ -819,7 +980,11 @@ def create_app(
     app.state.graph_runtime = None
     app.state.daily_task = None
     app.state.shadow_task = None
+    app.state.evolution_task = None
+    app.state.evolution_scheduler = evolution_scheduler
     app.state.recovery_runtime = None
+    app.state.temporal_repair_enabled = enabled_temporal_repair
+    app.state.repair_verifier_trust_store = repair_verifier_trust_store
     app.state.health_task = None
 
     def currency_context(primary_quote: MarketSnapshot | None = None) -> CurrencyRiskContext:
@@ -1472,7 +1637,13 @@ def create_app(
         macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
         drift_mission = (payload.agent_id, payload.agent_version) == ("A14", "0.2.0")
         selector_mission = (payload.agent_id, payload.agent_version) == ("A12", "0.2.0")
+        selector_v3_mission = (payload.agent_id, payload.agent_version) == ("A12", "0.3.0")
         allocator_mission = (payload.agent_id, payload.agent_version) == ("A13", "0.2.0")
+        allocator_v3_mission = (payload.agent_id, payload.agent_version) == ("A13", "0.3.0")
+        if payload.upstream_run_id is not None and not allocator_v3_mission:
+            raise HTTPException(422, "Upstream graph run is supported only for A13 0.3.0")
+        if allocator_v3_mission and payload.upstream_run_id is None:
+            raise HTTPException(422, "A13 0.3.0 requires an A12 0.3.0 graph run")
         counterfactual_mission = (payload.agent_id, payload.agent_version) == (
             "A15",
             "0.2.0",
@@ -1576,26 +1747,58 @@ def create_app(
                     context_quotes,
                     tuple(displayed_depth.copy().values()),
                 )
-            elif selector_mission:
+            elif selector_mission or selector_v3_mission:
                 registry_snapshot = await owned_research_call(
                     lambda: _candidate_registry_snapshot(configured_research_workspace)
                 )
-                sources = selector_sources(
+                source_builder = selector_sources
+                shadow_store = None
+                if selector_v3_mission:
+                    shadow_store = await owned_research_call(
+                        lambda: _available_shadow_store(configured_research_workspace)
+                    )
+                    source_builder = selector_sources_v3
+                sources = source_builder(
                     registry_snapshot.candidates,
                     snapshot,
                     now=current_time(),
                     registry_available=registry_snapshot.available,
+                    **({"shadow_store": shadow_store} if selector_v3_mission else {}),
                 )
-            elif allocator_mission:
+            elif allocator_mission or allocator_v3_mission:
                 portfolio = await asyncio.to_thread(lambda: execution.exposure_snapshot)
-                sources = allocator_sources(
-                    AllocationInputs(
-                        portfolio=portfolio,
-                        risk_limits=limits,
-                        safety_state=risk.safety_state.value,
-                    ),
-                    now=current_time(),
+                allocation_inputs = AllocationInputs(
+                    portfolio=portfolio,
+                    risk_limits=limits,
+                    safety_state=risk.safety_state.value,
                 )
+                if allocator_v3_mission:
+                    runtime = require_graph_runtime()
+                    try:
+                        selector_receipt, selector_output = await asyncio.to_thread(
+                            runtime.completed_output, payload.upstream_run_id
+                        )
+                    except KeyError as error:
+                        raise HTTPException(404, "Upstream selector graph run not found") from error
+                    except ValueError as error:
+                        raise HTTPException(
+                            409, "Upstream selector graph run is not current"
+                        ) from error
+                    if type(selector_output) is not EligibleStrategySetV3:
+                        raise HTTPException(409, "Upstream graph run is not A12 0.3.0 output")
+                    try:
+                        sources = allocator_sources_v3(
+                            allocation_inputs,
+                            selector_receipt=selector_receipt,
+                            selector_output=selector_output,
+                            now=current_time(),
+                        )
+                    except ValueError as error:
+                        raise HTTPException(
+                            409, "Upstream selector evidence is unavailable"
+                        ) from error
+                else:
+                    sources = allocator_sources(allocation_inputs, now=current_time())
             elif counterfactual_mission:
                 report = await owned_research_call(
                     lambda: _available_counterfactual_report(
@@ -1611,7 +1814,7 @@ def create_app(
                         await asyncio.to_thread(health_worker.status) if health_worker else None
                     )
                     incidents = (
-                        await asyncio.to_thread(health_worker.store.incidents)
+                        await asyncio.to_thread(health_worker.store.open_incidents)
                         if health_worker and (repair_details_mission or repair_trace_mission)
                         else None
                     )
@@ -1679,7 +1882,23 @@ def create_app(
                     include_traces=repair_trace_mission,
                 )
             elif evolution_mission:
-                sources = evolution_sources(agent_registry, now=current_time())
+                quality_receipts = None
+                quality_unavailable_reason = "GRAPH_LEDGER_UNAVAILABLE"
+                if app.state.graph_runtime is not None:
+                    from ai_quant_os.graph_ledger import GraphQualityCapacityExceeded
+
+                    try:
+                        quality_receipts = await asyncio.to_thread(
+                            app.state.graph_runtime.quality_receipts
+                        )
+                    except GraphQualityCapacityExceeded:
+                        quality_unavailable_reason = "GRAPH_RUN_CAPACITY_EXCEEDED"
+                sources = evolution_sources(
+                    agent_registry,
+                    now=current_time(),
+                    quality_receipts=quality_receipts,
+                    quality_unavailable_reason=quality_unavailable_reason,
+                )
             elif payload.agent_id == "A07":
                 sources = integrity_sources(
                     snapshot, world_state.histories(), ingress_health.snapshot()
@@ -1691,6 +1910,9 @@ def create_app(
                 sources,
                 clock=current_time,
                 call_budget=call_budget,
+                timeout_seconds=2
+                if (payload.agent_id, payload.agent_version) == ("A12", "0.3.0")
+                else 0.1,
                 max_input_bytes=65536
                 if drift_mission
                 else STRENGTH_INPUT_BYTES
@@ -1996,7 +2218,7 @@ def create_app(
         return context
 
     def capture_incident_observation() -> dict:
-        incidents = health_worker.store.incidents() if health_worker else None
+        incidents = health_worker.store.open_incidents() if health_worker else None
         health = health_worker.status() if health_worker else None
         broker = next(row for row in router.snapshot() if row["broker_id"] == "PAPER")
         return dict(
@@ -2596,7 +2818,7 @@ def create_app(
                 from ai_quant_os.paper_recovery import require_completed_triage
 
                 require_completed_triage(state_store.audit_events())
-                if health_worker is not None and health_worker.store.incidents():
+                if health_worker is not None and health_worker.store.open_incidents():
                     raise ValueError("Open health incidents require independently gated repair")
                 execution.recover_paper_safety(
                     before_change=lambda: state_store.record_recovery(
@@ -2618,6 +2840,7 @@ def create_app(
     from ai_quant_os.broker_capability_api import install_broker_capability_routes
 
     install_broker_capability_routes(app, router, require_operator, clock=current_time)
+    install_repair_temporal_routes(app, require_operator)
     install_incident_proposal_routes(app, require_operator, incident_proposal_store)
     install_research_data_routes(app, research_data_catalog, require_operator, current_time)
     install_validation_package_routes(
@@ -2738,13 +2961,9 @@ def create_app(
     )
     install_evolution_routes(
         app,
-        evolution_workspace
-        or (
-            Path(os.environ["AI_QUANT_EVOLUTION_WORKSPACE"])
-            if os.getenv("AI_QUANT_EVOLUTION_WORKSPACE")
-            else None
-        ),
+        configured_evolution_workspace,
         require_operator,
+        evolution_scheduler,
     )
     return app
 

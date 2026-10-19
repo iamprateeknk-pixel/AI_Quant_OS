@@ -33,8 +33,12 @@ def worker(
 
 
 def test_real_failed_graph_is_quarantined_and_restored_by_exact_version(tmp_path):
+    from ai_quant_os.agent_lifecycle_store import AgentLifecycleStore
+
     async def run():
         registry = load_agent_catalog()
+        registry.bind_lifecycle_store(AgentLifecycleStore(tmp_path / "agent-lifecycle.sqlite3"))
+        registry.set_lifecycle("A02", "0.1.0", "ACTIVE")
         evidence = await context(registry)
 
         async def broken(invocation):
@@ -58,8 +62,11 @@ def test_real_failed_graph_is_quarantined_and_restored_by_exact_version(tmp_path
             assert store.incidents()[0].code == "AGENT_FAILED"
             value.step()
             assert len(store.incidents()) == 1
-        value, store, state, risk, restored = worker(tmp_path)
+        restored = load_agent_catalog()
+        restored.bind_lifecycle_store(AgentLifecycleStore(tmp_path / "agent-lifecycle.sqlite3"))
+        value, store, state, risk, restored = worker(tmp_path, registry=restored)
         assert restored.lifecycle("A02", "0.1.0") == "QUARANTINED"
+        assert restored.lifecycle("A02", "0.2.0") == "SHADOW"
         assert risk.safety_state == state.safety_state() == SafetyState.NO_NEW_RISK
 
     asyncio.run(run())
@@ -259,6 +266,57 @@ def test_clock_regression_halts_without_fabricating_clock_measurement(tmp_path):
     value.step()
     assert store.incidents()[0].code == "CLOCK_REGRESSION"
     assert risk.safety_state == state.safety_state() == SafetyState.HALT
+
+
+def test_quote_incident_closure_requires_live_trusted_quote_and_recovery_is_separate(tmp_path):
+    bad = MarketSnapshot("EURUSD", Decimal(1), Decimal(1), NOW, "world-1", False)
+    quotes = [bad]
+    value, store, state, risk, _ = worker(tmp_path, quotes=lambda: tuple(quotes))
+    value.step()
+    incident = store.incidents()[0]
+    with pytest.raises(ValueError, match="fresh trusted quote"):
+        value.close_quote_incident(incident.incident_id, command_id="close-1", reason="quote fixed")
+    assert incident in store.open_incidents()
+
+    quotes[:] = [MarketSnapshot("EURUSD", Decimal(1), Decimal(1), NOW, "world-2", True)]
+    event = value.close_quote_incident(
+        incident.incident_id, command_id="close-1", reason="quote fixed"
+    )
+    assert event["action"] == "CLOSED"
+    assert value.status()["open_incidents"] == 0
+    assert risk.safety_state == state.safety_state() == SafetyState.NO_NEW_RISK
+    # Closure acknowledges the quote incident; it does not normalize risk.
+    with pytest.raises(ValueError):
+        value.close_quote_incident(incident.incident_id, command_id="close-2", reason="again")
+
+
+def test_closed_quote_does_not_reapply_old_stop_after_separate_paper_recovery(tmp_path):
+    from ai_quant_os.health_watchdog import HealthWatchdog
+
+    bad = MarketSnapshot("EURUSD", Decimal(1), Decimal(1), NOW, "world-1", False)
+    quotes = [bad]
+    value, store, state, risk, registry = worker(tmp_path, quotes=lambda: tuple(quotes))
+    value.step()
+    incident = store.incidents()[0]
+    quotes[:] = [MarketSnapshot("EURUSD", Decimal(1), Decimal(1), NOW, "world-2", True)]
+    value.close_quote_incident(incident.incident_id, command_id="close-1", reason="restored")
+    receipt = {"receipt_id": "recovery-1", "safety_state": "NORMAL"}
+    risk.recover_paper_safety(
+        before_change=lambda: state.record_recovery("paper-recovery-test", "triaged", receipt)
+    )
+    restored = HealthWatchdog(
+        store,
+        state,
+        risk,
+        value.execution,
+        registry,
+        lambda cursor: (),
+        lambda: tuple(quotes),
+        lambda: NOW,
+    )
+    restored.restore()
+    assert risk.safety_state == state.safety_state() == SafetyState.NORMAL
+    assert restored.status()["open_incidents"] == 0
 
 
 def test_persistent_health_stop_holds_kernel_authority_through_audit_commit(tmp_path):

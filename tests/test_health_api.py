@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -105,3 +105,84 @@ def test_corrupt_restored_journal_blocks_commands_and_halts_without_monitoring(t
         )
         assert response.status_code == 503
         assert client.get("/api/v1/risk").json()["safety_state"] == "HALT"
+
+
+def test_quote_incident_close_route_requires_operator_and_fresh_quote(tmp_path):
+    options = dict(
+        operator_token="operator",
+        clock=lambda: NOW,
+        paper_db_path=tmp_path / "paper.sqlite3",
+        health_watchdog_enabled=True,
+    )
+    headers = {"X-Operator-Token": "operator"}
+    with TestClient(create_app(**options)) as client:
+        client.post(
+            "/api/v1/paper/quotes",
+            headers=headers,
+            json={
+                "instrument_id": "EURUSD",
+                "bid": "1.1000",
+                "ask": "1.1001",
+                "observed_at": (NOW - timedelta(seconds=6)).isoformat(),
+                "world_state_version": "old",
+            },
+        )
+        client.post("/api/v1/paper/health/scan", headers=headers)
+        incidents = client.get("/api/v1/paper/health/incidents", headers=headers).json()[
+            "incidents"
+        ]
+        incident_id = incidents[0]["incident_id"]
+        path = f"/api/v1/paper/health/incidents/{incident_id}/close"
+        assert (
+            client.post(
+                path, json={"reason": "resolved"}, headers={"Idempotency-Key": "close-quote"}
+            ).status_code
+            == 401
+        )
+        assert (
+            client.post(
+                path,
+                json={"reason": "resolved"},
+                headers={**headers, "Idempotency-Key": "close-quote"},
+            ).status_code
+            == 409
+        )
+        client.post(
+            "/api/v1/paper/quotes",
+            headers=headers,
+            json={
+                "instrument_id": "EURUSD",
+                "bid": "1.1000",
+                "ask": "1.1001",
+                "observed_at": NOW.isoformat(),
+                "world_state_version": "fresh",
+            },
+        )
+        response = client.post(
+            path,
+            json={"reason": "trusted quote restored"},
+            headers={**headers, "Idempotency-Key": "close-quote"},
+        )
+        assert response.status_code == 200
+        assert client.get("/api/v1/paper/health", headers=headers).json()["open_incidents"] == 0
+        item = client.get(f"/api/v1/paper/health/incidents/{incident_id}", headers=headers).json()
+        assert item["status"] == "CLOSED"
+        assert item["transitions"][0]["action"] == "CLOSED"
+
+
+def test_persistent_api_lifespan_has_one_crash_released_owner(tmp_path):
+    options = {
+        "operator_token": "operator",
+        "paper_db_path": tmp_path / "paper.sqlite3",
+    }
+    first = TestClient(create_app(**options))
+    with first:
+        competing = TestClient(create_app(**options))
+        try:
+            with pytest.raises(ValueError, match="already owned"):
+                competing.__enter__()
+        finally:
+            competing.close()
+
+    with TestClient(create_app(**options)) as successor:
+        assert successor.get("/api/v1/risk").status_code == 200

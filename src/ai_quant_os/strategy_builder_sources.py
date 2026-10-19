@@ -76,7 +76,7 @@ def builder_sources(review: HypothesisReview, *, now: datetime) -> dict[str, Sou
             "hypothesis_spec",
             ReviewedHypothesisEvidence(as_of=now, review=review),
             "RESEARCH_MEMORY_READ",
-            "TRAINING",
+            "GENERAL",
         ),
         (
             "strategy_sdk",
@@ -114,7 +114,7 @@ def candidate_for_context(context: CompiledContext) -> CandidateBundle:
     ):
         raise ValueError("Candidate builder requires its complete sandbox context")
     expected = (
-        ("hypothesis_spec", "RESEARCH_MEMORY_READ", "TRAINING"),
+        ("hypothesis_spec", "RESEARCH_MEMORY_READ", "GENERAL"),
         ("strategy_sdk", "WORLD_STATE_READ", "GENERAL"),
         ("feature_catalog", "WORLD_STATE_READ", "GENERAL"),
     )

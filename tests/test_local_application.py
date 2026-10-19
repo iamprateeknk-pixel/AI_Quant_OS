@@ -11,17 +11,31 @@ from urllib.request import ProxyHandler, Request, build_opener
 import pytest
 
 
+def _available_local_ports(count):
+    listeners = []
+    try:
+        while len(listeners) < count:
+            port = 12000 + secrets.randbelow(18000)
+            listener = socket.socket()
+            try:
+                listener.bind(("127.0.0.1", port))
+            except OSError:
+                listener.close()
+                continue
+            listeners.append(listener)
+        return [listener.getsockname()[1] for listener in listeners]
+    finally:
+        for listener in listeners:
+            listener.close()
+
+
 @pytest.mark.skipif(
     os.getenv("AI_QUANT_REQUIRE_LOCAL_WEB") != "1", reason="Opt-in built frontend integration"
 )
 def test_real_ui_api_authentication_persistence_and_shutdown(tmp_path, monkeypatch):
     from ai_quant_os.local_runtime import LocalSettings, local_application
 
-    ports = []
-    for _ in range(2):
-        with socket.socket() as listener:
-            listener.bind(("127.0.0.1", 0))
-            ports.append(listener.getsockname()[1])
+    ports = _available_local_ports(2)
     token = secrets.token_urlsafe(32)
     monkeypatch.setenv("AI_QUANT_OPERATOR_TOKEN", token)
     monkeypatch.setenv("AI_QUANT_REVIEW_ENABLED", "true")
@@ -74,6 +88,8 @@ def test_real_ui_api_authentication_persistence_and_shutdown(tmp_path, monkeypat
         with socket.socket() as listener:
             if os.name == "nt":
                 listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            else:
+                listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listener.bind(("127.0.0.1", port))
 
 
@@ -90,10 +106,7 @@ def test_frontend_exit_cleans_up_already_ready_api(tmp_path, monkeypatch):
     binary.write_text("process.exit(7)", encoding="utf-8")
     (web / ".next").mkdir()
     (web / ".next/BUILD_ID").write_text("trusted-exit-fixture", encoding="utf-8")
-    with socket.socket() as api_listener, socket.socket() as web_listener:
-        api_listener.bind(("127.0.0.1", 0))
-        web_listener.bind(("127.0.0.1", 0))
-        ports = [api_listener.getsockname()[1], web_listener.getsockname()[1]]
+    ports = _available_local_ports(2)
     original = local_runtime.OwnedProcess
     created = []
 
@@ -110,4 +123,8 @@ def test_frontend_exit_cleans_up_already_ready_api(tmp_path, monkeypatch):
     assert len(created) == 2
     assert all(child.process.poll() is not None for child in created)
     with socket.socket() as listener:
+        if os.name == "nt":
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        else:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listener.bind(("127.0.0.1", ports[0]))

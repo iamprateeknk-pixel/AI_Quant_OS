@@ -1,4 +1,4 @@
-"""Audited historical CSV catalog with immutable labels and checked training reads."""
+"""Audited training/holdout stores with isolated raw bytes and checked reads."""
 
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -51,6 +51,12 @@ class ResearchEvidenceCatalog:
         if type(capacity) is not int or not 1 <= capacity <= 64:
             raise ValueError("Invalid research evidence capacity")
         existed = path is not None and path.exists()
+        holdout_path = (
+            path.with_name(path.stem + ".holdout" + path.suffix) if path is not None else None
+        )
+        holdout_existed = holdout_path is not None and holdout_path.exists()
+        if holdout_existed and not existed:
+            raise ValueError("Research catalog metadata missing")
         if path is not None:
             path.parent.mkdir(parents=True, exist_ok=True)
         self._capacity, self._lock = capacity, Lock()
@@ -60,40 +66,59 @@ class ResearchEvidenceCatalog:
             isolation_level=None,
             timeout=5,
         )
+        self._holdout_db = sqlite3.connect(
+            str(holdout_path) if holdout_path else ":memory:",
+            check_same_thread=False,
+            isolation_level=None,
+            timeout=5,
+        )
         self._db.execute("PRAGMA synchronous=FULL")
+        self._holdout_db.execute("PRAGMA synchronous=FULL")
         self._audit = AuditChain(self._db)
+        self._holdout_audit = AuditChain(self._holdout_db)
         try:
+            self._initialize_store(self._db, existed)
+            self._initialize_store(self._holdout_db, holdout_existed)
+            self._migrate_legacy_holdout()
             with self._transaction():
-                tables = {
-                    row[0]
-                    for row in self._db.execute("SELECT name FROM sqlite_master WHERE type='table'")
-                }
-                required = {"research_datasets", "audit_events", "audit_chain", "audit_head"}
-                if existed and (
-                    not required <= tables
-                    or self._db.execute("SELECT COUNT(*) FROM audit_head").fetchone()[0] != 1
-                ):
-                    raise ValueError("Research catalog metadata missing")
-                self._db.execute(
-                    "CREATE TABLE IF NOT EXISTS research_datasets (dataset_ref TEXT PRIMARY KEY, raw_csv BLOB NOT NULL, receipt_json TEXT NOT NULL)"
-                )
-                self._db.execute(
-                    "CREATE TABLE IF NOT EXISTS audit_events (event_key TEXT PRIMARY KEY, event_json TEXT NOT NULL)"
-                )
-                self._audit.initialize()
                 self._verified()
         except BaseException:
             self._db.close()
+            self._holdout_db.close()
             raise
+
+    @staticmethod
+    def _initialize_store(db: sqlite3.Connection, existed: bool) -> None:
+        tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        required = {"research_datasets", "audit_events", "audit_chain", "audit_head"}
+        if existed and (
+            not required <= tables
+            or db.execute("SELECT COUNT(*) FROM audit_head").fetchone()[0] != 1
+        ):
+            raise ValueError("Research catalog metadata missing")
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS research_datasets (dataset_ref TEXT PRIMARY KEY, raw_csv BLOB NOT NULL, receipt_json TEXT NOT NULL)"
+        )
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS research_dataset_tombstones (dataset_ref TEXT PRIMARY KEY, receipt_json TEXT NOT NULL)"
+        )
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS audit_events (event_key TEXT PRIMARY KEY, event_json TEXT NOT NULL)"
+        )
+        AuditChain(db).initialize()
 
     @contextmanager
     def _transaction(self):
         self._db.execute("BEGIN IMMEDIATE")
         try:
+            self._holdout_db.execute("BEGIN IMMEDIATE")
             yield
+            self._holdout_db.execute("COMMIT")
             self._db.execute("COMMIT")
         except BaseException:
-            self._db.execute("ROLLBACK")
+            for db in (self._holdout_db, self._db):
+                if db.in_transaction:
+                    db.execute("ROLLBACK")
             raise
 
     @staticmethod
@@ -105,11 +130,20 @@ class ResearchEvidenceCatalog:
             "resource_class": receipt.resource_class,
         }
 
-    def _verified(self) -> tuple[tuple[ResearchDataReceipt, bytes], ...]:
-        count, total, maximum, metadata = self._db.execute(
+    def _verified_store(
+        self,
+        db: sqlite3.Connection,
+        audit: AuditChain,
+        *,
+        expected_class: str | None,
+    ) -> tuple[tuple[ResearchDataReceipt, bytes], ...]:
+        count, total, maximum, metadata = db.execute(
             "SELECT COUNT(*),COALESCE(SUM(LENGTH(raw_csv)),0),COALESCE(MAX(LENGTH(raw_csv)),0),COALESCE(MAX(LENGTH(receipt_json)),0) FROM research_datasets"
         ).fetchone()
-        events, event_bytes = self._db.execute(
+        tombstone_count, tombstone_bytes = db.execute(
+            "SELECT COUNT(*),COALESCE(MAX(LENGTH(receipt_json)),0) FROM research_dataset_tombstones"
+        ).fetchone()
+        events, event_bytes = db.execute(
             "SELECT COUNT(*),COALESCE(MAX(LENGTH(event_json)),0) FROM audit_events"
         ).fetchone()
         if (
@@ -117,15 +151,34 @@ class ResearchEvidenceCatalog:
             or total > 8388608
             or maximum > 1048576
             or metadata > 4096
-            or events != count
+            or tombstone_count > 64
+            or tombstone_bytes > 4096
+            or events != count + tombstone_count
             or event_bytes > 2048
         ):
             raise ValueError("Research catalog capacity/audit count mismatch")
-        integrity = self._audit.require_valid()
-        if integrity.event_count != count or integrity.legacy_event_count:
+        integrity = audit.require_valid()
+        if integrity.event_count != events or integrity.legacy_event_count:
             raise ValueError("Research catalog audit binding mismatch")
+        tombstones = {}
+        for reference, encoded in db.execute(
+            "SELECT dataset_ref,receipt_json FROM research_dataset_tombstones"
+        ):
+            receipt = ResearchDataReceipt.model_validate_json(encoded)
+            if (
+                receipt.resource_class != "HOLDOUT"
+                or receipt.dataset_ref != reference
+                or receipt.model_dump_json() != encoded
+            ):
+                raise ValueError("Research catalog isolation tombstone mismatch")
+            event = db.execute(
+                "SELECT event_json FROM audit_events WHERE event_key=?", (reference,)
+            ).fetchone()
+            if event is None or json.loads(event[0]) != self._event(receipt):
+                raise ValueError("Research catalog tombstone audit mismatch")
+            tombstones[reference] = receipt
         results = []
-        for reference, raw, encoded in self._db.execute(
+        for reference, raw, encoded in db.execute(
             "SELECT dataset_ref,raw_csv,receipt_json FROM research_datasets ORDER BY rowid"
         ):
             receipt = ResearchDataReceipt.model_validate_json(encoded)
@@ -133,7 +186,9 @@ class ResearchEvidenceCatalog:
                 raw, receipt.source_id, receipt.resource_class, receipt.received_at
             ) or (reference != receipt.dataset_ref or receipt.model_dump_json() != encoded):
                 raise ValueError("Research catalog source identity mismatch")
-            event = self._db.execute(
+            if expected_class is not None and receipt.resource_class != expected_class:
+                raise ValueError("Research dataset is stored in the wrong class catalog")
+            event = db.execute(
                 "SELECT event_json FROM audit_events WHERE event_key=?", (reference,)
             ).fetchone()
             if event is None or json.loads(event[0]) != self._event(receipt):
@@ -145,6 +200,136 @@ class ResearchEvidenceCatalog:
                 raise ValueError("Research classification overlap")
             results.append((receipt, raw))
         return tuple(results)
+
+    def _verified_receipts(
+        self,
+        db: sqlite3.Connection,
+        audit: AuditChain,
+        *,
+        expected_class: str,
+    ) -> tuple[ResearchDataReceipt, ...]:
+        """Verify sealed-store metadata without selecting its raw CSV column."""
+        count, receipt_bytes, maximum_receipt = db.execute(
+            "SELECT COUNT(*),COALESCE(SUM(LENGTH(receipt_json)),0),COALESCE(MAX(LENGTH(receipt_json)),0) FROM research_datasets"
+        ).fetchone()
+        tombstone_count, tombstone_bytes = db.execute(
+            "SELECT COUNT(*),COALESCE(SUM(LENGTH(receipt_json)),0) FROM research_dataset_tombstones"
+        ).fetchone()
+        events = db.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
+        page_count = db.execute("PRAGMA page_count").fetchone()[0]
+        page_size = db.execute("PRAGMA page_size").fetchone()[0]
+        integrity = audit.require_valid()
+        if (
+            count + tombstone_count > 64
+            or receipt_bytes + tombstone_bytes > 262144
+            or maximum_receipt > 4096
+            or events != count + tombstone_count
+            or integrity.event_count != events
+            or integrity.legacy_event_count
+            or page_count * page_size > 16777216
+        ):
+            raise ValueError("Research catalog metadata/audit count mismatch")
+        receipts = []
+        for reference, encoded in db.execute(
+            "SELECT dataset_ref,receipt_json FROM research_datasets ORDER BY rowid"
+        ):
+            receipt = ResearchDataReceipt.model_validate_json(encoded)
+            event = db.execute(
+                "SELECT event_json FROM audit_events WHERE event_key=?", (reference,)
+            ).fetchone()
+            if (
+                receipt.resource_class != expected_class
+                or receipt.dataset_ref != reference
+                or receipt.model_dump_json() != encoded
+                or event is None
+                or json.loads(event[0]) != self._event(receipt)
+            ):
+                raise ValueError("Research catalog metadata identity mismatch")
+            receipts.append(receipt)
+        tombstones = self._legacy_tombstone_receipts() if db is self._db else ()
+        if any(
+            receipt.resource_class != "HOLDOUT"
+            or receipt.dataset_ref not in {row.dataset_ref for row in receipts}
+            for receipt in tombstones
+        ):
+            raise ValueError("Research catalog isolation metadata mismatch")
+        return tuple(receipts)
+
+    def _verified(self) -> tuple[tuple[ResearchDataReceipt, bytes], ...]:
+        training = self._verified_store(
+            self._db,
+            self._audit,
+            expected_class="TRAINING",
+        )
+        holdout = self._verified_store(
+            self._holdout_db,
+            self._holdout_audit,
+            expected_class="HOLDOUT",
+        )
+        rows = training + holdout
+        isolated_by_ref = {receipt.dataset_ref: receipt for receipt, _ in holdout}
+        if any(
+            isolated_by_ref.get(receipt.dataset_ref) != receipt
+            for receipt in self._legacy_tombstone_receipts()
+        ):
+            raise ValueError("Research catalog isolated holdout is missing")
+        if len(rows) > 64 or sum(len(raw) for _, raw in rows) > 8388608:
+            raise ValueError("Research catalog capacity/audit count mismatch")
+        for receipt in self._legacy_tombstone_receipts():
+            if any(_overlap(receipt, live) for live, _ in rows if live.resource_class != "HOLDOUT"):
+                raise ValueError("Research classification overlap")
+        if any(
+            first.resource_class != second.resource_class and _overlap(first, second)
+            for index, (first, _) in enumerate(rows)
+            for second, _ in rows[index + 1 :]
+        ):
+            raise ValueError("Research classification overlap")
+        return rows
+
+    def _legacy_tombstone_receipts(self) -> tuple[ResearchDataReceipt, ...]:
+        return tuple(
+            ResearchDataReceipt.model_validate_json(encoded)
+            for (encoded,) in self._db.execute(
+                "SELECT receipt_json FROM research_dataset_tombstones"
+            )
+        )
+
+    def _migrate_legacy_holdout(self) -> None:
+        with self._transaction():
+            legacy = self._verified_store(self._db, self._audit, expected_class=None)
+            holdouts = tuple(row for row in legacy if row[0].resource_class == "HOLDOUT")
+            if not holdouts:
+                return
+            isolated = self._verified_store(
+                self._holdout_db, self._holdout_audit, expected_class="HOLDOUT"
+            )
+            isolated_by_ref = {receipt.dataset_ref: (receipt, raw) for receipt, raw in isolated}
+            for receipt, raw in holdouts:
+                existing = isolated_by_ref.get(receipt.dataset_ref)
+                if existing is not None and existing != (receipt, raw):
+                    raise ValueError("Conflicting isolated holdout migration")
+                if existing is None:
+                    self._holdout_db.execute(
+                        "INSERT INTO research_datasets VALUES (?,?,?)",
+                        (receipt.dataset_ref, raw, receipt.model_dump_json()),
+                    )
+                    self._holdout_audit.append(receipt.dataset_ref, self._event(receipt))
+                    isolated_by_ref[receipt.dataset_ref] = (receipt, raw)
+                tombstone = self._db.execute(
+                    "SELECT receipt_json FROM research_dataset_tombstones WHERE dataset_ref=?",
+                    (receipt.dataset_ref,),
+                ).fetchone()
+                if tombstone is not None and tombstone[0] != receipt.model_dump_json():
+                    raise ValueError("Conflicting legacy holdout tombstone")
+                self._db.execute(
+                    "INSERT OR IGNORE INTO research_dataset_tombstones VALUES (?,?)",
+                    (receipt.dataset_ref, receipt.model_dump_json()),
+                )
+                self._db.execute(
+                    "DELETE FROM research_datasets WHERE dataset_ref=?", (receipt.dataset_ref,)
+                )
+            self._verified_store(self._db, self._audit, expected_class="TRAINING")
+            self._verified_store(self._holdout_db, self._holdout_audit, expected_class="HOLDOUT")
 
     def publish(
         self, raw: bytes, *, source_id: str, resource_class: str, received_at: datetime
@@ -167,11 +352,16 @@ class ResearchEvidenceCatalog:
                 or sum(len(body) for _, body in rows) + len(raw) > 8388608
             ):
                 raise ValueError("Research catalog capacity exhausted")
-            self._db.execute(
+            target_db, target_audit = (
+                (self._db, self._audit)
+                if receipt.resource_class == "TRAINING"
+                else (self._holdout_db, self._holdout_audit)
+            )
+            target_db.execute(
                 "INSERT INTO research_datasets VALUES (?,?,?)",
                 (receipt.dataset_ref, raw, receipt.model_dump_json()),
             )
-            self._audit.append(receipt.dataset_ref, self._event(receipt))
+            target_audit.append(receipt.dataset_ref, self._event(receipt))
             return receipt
 
     def list(self) -> tuple[ResearchDataReceipt, ...]:
@@ -194,17 +384,27 @@ class ResearchEvidenceCatalog:
     ) -> tuple[tuple[ResearchDataReceipt, BarDataset], ...]:
         registry.require_tool(agent_id, agent_version, "TRAINING_READ", scope=scope)
         with self._lock, self._transaction():
-            rows = tuple(
-                (record, parse_research_csv(raw))
-                for record, raw in self._verified()
-                if record.resource_class == "TRAINING"
+            training_rows = self._verified_store(self._db, self._audit, expected_class="TRAINING")
+            holdout_receipts = self._verified_receipts(
+                self._holdout_db, self._holdout_audit, expected_class="HOLDOUT"
             )
+            holdout_by_ref = {receipt.dataset_ref: receipt for receipt in holdout_receipts}
+            if any(
+                holdout_by_ref.get(receipt.dataset_ref) != receipt
+                for receipt in self._legacy_tombstone_receipts()
+            ):
+                raise ValueError("Research catalog isolated holdout is missing")
+            for receipt, _ in training_rows:
+                if any(_overlap(receipt, heldout) for heldout in holdout_receipts):
+                    raise ValueError("Research classification overlap")
+            rows = tuple((receipt, parse_research_csv(raw)) for receipt, raw in training_rows)
         registry.require_tool(agent_id, agent_version, "TRAINING_READ", scope=scope)
         return rows
 
     def close(self) -> None:
         with self._lock:
             self._db.close()
+            self._holdout_db.close()
 
     def __enter__(self) -> "ResearchEvidenceCatalog":
         return self

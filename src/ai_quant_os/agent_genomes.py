@@ -36,13 +36,19 @@ class MetricCriterion(BaseModel):
         "TOOL_ERROR_RATE",
         "COST_USD",
         "REGIME_CORRECTNESS",
+        "INTEGRITY_CORRECTNESS",
     ]
     direction: Literal["MAXIMIZE", "MINIMIZE"]
     minimum_improvement: Decimal = Field(ge=0, le=1000000, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def metric_policy(self) -> "MetricCriterion":
-        maximized = self.metric in {"CORRECTNESS", "RELIABILITY", "REGIME_CORRECTNESS"}
+        maximized = self.metric in {
+            "CORRECTNESS",
+            "RELIABILITY",
+            "REGIME_CORRECTNESS",
+            "INTEGRITY_CORRECTNESS",
+        }
         expected = "MAXIMIZE" if maximized else "MINIMIZE"
         rates = {
             "CORRECTNESS",
@@ -50,6 +56,7 @@ class MetricCriterion(BaseModel):
             "RELIABILITY",
             "TOOL_ERROR_RATE",
             "REGIME_CORRECTNESS",
+            "INTEGRITY_CORRECTNESS",
         }
         if self.direction != expected or (self.metric in rates and self.minimum_improvement > 1):
             raise ValueError("Objective direction or improvement differs from metric units")

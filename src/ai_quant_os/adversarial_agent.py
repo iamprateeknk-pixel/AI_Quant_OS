@@ -10,6 +10,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from ai_quant_os.agent_context import (
     CompiledContext,
+    DatasetResourceCatalog,
     EvidenceRecord,
     SourceBinding,
     verify_context,
@@ -205,8 +206,9 @@ def _observations(context: CompiledContext):
         or not validation.gates
         or next((row[:2] for row in validation.gates if row[0] == "ADVERSARIAL"), None)
         != ("ADVERSARIAL", stress.state)
-        or tuple(row.source_id for row in context.inputs)
-        != tuple(report_identity + name for name in INPUT_NAMES)
+        or context.inputs[0].source_id != report_identity + "strategy_candidate"
+        or context.inputs[1].source_id != report_identity + "validation_results"
+        or not context.inputs[2].source_id.startswith("dataset-resource-catalog:")
     ):
         raise ValueError("Adversarial source observations disagree")
     return candidate, validation, stress
@@ -265,6 +267,19 @@ def adversarial_sources(report: ResearchReport, *, now: datetime) -> dict[str, S
         "stress_library": (stress, "HOLDOUT_READ", "HOLDOUT"),
     }
     sources = {}
+    holdout_scope = report.plan.holdout_scope
+    scope_material = "|".join(
+        (
+            holdout_scope.instrument_id,
+            holdout_scope.first_observed_at.isoformat(),
+            holdout_scope.last_observed_at.isoformat(),
+            holdout_scope.dataset_fingerprint,
+        )
+    )
+    holdout_ref = "research-data-scope:" + holdout_scope.dataset_fingerprint
+    holdout_catalog = DatasetResourceCatalog.from_verified_resources(
+        ((holdout_ref, "HOLDOUT", scope_material),)
+    )
     for name, (model, tool, resource) in payloads.items():
         record = EvidenceRecord(
             source_id=f"research-report:{report.plan.experiment_id}:{digest}:{name}",
@@ -277,7 +292,13 @@ def adversarial_sources(report: ResearchReport, *, now: datetime) -> dict[str, S
         async def fetch(record=record):
             return record
 
-        sources[name] = SourceBinding(tool, resource, fetch)
+        sources[name] = SourceBinding(
+            tool,
+            resource,
+            fetch,
+            resource_refs=(holdout_ref,) if resource == "HOLDOUT" else (),
+            resource_catalog=holdout_catalog if resource == "HOLDOUT" else None,
+        )
     return sources
 
 

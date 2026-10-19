@@ -4,7 +4,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from decimal import Context, localcontext
 
-from ai_quant_os.agent_context import EvidenceRecord, SourceBinding
+from ai_quant_os.agent_context import DatasetResourceCatalog, EvidenceRecord, SourceBinding
 from ai_quant_os.graph_ledger import GraphRecord
 from ai_quant_os.macro_sources import MacroWorldEvidence
 from ai_quant_os.market_data import BarDataset
@@ -100,6 +100,9 @@ def hypothesis_sources(
         collection_sha256=fingerprint([asdict(row) for row in worlds]),
     )
     sources = {}
+    dataset_catalog = DatasetResourceCatalog.from_receipts(
+        tuple(receipt for receipt, _ in training)
+    )
     for name, payload, tool, resource in (
         ("historical_catalog", historical, "HISTORY_READ", "TRAINING"),
         ("research_memory", memory, "RESEARCH_MEMORY_READ", "TRAINING"),
@@ -116,5 +119,13 @@ def hypothesis_sources(
         async def fetch(record=record):
             return record
 
-        sources[name] = SourceBinding(tool, resource, fetch)
+        sources[name] = SourceBinding(
+            tool,
+            resource,
+            fetch,
+            resource_refs=tuple(receipt.dataset_ref for receipt, _ in training)
+            if resource == "TRAINING"
+            else (),
+            resource_catalog=dataset_catalog if resource == "TRAINING" else None,
+        )
     return sources

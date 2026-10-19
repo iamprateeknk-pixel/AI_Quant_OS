@@ -33,3 +33,21 @@ validated together. The decision remains `WAIT_FOR_EVIDENCE` and
 it does not verify referenced artifacts, run evaluations, consult an independent
 policy owner, change candidate lifecycle, execute promotion, or perform rollback.
 Those connected P11 gates remain open.
+
+Promotion snapshots can be retained through `PromotionEvidenceStore` in
+`ai_quant_os.promotion_store`. Each canonical decision is addressed by its
+content hash and bound to the local audit chain; restart reads revalidate the
+hash, model, and event binding. This preserves the submitted evidence references
+and gate statuses only. The store does not resolve or independently validate
+those references and cannot authorize promotion.
+
+Use the local CLI to retain and inspect a decision snapshot:
+
+```powershell
+ai-quant-evolve --workspace data-local/evolution promotion-record --input <decision.json>
+ai-quant-evolve --workspace data-local/evolution promotion-get <promotion-decision-ref>
+ai-quant-evolve --workspace data-local/evolution promotion-list
+```
+
+The input must satisfy the published v1 schema. Recording or reading a snapshot
+does not mark its evaluations as verified or change the candidate or champion.

@@ -49,6 +49,7 @@ def main():
         choices=("CIRCULAR_CLOSED_TRADE_BLOCKS_SHA256_V1", REVERSAL_MONTE_CARLO_METHOD),
     )
     parser.add_argument("--adversarial", action="store_true")
+    parser.add_argument("--selection-diagnostics", action="store_true")
     parser.add_argument("--adversarial-drop-every", type=int)
     parser.add_argument("--adversarial-shock-bps", type=int)
     parser.add_argument("--adversarial-loss-limit", type=Decimal)
@@ -91,6 +92,10 @@ def main():
             raise ValueError("Adversarial options require --adversarial declaration")
         if args.adversarial and not args.monte_carlo:
             raise ValueError("Version 1.2 adversarial policy requires --monte-carlo")
+        if args.selection_diagnostics and not (args.monte_carlo and args.adversarial):
+            raise ValueError(
+                "Selection diagnostics require the version 1.3 Monte Carlo and adversarial policies"
+            )
         adverse_spec = AdversarialSpec(**adverse_kwargs) if args.adversarial else None
         if (
             args.strategy == "moving-average-directional"
@@ -173,7 +178,9 @@ def main():
             args.quantity,
             BacktestCosts(args.slippage_bps, args.fee),
             BacktestCosts(args.stress_slippage_bps, args.stress_fee),
-            schema_version="1.2"
+            schema_version="1.3"
+            if args.selection_diagnostics
+            else "1.2"
             if adverse_spec is not None
             else "1.1"
             if mc_spec is not None

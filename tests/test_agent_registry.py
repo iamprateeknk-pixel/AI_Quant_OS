@@ -76,7 +76,7 @@ def test_lifecycle_is_server_owned_and_live_scope_is_never_permitted():
     registry.require_tool("A09", "0.1.0", "WORLD_STATE_READ", scope="PAPER")
     with pytest.raises(PermissionError):
         registry.require_tool("A09", "0.1.0", "CANDIDATE_CREATE", scope="SANDBOX")
-    registry.set_lifecycle("A09", "0.1.0", "QUARANTINED")
+    registry.quarantine("A09", "0.1.0", registry.get("A09", "0.1.0").manifest_ref)
     with pytest.raises(PermissionError):
         registry.require_tool("A09", "0.1.0", "WORLD_STATE_READ", scope="PAPER")
     with pytest.raises(PermissionError):
@@ -130,7 +130,7 @@ def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
     client = TestClient(create_app(operator_token="fixture-token"))
     body = client.get("/api/v1/agents/registry").json()
     assert body["mode"] == "PAPER"
-    assert len(body["agents"]) == 40
+    assert len(body["agents"]) == 42
     assert {(item["agent_id"], item["agent_version"]) for item in body["agents"]} == (
         {(f"A{index:02}", "0.1.0") for index in range(1, 19)}
         | {
@@ -148,7 +148,9 @@ def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
             ("A10", "0.2.0"),
             ("A11", "0.2.0"),
             ("A12", "0.2.0"),
+            ("A12", "0.3.0"),
             ("A13", "0.2.0"),
+            ("A13", "0.3.0"),
             ("A14", "0.2.0"),
             ("A15", "0.2.0"),
             ("A16", "0.2.0"),
@@ -189,6 +191,26 @@ def test_registry_read_api_has_no_client_activation_or_manifest_write_route():
         ).status_code
         == 405
     )
+
+
+def test_persistent_api_restores_agent_lifecycle_before_registry_reads(tmp_path):
+    from ai_quant_os.agent_lifecycle_store import AgentLifecycleStore
+
+    paper_path = tmp_path / "paper.sqlite3"
+    lifecycle_path = tmp_path / "paper.agent-lifecycle.sqlite3"
+    prior = load_agent_catalog()
+    prior.bind_lifecycle_store(AgentLifecycleStore(lifecycle_path))
+    prior.set_lifecycle("A09", "0.2.0", "LIMITED")
+
+    with TestClient(create_app(paper_db_path=paper_path, operator_token="fixture-token")) as client:
+        body = client.get("/api/v1/agents/registry").json()
+
+    lifecycle = next(
+        item
+        for item in body["agents"]
+        if (item["agent_id"], item["agent_version"]) == ("A09", "0.2.0")
+    )
+    assert lifecycle["lifecycle"] == "LIMITED"
 
 
 def test_empty_registry_and_unknown_lifecycle_fail_closed():

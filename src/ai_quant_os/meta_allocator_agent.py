@@ -12,6 +12,7 @@ from ai_quant_os.agent_envelope import AgentEnvelope
 from ai_quant_os.agent_registry import AgentRegistry
 from ai_quant_os.graph_runtime import AgentImplementation, AgentInvocation
 from ai_quant_os.meta_allocator_sources import (
+    ConnectedStrategySetObservation,
     CovarianceObservation,
     ExposureObservation,
     INPUT_NAMES,
@@ -51,6 +52,32 @@ class AllocationProposal(AgentEnvelope):
             or self.portfolio_snapshot_id != observations[1].snapshot_id
             or self.safety_state != observations[2].safety_state
             or self.blockers != _blockers(observations)
+        ):
+            raise ValueError("Allocation output differs from current portfolio evidence")
+
+
+class AllocationProposalV3(AllocationProposal):
+    agent_version: Literal["0.3.0"] = "0.3.0"
+    output_type: Literal["AllocationProposalV3"] = "AllocationProposalV3"
+    upstream_run_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,128}$")
+    upstream_context_ref: str = Field(min_length=1, max_length=128)
+    strategy_output_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    eligible_candidate_ids: tuple[str, ...] = Field(max_length=100)
+
+    def require_context(self, context: CompiledContext) -> None:
+        AgentEnvelope.require_context(self, context)
+        observations = _observations_v3(context)
+        selector = observations[0]
+        if (
+            self.state != "WAIT_FOR_EVIDENCE"
+            or self.allocations
+            or self.portfolio_snapshot_id != observations[1].snapshot_id
+            or self.safety_state != observations[2].safety_state
+            or self.blockers != _blockers_v3(observations)
+            or self.upstream_run_id != selector.upstream_run_id
+            or self.upstream_context_ref != selector.upstream_context_ref
+            or self.strategy_output_sha256 != selector.output_sha256
+            or self.eligible_candidate_ids != selector.eligible_candidate_ids
         ):
             raise ValueError("Allocation output differs from current portfolio evidence")
 
@@ -105,6 +132,55 @@ def _observations(context: CompiledContext):
     return observations
 
 
+def _observations_v3(context: CompiledContext):
+    verify_context(context)
+    tools = (
+        "STRATEGY_REGISTRY_READ",
+        "PORTFOLIO_READ",
+        "PORTFOLIO_READ",
+        "PORTFOLIO_READ",
+        "PORTFOLIO_READ",
+    )
+    if (
+        (context.agent_id, context.agent_version, context.scope, context.status)
+        != ("A13", "0.3.0", "PAPER", "READY")
+        or tuple(row.input_name for row in context.inputs) != INPUT_NAMES
+        or tuple(row.source_tool for row in context.inputs) != tools
+        or tuple(row.resource_class for row in context.inputs) != ("GENERAL",) * 5
+    ):
+        raise ValueError("Allocator requires its exact protected paper context")
+    models = (
+        ConnectedStrategySetObservation,
+        PortfolioObservation,
+        RiskObservation,
+        CovarianceObservation,
+        ExposureObservation,
+    )
+    observations = tuple(
+        model.model_validate_json(row.payload_json)
+        for model, row in zip(models, context.inputs, strict=True)
+    )
+    if (
+        tuple(row.source_id for row in context.inputs)
+        != tuple(
+            "meta-allocator:" + name + ":" + sha256(row.payload_json.encode()).hexdigest()
+            for name, row in zip(INPUT_NAMES, context.inputs, strict=True)
+        )
+        or any(row.as_of > context.created_at for row in context.inputs)
+        or any(
+            observation.as_of != source.as_of
+            for observation, source in zip(observations, context.inputs, strict=True)
+        )
+        or observations[1].coverage != "SINGLE_INSTRUMENT"
+        or observations[2].risk_budget_status != "UNCALIBRATED"
+        or observations[3].availability != "UNAVAILABLE"
+        or observations[4].coverage != "SINGLE_INSTRUMENT"
+        or observations[1].snapshot_id != observations[4].snapshot_id
+    ):
+        raise ValueError("Allocator observations are stale or inconsistent")
+    return observations
+
+
 def _blockers(observations) -> tuple[str, ...]:
     blockers = {
         "UPSTREAM_STRATEGY_SET_UNAVAILABLE",
@@ -113,6 +189,23 @@ def _blockers(observations) -> tuple[str, ...]:
         "COVARIANCE_UNAVAILABLE",
         "PORTFOLIO_EXPOSURE_INCOMPLETE",
     }
+    if observations[2].safety_state != "NORMAL":
+        blockers.add("PAPER_SAFETY_STATE_RESTRICTS_ALLOCATION")
+    return tuple(sorted(blockers))
+
+
+def _blockers_v3(observations) -> tuple[str, ...]:
+    blockers = {
+        "PORTFOLIO_SNAPSHOT_INCOMPLETE",
+        "RISK_BUDGET_UNCALIBRATED",
+        "COVARIANCE_UNAVAILABLE",
+        "PORTFOLIO_EXPOSURE_INCOMPLETE",
+    }
+    selector = observations[0]
+    if not selector.eligible_candidate_ids:
+        blockers.add("UPSTREAM_NO_ELIGIBLE_STRATEGIES")
+    if selector.state == "WAIT_FOR_EVIDENCE":
+        blockers.add("UPSTREAM_SELECTOR_BLOCKED")
     if observations[2].safety_state != "NORMAL":
         blockers.add("PAPER_SAFETY_STATE_RESTRICTS_ALLOCATION")
     return tuple(sorted(blockers))
@@ -137,7 +230,37 @@ async def propose_allocation(invocation: AgentInvocation) -> AllocationProposal:
     )
 
 
+async def propose_allocation_v3(invocation: AgentInvocation) -> AllocationProposalV3:
+    context = invocation.context
+    observations = _observations_v3(context)
+    selector = observations[0]
+    return AllocationProposalV3(
+        task_id=context.task_id,
+        input_refs=context.input_refs,
+        evidence_refs=context.input_refs,
+        created_at=context.created_at,
+        valid_until=context.valid_until,
+        trace_id=str(uuid4()),
+        contradictions=(),
+        state="WAIT_FOR_EVIDENCE",
+        portfolio_snapshot_id=observations[1].snapshot_id,
+        safety_state=observations[2].safety_state,
+        allocations=(),
+        blockers=_blockers_v3(observations),
+        upstream_run_id=selector.upstream_run_id,
+        upstream_context_ref=selector.upstream_context_ref,
+        strategy_output_sha256=selector.output_sha256,
+        eligible_candidate_ids=selector.eligible_candidate_ids,
+    )
+
+
 def allocator_implementation(registry: AgentRegistry) -> AgentImplementation:
     return AgentImplementation(
         registry.get("A13", "0.2.0").manifest_ref, AllocationProposal, propose_allocation
+    )
+
+
+def allocator_implementation_v3(registry: AgentRegistry) -> AgentImplementation:
+    return AgentImplementation(
+        registry.get("A13", "0.3.0").manifest_ref, AllocationProposalV3, propose_allocation_v3
     )

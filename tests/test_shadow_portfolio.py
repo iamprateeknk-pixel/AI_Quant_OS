@@ -69,6 +69,193 @@ def test_shadow_native_portfolio_accumulates_causal_prefixes_without_broker(tmp_
     assert original == assignment.candidate_view
 
 
+def test_selector_shadow_performance_uses_latest_verified_candidate_report(tmp_path):
+    from ai_quant_os.shadow_pipeline import assign_shadow, observe_shadow
+    from ai_quant_os.strategy_selector_sources import shadow_performance_observation
+
+    assignment, store, candidates, strategies = shadow_fixture(tmp_path)
+    assign_shadow(assignment, store, candidates, strategies)
+    before = shadow_performance_observation(store, now=assignment.assigned_at)
+    assert before.availability == "NO_OBSERVATIONS"
+    assert before.rows[0].outcome == "NOT_OBSERVED"
+
+    bars = forward_bars(assignment)
+    observe_shadow(assignment.shadow_id, "batch-one", bars, store, candidates, strategies)
+    report = store.latest(assignment.shadow_id)
+    after = shadow_performance_observation(store, now=report.observed_at)
+    assert after.availability == "AVAILABLE"
+    assert len(after.rows) == 1
+    row = after.rows[0]
+    assert row.candidate_id == assignment.candidate.manifest.candidate_id
+    assert row.shadow_id == assignment.shadow_id
+    assert row.sequence == report.sequence
+    assert row.outcome == report.outcome == "OBSERVED"
+    assert row.net_pnl == report.run.result.net_pnl
+    assert row.pnl_currency == report.run.result.pnl_currency
+    assert row.report_sha256 == report.fingerprint
+
+
+def test_selector_v3_receives_verified_shadow_metrics_but_never_ranks_them(tmp_path, monkeypatch):
+    import asyncio
+    import json
+    from ai_quant_os.agent_context import ContextCompiler
+    from ai_quant_os.agent_registry import ToolInvocation, load_agent_catalog
+    from ai_quant_os.graph_runtime import AgentInvocation
+    from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
+    from ai_quant_os.shadow_pipeline import assign_shadow, observe_shadow
+    from ai_quant_os.strategy_selector_agent import selector_implementation_v3
+    from ai_quant_os.strategy_selector_service import StrategyRegistryRead
+    from ai_quant_os.strategy_selector_sources import selector_sources_v3
+    from ai_quant_os.world_state import WorldStateEngine
+
+    assignment, shadow_store, candidates, strategies = shadow_fixture(tmp_path)
+    assign_shadow(assignment, shadow_store, candidates, strategies)
+    report = observe_shadow(
+        assignment.shadow_id,
+        "batch-one",
+        forward_bars(assignment),
+        shadow_store,
+        candidates,
+        strategies,
+    )
+    now = report.observed_at
+    snapshot = WorldStateEngine(PAPER_INSTRUMENTS).snapshot((), now=now)
+    registry = load_agent_catalog()
+    sources = selector_sources_v3(
+        candidates.list(),
+        snapshot,
+        now=now,
+        registry_available=True,
+        shadow_store=shadow_store,
+    )
+    context = asyncio.run(
+        ContextCompiler(
+            registry,
+            sources,
+            clock=lambda: now + timedelta(microseconds=1),
+            timeout_seconds=2,
+        ).compile("A12", "0.3.0", task_id="selector-shadow", scope="PAPER")
+    )
+    performance = json.loads(context.inputs[2].payload_json)
+    assert performance["availability"] == "AVAILABLE"
+    assert performance["rows"][0]["candidate_id"] == assignment.candidate.manifest.candidate_id
+    assert performance["rows"][0]["report_sha256"] == report.fingerprint
+
+    class Tools:
+        async def call(self, tool, payload):
+            assert tool == "STRATEGY_REGISTRY_READ"
+            return {
+                "registry_sha256": payload["registry_sha256"],
+                "candidate_count": len(candidates.list()),
+                "performance_sha256": payload["performance_sha256"],
+                "status": "CHECKED_REGISTRY_AND_SHADOW_SNAPSHOT",
+            }
+
+    output = asyncio.run(
+        selector_implementation_v3(registry).invoke(AgentInvocation(context, Tools()))
+    )
+    output.require_context(context)
+    assert output.eligible_strategies == ()
+    assert "CANDIDATE_PERFORMANCE_NOT_QUALIFIED" in output.blockers
+    assert output.performance_available is False
+    assert output.promotion_allowed is False
+
+    from ai_quant_os.strategy_selector_sources import ShadowPerformanceObservation
+
+    payload = {
+        "registry_sha256": json.loads(context.inputs[0].payload_json)["registry_sha256"],
+        "performance_sha256": ShadowPerformanceObservation.model_validate_json(
+            context.inputs[2].payload_json
+        ).fingerprint,
+    }
+    service = StrategyRegistryRead(
+        lambda: candidates,
+        registry,
+        context=lambda context_ref: context,
+        clock=lambda: context.created_at + timedelta(microseconds=1),
+        shadow_store=lambda: shadow_store,
+    )
+    invocation = ToolInvocation(
+        "A12",
+        "0.3.0",
+        "STRATEGY_REGISTRY_READ",
+        "PAPER",
+        payload,
+        context.context_ref,
+        context.task_id,
+    )
+    receipt = asyncio.run(service(invocation))
+    assert receipt["status"] == "CHECKED_REGISTRY_AND_SHADOW_SNAPSHOT"
+
+    import threading
+    import time
+    import ai_quant_os.strategy_selector_sources as selector_sources_module
+
+    scan_started = threading.Event()
+    scan_finished = threading.Event()
+    original_scan = selector_sources_module.shadow_performance_observation
+
+    def slow_scan(store, *, now):
+        scan_started.set()
+        time.sleep(0.2)
+        try:
+            return original_scan(store, now=now)
+        finally:
+            scan_finished.set()
+
+    monkeypatch.setattr(selector_sources_module, "shadow_performance_observation", slow_scan)
+
+    async def check_deadline_and_responsiveness():
+        loop = asyncio.get_running_loop()
+        started_at = loop.time()
+        ticks = 0
+
+        async def keep_loop_responsive():
+            nonlocal ticks
+            deadline = loop.time() + 0.08
+            while loop.time() < deadline:
+                ticks += 1
+                await asyncio.sleep(0)
+
+        async def timed_call():
+            with pytest.raises(TimeoutError):
+                await asyncio.wait_for(service(invocation), timeout=0.05)
+
+        await asyncio.gather(timed_call(), keep_loop_responsive())
+        assert scan_started.is_set()
+        assert ticks > 10
+        assert loop.time() - started_at < 0.15
+        await asyncio.to_thread(scan_finished.wait, 3)
+        assert scan_finished.is_set()
+
+    asyncio.run(check_deadline_and_responsiveness())
+
+    from ai_quant_os.market_data import Bar
+
+    later = tuple(
+        Bar(
+            "EURUSD",
+            assignment.assigned_at + timedelta(minutes=i),
+            Decimal(price),
+            Decimal(price),
+            Decimal(price),
+            Decimal(price),
+            Decimal(100),
+        )
+        for i, price in enumerate(("1.25", "1.3", "1.35"), start=7)
+    )
+    observe_shadow(
+        assignment.shadow_id,
+        "batch-two",
+        later,
+        shadow_store,
+        candidates,
+        strategies,
+    )
+    with pytest.raises(ValueError, match="Shadow performance changed"):
+        asyncio.run(service(invocation))
+
+
 def test_shadow_cached_restart_and_changed_command_refusal(tmp_path, monkeypatch):
     from ai_quant_os.shadow_pipeline import assign_shadow, observe_shadow
     from ai_quant_os.shadow_store import ShadowStore
@@ -409,6 +596,13 @@ def test_withdrawal_during_native_execution_archives_failure(tmp_path, monkeypat
     assert report.outcome == "FAILED"
     assert report.run is not None
     assert store.latest(assignment.shadow_id) == report
+    from ai_quant_os.strategy_selector_sources import shadow_performance_observation
+
+    performance = shadow_performance_observation(store, now=report.observed_at)
+    assert performance.availability == "NO_OBSERVATIONS"
+    assert performance.rows[0].outcome == "FAILED"
+    assert performance.rows[0].net_pnl == report.run.result.net_pnl
+    assert performance.rows[0].failure_reason == "CANDIDATE_WITHDRAWN"
     assert (
         shadow_pipeline.observe_shadow(
             assignment.shadow_id, "batch", forward_bars(assignment), store, candidates, strategies
@@ -559,3 +753,56 @@ def test_saved_shadow_portfolio_replays():
     assert report.sequence == 2
     assert report.promotion_allowed is False
     assert encode_research(report) == raw
+
+
+def test_cancelled_selector_scan_keeps_its_bounded_capacity_until_worker_finishes(monkeypatch):
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+
+    import ai_quant_os.strategy_selector_sources as selector_sources_module
+
+    started = threading.Event()
+    release = threading.Event()
+    finished = threading.Event()
+    calls = 0
+
+    def scan(store, *, now):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            started.set()
+            release.wait(2)
+            finished.set()
+        return selector_sources_module.ShadowPerformanceObservation(
+            as_of=now, availability="NO_OBSERVATIONS", rows=()
+        )
+
+    executor = ThreadPoolExecutor(max_workers=1)
+    monkeypatch.setattr(selector_sources_module, "_SHADOW_SCAN_EXECUTOR", executor)
+    monkeypatch.setattr(
+        selector_sources_module, "_SHADOW_SCAN_SLOTS", threading.BoundedSemaphore(1)
+    )
+    monkeypatch.setattr(selector_sources_module, "shadow_performance_observation", scan)
+
+    now = datetime.now().astimezone()
+    loop = asyncio.new_event_loop()
+    try:
+        task = loop.create_task(selector_sources_module.run_shadow_performance_scan(None, now=now))
+        loop.run_until_complete(asyncio.sleep(0))
+        assert started.wait(1)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            loop.run_until_complete(task)
+        with pytest.raises(selector_sources_module.ShadowScanCapacityExceeded):
+            asyncio.run(selector_sources_module.run_shadow_performance_scan(None, now=now))
+        loop.close()
+        release.set()
+        assert finished.wait(1)
+        result = asyncio.run(selector_sources_module.run_shadow_performance_scan(None, now=now))
+        assert result.availability == "NO_OBSERVATIONS"
+    finally:
+        if not loop.is_closed():
+            loop.close()
+        release.set()
+        executor.shutdown(wait=True)

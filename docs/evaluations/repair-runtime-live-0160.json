@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-14",
+  "status": "CONTROLLED_LOCAL_RUNTIME_AND_ENFORCEMENT_OBSERVED",
+  "image_id": "sha256:5c86773e1c259ac6b89d6ff2bf8ceca386de0013b66c4e3b0cd1f1e91658e5b4",
+  "engine": {
+    "os_type": "linux",
+    "cgroup_version": "2",
+    "seccomp": "name=seccomp,profile=builtin",
+    "memory_limit": true,
+    "swap_limit": true,
+    "pids_limit": true,
+    "containerd_store": true,
+    "server_version": "29.8.0"
+  },
+  "dependency_probe": {
+    "evidence_root": "data-local/dependency-runtime-0081-continuation/test_actual_linux_dependencies0",
+    "status": "DEPENDENCY_RUNTIME_OBSERVED",
+    "distribution_count": 51,
+    "python_version": "3.11.17",
+    "pytest_version": "8.4.2",
+    "trusted_tests_passed": 2,
+    "readonly_write_denied": true,
+    "network_route_denied": true,
+    "proposed_source_executed": false,
+    "promotion_allowed": false
+  },
+  "repair_container_admission": {
+    "evidence_root": "data-local/repair-container-0160/test_actual_repair_container_i0",
+    "focused_test": "test_actual_repair_container_is_admitted_then_removed_without_start",
+    "passed": 1,
+    "fixture_is_synthetic": true,
+    "container_id": "dde8dc372162f632270b344bed058a646c05cf41af24115c2c397d7b23864b70",
+    "snapshot_sha256": "089399fb8c7170ac257b7f082f98aef3721f2373e948bd3297e487a66eb70d8a",
+    "suite_sha256": "c09363a355c8f9e0ddf236b5427460be4eda418475ea696a82ff0536708cc3a8",
+    "container_status_before_cleanup": "created",
+    "running": false,
+    "removed": true,
+    "candidate_source_executed": false,
+    "execution_verified": false,
+    "promotion_allowed": false
+  },
+  "enforcement_probe": {
+    "evidence_root": "data-local/worker-enforcement-0083-continuation",
+    "focused_tests_passed": 16,
+    "seconds": 36.19,
+    "probe_sha256": "0e9003512d07b7b469a6487a82a71072605a5c3144c256e46fa745ec2a39dbc4",
+    "guard_sha256": "59ac6c56aeaf0c062d8f732b77978a11b6163d16fc326c0a3e8ad8014625aa85",
+    "scenarios": [
+      {
+        "scenario": "PRIVILEGE_AND_NOEXEC",
+        "container_id": "68e49e977f13ad870e68a8a19f88b9ab431c1a063c0acd357d189c682e0e3af6",
+        "exit_code": 0,
+        "removed": true,
+        "observations": {
+          "setuid_denied": true,
+          "setgid_denied": true,
+          "supplementary_groups_denied": true,
+          "raw_socket_denied": true,
+          "scratch_direct_execution_denied": true
+        }
+      },
+      {
+        "scenario": "MEMORY",
+        "container_id": "0ee0dbf3503641727a18505a4fc703b2727e5bb8c6d1b404013f1ed37f8d88c3",
+        "exit_code": 137,
+        "oom_killed": true,
+        "removed": true
+      },
+      {
+        "scenario": "CPU",
+        "container_id": "0e50fbc41ac4da61e394c29a373e52f92c8db26ac4d6f3000ebf055438c187be",
+        "exit_code": 137,
+        "oom_killed": false,
+        "removed": true
+      },
+      {
+        "scenario": "PROCESSES",
+        "container_id": "8024f93da402a980d5e0e1569e9d456123bc1f031baac3cfed582a26a09b1166",
+        "exit_code": 0,
+        "removed": true,
+        "observations": {
+          "created_children": 63,
+          "observed_pids": 64,
+          "process_creation_denied": true
+        }
+      },
+      {
+        "scenario": "FILES",
+        "container_id": "2cf83e293a7d258eab4ac3201710eb94b9ab3b1dac1e3da7271e435e55709c3a",
+        "exit_code": 0,
+        "removed": true,
+        "observations": {
+          "file_bytes": 1048576,
+          "file_size_denied": true,
+          "descriptor_limit_denied": true,
+          "opened_descriptors": 125
+        }
+      }
+    ],
+    "candidate_or_repair_source_executed": false,
+    "isolation_verified": false,
+    "promotion_allowed": false
+  },
+  "limitations": [
+    "This is local runtime and fixed-profile kernel-control evidence, not independent daemon or source attestation.",
+    "No proposed repair source or repair verifier suite was executed.",
+    "Independent behavioral verification, durable repair execution/restart evidence, Temporal repair stages, shadow/canary, incident closure and gated recovery remain pending."
+  ]
+}

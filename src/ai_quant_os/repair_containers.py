@@ -1,10 +1,13 @@
-"""Owned created-container admission and cleanup; candidate execution stays unavailable."""
+"""Owned repair-container admission, one-shot execution, and cleanup."""
 
 import json
+import os
 import re
 import shutil
+from hashlib import sha256
 from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import Literal
 from uuid import uuid4
 
 from ai_quant_os.repair_jobs import PreparedRepairJob
@@ -15,7 +18,11 @@ from ai_quant_os.repair_sandbox import (
     MEMORY_BYTES,
     SCRATCH_OPTIONS,
     VERIFIER_COMMAND,
+    local_docker_command,
 )
+from ai_quant_os.repair_snapshots import canonical_json
+from ai_quant_os.repair_image_inputs import read_repair_image_input
+from ai_quant_os.strategy_image_content import parse_metadata
 
 
 @dataclass(frozen=True)
@@ -28,6 +35,302 @@ class CreatedRepairContainer:
     @property
     def promotion_allowed(self) -> bool:
         return False
+
+
+@dataclass(frozen=True)
+class RepairExecutionReceipt:
+    schema_version: Literal["1.0"]
+    owner: str
+    container_id: str
+    image_id: str
+    snapshot_sha256: str
+    suite_sha256: str
+    request_sha256: str
+    state: Literal[
+        "EXECUTION_FINISHED_AWAITING_INDEPENDENT_VERIFICATION",
+        "EXECUTION_FAILED_AWAITING_REVIEW",
+    ]
+    exit_code: int
+    oom_killed: bool
+    stdout_bytes: int
+    stdout_sha256: str
+    stderr_bytes: int
+    stderr_sha256: str
+    execution_verified: Literal[False] = False
+    promotion_allowed: Literal[False] = False
+
+
+@dataclass(frozen=True)
+class RepairExecutionRecovery:
+    schema_version: Literal["1.0"]
+    owner: str
+    state: Literal["EXECUTION_OUTCOME_UNCONFIRMED", "EXECUTION_RECORDED"]
+    retained_artifacts: tuple[str, ...]
+    receipt: RepairExecutionReceipt | None
+
+
+_EXECUTION_TIMEOUT = 45
+_EXECUTION_OUTPUT_LIMIT = 65536
+
+
+def _execution_paths(root, owner):
+    if not isinstance(owner, str) or not re.fullmatch(r"[a-f0-9]{32}", owner):
+        raise ValueError("Repair execution owner identity invalid")
+    prefix = root / f"repair-execution-{owner}"
+    return {
+        "intent": prefix.with_suffix(".start-intent.json"),
+        "stdout": prefix.with_suffix(".stdout"),
+        "stderr": prefix.with_suffix(".stderr"),
+        "result": prefix.with_suffix(".result.json"),
+        "request": prefix.with_suffix(".request.json"),
+    }
+
+
+def read_repair_execution(root, owner: str) -> RepairExecutionRecovery:
+    """Read retained execution evidence without contacting Docker or starting work."""
+    paths = _execution_paths(root, owner)
+    retained = tuple(
+        name
+        for key, name in (
+            ("result", "result.json"),
+            ("intent", "start-intent.json"),
+            ("stderr", "stderr"),
+            ("stdout", "stdout"),
+            ("request", "request.json"),
+        )
+        if os.path.lexists(paths[key])
+    )
+    if "start-intent.json" not in retained:
+        raise ValueError("Repair execution has no durable start intent")
+    intent_raw = read_repair_image_input(paths["intent"], 8192)
+    intent = parse_metadata(intent_raw)
+    owner_id = intent.get("container_id")
+    expected_intent = {
+        "schema_version": "1.0",
+        "owner": owner,
+        "container_id": owner_id,
+        "image_id": intent.get("image_id"),
+        "snapshot_sha256": intent.get("snapshot_sha256"),
+        "suite_sha256": intent.get("suite_sha256"),
+        "request_sha256": intent.get("request_sha256"),
+        "arguments": ["container", "start", "--attach", owner_id],
+        "timeout_seconds": _EXECUTION_TIMEOUT,
+        "output_limit": _EXECUTION_OUTPUT_LIMIT,
+        "state": "START_REQUEST_MAY_HAVE_BEEN_SENT",
+        "execution_verified": False,
+        "promotion_allowed": False,
+    }
+    if (
+        intent != expected_intent
+        or type(owner_id) is not str
+        or not re.fullmatch(r"[a-f0-9]{64}", owner_id)
+        or any(
+            type(intent.get(name)) is not str or not re.fullmatch(r"[a-f0-9]{64}", intent[name])
+            for name in ("snapshot_sha256", "suite_sha256", "request_sha256")
+        )
+        or type(intent.get("image_id")) is not str
+        or not re.fullmatch(r"sha256:[a-f0-9]{64}", intent["image_id"])
+    ):
+        raise ValueError("Repair execution start intent is invalid")
+
+    if "request.json" in retained:
+        request_raw = read_repair_image_input(paths["request"], 65536)
+        if sha256(request_raw).hexdigest() != intent["request_sha256"]:
+            raise ValueError("Retained repair request does not match execution intent")
+
+    receipt = None
+    if "result.json" in retained:
+        if "stdout" not in retained or "stderr" not in retained:
+            raise ValueError("Repair execution result is missing captured streams")
+        result = parse_metadata(read_repair_image_input(paths["result"], 8192))
+        expected_fields = set(RepairExecutionReceipt.__dataclass_fields__)
+        if set(result) != expected_fields:
+            raise ValueError("Repair execution receipt fields are incomplete or unknown")
+        receipt = RepairExecutionReceipt(**result)
+        stdout = read_repair_image_input(paths["stdout"], _EXECUTION_OUTPUT_LIMIT)
+        stderr = read_repair_image_input(paths["stderr"], _EXECUTION_OUTPUT_LIMIT)
+        if (
+            receipt.schema_version != "1.0"
+            or receipt.owner != owner
+            or receipt.container_id != owner_id
+            or receipt.image_id != intent["image_id"]
+            or receipt.snapshot_sha256 != intent["snapshot_sha256"]
+            or receipt.suite_sha256 != intent["suite_sha256"]
+            or receipt.request_sha256 != intent["request_sha256"]
+            or type(receipt.exit_code) is not int
+            or not 0 <= receipt.exit_code <= 255
+            or type(receipt.oom_killed) is not bool
+            or receipt.state
+            != (
+                "EXECUTION_FINISHED_AWAITING_INDEPENDENT_VERIFICATION"
+                if receipt.exit_code == 0 and not receipt.oom_killed
+                else "EXECUTION_FAILED_AWAITING_REVIEW"
+            )
+            or receipt.execution_verified is not False
+            or receipt.promotion_allowed is not False
+            or receipt.stdout_bytes != len(stdout)
+            or receipt.stdout_sha256 != sha256(stdout).hexdigest()
+            or receipt.stderr_bytes != len(stderr)
+            or receipt.stderr_sha256 != sha256(stderr).hexdigest()
+        ):
+            raise ValueError("Repair execution receipt does not match retained evidence")
+        for digest in (receipt.snapshot_sha256, receipt.suite_sha256, receipt.request_sha256):
+            if type(digest) is not str or not re.fullmatch(r"[a-f0-9]{64}", digest):
+                raise ValueError("Repair execution receipt digest is invalid")
+    return RepairExecutionRecovery(
+        schema_version="1.0",
+        owner=owner,
+        state="EXECUTION_RECORDED" if receipt is not None else "EXECUTION_OUTCOME_UNCONFIRMED",
+        retained_artifacts=retained,
+        receipt=receipt,
+    )
+
+
+def _persist_execution_file(path, raw, *, limit):
+    if type(raw) is not bytes or len(raw) > limit:
+        raise ValueError("Repair execution evidence exceeds its bound")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags, 0o600)
+    try:
+        with os.fdopen(descriptor, "wb", closefd=False) as output:
+            output.write(raw)
+            output.flush()
+            os.fsync(output.fileno())
+    finally:
+        os.close(descriptor)
+
+
+def _terminal_execution(value, *, container_id):
+    try:
+        state = value["State"]
+        exit_code = state["ExitCode"]
+        restart_count = value["RestartCount"]
+        if (
+            value["Id"] != container_id
+            or state["Status"] != "exited"
+            or any(
+                type(state[key]) is not bool or state[key]
+                for key in ("Running", "Paused", "Restarting", "Dead")
+            )
+            or type(state["OOMKilled"]) is not bool
+            or type(state["Pid"]) is not int
+            or state["Pid"] != 0
+            or type(exit_code) is not int
+            or not 0 <= exit_code <= 255
+            or state["Error"] != ""
+            or type(restart_count) is not int
+            or restart_count != 0
+        ):
+            raise ValueError("Repair worker terminal state is not coherent")
+        return exit_code, state["OOMKilled"]
+    except (KeyError, TypeError) as error:
+        raise ValueError("Repair worker terminal inspection is incomplete") from error
+
+
+def run_repair_verifier(
+    policy: DockerConfinement,
+    job: PreparedRepairJob,
+    created: CreatedRepairContainer,
+) -> RepairExecutionReceipt:
+    """Start the pinned verifier once and retain bounded, explicitly unattested output.
+
+    Call only inside ``prepared_repair_container``. An intent is fsynced before the
+    start RPC; if transport or inspection is ambiguous, the same owner cannot start
+    again. Docker logging stays disabled and the result never grants promotion.
+    """
+    if (
+        type(policy) is not DockerConfinement
+        or type(job) is not PreparedRepairJob
+        or type(created) is not CreatedRepairContainer
+        or policy.suite_sha256 != job.suite_sha256
+        or created.snapshot_sha256 != job.snapshot_sha256
+        or created.image_id != policy.image_id
+        or created.owner not in job.pending_containers
+        or job.container_image(created.owner) != policy.image_id
+        or not re.fullmatch(r"[a-f0-9]{64}", created.container_id)
+    ):
+        raise ValueError("Repair execution requires its active exact container lease")
+    paths = _execution_paths(job.path.parent, created.owner)
+    if any(os.path.lexists(path) for path in paths.values()):
+        raise ValueError("Existing repair execution intent prevents repeated start")
+    job.verify()
+    request_raw = read_repair_image_input(job.path / "request.json", 65536)
+    if sha256(request_raw).hexdigest() != job.request_sha256:
+        raise ValueError("Prepared request does not match repair job identity")
+    _persist_execution_file(paths["request"], request_raw, limit=65536)
+    job.verify_container_lease(created.owner)
+    executable = shutil.which("docker")
+    if executable is None or not policy.probe().available:
+        raise ValueError("Pinned repair execution runtime unavailable")
+    observed = _inspect(policy, executable, created.container_id)
+    _require_owner(
+        observed,
+        owner=created.owner,
+        identity=created.container_id,
+        image=policy.image_id,
+    )
+    policy.require_container(observed, owner=created.owner, job=job.path)
+    if type(observed.get("RestartCount")) is not int or observed["RestartCount"] != 0:
+        raise ValueError("Repair worker has prior start history")
+
+    start_arguments = ["container", "start", "--attach", created.container_id]
+    intent = {
+        "schema_version": "1.0",
+        "owner": created.owner,
+        "container_id": created.container_id,
+        "image_id": policy.image_id,
+        "snapshot_sha256": job.snapshot_sha256,
+        "suite_sha256": job.suite_sha256,
+        "request_sha256": job.request_sha256,
+        "arguments": start_arguments,
+        "timeout_seconds": _EXECUTION_TIMEOUT,
+        "output_limit": _EXECUTION_OUTPUT_LIMIT,
+        "state": "START_REQUEST_MAY_HAVE_BEEN_SENT",
+        "execution_verified": False,
+        "promotion_allowed": False,
+    }
+    _persist_execution_file(paths["intent"], canonical_json(intent).encode(), limit=8192)
+    execution = local_docker_command(
+        executable,
+        *start_arguments,
+        timeout=_EXECUTION_TIMEOUT,
+    )
+    _persist_execution_file(paths["stdout"], execution.stdout, limit=_EXECUTION_OUTPUT_LIMIT)
+    _persist_execution_file(paths["stderr"], execution.stderr, limit=_EXECUTION_OUTPUT_LIMIT)
+    terminal = _inspect(policy, executable, created.container_id)
+    _require_owner(
+        terminal,
+        owner=created.owner,
+        identity=created.container_id,
+        image=policy.image_id,
+    )
+    exit_code, oom_killed = _terminal_execution(terminal, container_id=created.container_id)
+    if execution.returncode != exit_code:
+        raise ValueError("Attached worker exit differs from terminal inspection")
+    state = (
+        "EXECUTION_FINISHED_AWAITING_INDEPENDENT_VERIFICATION"
+        if exit_code == 0 and not oom_killed
+        else "EXECUTION_FAILED_AWAITING_REVIEW"
+    )
+    receipt = RepairExecutionReceipt(
+        schema_version="1.0",
+        owner=created.owner,
+        container_id=created.container_id,
+        image_id=policy.image_id,
+        snapshot_sha256=job.snapshot_sha256,
+        suite_sha256=job.suite_sha256,
+        request_sha256=job.request_sha256,
+        state=state,
+        exit_code=exit_code,
+        oom_killed=oom_killed,
+        stdout_bytes=len(execution.stdout),
+        stdout_sha256=sha256(execution.stdout).hexdigest(),
+        stderr_bytes=len(execution.stderr),
+        stderr_sha256=sha256(execution.stderr).hexdigest(),
+    )
+    _persist_execution_file(paths["result"], canonical_json(receipt.__dict__).encode(), limit=8192)
+    return receipt
 
 
 def _inspect(policy, executable, identity):

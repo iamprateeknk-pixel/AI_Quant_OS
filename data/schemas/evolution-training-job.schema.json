@@ -1,0 +1,156 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "job_ref": {
+      "pattern": "^evolution-job:[a-f0-9]{64}$",
+      "title": "Job Ref",
+      "type": "string"
+    },
+    "protocol_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Protocol Sha256",
+      "type": "string"
+    },
+    "dataset_ref": {
+      "pattern": "^evolution-dataset:[a-f0-9]{64}$",
+      "title": "Dataset Ref",
+      "type": "string"
+    },
+    "baseline_genome_ref": {
+      "pattern": "^agent-genome:[a-f0-9]{64}$",
+      "title": "Baseline Genome Ref",
+      "type": "string"
+    },
+    "challenger_genome_ref": {
+      "pattern": "^agent-genome:[a-f0-9]{64}$",
+      "title": "Challenger Genome Ref",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "state": {
+      "default": "PENDING",
+      "enum": [
+        "PENDING",
+        "RUNNING",
+        "COMPLETED",
+        "FAILED"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "scorecard_ref": {
+      "anyOf": [
+        {
+          "pattern": "^evolution-scorecard:[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scorecard Ref"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "const": "TRAINING_EXECUTION_FAILED",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Code"
+    },
+    "recovery_count": {
+      "default": 0,
+      "maximum": 3,
+      "minimum": 0,
+      "title": "Recovery Count",
+      "type": "integer"
+    },
+    "recovery_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Recovery Id"
+    },
+    "recovery_reason": {
+      "anyOf": [
+        {
+          "maxLength": 212,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Recovery Reason"
+    },
+    "recovery_expected_updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Recovery Expected Updated At"
+    },
+    "evaluation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Evaluation Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "job_ref",
+    "protocol_sha256",
+    "dataset_ref",
+    "baseline_genome_ref",
+    "challenger_genome_ref",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Evolution training job",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-quant-os.invalid/schemas/evolution-training-job.schema.json",
+  "description": "Audited local TRAINING evaluation job; verification and promotion are never granted."
+}

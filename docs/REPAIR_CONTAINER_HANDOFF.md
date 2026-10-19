@@ -1,5 +1,24 @@
 # Owned repair container admission and cleanup
 
+## Current local evidence (2026-10-16)
+
+The installed Docker Desktop Linux engine is running (29.8.0, x86_64), and the
+pinned input-only image is available. The opt-in live test created and inspected
+a repair container for a synthetic Git fixture, confirmed Docker still reported
+`created` with `Running=false`, then removed the exact immutable ID and verified
+it was absent. The candidate package and verifier were not started. See
+`docs/evaluations/repair-runtime-live-0160.json`. This closes live
+create/admission/removal evidence only; it does not implement or certify repair
+execution.
+
+On 2026-10-16, the actual-engine repair admission/removal and fixed execution-probe
+tests passed (2). The execution probe only printed a fixed trusted string and
+remained `EXECUTION_FINISHED_AWAITING_INDEPENDENT_VERIFICATION`, with verification
+and promotion false. Candidate-test engine tests also passed (8), and the pinned
+dependency/runtime enforcement tests passed (28). These are direct local
+container observations; none runs an A02/A07 genome or establishes independent
+isolation certification.
+
 This increment owns the create/inspect/remove lifecycle. It does not start
 containers, run a candidate/verifier suite, test live kernel enforcement, issue
 certificates or release quarantine. `CreatedRepairContainer` conveys admission
@@ -59,12 +78,14 @@ output and actual unavailable-runtime cleanup. These are lifecycle control-flow
 checks, not actual Docker creation or isolation evidence. Full results are in
 `BUILD_STATUS.md`; Windows/Linux CI is configured but hosted execution unverified.
 
-The local engine remains unavailable. A usable reviewed offline image/toolchain,
-direct kernel probes, a reviewed suite, non-root file access, historical deployed
-source/tool transcript closure and actual isolated behavioral checks remain
-required before any start path is implemented. Repair certificates, Temporal
-repair stages, shadow/canary, incident closure and gated recovery/rollback remain
-open.
+The local engine is available, and direct kernel/dependency probes are recorded
+above. A P11-specific reviewed runtime image/toolchain, agent genome runner,
+historical deployed source/tool transcript closure and actual isolated agent
+behavioral checks remain required before candidate evaluation is considered
+verified. Repair certificates, Temporal
+repair stages, shadow/canary, critical/agent incident resolution and gated
+recovery/rollback remain open. Quote incident acknowledgement is available
+separately through the watchdog.
 
 Parent filesystem and local daemon are trusted. The receipt is an ownership aid,
 not a signed audit journal or a lease-recovery service. Directory fsync, sudden

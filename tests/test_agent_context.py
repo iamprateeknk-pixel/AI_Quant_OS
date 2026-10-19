@@ -12,8 +12,26 @@ from ai_quant_os.agent_context import (
     require_current_context,
 )
 from ai_quant_os.agent_registry import load_agent_catalog
+from ai_quant_os.research_data_contracts import ResearchDataReceipt, research_dataset_ref
+from ai_quant_os.agent_context import DatasetResourceCatalog
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+
+def receipt(resource_class="HOLDOUT"):
+    raw_sha = "a" * 64
+    return ResearchDataReceipt(
+        dataset_ref=research_dataset_ref("fixture", raw_sha, resource_class),
+        source_id="fixture",
+        resource_class=resource_class,
+        raw_sha256=raw_sha,
+        dataset_fingerprint="b" * 64,
+        instrument_id="EURUSD",
+        row_count=2,
+        first_observed_at=NOW,
+        last_observed_at=NOW + timedelta(seconds=1),
+        received_at=NOW + timedelta(seconds=2),
+    )
 
 
 def binding(tool="WORLD_STATE_READ", resource_class="GENERAL", changes=None):
@@ -77,19 +95,105 @@ def test_holdout_cannot_leak_through_generic_source_capability(agent):
 
 
 def test_validator_holdout_is_sandbox_only_and_keeps_source_identity():
+    dataset = receipt()
     result = compile_context(
-        {"immutable_datasets": binding("HOLDOUT_READ", "HOLDOUT")}, agent="A10", scope="SANDBOX"
+        {
+            "immutable_datasets": SourceBinding(
+                "HOLDOUT_READ",
+                "HOLDOUT",
+                binding("HOLDOUT_READ", "HOLDOUT").fetch,
+                resource_refs=(dataset.dataset_ref,),
+                resource_catalog=DatasetResourceCatalog.from_receipts((dataset,)),
+            )
+        },
+        agent="A10",
+        scope="SANDBOX",
     )
     item = next(row for row in result.inputs if row.input_name == "immutable_datasets")
     assert item.status == "AVAILABLE"
     assert item.resource_class == "HOLDOUT"
+    assert "dataset-resource-catalog:" in item.source_id
     denied = compile_context(
-        {"immutable_datasets": binding("HOLDOUT_READ", "HOLDOUT")}, agent="A10"
+        {
+            "immutable_datasets": SourceBinding(
+                "HOLDOUT_READ",
+                "HOLDOUT",
+                binding("HOLDOUT_READ", "HOLDOUT").fetch,
+                resource_refs=(dataset.dataset_ref,),
+                resource_catalog=DatasetResourceCatalog.from_receipts((dataset,)),
+            )
+        },
+        agent="A10",
     )
     assert (
         next(row for row in denied.inputs if row.input_name == "immutable_datasets").status
         == "DENIED"
     )
+
+
+def test_protected_source_requires_receipt_backed_matching_classification():
+    registry = load_agent_catalog()
+    dataset = receipt("TRAINING")
+    fetched = []
+
+    async def fetch():
+        fetched.append(True)
+        return EvidenceRecord(
+            source_id="fixture",
+            as_of=NOW,
+            valid_until=NOW + timedelta(seconds=3),
+            trusted=True,
+            payload_json="{}",
+        )
+
+    source = SourceBinding(
+        "HOLDOUT_READ",
+        "HOLDOUT",
+        fetch,
+        resource_refs=(dataset.dataset_ref,),
+        resource_catalog=DatasetResourceCatalog.from_receipts((dataset,)),
+    )
+    result = asyncio.run(
+        ContextCompiler(registry, {"immutable_datasets": source}, clock=lambda: NOW).compile(
+            "A10", "0.2.0", task_id="fixture", scope="SANDBOX"
+        )
+    )
+    item = next(row for row in result.inputs if row.input_name == "immutable_datasets")
+    assert item.status == "DENIED"
+    assert fetched == []
+    assert item.payload_json is None
+
+
+def test_empty_protected_collection_requires_an_explicit_empty_catalog():
+    registry = load_agent_catalog()
+
+    async def fetch():
+        return EvidenceRecord(
+            source_id="empty-training",
+            as_of=NOW,
+            valid_until=NOW + timedelta(seconds=3),
+            trusted=True,
+            payload_json='{"datasets":[]}',
+        )
+
+    catalog = DatasetResourceCatalog.from_receipts(())
+    backed = SourceBinding("HISTORY_READ", "TRAINING", fetch, resource_catalog=catalog)
+    result = asyncio.run(
+        ContextCompiler(registry, {"historical_catalog": backed}, clock=lambda: NOW).compile(
+            "A08", "0.2.0", task_id="empty", scope="SANDBOX"
+        )
+    )
+    item = next(row for row in result.inputs if row.input_name == "historical_catalog")
+    assert item.status == "AVAILABLE"
+
+    unbacked = SourceBinding("HISTORY_READ", "TRAINING", fetch)
+    result = asyncio.run(
+        ContextCompiler(registry, {"historical_catalog": unbacked}, clock=lambda: NOW).compile(
+            "A08", "0.2.0", task_id="empty", scope="SANDBOX"
+        )
+    )
+    item = next(row for row in result.inputs if row.input_name == "historical_catalog")
+    assert item.status == "DENIED"
 
 
 @pytest.mark.parametrize("kind", ["STALE", "FUTURE", "UNTRUSTED", "TIMEOUT", "FAILED"])

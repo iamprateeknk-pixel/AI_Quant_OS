@@ -265,9 +265,31 @@ class GraphRuntime:
     def health_receipts(self, after_run_id: str = "") -> tuple[GraphReceipt, ...]:
         return self._ledger.health_receipts(after_run_id)
 
+    def quality_receipts(self) -> tuple[GraphReceipt, ...]:
+        """Read the verified durable receipt inventory for operational quality metrics."""
+        return self._ledger.quality_receipts()
+
     def receipt(self, run_id: str) -> GraphReceipt:
         """Read archival state without invoking or changing the graph."""
         return self._ledger.get(run_id).receipt
+
+    def completed_output(self, run_id: str) -> tuple[GraphReceipt, BaseModel]:
+        """Read a current completed output after revalidating its pinned context."""
+        record = self._ledger.get(run_id)
+        receipt, context = record.receipt, record.checkpoint.context
+        if receipt.status != "COMPLETED" or receipt.output_json is None:
+            raise ValueError("Completed graph output is unavailable")
+        self.require_context(context)
+        implementation = self._implementations.get((context.agent_id, context.agent_version))
+        if implementation is None or implementation.output_schema.__name__ != receipt.output_type:
+            raise ValueError("Completed graph output implementation is unavailable")
+        try:
+            output = implementation.output_schema.model_validate_json(receipt.output_json)
+            if isinstance(output, AgentEnvelope):
+                output.require_context(context)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Completed graph output failed current validation") from error
+        return receipt, output
 
     def trace(self, run_id: str):
         return self._ledger.trace(run_id)

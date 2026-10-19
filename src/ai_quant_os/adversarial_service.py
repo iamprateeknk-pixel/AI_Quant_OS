@@ -5,7 +5,11 @@ from hashlib import sha256
 from typing import Callable
 
 from ai_quant_os.adversarial_agent import _observations, adversarial_sources
-from ai_quant_os.agent_context import CompiledContext, require_context_for_agent
+from ai_quant_os.agent_context import (
+    CompiledContext,
+    bind_resource_provenance,
+    require_context_for_agent,
+)
 from ai_quant_os.agent_registry import AgentRegistry, ToolInvocation
 from ai_quant_os.research_adversarial import verify_adversarial
 from ai_quant_os.research_results import ResearchReport
@@ -71,6 +75,7 @@ class StressRun:
         ):
             expected = await expected_sources[name].fetch()
             binding = expected_sources[name]
+            expected = bind_resource_provenance(expected, binding)
             if (
                 row.payload_json != expected.payload_json
                 or row.source_id != expected.source_id

@@ -1,0 +1,208 @@
+{
+  "additionalProperties": false,
+  "description": "A repeatability summary, not an independent quality or promotion certificate.",
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "const": "REPEATED_TRAINING_QUALITY_DIAGNOSTIC",
+      "default": "REPEATED_TRAINING_QUALITY_DIAGNOSTIC",
+      "title": "Scope",
+      "type": "string"
+    },
+    "protocol_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Protocol Sha256",
+      "type": "string"
+    },
+    "dataset_ref": {
+      "pattern": "^evolution-dataset:[a-f0-9]{64}$",
+      "title": "Dataset Ref",
+      "type": "string"
+    },
+    "baseline_genome_ref": {
+      "pattern": "^agent-genome:[a-f0-9]{64}$",
+      "title": "Baseline Genome Ref",
+      "type": "string"
+    },
+    "candidate_genome_ref": {
+      "pattern": "^agent-genome:[a-f0-9]{64}$",
+      "title": "Candidate Genome Ref",
+      "type": "string"
+    },
+    "primary_metric": {
+      "enum": [
+        "CORRECTNESS",
+        "REGIME_CORRECTNESS",
+        "INTEGRITY_CORRECTNESS"
+      ],
+      "title": "Primary Metric",
+      "type": "string"
+    },
+    "scorecard_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 2,
+      "title": "Scorecard Refs",
+      "type": "array"
+    },
+    "dataset_provenance": {
+      "enum": [
+        "SYNTHETIC_DEVELOPMENT_NOT_HOLDOUT",
+        "RECORDED_REFERENCE",
+        "REVIEWED_REFERENCE"
+      ],
+      "title": "Dataset Provenance",
+      "type": "string"
+    },
+    "first_evaluated_at": {
+      "format": "date-time",
+      "title": "First Evaluated At",
+      "type": "string"
+    },
+    "latest_evaluated_at": {
+      "format": "date-time",
+      "title": "Latest Evaluated At",
+      "type": "string"
+    },
+    "run_count": {
+      "maximum": 32,
+      "minimum": 2,
+      "title": "Run Count",
+      "type": "integer"
+    },
+    "case_count": {
+      "maximum": 128,
+      "minimum": 1,
+      "title": "Case Count",
+      "type": "integer"
+    },
+    "observed_case_count": {
+      "maximum": 4096,
+      "minimum": 2,
+      "title": "Observed Case Count",
+      "type": "integer"
+    },
+    "baseline_correct_observations": {
+      "maximum": 4096,
+      "minimum": 0,
+      "title": "Baseline Correct Observations",
+      "type": "integer"
+    },
+    "candidate_correct_observations": {
+      "maximum": 4096,
+      "minimum": 0,
+      "title": "Candidate Correct Observations",
+      "type": "integer"
+    },
+    "baseline_accuracy": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Baseline Accuracy"
+    },
+    "candidate_accuracy": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "title": "Candidate Accuracy"
+    },
+    "stable_candidate_correct_cases": {
+      "maximum": 128,
+      "minimum": 0,
+      "title": "Stable Candidate Correct Cases",
+      "type": "integer"
+    },
+    "variable_candidate_cases": {
+      "maximum": 128,
+      "minimum": 0,
+      "title": "Variable Candidate Cases",
+      "type": "integer"
+    },
+    "improving_runs": {
+      "maximum": 32,
+      "minimum": 0,
+      "title": "Improving Runs",
+      "type": "integer"
+    },
+    "no_improvement_runs": {
+      "maximum": 32,
+      "minimum": 0,
+      "title": "No Improvement Runs",
+      "type": "integer"
+    },
+    "guardrail_regression_runs": {
+      "maximum": 32,
+      "minimum": 0,
+      "title": "Guardrail Regression Runs",
+      "type": "integer"
+    },
+    "evidence_independence": {
+      "const": "NOT_ESTABLISHED",
+      "default": "NOT_ESTABLISHED",
+      "title": "Evidence Independence",
+      "type": "string"
+    },
+    "evaluation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Evaluation Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "protocol_sha256",
+    "dataset_ref",
+    "baseline_genome_ref",
+    "candidate_genome_ref",
+    "primary_metric",
+    "scorecard_refs",
+    "dataset_provenance",
+    "first_evaluated_at",
+    "latest_evaluated_at",
+    "run_count",
+    "case_count",
+    "observed_case_count",
+    "baseline_correct_observations",
+    "candidate_correct_observations",
+    "baseline_accuracy",
+    "candidate_accuracy",
+    "stable_candidate_correct_cases",
+    "variable_candidate_cases",
+    "improving_runs",
+    "no_improvement_runs",
+    "guardrail_regression_runs"
+  ],
+  "title": "TrainingQualityProfile",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:evolution-training-quality-profile:1.0"
+}

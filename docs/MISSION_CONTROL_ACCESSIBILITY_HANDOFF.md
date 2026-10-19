@@ -22,9 +22,10 @@ The axe and keyboard measurements cover the initial signed-out route state. The
 separate authenticated safety-action and visual-state browser evidence is recorded
 in `BROWSER_ACCEPTANCE_HANDOFF.md`. The native destination-search dialog keeps
 focus contained through Tab and restores focus on Escape; Ctrl+K also works at
-320 px without horizontal overflow. Other authenticated/modal interactions,
-remaining responsive keyboard paths, and manual screen-reader review remain open,
-along with the exact
+320 px without horizontal overflow. The authenticated Risk Center keyboard path
+was also checked at 320 px, including sign-in, control-field order, skipped
+disabled action, and sign-out. Other authenticated workflows, responsive keyboard
+paths, and manual screen-reader review remain open, along with the exact
 broker `DEGRADED` state because the current backend contract only exposes
 `CONNECTED`, `DISCONNECTED`, and `UNKNOWN`. Applicable P00-P13 release gates also
 remain open.

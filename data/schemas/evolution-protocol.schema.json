@@ -18,7 +18,8 @@
             "LATENCY_MS",
             "TOOL_ERROR_RATE",
             "COST_USD",
-            "REGIME_CORRECTNESS"
+            "REGIME_CORRECTNESS",
+            "INTEGRITY_CORRECTNESS"
           ],
           "title": "Metric",
           "type": "string"
@@ -69,7 +70,8 @@
             "P95_WALL_MS",
             "TOOL_FAILURE_RATE",
             "ACTUAL_USAGE_USD",
-            "REGIME_EXACT_OBJECT_MATCH"
+            "REGIME_EXACT_OBJECT_MATCH",
+            "INTEGRITY_EVIDENCE_MATCH"
           ],
           "title": "Method",
           "type": "string"
