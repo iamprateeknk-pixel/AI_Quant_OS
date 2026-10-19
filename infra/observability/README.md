@@ -86,4 +86,6 @@ only to retained prefixes; they do not certify complete history/delivery. Reads
 are bounded, checked for original prefix rewrites and inventory changes, and
 withhold results if any source is ambiguous/unavailable. File prefixes are not an
 atomic multi-file journal or independently authentic. No reset/flush/retry is
-exposed. See ADR 0148; console span presentation remains pending.
+exposed. The Traces console presents retained spans parent-first and orders
+siblings by recorded start time; this parentage does not establish complete causal
+history. See ADR 0148 and the saved-span console increment in `docs/BUILD_STATUS.md`.
