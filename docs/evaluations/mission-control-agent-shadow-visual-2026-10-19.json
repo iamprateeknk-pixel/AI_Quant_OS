@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "mission-control-agent-shadow-visual-2026-10-19",
+  "capture_started_at": "2026-10-19T17:10:56Z",
+  "capture_completed_at": "2026-10-19T17:11:20Z",
+  "scope": "LOCAL_PAPER_AGENT_SHADOW_VISUAL_STATE_CAPTURE",
+  "source_revision": "c0c90325afe9e0c10db8f1adca1c13462d13d2e7",
+  "build_id_sha256": "7edb4ec5c64b5ea771424c40bb5f42e6ac5a7f6f65df1ae98eb48f18accb5469",
+  "environment": {
+    "application": "local PAPER API and production-built Mission Control",
+    "origin": "http://127.0.0.1:3124",
+    "browser": "Playwright CLI Chromium",
+    "route": "/agents",
+    "viewport_px": [1280, 800],
+    "broker_or_live_access": false,
+    "state_root": ".task-temp/p12-visual-state"
+  },
+  "observation": {
+    "result": "PASS",
+    "roles": 18,
+    "registered_versions": 42,
+    "lifecycle": "SHADOW",
+    "environment_mode": "PAPER",
+    "capital_authority_claim": false,
+    "screenshot": "apps/web/output/playwright/visual-states/agent-shadow-registry.png"
+  },
+  "runtime_cleanup": {
+    "browser_closed": true,
+    "local_application_stopped": true,
+    "ports_8124_and_3124_released": true,
+    "state_root_contains_only_synthetic_local_test_state": true
+  },
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "This is a retained browser screenshot of the shadow lifecycle, not an automated pixel-diff regression result.",
+    "No new baseline or renderer-independent visual comparison was performed.",
+    "All broader P00-P13 release gates remain open."
+  ]
+}

@@ -48,3 +48,11 @@ selector. The synthetic session was signed out, the protected session read retur
 `docs/evaluations/mission-control-authenticated-keyboard-2026-10-19.json`.
 
 The local screenshot folder is ignored by Git. Preserve it locally when reviewing the states; it is not part of a commit.
+
+On 2026-10-19, an additional production-build capture was taken at
+`apps/web/output/playwright/visual-states/agent-shadow-registry.png`. The Agents
+view showed 18 roles and 42 registered versions, each carrying the backend-owned
+`SHADOW` lifecycle under the PAPER environment, with no capital-authority claim.
+This adds a retained shadow-state fixture; it is a visual snapshot, not an
+automated pixel-diff regression result. See
+`docs/evaluations/mission-control-agent-shadow-visual-2026-10-19.json`.
