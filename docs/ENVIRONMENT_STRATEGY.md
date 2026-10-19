@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records the required environment sequence for AI Quant OS. It is a build and release plan, not confirmation that a particular deployment was selected or provisioned. The current implementation and evidence remain local and paper-only. No AWS account, deployment, provider spend, broker connectivity, or live capital is authorized by this plan.
+This document records the required environment sequence for AI Quant OS. The operator has confirmed local, single-operator PAPER workstation use for the current development scope; this is not confirmation that a remote environment was selected or provisioned. The current implementation and evidence remain local and paper-only. No AWS account, deployment, provider spend, broker connectivity, or live capital is authorized by this plan.
 
 ## Environment tiers
 
@@ -30,4 +30,4 @@ Current promotion evidence is represented by the fail-closed `PromotionDecision`
 
 ## Decisions still required
 
-The operator must confirm intended deployment model, service owner, expected users, and internet exposure before any staging design is treated as final. Security, legal/compliance, data rights, broker eligibility, privacy/retention, and cost owners must approve their respective gates before external data, remote services, or live capital are introduced. No such approval is inferred here.
+The current deployment model is confirmed as local, single-operator PAPER. A future staging design still needs a named service owner, expected users, and internet exposure decision. Security, legal/compliance, data rights, broker eligibility, privacy/retention, and cost owners must approve their respective gates before external data, remote services, or live capital are introduced. No such approval is inferred here.
