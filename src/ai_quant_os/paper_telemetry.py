@@ -2,6 +2,7 @@
 
 from contextlib import contextmanager
 from contextvars import ContextVar
+import logging
 import os
 import re
 from threading import RLock
@@ -12,6 +13,8 @@ from importlib.metadata import version
 from urllib.parse import urlsplit
 
 import httpx
+
+LOGGER = logging.getLogger(__name__)
 
 
 class PaperSpan:
@@ -380,10 +383,31 @@ class PaperTraceMiddleware:
                 failed = True
                 raise
             finally:
+                route = getattr(scope.get("route"), "path", "UNMATCHED")
+                if not isinstance(route, str) or not (
+                    route == "UNMATCHED"
+                    or re.fullmatch(r"/api/v1/[A-Za-z0-9_/{}/.-]{1,240}", route)
+                ):
+                    route = "UNMATCHED"
+                method = method if method in {"GET", "POST", "DELETE", "PUT", "PATCH"} else "OTHER"
+                status_label = status if type(status) is int and 100 <= status <= 599 else "UNKNOWN"
+                request_failed = failed or not complete or (status is not None and status >= 500)
                 self.telemetry.record_http(
-                    getattr(scope.get("route"), "path", "UNMATCHED"),
+                    route,
                     method,
                     status,
                     monotonic_ns() - started,
-                    failed or not complete,
+                    request_failed,
                 )
+                if request_failed:
+                    try:
+                        LOGGER.error(
+                            "paper_http_request_failed trace_id=%s route=%s method=%s status_code=%s",
+                            span.trace_id or "-",
+                            route,
+                            method,
+                            status_label,
+                        )
+                    except Exception:
+                        # Diagnostic output cannot alter the API response or safety path.
+                        pass

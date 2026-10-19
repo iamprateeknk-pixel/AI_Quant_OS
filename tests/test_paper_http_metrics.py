@@ -237,3 +237,116 @@ def test_stream_return_without_terminal_body_is_observed_as_incomplete():
         assert "private-url-token" not in text
     finally:
         telemetry.close()
+
+
+def test_failed_http_log_can_be_joined_to_trace_without_logging_exception_details(caplog):
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    exporter = InMemorySpanExporter()
+    telemetry = PaperTelemetry(exporter=exporter)
+
+    async def broken(scope, receive, send):
+        raise RuntimeError("private-request-payload-secret")
+
+    async def ignored(*args):
+        pass
+
+    try:
+        with caplog.at_level("ERROR", logger="ai_quant_os.paper_telemetry"):
+            with pytest.raises(RuntimeError, match="private-request-payload-secret"):
+                asyncio.run(
+                    PaperTraceMiddleware(broken, telemetry=telemetry)(
+                        {
+                            "type": "http",
+                            "method": "POST",
+                            "path": "/private-path-token",
+                            "query_string": b"password=private-query-secret",
+                        },
+                        ignored,
+                        ignored,
+                    )
+                )
+        assert telemetry.flush()
+        trace = next(span for span in exporter.get_finished_spans() if span.name == "paper.http")
+        assert f"trace_id={trace.context.trace_id:032x}" in caplog.text
+        assert "route=UNMATCHED" in caplog.text and "method=POST" in caplog.text
+        assert "private-request-payload-secret" not in caplog.text
+        assert "private-path-token" not in caplog.text
+        assert "private-query-secret" not in caplog.text
+    finally:
+        telemetry.close()
+
+
+def test_http_5xx_log_uses_route_template_and_updates_failure_metric(caplog):
+    from types import SimpleNamespace
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    exporter = InMemorySpanExporter()
+    telemetry = PaperTelemetry(exporter=exporter)
+
+    async def unavailable(scope, receive, send):
+        await send({"type": "http.response.start", "status": 503, "headers": []})
+        await send({"type": "http.response.body", "body": b"unavailable"})
+
+    async def ignore_send(message):
+        pass
+
+    async def ignore_receive():
+        return {"type": "http.request", "body": b""}
+
+    try:
+        with caplog.at_level("ERROR", logger="ai_quant_os.paper_telemetry"):
+            asyncio.run(
+                PaperTraceMiddleware(unavailable, telemetry=telemetry)(
+                    {
+                        "type": "http",
+                        "method": "GET",
+                        "route": SimpleNamespace(path="/api/v1/system/status"),
+                    },
+                    ignore_receive,
+                    ignore_send,
+                )
+            )
+        assert telemetry.flush()
+        trace = next(span for span in exporter.get_finished_spans() if span.name == "paper.http")
+        assert f"trace_id={trace.context.trace_id:032x}" in caplog.text
+        assert "route=/api/v1/system/status method=GET status_code=503" in caplog.text
+        assert 'route="/api/v1/system/status",status_class="5xx"' in telemetry.metrics_text()
+        assert (
+            'ai_quant_paper_http_failures_total{method="GET",route="/api/v1/system/status",status_class="5xx"} 1'
+            in telemetry.metrics_text()
+        )
+    finally:
+        telemetry.close()
+
+
+def test_failure_log_sink_cannot_change_an_http_response(monkeypatch):
+    import ai_quant_os.paper_telemetry as paper_telemetry
+
+    telemetry = PaperTelemetry()
+
+    async def unavailable(scope, receive, send):
+        await send({"type": "http.response.start", "status": 503, "headers": []})
+        await send({"type": "http.response.body", "body": b"unavailable"})
+
+    sent = []
+
+    async def capture(message):
+        sent.append(message)
+
+    def broken_log(*args, **kwargs):
+        raise RuntimeError("private-logger-failure")
+
+    monkeypatch.setattr(paper_telemetry.LOGGER, "error", broken_log)
+    try:
+        asyncio.run(
+            PaperTraceMiddleware(unavailable, telemetry=telemetry)(
+                {"type": "http", "method": "GET", "path": "/api/v1/system/status"},
+                asyncio.sleep,
+                capture,
+            )
+        )
+        assert sent[0]["status"] == 503
+        assert sent[-1]["body"] == b"unavailable"
+    finally:
+        telemetry.close()

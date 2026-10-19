@@ -107,8 +107,11 @@ This is a local single-operator development workflow. Local processes sharing
 the Windows account can still inspect that account's memory and files. Stop only
 the process you started. Retain trace files. Never reset SDK counters, clear
 uncertain custody or retry historical exports to turn an unconfirmed outcome
-into delivery. Metrics/log correlation, external alert delivery, independent
-acceptance and all P00–P13 release gates remain open.
+into delivery. Failed HTTP requests now emit a safe summary line carrying the
+trace ID and route template; these lines stay in the local API process log and
+are not collected or persisted by the Prometheus/Grafana supervisor. External
+alert delivery, broader log retention, independent acceptance and all P00–P13
+release gates remain open.
 
 Sources reviewed 2026-10-11: [release](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.162.0),
 [pinned file exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.162.0/exporter/fileexporter/README.md),

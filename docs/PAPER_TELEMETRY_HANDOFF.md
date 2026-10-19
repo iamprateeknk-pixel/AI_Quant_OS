@@ -51,6 +51,14 @@ Exceptions propagate unchanged, but telemetry records a fixed failure descriptio
 without the exception text, stack or event. This is observation of the real path,
 not an alternate risk/execution route. Deterministic domain code is unchanged.
 
+The ASGI boundary also emits one fixed-format ERROR summary for an unhandled,
+incomplete, or 5xx HTTP request. Its only values are the generated trace ID (or
+`-` when tracing is disabled), a validated route template, an allowlisted method,
+and a bounded HTTP status. This lets an operator open the same ID in the protected
+trace reader. Raw paths, query strings, request data, headers, exception text and
+stack are not added by this summary. The surrounding server may independently log
+an exception traceback; this change does not configure or redact that server log.
+
 The app owns and closes environment-created telemetry on every lifespan exit,
 including in-memory and failed service startup paths. Injected telemetry remains
 the caller's responsibility; flush and close it explicitly. Runtime instances are
