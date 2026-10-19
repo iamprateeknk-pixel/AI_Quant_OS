@@ -60,11 +60,17 @@ specific native body-size error, and confirms that collector outage leaves paper
 orders working while original SDK outcomes become unconfirmed. Both collector
 handles are observed terminal; no unknown worker is killed or replaced.
 
+The native Windows Prometheus/Grafana acceptance has been run with the pinned
+local distributions. It verifies protected metrics scraping/query, provisioned
+dashboard/authentication, alert hold/recovery, and explicit source failure while
+temporary service processes and credentials remain test-owned. See
+`docs/evaluations/observability-stack-0214.json`.
+
 Stop only the process you started. Retain its trace files. Never reset SDK
 counters, clear uncertain custody or retry historical exports to turn an
-unconfirmed outcome into delivery. Collector/Grafana service deployment, protected
-span search, metrics/log correlation, independent acceptance and all P00–P13
-release gates remain open.
+unconfirmed outcome into delivery. Persistent collector/Grafana service
+management, metrics/log correlation, external alert delivery, independent
+acceptance and all P00–P13 release gates remain open.
 
 Sources reviewed 2026-10-11: [release](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.162.0),
 [pinned file exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.162.0/exporter/fileexporter/README.md),
