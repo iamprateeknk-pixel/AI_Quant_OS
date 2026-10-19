@@ -63,3 +63,26 @@ def test_http_upload_restore_and_replay(mirror, tmp_path, kind) -> None:
     assert archive_type(tmp_path / "restored").replay(manifest.archive_id).fingerprint == (
         manifest.dataset_fingerprint
     )
+
+
+def test_http_archive_publish_rejects_overwritten_remote_bytes(mirror, tmp_path) -> None:
+    source = tmp_path / "bars.csv"
+    source.write_text(
+        "instrument_id,observed_at,open,high,low,close,volume\n"
+        "EURUSD,2026-01-01T00:00:00+00:00,1.09,1.11,1.08,1.10,100\n",
+        encoding="utf-8",
+    )
+    archive = BarArchive(tmp_path / "source")
+    manifest = archive.ingest_csv(
+        source, source_id="fixture:bars", ingested_at=datetime(2026, 1, 1, tzinfo=timezone.utc)
+    )
+    remote_key = mirror._key(manifest.raw_path)
+    mirror._client.put_object(Bucket=mirror.bucket, Key=remote_key, Body=b"tampered")
+
+    with pytest.raises(ValueError, match="Immutable archive object changed"):
+        mirror.publish_bar(archive, manifest.archive_id)
+
+    assert (
+        mirror._client.get_object(Bucket=mirror.bucket, Key=remote_key)["Body"].read()
+        == b"tampered"
+    )
