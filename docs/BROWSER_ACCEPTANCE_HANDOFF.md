@@ -57,6 +57,14 @@ The local screenshot folder is ignored by Git. Preserve it locally when reviewin
 npm run visual:compare -- --reference output/playwright/visual-states/normal-paper-dashboard.png --current output/playwright/visual-states/normal-paper-dashboard.png --diff output/playwright/visual-states/normal-paper-dashboard.diff.png --max-diff 0.01 --pixel-threshold 8
 ```
 
+`apps/web/scripts/compare-visual-suite.mjs` checks the six required states together: normal PAPER dashboard, `NO_NEW_RISK`, broker disconnected (the implemented broker failure state), agent quarantine, active incident, and the shadow agent registry. It fails on a missing reference/capture or any over-budget state and writes one diff image per comparable state. Pass `--masks-json` with a state-name-to-rectangle map when a known dynamic area needs masking. Example:
+
+```powershell
+npm run visual:compare-suite -- --reference-dir output/playwright/visual-states --current-dir output/playwright/visual-captures --diff-dir output/playwright/visual-diffs --max-diff 0.01 --pixel-threshold 8
+```
+
+The retained-state self-comparison only verifies that the six local references are present and the comparison runner can read them; it is not a fresh-build regression result. The screenshot command and state-seeding procedure remain manual. Stable cross-machine regression still needs reproducible fixture setup, fixed time/session values, and a pinned browser/viewport.
+
 The retained six screenshots are local inspection captures, not deterministic CI baselines. They contain session-specific IDs and timestamps and were produced with varying viewport heights. Compare a fresh capture against a matching local reference at the same viewport; mask only known dynamic regions. CI-quality pixel regression still needs reproducible seed data, fixed time/session values, and a browser/viewport pin. The illustrative execution-pack dashboard is not a valid baseline because its trading values are fabricated.
 
 On 2026-10-19, an additional production-build capture was taken at

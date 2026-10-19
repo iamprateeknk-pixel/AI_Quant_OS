@@ -80,6 +80,21 @@ test('dimension mismatch is rejected with both image sizes', async () => {
   }
 });
 
+test('a mask that excludes every pixel is rejected rather than treated as a pass', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'ai-quant-visual-'));
+  try {
+    const reference = path.join(root, 'reference.png');
+    const current = path.join(root, 'current.png');
+    await makeImage(reference, '#000000', 4, 3);
+    await makeImage(current, '#ffffff', 4, 3);
+    await assert.rejects(compareVisualImages(reference, current, {
+      maskRects: [{ x: 0, y: 0, width: 4, height: 3 }],
+    }), /masks exclude every image pixel/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('CLI exits unsuccessfully when changed-pixel ratio exceeds its budget', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'ai-quant-visual-'));
   try {

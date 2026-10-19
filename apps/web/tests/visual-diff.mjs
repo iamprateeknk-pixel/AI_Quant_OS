@@ -52,6 +52,7 @@ export async function compareVisualImages(referencePath, currentPath, options = 
     }
   }
 
+  if (comparedPixels === 0) throw new Error('masks exclude every image pixel');
   if (diffPath) await sharp(diff, { raw: { width, height, channels: 4 } }).png().toFile(diffPath);
   return {
     width,
