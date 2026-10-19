@@ -71,6 +71,66 @@ def test_asynchronous_quotes_share_one_native_account_and_reproduce(tmp_path, mo
     m.verify_tick_portfolio_report(result)
 
 
+def test_partial_tick_liquidity_limits_each_fill_to_displayed_side_size(tmp_path):
+    m = module()
+    source = inputs()
+    limited = tuple(
+        replace(
+            leg,
+            dataset=TickDataset(
+                replace(tick, bid_size=Decimal(5), ask_size=Decimal(5))
+                for tick in leg.dataset.ticks
+            ),
+        )
+        for leg in source
+    )
+
+    report = m.run_native_tick_portfolio(
+        limited,
+        StrategyRegistry(tmp_path / "limited"),
+        fee_per_order_usd=Decimal(".10"),
+    )
+
+    assert report.schema_version == "1.1"
+    assert report.liquidity_model == "SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1"
+    assert report.replay_model == "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"
+    assert any(fill.quantity < Decimal(10) for leg in report.legs for fill in leg.fills)
+    assert report.total_fees_usd == Decimal(report.native_order_count) * Decimal(".10")
+    for leg in report.legs:
+        quotes = {tick.observed_at: tick for tick in leg.source_ticks[1:]}
+        for fill in leg.fills:
+            quote = quotes[fill.observed_at]
+            available = quote.ask_size if fill.side == "BUY" else quote.bid_size
+            assert fill.quantity <= available
+    m.verify_tick_portfolio_report(report)
+
+
+def test_partial_tick_report_rejects_fill_above_recorded_side_capacity(tmp_path):
+    m = module()
+    source = inputs()
+    limited = tuple(
+        replace(
+            leg,
+            dataset=TickDataset(
+                replace(tick, bid_size=Decimal(5), ask_size=Decimal(5))
+                for tick in leg.dataset.ticks
+            ),
+        )
+        for leg in source
+    )
+    report = m.run_native_tick_portfolio(limited, StrategyRegistry(tmp_path / "tamper"))
+    first_leg = report.legs[0]
+    first_fill, *remaining_fills = first_leg.fills
+    altered = replace(first_fill, quantity=first_fill.quantity + Decimal(1))
+    tampered = replace(
+        report,
+        legs=(replace(first_leg, fills=(altered, *remaining_fills)), report.legs[1]),
+    )
+
+    with pytest.raises(ValueError, match="displayed quote-side liquidity"):
+        m.verify_tick_portfolio_report(tampered)
+
+
 def test_shared_collateral_cannot_be_spent_twice(tmp_path):
     m = module()
     with pytest.raises(ValueError, match="collateral|denied|rejected"):

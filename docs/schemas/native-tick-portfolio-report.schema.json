@@ -394,14 +394,14 @@
       "type": "boolean"
     },
     "replay_model": {
-      "const": "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V1",
-      "default": "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V1",
+      "const": "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2",
+      "default": "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2",
       "title": "Replay Model",
       "type": "string"
     },
     "schema_version": {
-      "const": "1.0",
-      "default": "1.0",
+      "const": "1.1",
+      "default": "1.1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -420,6 +420,12 @@
       "const": "PAPER",
       "default": "PAPER",
       "title": "Venue",
+      "type": "string"
+    },
+    "liquidity_model": {
+      "const": "SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1",
+      "default": "SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1",
+      "title": "Liquidity Model",
       "type": "string"
     }
   },

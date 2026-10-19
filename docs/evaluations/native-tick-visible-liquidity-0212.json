@@ -1,0 +1,57 @@
+{
+  "increment": "0212",
+  "date": "2026-10-19",
+  "feature": "Source-visible side liquidity slices for asynchronous recorded-tick portfolio orders",
+  "verification": {
+    "focused_tests": {
+      "passed": 204,
+      "failed": 0,
+      "scope": [
+        "tests/test_native_tick_portfolio.py",
+        "tests/test_tick_portfolio_cli.py",
+        "tests/test_native_realized_history.py",
+        "tests/test_native_tick_evidence.py",
+        "tests/test_nautilus_ticks.py",
+        "tests/test_nautilus_runtime.py",
+        "tests/test_nautilus_directional.py",
+        "tests/test_native_portfolio.py",
+        "tests/test_tick_data.py",
+        "tests/test_tick_archive.py",
+        "tests/test_strategy_registry.py",
+        "tests/test_directional_research.py",
+        "tests/test_counterfactual.py",
+        "tests/test_daily_evidence.py",
+        "tests/test_shadow_portfolio.py",
+        "tests/test_research_adversarial.py",
+        "tests/test_research_candidates.py"
+      ]
+    },
+    "full_backend_suite": {
+      "passed": 3158,
+      "skipped": 46,
+      "failed": 0,
+      "seconds": "1451.36",
+      "evolution_runner": "enabled"
+    },
+    "ruff": "passed",
+    "format_check": "passed",
+    "compileall": "passed",
+    "diff_check": "passed",
+    "regressions": [
+      "Partial order quantity never exceeds the recorded displayed side size",
+      "Paired PRICE/TICK events do not replenish displayed size",
+      "Per-order fees account for submitted child orders",
+      "Independent report verification rejects altered fills beyond quote-side capacity",
+      "Existing single-instrument tick replay keeps its complete-liquidity gate",
+      "CLI exports the schema 1.1 report and verifies model identifiers"
+    ]
+  },
+  "rollback": "Revert the increment commit. No persistent state migration is introduced; previously exported schema 1.1 reports retain their original model declaration.",
+  "limits": [
+    "Recorded top-of-book displayed size only; no deeper book or queue position",
+    "Declared event ordering is not measured network or venue latency",
+    "No exchange partial-fill acknowledgements, maintenance-margin model, or liquidation policy",
+    "Paper research only; no broker calls, credentials, order authority, or promotion permission",
+    "Independent review of this P03 increment and remaining P03 isolation/liquidation work remain open"
+  ]
+}
