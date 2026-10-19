@@ -66,10 +66,39 @@ dashboard/authentication, alert hold/recovery, and explicit source failure while
 temporary service processes and credentials remain test-owned. See
 `docs/evaluations/observability-stack-0214.json`.
 
-Stop only the process you started. Retain its trace files. Never reset SDK
-counters, clear uncertain custody or retry historical exports to turn an
-unconfirmed outcome into delivery. Persistent collector/Grafana service
-management, metrics/log correlation, external alert delivery, independent
+## Run the local PAPER Prometheus and Grafana stack
+
+Start the local PAPER API first. In a separate, trusted PowerShell terminal, set
+the same operator token used by that API and supply a private Grafana password:
+
+```powershell
+$env:AI_QUANT_OPERATOR_TOKEN = '<the local PAPER operator token>'
+$env:AI_QUANT_GRAFANA_ADMIN_PASSWORD = '<a private password of at least 12 characters>'
+ai-quant-observability
+```
+
+The command verifies the pinned Windows Prometheus 3.15.0 and Grafana 13.2.3
+distribution contents, checks the protected API metrics endpoint, and starts
+both services on IPv4 loopback. Press Ctrl+C to stop the owned processes. The
+Prometheus TSDB and Grafana data persist under `data-local/observability`; the
+per-run configuration and bootstrap credentials live in a temporary directory
+that is removed during normal shutdown. The Grafana browser session key changes
+on each run, so sign in again after restarting. Grafana uses the supplied
+password to initialize a new local database; changing the environment value
+does not reset a password already stored in that database. A forced shutdown
+can leave an `observability-run-*` directory containing temporary credentials;
+after confirming no launcher is running, remove only that stale directory.
+The launcher does not start the OTel collector or API, install a Windows
+service, configure remote access, or send alert notifications. `--run-seconds
+N` can be used for a bounded 1–60 second smoke run. Override ports with
+`--api-port`, `--prometheus-port`, and `--grafana-port`, or state location with
+`--state`.
+
+This is a local single-operator development workflow. Local processes sharing
+the Windows account can still inspect that account's memory and files. Stop only
+the process you started. Retain trace files. Never reset SDK counters, clear
+uncertain custody or retry historical exports to turn an unconfirmed outcome
+into delivery. Metrics/log correlation, external alert delivery, independent
 acceptance and all P00–P13 release gates remain open.
 
 Sources reviewed 2026-10-11: [release](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.162.0),

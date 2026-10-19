@@ -30,6 +30,7 @@ ai-quant-shadow = "ai_quant_os.shadow_cli:main"
 ai-quant-repair = "ai_quant_os.repair_cli:main"
 ai-quant-evolve = "ai_quant_os.evolution_cli:main"
 ai-quant-local = "ai_quant_os.local_cli:main"
+ai-quant-observability = "ai_quant_os.observability_cli:main"
 ai-quant-demo-sync = "ai_quant_os.mt5_sync_service:main"
 ai-quant-demo-checkpoint = "ai_quant_os.mt5_sync_checkpoint:main"
 
