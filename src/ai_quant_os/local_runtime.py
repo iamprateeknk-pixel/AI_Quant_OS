@@ -7,11 +7,14 @@ import secrets
 import shutil
 import socket
 import sys
+import subprocess
 import time
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
 from typing import Callable
+from urllib.parse import urlsplit
 
 from ai_quant_os.local_processes import OwnedProcess
 from ai_quant_os.repair_transport import bounded_command
@@ -113,6 +116,15 @@ class LocalSettings:
             endpoint = inherited.get("AI_QUANT_OTEL_ENDPOINT", "http://127.0.0.1:4318/v1/traces")
             LocalOtlpExporter(endpoint)
             backend["AI_QUANT_OTEL_ENDPOINT"] = endpoint
+        collector_managed = inherited.get("AI_QUANT_OTEL_COLLECTOR_MANAGED", "0")
+        if collector_managed not in {"0", "1"}:
+            raise ValueError("Explicit local Collector management flag required")
+        if collector_managed == "1":
+            if telemetry_enabled != "1":
+                raise ValueError("Managed Collector requires OTel telemetry to be enabled")
+            backend["AI_QUANT_COLLECTOR_TRACE_FILE"] = str(
+                self.state.resolve() / "observability/paper-traces.jsonl"
+            )
         frontend = {
             **base,
             "AI_QUANT_API_URL": f"http://127.0.0.1:{self.api_port}",
@@ -155,14 +167,94 @@ def wait_ready(
     raise RuntimeError("Local service readiness deadline exceeded")
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _start_managed_collector(settings: LocalSettings, environment: dict[str, str]):
+    checkout = settings.checkout.resolve()
+    manifest = json.loads((checkout / "infra/observability/collector-release.json").read_text())
+    binary = checkout / "data-local/tools/otelcol-contrib-0.162.0/otelcol-contrib.exe"
+    if not binary.is_file() or _sha256(binary) != manifest["executable_sha256"]:
+        raise ValueError("Pinned OpenTelemetry Collector missing or hash mismatch")
+    endpoint = urlsplit(environment["AI_QUANT_OTEL_ENDPOINT"])
+    port = endpoint.port
+    if port is None or port in {settings.api_port, settings.web_port}:
+        raise ValueError("Managed Collector requires an unused distinct loopback port")
+    try:
+        with socket.socket() as probe:
+            if os.name == "nt":
+                probe.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            probe.bind(("127.0.0.1", port))
+    except OSError as error:
+        raise ValueError("Managed Collector loopback port is already occupied") from error
+
+    trace_file = Path(environment["AI_QUANT_COLLECTOR_TRACE_FILE"])
+    trace_file.parent.mkdir(parents=True, exist_ok=True)
+    config = json.loads((checkout / "infra/observability/collector.json").read_text())
+    config["receivers"]["otlp"]["protocols"]["http"]["endpoint"] = f"127.0.0.1:{port}"
+    config_path = trace_file.parent / "collector-runtime.json"
+    config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    collector_environment = {
+        key: os.environ[key]
+        for key in ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "HOME", "USERPROFILE")
+        if os.environ.get(key)
+    }
+    collector_environment["AI_QUANT_COLLECTOR_TRACE_FILE"] = str(trace_file)
+    result = subprocess.run(
+        [str(binary), "validate", f"--config={config_path}"],
+        cwd=checkout,
+        env=collector_environment,
+        capture_output=True,
+        timeout=15,
+        shell=False,
+        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+    )
+    if result.returncode != 0:
+        raise ValueError("Pinned OpenTelemetry Collector refused its local configuration")
+    return binary, config_path, collector_environment, port
+
+
+def _wait_collector(process: OwnedProcess, port: int, timeout: float = 15) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if process.process.poll() is not None:
+            raise RuntimeError("Owned OpenTelemetry Collector exited before readiness")
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                return
+        except OSError:
+            time.sleep(0.1)
+    raise RuntimeError("Owned OpenTelemetry Collector readiness deadline exceeded")
+
+
 @contextmanager
 def local_application(settings: LocalSettings):
     settings.validate()
     settings.state.resolve().mkdir(parents=True, exist_ok=True)
-    backend_env, frontend_env = settings.environments(dict(os.environ))
+    inherited_environment = dict(os.environ)
+    backend_env, frontend_env = settings.environments(inherited_environment)
     nonce = secrets.token_hex(16)
     backend_env["AI_QUANT_LOCAL_INSTANCE"] = nonce
+    collector_managed = inherited_environment.get("AI_QUANT_OTEL_COLLECTOR_MANAGED", "0") == "1"
     with ExitStack() as stack:
+        children = []
+        if collector_managed:
+            binary, config_path, collector_environment, collector_port = _start_managed_collector(
+                settings, backend_env
+            )
+            collector = OwnedProcess(
+                [str(binary), f"--config={config_path}"],
+                cwd=settings.checkout.resolve(),
+                environment=collector_environment,
+            )
+            stack.callback(collector.close)
+            _wait_collector(collector, collector_port)
+            children.append(collector)
         api = OwnedProcess(
             _isolated_module_command(
                 "ai_quant_os.local_api", Path(__file__).resolve().parents[1], str(settings.api_port)
@@ -197,4 +289,5 @@ def local_application(settings: LocalSettings):
             lambda body: b"Mission Control" in body and b"PAPER" in body,
             timeout=30,
         )
-        yield api, web
+        children.extend((api, web))
+        yield tuple(children)

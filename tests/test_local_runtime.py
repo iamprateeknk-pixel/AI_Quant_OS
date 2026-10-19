@@ -89,6 +89,32 @@ def test_explicit_local_telemetry_reaches_only_backend_without_ambient_fields(tm
     assert "OTEL_RESOURCE_ATTRIBUTES" not in backend and "OTEL_EXPORTER_OTLP_HEADERS" not in backend
 
 
+def test_managed_local_collector_requires_telemetry_and_exposes_only_trace_file_path(tmp_path):
+    settings = runtime().LocalSettings(Path.cwd(), tmp_path)
+    backend, frontend = settings.environments(
+        {
+            "AI_QUANT_OTEL_ENABLED": "1",
+            "AI_QUANT_OTEL_COLLECTOR_MANAGED": "1",
+            "AI_QUANT_OTEL_ENDPOINT": "http://127.0.0.1:4319/v1/traces",
+        }
+    )
+    assert backend["AI_QUANT_COLLECTOR_TRACE_FILE"] == str(
+        tmp_path.resolve() / "observability/paper-traces.jsonl"
+    )
+    assert "AI_QUANT_COLLECTOR_TRACE_FILE" not in frontend
+    assert "AI_QUANT_OTEL_COLLECTOR_MANAGED" not in backend
+    assert "AI_QUANT_OTEL_COLLECTOR_MANAGED" not in frontend
+    with pytest.raises(ValueError, match="telemetry"):
+        settings.environments({"AI_QUANT_OTEL_COLLECTOR_MANAGED": "1"})
+    with pytest.raises(ValueError):
+        settings.environments(
+            {
+                "AI_QUANT_OTEL_ENABLED": "1",
+                "AI_QUANT_OTEL_COLLECTOR_MANAGED": "true",
+            }
+        )
+
+
 def test_local_monitoring_alert_flag_is_explicit_and_backend_only(tmp_path):
     settings = runtime().LocalSettings(Path.cwd(), tmp_path)
     backend, frontend = settings.environments({"AI_QUANT_PROMETHEUS_ALERTS_ENABLED": "1"})

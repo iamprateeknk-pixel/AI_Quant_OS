@@ -4,6 +4,7 @@ import json
 import os
 import secrets
 import socket
+import time
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import ProxyHandler, Request, build_opener
@@ -91,6 +92,49 @@ def test_real_ui_api_authentication_persistence_and_shutdown(tmp_path, monkeypat
             else:
                 listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listener.bind(("127.0.0.1", port))
+
+
+@pytest.mark.skipif(
+    os.getenv("AI_QUANT_REQUIRE_LOCAL_WEB") != "1", reason="Opt-in built frontend integration"
+)
+def test_opt_in_telemetry_supervises_local_collector_and_retains_request_trace(
+    tmp_path, monkeypatch
+):
+    from ai_quant_os.local_runtime import LocalSettings, local_application
+
+    root = Path.cwd()
+    collector = root / "data-local/tools/otelcol-contrib-0.162.0/otelcol-contrib.exe"
+    if not collector.is_file():
+        pytest.skip("Pinned local OpenTelemetry Collector is not installed")
+    ports = _available_local_ports(3)
+    token = secrets.token_urlsafe(32)
+    monkeypatch.setenv("AI_QUANT_OPERATOR_TOKEN", token)
+    monkeypatch.setenv("AI_QUANT_OTEL_ENABLED", "1")
+    monkeypatch.setenv("AI_QUANT_OTEL_COLLECTOR_MANAGED", "1")
+    monkeypatch.setenv("AI_QUANT_OTEL_ENDPOINT", f"http://127.0.0.1:{ports[2]}/v1/traces")
+    settings = LocalSettings(root, tmp_path / "state", ports[0], ports[1])
+    opener = build_opener(ProxyHandler({}))
+    trace_file = settings.state / "observability/paper-traces.jsonl"
+    with local_application(settings) as children:
+        assert len(children) == 3
+        with opener.open(
+            f"http://127.0.0.1:{ports[0]}/api/v1/system/status", timeout=5
+        ) as response:
+            assert json.loads(response.read())["mode"] == "PAPER"
+            trace_id = response.headers.get("X-Paper-Trace-Id")
+        assert trace_id and len(trace_id) == 32
+        deadline = time.monotonic() + 10
+        retained = ""
+        while time.monotonic() < deadline:
+            if trace_file.exists():
+                retained = trace_file.read_text(encoding="utf-8")
+                if trace_id.lower() in retained.lower():
+                    break
+            time.sleep(0.05)
+        assert trace_file.is_file() and trace_id.lower() in retained.lower()
+    assert all(child.process.poll() is not None for child in children)
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", ports[2]))
 
 
 @pytest.mark.skipif(

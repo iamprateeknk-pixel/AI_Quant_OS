@@ -26,10 +26,19 @@ absent. Verify its archive SHA-256 and the extracted executable SHA-256 against
 the manifest before execution. This is a per-user development process, not a
 Windows service or automatic app launch. No Docker operation is needed.
 
-In the backend's launch environment, explicitly set `AI_QUANT_OTEL_ENABLED=1` and
-`AI_QUANT_OTEL_ENDPOINT=http://127.0.0.1:4318/v1/traces`. Existing disabled defaults
-remain intact. The collector must start separately; enabling SDK recording does
-not prove collector availability.
+For a managed foreground workflow, `ai-quant-local` can start the same pinned
+Collector before its API and stop it after API shutdown. Set
+`AI_QUANT_OTEL_ENABLED=1` and `AI_QUANT_OTEL_COLLECTOR_MANAGED=1` in the local
+launcher environment; the opt-in mode retains rotating traces under the local
+app state directory and exposes them through the existing protected trace reader.
+See `docs/LOCAL_APPLICATION_HANDOFF.md` for its environment boundary and startup
+behavior.
+
+For the manual workflow, set `AI_QUANT_OTEL_ENABLED=1` and
+`AI_QUANT_OTEL_ENDPOINT=http://127.0.0.1:4318/v1/traces` in the backend's launch
+environment and start the Collector separately. Enabling SDK recording does not
+prove Collector availability. The managed `ai-quant-local` workflow sets up the
+Collector first when its separate managed flag is also explicitly enabled.
 
 ## Limits and evidence
 

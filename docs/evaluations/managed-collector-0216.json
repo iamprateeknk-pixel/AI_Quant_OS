@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "managed-collector-0216",
+  "date": "2026-10-19",
+  "started_at": "2026-10-19T17:49:00Z",
+  "completed_at": "2026-10-19T17:50:47Z",
+  "source_revision": "a7200a3525da9559b744026cc1377581b835d167",
+  "scope": "OPT_IN_LOCAL_PAPER_COLLECTOR_LIFECYCLE",
+  "binary": {
+    "version": "0.162.0",
+    "platform": "windows_amd64",
+    "path": "data-local/tools/otelcol-contrib-0.162.0/otelcol-contrib.exe",
+    "sha256": "f8f69bd67025f29353b44440069046ca5bdb50cbbfcd6f359d465f0fe84e436e",
+    "release_manifest_verified": true
+  },
+  "test_command_scope": [
+    "tests/test_local_runtime.py",
+    "tests/test_local_application.py",
+    "tests/test_collector_deployment.py",
+    "tests/test_observability_cli.py",
+    "tests/test_prometheus_deployment.py",
+    "tests/test_paper_http_alerts.py",
+    "tests/test_grafana_deployment.py"
+  ],
+  "result": {
+    "passed": 34,
+    "failed": 0,
+    "duration_seconds": 106.97,
+    "status": "PASS"
+  },
+  "verified": [
+    "The opt-in local application supervisor verifies the pinned Collector hash and generated configuration, starts it on the validated loopback OTLP port before starting the API, and waits until the receiver accepts connections.",
+    "A real local PAPER API request returns a trace ID that is present in the retained Collector JSON file.",
+    "Collector configuration and trace-file path are retained under the local app state root; only the backend receives the trace-file path.",
+    "The owned Collector, API and UI process handles are terminal after supervisor cleanup, and the Collector listener port is released.",
+    "Native Collector acceptance continues to verify actual SDK export, protected trace reads, outage, restart and retained-file behavior.",
+    "Ruff lint and format checks pass for the changed Python files."
+  ],
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "Managed Collector startup is opt-in and currently requires the pinned Windows native binary. Linux and service-manager deployment were not tested.",
+    "The local OTLP receiver has no authentication. Other processes able to access loopback can submit forged spans or consume receiver resources.",
+    "Trace files are local observations, not an audit journal or tamper-proof record. Metrics/log correlation, independent security review and all P00-P13 gates remain open."
+  ]
+}

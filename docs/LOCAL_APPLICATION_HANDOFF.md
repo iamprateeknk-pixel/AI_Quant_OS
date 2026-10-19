@@ -52,6 +52,17 @@ Frontend `.env` variants are refused because Next would otherwise load them itse
 This relies on a trusted host, checkout, dependencies and build; it is not a browser,
 credential or candidate-code security sandbox.
 
+OpenTelemetry stays disabled by default. To have `ai-quant-local` start the pinned
+local Windows Collector before the API and keep it available during bounded API
+shutdown, explicitly set `AI_QUANT_OTEL_ENABLED=1` and
+`AI_QUANT_OTEL_COLLECTOR_MANAGED=1`. The launcher verifies the Collector hash,
+validates a generated loopback config and stores rotated traces and the generated
+config under `<state>/observability`. It passes the trace-file path to the API for
+the existing protected trace reader; Collector settings and credentials are not
+forwarded to the frontend. `AI_QUANT_OTEL_COLLECTOR_MANAGED=1` requires telemetry
+to be enabled. Leave the managed flag at `0` when an operator already runs the
+explicitly configured local Collector separately.
+
 ## Ownership and readiness
 
 - The local supervisor acquires a nonblocking kernel lock before importing/opening

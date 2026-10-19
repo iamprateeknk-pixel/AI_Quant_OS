@@ -12,19 +12,25 @@ already locked API. The four added distribution pins are identical in Windows an
 Linux profiles; existing pins are preserved. Actual Linux runtime verification is
 pending. A binary-only locked Windows install and native SDK tests were run.
 
-Start an independently configured local collector accepting OTLP HTTP/protobuf at
-`http://127.0.0.1:4318/v1/traces`. In PowerShell, set:
+For the managed workflow, `ai-quant-local` starts the pinned Windows Collector
+before the API. In PowerShell, set:
 
 ```powershell
 $env:AI_QUANT_OTEL_ENABLED = '1'
+$env:AI_QUANT_OTEL_COLLECTOR_MANAGED = '1'
 $env:AI_QUANT_OTEL_ENDPOINT = 'http://127.0.0.1:4318/v1/traces'
 ai-quant-local --state data-local/local-app
 ```
 
-Use the existing local launcher arguments described in LOCAL_APPLICATION_HANDOFF.md.
-The launcher forwards only these two telemetry fields to the backend; none go to
-the frontend. The normal ASGI app also reads this configuration directly. `0` is
-the default enable flag; other values are rejected. Only an explicit literal
+The managed mode verifies and validates the Collector, binds it to loopback,
+retains rotated trace output at
+`data-local/local-app/observability/paper-traces.jsonl`, and closes it after the
+API. Leave `AI_QUANT_OTEL_COLLECTOR_MANAGED` at `0` when starting a Collector
+separately. Use the existing local launcher arguments described in
+LOCAL_APPLICATION_HANDOFF.md. The API receives only its telemetry enable flag,
+loopback endpoint, and (in managed mode) local trace-file path; none go to the
+frontend. The normal ASGI app also reads this configuration directly. `0` is the
+default enable flag; other values are rejected. Only an explicit literal
 IPv4 loopback HTTP endpoint, nonzero port and exact `/v1/traces` path are admitted.
 Remote targets, credentials, query strings, fragments and redirects are refused.
 
