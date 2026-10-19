@@ -103,6 +103,9 @@ def test_environment(values: dict[str, str]) -> dict[str, str]:
         P02_TEST_S3_ACCESS_KEY=values["AI_QUANT_LOCAL_S3_ACCESS_KEY"],
         P02_TEST_S3_SECRET_KEY=values["AI_QUANT_LOCAL_S3_SECRET_KEY"],
         P02_TEST_S3_BUCKET="quant-archives",
+        P02_TEST_CLICKHOUSE_ENDPOINT="http://127.0.0.1:58123",
+        P02_TEST_CLICKHOUSE_USER="quant_dev",
+        P02_TEST_CLICKHOUSE_PASSWORD=values["AI_QUANT_LOCAL_CLICKHOUSE_PASSWORD"],
     )
     return environment
 
@@ -120,6 +123,7 @@ def main() -> int:
             "tests/test_lineage_catalog.py",
             "tests/test_valkey_cache.py",
             "tests/test_s3_http.py",
+            "tests/test_clickhouse_publication.py",
         ],
         cwd=ROOT,
         env=test_environment(values),
