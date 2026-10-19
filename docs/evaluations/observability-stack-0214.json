@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "evaluation_id": "observability-stack-0214",
   "date": "2026-10-19",
-  "started_at": "2026-10-19T17:19:04Z",
+  "started_at": "2026-10-19T17:20:58Z",
   "completed_at": "2026-10-19T17:24:26Z",
   "source_revision": "5d36d0b1b19bcb75315a2147f5c64cda9fb92842",
   "scope": "NATIVE_WINDOWS_PROMETHEUS_GRAFANA_LOCAL_PAPER_INTEGRATION",
