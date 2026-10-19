@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "collector-parent-order-0213",
+  "capture_started_at": "2026-10-19T17:13:00Z",
+  "capture_completed_at": "2026-10-19T17:19:04Z",
+  "scope": "LOCAL_PAPER_NATIVE_COLLECTOR_ACCEPTANCE_AND_RETAINED_SPAN_PRESENTATION",
+  "source_revision": "11fa40710125127361cebe410ba825c5e7bbfaff",
+  "working_tree_source_sha256": {
+    "apps/web/src/features/traces/collector-trace.ts": "ac238d9b0c2961251de52845f6949e7d2603c1b1f327fffe6f4a7b1d736d71f6",
+    "apps/web/src/features/traces/collector-trace-panel.tsx": "b0776e805ba4d421180a156249774cf02e895f4fd0ccb1da80ce9d547d251719"
+  },
+  "build_id_sha256": "541987828339c6aec13ca538990a7a9b13408e2cade460ce327bdc77631c1ee4",
+  "native_collector": {
+    "version": "0.162.0",
+    "platform": "windows_amd64",
+    "executable_sha256": "f8f69bd67025f29353b44440069046ca5bdb50cbbfcd6f359d465f0fe84e436e",
+    "manifest_match": true,
+    "native_tests": 3,
+    "failures": 0,
+    "result": "PASS",
+    "covered": [
+      "native collector accepts the bounded loopback configuration",
+      "actual SDK export is retained and exposed only through the protected trace API",
+      "oversized request body is rejected by the pinned receiver",
+      "collector outage leaves paper order handling available and marks exports unconfirmed",
+      "a separately admitted collector restart preserves original file bytes and does not retry failed exports"
+    ]
+  },
+  "frontend": {
+    "collector_trace_tests": 8,
+    "web_tests": 185,
+    "eslint_via_node_entrypoint": "PASS",
+    "next_production_build_and_typescript": "PASS",
+    "span_order_regression": "scrambled collector order rendered parent-first; siblings ordered by recorded start time with original order as the tie-break"
+  },
+  "temporary_output_and_collector_processes": "pytest-owned temporary directory and processes; both collector process handles observed terminal",
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "This verifies local Windows native collector behavior and the selected frontend span presentation only.",
+    "The upstream file exporter remains alpha; local file prefixes are not an authenticated, atomic, tamper-proof audit ledger.",
+    "Linux/service deployment, Grafana dashboards/alerts, full causal lineage, visual regression, and independent P00-P13 acceptance remain open."
+  ]
+}
