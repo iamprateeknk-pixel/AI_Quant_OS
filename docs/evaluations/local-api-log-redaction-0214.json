@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "local-api-log-redaction-0214",
+  "date": "2026-10-19",
+  "started_at": "2026-10-19T18:10:36Z",
+  "completed_at": "2026-10-19T18:11:20Z",
+  "source_revision": "57f2c64148b7dd6282c92e7ee9c630daeaf8e4d2",
+  "scope": "LOCAL_PAPER_UVICORN_LAUNCHER_REDACTION_INTEGRATION",
+  "test_command_scope": [
+    "tests/test_local_application.py",
+    "tests/test_local_runtime.py"
+  ],
+  "result": {
+    "passed": 22,
+    "failed": 0,
+    "duration_seconds": 42.76,
+    "status": "PASS"
+  },
+  "environment": {
+    "application": "Owned local PAPER API and production-built Mission Control",
+    "platform": "Windows",
+    "broker_or_live_access": false,
+    "operator_credentials": "synthetic test-only"
+  },
+  "verified": [
+    "The local launcher starts the API with the redacted Uvicorn logger configuration and the real local application integration group passes.",
+    "The local startup, managed Collector request trace, process shutdown, and port release regressions pass in the same integration group."
+  ],
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "The integration group confirms launcher compatibility; emitted exception redaction itself is verified by the separate logger subprocess test.",
+    "Direct ASGI embedding, alternate servers, external log forwarding, and log retention are not configured by this increment.",
+    "No independent security review or broader P00-P13 acceptance was performed; all P00-P13 release gates remain open."
+  ]
+}

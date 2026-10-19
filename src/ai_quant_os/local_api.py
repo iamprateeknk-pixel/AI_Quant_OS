@@ -1,5 +1,7 @@
 """Private launch wrapper for the trusted installed paper API."""
 
+from copy import deepcopy
+import logging
 import os
 import sys
 from threading import Thread
@@ -8,6 +10,29 @@ from pathlib import Path
 import uvicorn
 
 from ai_quant_os.root_ownership import kernel_root_lock
+
+
+class RedactedServerExceptionFilter(logging.Filter):
+    """Prevent Uvicorn from formatting raw exception text and traceback frames."""
+
+    def filter(self, record):
+        if record.exc_info or record.exc_text or record.stack_info:
+            record.msg = "ASGI exception details withheld"
+            record.args = ()
+            record.exc_info = None
+            record.exc_text = None
+            record.stack_info = None
+        return True
+
+
+def _server_log_config():
+    config = deepcopy(uvicorn.config.LOGGING_CONFIG)
+    config["filters"] = {
+        **config.get("filters", {}),
+        "ai_quant_safe_exception": {"()": RedactedServerExceptionFilter},
+    }
+    config["handlers"]["default"]["filters"] = ["ai_quant_safe_exception"]
+    return config
 
 
 def main() -> None:
@@ -28,7 +53,14 @@ def _serve(port: int, nonce: str) -> None:
         return {"instance": nonce, "mode": "PAPER"}
 
     server = uvicorn.Server(
-        uvicorn.Config(app, host="127.0.0.1", port=port, access_log=False, log_level="warning")
+        uvicorn.Config(
+            app,
+            host="127.0.0.1",
+            port=port,
+            access_log=False,
+            log_level="warning",
+            log_config=_server_log_config(),
+        )
     )
 
     def parent_closed():

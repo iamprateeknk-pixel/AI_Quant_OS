@@ -56,8 +56,10 @@ incomplete, or 5xx HTTP request. Its only values are the generated trace ID (or
 `-` when tracing is disabled), a validated route template, an allowlisted method,
 and a bounded HTTP status. This lets an operator open the same ID in the protected
 trace reader. Raw paths, query strings, request data, headers, exception text and
-stack are not added by this summary. The surrounding server may independently log
-an exception traceback; this change does not configure or redact that server log.
+stack are not added by this summary. The local launcher installs a Uvicorn error
+filter that replaces exception tracebacks with the fixed message
+`ASGI exception details withheld`. Directly embedding the ASGI app in another
+server does not inherit this launcher filter.
 
 The app owns and closes environment-created telemetry on every lifespan exit,
 including in-memory and failed service startup paths. Injected telemetry remains

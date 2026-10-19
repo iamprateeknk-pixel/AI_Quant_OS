@@ -10,19 +10,25 @@ finite-label Prometheus histogram/counter. Do not export IDs as metric labels.
 
 The middleware remains fail-open: logging failure cannot change the response,
 control decision, order result, or risk state. Client trace context is not adopted.
+The local Uvicorn launcher applies a default-handler filter that replaces any
+exception record and traceback with `ASGI exception details withheld` before
+formatting it, so exception values and stack locals are not written by that path.
 
 ## Limits
 
 The summary supports lookup in the protected retained-trace reader; it is not a
 durable log journal and is not ingested by Prometheus, Grafana, or the Collector.
-The ASGI middleware does not configure the surrounding server's traceback policy.
-The terminal/server logger may independently emit exception details and must be
-reviewed before logs are forwarded or retained outside the local workstation.
+This filter is installed only by the supplied local Uvicorn launcher. Direct ASGI
+embedding or a separately configured server needs its own log policy. Summaries
+are process output, not a durable journal, and are not ingested by Prometheus,
+Grafana, or the Collector.
 
 ## Evidence
 
 `tests/test_paper_http_metrics.py` verifies an actual generated trace ID appears
 in failure summaries, 5xx responses increment the failure metric, route templates
 are retained, and raw paths, query values, and exception messages are omitted from
-the middleware summary. All existing order, risk, export, and trace-parentage
-behavior remains covered by the telemetry regression suite.
+the middleware summary. A subprocess test configures Uvicorn's actual error
+logger and confirms exception messages and tracebacks are withheld. All existing
+order, risk, export, and trace-parentage behavior remains covered by the telemetry
+regression suite.
