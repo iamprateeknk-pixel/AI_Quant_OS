@@ -3,7 +3,15 @@
 from threading import Lock
 
 CODES = frozenset(
-    {"INVALID_QUOTE", "INVALID_BAR", "CONFLICTING_BAR", "FUTURE_BAR", "DUPLICATE_BAR"}
+    {
+        "INVALID_QUOTE",
+        "INVALID_BAR",
+        "CONFLICTING_BAR",
+        "FUTURE_BAR",
+        "DUPLICATE_BAR",
+        "SCHEMA_REJECTED_QUOTE",
+        "SCHEMA_REJECTED_BAR",
+    }
 )
 
 

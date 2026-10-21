@@ -175,3 +175,100 @@ def test_registered_native_run_binds_configuration_and_cli_report(tmp_path):
     binding = json.loads(output.read_text())["strategy_binding"]
     assert binding["genome_sha256"] == run.binding.genome_sha256
     assert binding["implementation_sha256"] == run.binding.implementation_sha256
+
+
+def test_builtin_strategy_catalog_is_verified_sorted_and_selectable(tmp_path):
+    from ai_quant_os.strategy_registry import StrategyRegistry, builtin_catalog, prepare_builtin
+
+    catalog_sha256, implementations = builtin_catalog()
+    refs = tuple(row.strategy_ref for row in implementations)
+    assert refs == tuple(sorted(refs))
+    assert refs == (
+        "buy-and-hold@1.0.0",
+        "moving-average-cross@1.0.0",
+        "moving-average-directional@1.0.0",
+        "tick-momentum@1.0.0",
+    )
+    plugin, binding = prepare_builtin(
+        genome((("fast", 1), ("slow", 2))),
+        StrategyRegistry(tmp_path / "registry"),
+        expected_catalog_sha256=catalog_sha256,
+    )
+    assert (plugin.fast, plugin.slow) == (1, 2)
+    assert binding.genome.strategy_ref == "moving-average-cross@1.0.0"
+    with pytest.raises(ValueError, match="catalog fingerprint"):
+        prepare_builtin(
+            genome(),
+            StrategyRegistry(tmp_path / "other-registry"),
+            expected_catalog_sha256="0" * 64,
+        )
+
+
+def test_backtest_cli_lists_catalog_and_runs_exact_catalog_reference(tmp_path):
+    import subprocess
+    import sys
+    from ai_quant_os.strategy_registry import builtin_catalog
+
+    listed = subprocess.run(
+        [sys.executable, "-m", "ai_quant_os.nautilus_cli", "--list-strategies"],
+        capture_output=True,
+        text=True,
+    )
+    assert listed.returncode == 0, listed.stderr
+    inventory = json.loads(listed.stdout)
+    catalog_sha256, implementations = builtin_catalog()
+    assert inventory["catalog_sha256"] == catalog_sha256
+    assert [row["strategy_ref"] for row in inventory["strategies"]] == [
+        row.strategy_ref for row in implementations
+    ]
+    from jsonschema import Draft202012Validator
+
+    schema = json.loads(
+        (Path(__file__).parents[1] / "docs/schemas/strategy-catalog-v1.schema.json").read_text()
+    )
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(inventory)
+
+    source = Path(__file__).parent / "fixtures" / "nautilus_replay.csv"
+    output = tmp_path / "directional-result.json"
+    executed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ai_quant_os.nautilus_cli",
+            str(source),
+            "--strategy-ref",
+            "moving-average-directional@1.0.0",
+            "--expected-catalog-sha256",
+            catalog_sha256,
+            "--output",
+            str(output),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert executed.returncode == 0, executed.stderr
+    report = json.loads(output.read_text())
+    assert report["strategy_ref"] == "moving-average-directional@1.0.0"
+    assert report["strategy_binding"]["implementation"]["strategy_ref"] == report["strategy_ref"]
+
+    stale_output = tmp_path / "stale-catalog-result.json"
+    stale = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ai_quant_os.nautilus_cli",
+            str(source),
+            "--strategy-ref",
+            "moving-average-directional@1.0.0",
+            "--expected-catalog-sha256",
+            "0" * 64,
+            "--output",
+            str(stale_output),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert stale.returncode == 2
+    assert "catalog fingerprint changed" in stale.stderr
+    assert not stale_output.exists()

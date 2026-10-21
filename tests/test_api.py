@@ -10,6 +10,8 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from ai_quant_os.api import IntentInput, QuoteInput, create_app
+from ai_quant_os.adversarial_service import IsolatedStressRun
+from ai_quant_os.validation_scientist_service import IsolatedValidationRun
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.execution import PaperExecutionGateway
 from ai_quant_os.market import MarketSnapshot
@@ -19,6 +21,24 @@ from ai_quant_os.risk import SafetyState
 
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+
+def test_api_registers_isolated_validation_tool(tmp_path):
+    client = object()
+    with TestClient(
+        create_app(
+            operator_token="test-secret",
+            clock=lambda: NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+            holdout_rpc_client=client,
+        )
+    ) as api:
+        tool = api.app.state.validation_run_tool
+        stress_tool = api.app.state.stress_run_tool
+        assert type(tool) is IsolatedValidationRun
+        assert tool._client is client
+        assert type(stress_tool) is IsolatedStressRun
+        assert stress_tool._client is client
 
 
 def test_trade_intent_accepts_legacy_and_explicit_v1_requests():
@@ -869,3 +889,104 @@ def test_api_portfolio_limit_rejects_new_buy_but_allows_risk_reducing_sell(tmp_p
     )
     assert reduce.status_code == 200
     assert reduce.json()["status"] == "ACCEPTED"
+
+
+def test_flatten_only_paper_route_closes_in_steps_and_blocks_addition_or_reversal(tmp_path) -> None:
+    client = TestClient(
+        create_app(
+            operator_token="test-secret",
+            clock=lambda: NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+        )
+    )
+    operator = {"X-Operator-Token": "test-secret"}
+    quote = {
+        "instrument_id": "EURUSD",
+        "bid": "1.1000",
+        "ask": "1.1001",
+        "observed_at": NOW.isoformat(),
+        "world_state_version": "world-1",
+    }
+    assert client.post("/api/v1/paper/quotes", json=quote, headers=operator).status_code == 200
+
+    def submit(intent_id: str, side: str, quantity: str):
+        return client.post(
+            "/api/v1/paper/intents",
+            headers={**operator, "Idempotency-Key": intent_id},
+            json={
+                "intent_id": intent_id,
+                "strategy_id": "demo",
+                "strategy_version": "1",
+                "instrument_id": "EURUSD",
+                "side": side,
+                "desired_exposure": quantity,
+                "risk_budget": "10",
+                "max_spread": "0.0003",
+                "max_slippage": "0.0002",
+                "valid_until": (NOW + timedelta(minutes=1)).isoformat(),
+                "world_state_version": "world-1",
+                "evidence_refs": ["fixture:1"],
+                "created_at": NOW.isoformat(),
+            },
+        )
+
+    opened = submit("open-long", "BUY", "100").json()
+    assert opened["status"] == "ACCEPTED"
+    filled = client.post(
+        "/api/v1/paper/fills",
+        headers=operator,
+        json={
+            "fill_id": "open-fill",
+            "order_id": opened["order_id"],
+            "quantity": "100",
+            "price": "1.1001",
+            "fee": "0",
+            "observed_at": NOW.isoformat(),
+        },
+    )
+    assert filled.status_code == 200
+    control = client.post(
+        "/api/v1/control/flatten-only",
+        headers={**operator, "Idempotency-Key": "enter-flatten-only"},
+        json={"reason": "reduce existing paper position"},
+    )
+    assert control.status_code == 200
+
+    assert submit("add-long", "BUY", "1").json()["status"] == "REJECT"
+    assert submit("reverse-short", "SELL", "101").json()["status"] == "REJECT"
+    reduction = submit("reduce-long", "SELL", "60").json()
+    assert reduction["status"] == "ACCEPTED"
+    assert (
+        client.post(
+            "/api/v1/paper/fills",
+            headers=operator,
+            json={
+                "fill_id": "reduce-fill-1",
+                "order_id": reduction["order_id"],
+                "quantity": "60",
+                "price": "1.1000",
+                "fee": "0",
+                "observed_at": NOW.isoformat(),
+            },
+        ).status_code
+        == 200
+    )
+
+    final_close = submit("close-remainder", "SELL", "40").json()
+    assert final_close["status"] == "ACCEPTED"
+    assert (
+        client.post(
+            "/api/v1/paper/fills",
+            headers=operator,
+            json={
+                "fill_id": "reduce-fill-2",
+                "order_id": final_close["order_id"],
+                "quantity": "40",
+                "price": "1.1000",
+                "fee": "0",
+                "observed_at": NOW.isoformat(),
+            },
+        ).status_code
+        == 200
+    )
+    assert client.get("/api/v1/portfolio/snapshot").json()["net_quantity"] == "0"

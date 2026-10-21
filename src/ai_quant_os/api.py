@@ -14,6 +14,8 @@ from typing import Callable, Literal
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -34,9 +36,19 @@ from ai_quant_os.supervisor_agent import supervisor_implementation
 from ai_quant_os.supervisor_drift import supervisor_drift_implementation
 from ai_quant_os.task_supervisor import (
     TaskSupervisionInput,
-    TaskKind,
     task_supervisor_implementation,
 )
+from ai_quant_os.task_supervisor_incident import (
+    IncidentSupervisionInput,
+    task_supervisor_incident_implementation,
+)
+from ai_quant_os.task_supervisor_research import (
+    task_supervisor_research_implementation,
+    task_supervisor_research_implementation_v3,
+    task_supervisor_research_implementation_v4,
+    task_supervisor_research_implementation_v5,
+)
+from ai_quant_os.task_supervisor_research_api import install_research_supervisor_routes
 from ai_quant_os.graph_trace import GraphTrace
 from ai_quant_os.graph_archive import GraphRunPage, GraphArchiveChanged
 from ai_quant_os.supervisor_dispatch import SupervisorDispatch
@@ -130,13 +142,18 @@ from ai_quant_os.drift_agent import drift_implementation
 from ai_quant_os.evolution_api import install_evolution_routes
 from ai_quant_os.research_data_api import install_research_data_routes
 from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog
-from ai_quant_os.research_hypothesis_agent import hypothesis_implementation
+from ai_quant_os.research_hypothesis_agent import (
+    hypothesis_implementation,
+    hypothesis_implementation_v3,
+)
 from ai_quant_os.research_hypothesis_api import install_hypothesis_routes
 from ai_quant_os.research_hypothesis_sources import (
     HYPOTHESIS_INPUT_BYTES,
     HYPOTHESIS_CONTEXT_BYTES,
     hypothesis_sources,
 )
+from ai_quant_os.research_hypothesis_contracts import hypothesis_recipe, hypothesis_recipe_v3
+from ai_quant_os.research_novelty import ResearchNoveltyReservations
 from ai_quant_os.graph_ledger import GraphLedger
 from ai_quant_os.strategy_build_store import StrategyBuildStore
 from ai_quant_os.strategy_builder_agent import builder_implementation
@@ -149,15 +166,24 @@ from ai_quant_os.strategy_builder_service import CandidateCreate
 from ai_quant_os.candidate_validation_store import CandidateValidationStore
 from ai_quant_os.validation_scientist_agent import validation_implementation
 from ai_quant_os.validation_scientist_sources import (
-    validation_sources,
     summary_for_context,
-    validation_summary,
+    validation_sources_from_summary,
+    ValidationContextSnapshot,
 )
-from ai_quant_os.validation_scientist_service import ValidationRun
+from ai_quant_os.validation_scientist_service import IsolatedValidationRun
+from ai_quant_os.holdout_validator_rpc import (
+    HoldoutContextSnapshot,
+    HoldoutRequest,
+    installed_windows_holdout_client,
+)
 from ai_quant_os.validation_scientist_api import install_validation_scientist_routes
-from ai_quant_os.adversarial_agent import adversarial_implementation, adversarial_sources
+from ai_quant_os.adversarial_agent import (
+    AdversarialContextSnapshot,
+    adversarial_implementation,
+    adversarial_sources_from_snapshot,
+)
 from ai_quant_os.adversarial_api import install_adversarial_routes
-from ai_quant_os.adversarial_service import StressRun as AdversarialStressRun
+from ai_quant_os.adversarial_service import IsolatedStressRun as AdversarialStressRun
 from ai_quant_os.strategy_selector_agent import (
     EligibleStrategySetV3,
     selector_implementation,
@@ -188,27 +214,6 @@ from ai_quant_os.health_watchdog import owned_health_call as owned_research_call
 from ai_quant_os.daily_api import install_daily_routes
 from ai_quant_os.paper_attribution import build_strategy_contributions
 from ai_quant_os.execution_attribution import build_execution_contributions
-
-
-def _available_research_store(workspace):
-    if workspace is None:
-        return None
-    path = workspace / "research.sqlite3"
-    if not path.is_file():
-        return None
-    from ai_quant_os.research_store import ResearchStore
-
-    return ResearchStore(path)
-
-
-def _load_research_report(workspace, experiment_id):
-    store = _available_research_store(workspace)
-    if store is None:
-        raise ValueError("Research archive is unavailable")
-    report = store.get(experiment_id)
-    if report is None:
-        raise KeyError("Completed research experiment not found")
-    return report
 
 
 def _available_candidate_store(workspace):
@@ -413,6 +418,7 @@ def create_app(
     telemetry: PaperTelemetry | None = None,
     collector_trace_file: Path | None = None,
     monitoring_alert_source: MonitoringAlertSource | None = None,
+    holdout_rpc_client=None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -629,6 +635,12 @@ def create_app(
     research_data_catalog = ResearchEvidenceCatalog(
         configured_path.with_name(configured_path.stem + ".research-data.sqlite3")
         if configured_path
+        else None,
+        training_only=True,
+    )
+    research_novelty_reservations = ResearchNoveltyReservations(
+        configured_path.with_name(configured_path.stem + ".research-novelty.sqlite3")
+        if configured_path
         else None
     )
     strategy_build_store = StrategyBuildStore(
@@ -647,6 +659,7 @@ def create_app(
         if configured_path
         else None
     )
+    validator_client = holdout_rpc_client or installed_windows_holdout_client()
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
         [
@@ -762,6 +775,20 @@ def create_app(
                     application.state.evolution_task = None
             return
         graph_path = configured_path.with_name(configured_path.stem + ".agents.sqlite3")
+        validation_run_tool = IsolatedValidationRun(
+            validator_client,
+            agent_registry,
+            context=archived_agent_context,
+            clock=current_time,
+        )
+        stress_run_tool = AdversarialStressRun(
+            validator_client,
+            agent_registry,
+            context=archived_agent_context,
+            clock=current_time,
+        )
+        application.state.validation_run_tool = validation_run_tool
+        application.state.stress_run_tool = stress_run_tool
         async with (
             GraphRuntime.open(
                 graph_path,
@@ -770,6 +797,11 @@ def create_app(
                     ("A01", "0.2.0"): supervisor_implementation(agent_registry),
                     ("A01", "0.3.0"): supervisor_drift_implementation(agent_registry),
                     ("A01", "0.4.0"): task_supervisor_implementation(agent_registry),
+                    ("A01", "0.5.0"): task_supervisor_incident_implementation(agent_registry),
+                    ("A01", "0.6.0"): task_supervisor_research_implementation(agent_registry),
+                    ("A01", "0.7.0"): task_supervisor_research_implementation_v3(agent_registry),
+                    ("A01", "0.8.0"): task_supervisor_research_implementation_v4(agent_registry),
+                    ("A01", "0.9.0"): task_supervisor_research_implementation_v5(agent_registry),
                     ("A02", "0.2.0"): regime_implementation(agent_registry),
                     ("A03", "0.2.0"): macro_implementation(agent_registry),
                     ("A04", "0.2.0"): currency_strength_implementation(agent_registry),
@@ -777,6 +809,7 @@ def create_app(
                     ("A06", "0.2.0"): event_implementation(agent_registry),
                     ("A07", "0.2.0"): integrity_implementation(agent_registry),
                     ("A08", "0.2.0"): hypothesis_implementation(agent_registry),
+                    ("A08", "0.3.0"): hypothesis_implementation_v3(agent_registry),
                     ("A09", "0.2.0"): builder_implementation(agent_registry),
                     ("A10", "0.2.0"): validation_implementation(agent_registry),
                     ("A11", "0.2.0"): adversarial_implementation(agent_registry),
@@ -795,19 +828,8 @@ def create_app(
                 tools=AgentToolBoundary(
                     agent_registry,
                     {
-                        "VALIDATION_RUN": ValidationRun(
-                            candidate_validation_store,
-                            validation_package_store,
-                            agent_registry,
-                            context=archived_agent_context,
-                            clock=current_time,
-                        ),
-                        "STRESS_RUN": AdversarialStressRun(
-                            lambda: _available_research_store(configured_research_workspace),
-                            agent_registry,
-                            context=archived_agent_context,
-                            clock=current_time,
-                        ),
+                        "VALIDATION_RUN": validation_run_tool,
+                        "STRESS_RUN": stress_run_tool,
                         "STRATEGY_REGISTRY_READ": StrategyRegistryRead(
                             lambda: _available_candidate_store(configured_research_workspace),
                             agent_registry,
@@ -828,6 +850,8 @@ def create_app(
                             runtime=require_graph_runtime,
                             context=archived_agent_context,
                             compile_child=compile_supervisor_child,
+                            compile_child_versioned=compile_supervisor_child_versioned,
+                            compile_child_parent_aware=compile_supervisor_child_parent_aware,
                             admission=supervisor_admission,
                             observe=observe_supervisor_child,
                         ),
@@ -972,9 +996,21 @@ def create_app(
                 application.state.evolution_task = None
             if telemetry is None:
                 await asyncio.to_thread(configured_telemetry.close)
+            research_novelty_reservations.close()
 
     configured_telemetry = telemetry if telemetry is not None else telemetry_from_environment()
     app = FastAPI(title="AI Quant OS Paper Control API", version="0.1.0", lifespan=lifespan)
+    app.state.holdout_rpc_client = validator_client
+
+    @app.exception_handler(RequestValidationError)
+    async def count_schema_rejected_ingress(request, exc):
+        if request.method == "POST":
+            if request.url.path == "/api/v1/paper/quotes":
+                ingress_health.note("SCHEMA_REJECTED_QUOTE")
+            elif request.url.path == "/api/v1/paper/world-state/bars":
+                ingress_health.note("SCHEMA_REJECTED_BAR")
+        return await request_validation_exception_handler(request, exc)
+
     app.add_middleware(PaperTraceMiddleware, telemetry=configured_telemetry)
     app.state.paper_telemetry = configured_telemetry
     app.state.graph_runtime = None
@@ -1622,16 +1658,38 @@ def create_app(
             task_kind=payload.task_kind,
         )
 
-    async def compile_context(
-        payload: AgentContextInput, *, task_kind: TaskKind | None = None
+    @app.post("/api/v1/paper/incidents/supervise/context", dependencies=[Depends(require_operator)])
+    async def compile_incident_task_context(
+        payload: IncidentSupervisionInput,
     ) -> dict[str, object]:
+        return await compile_context(
+            AgentContextInput(agent_id="A01", agent_version="0.5.0", task_id=payload.task_id),
+            task_kind="INCIDENT_REVIEW",
+        )
+
+    async def compile_context(
+        payload: AgentContextInput, *, task_kind: str | None = None
+    ) -> dict[str, object]:
+        if (payload.agent_id, payload.agent_version) in {
+            ("A01", "0.6.0"),
+            ("A01", "0.7.0"),
+            ("A01", "0.8.0"),
+            ("A01", "0.9.0"),
+        }:
+            raise HTTPException(422, "Typed sandbox research supervision route required")
         if (payload.agent_id, payload.agent_version) == ("A01", "0.4.0") and task_kind is None:
             raise HTTPException(422, "Typed task supervision context route required")
+        if (payload.agent_id, payload.agent_version) == (
+            "A01",
+            "0.5.0",
+        ) and task_kind != "INCIDENT_REVIEW":
+            raise HTTPException(422, "Typed incident supervision context route required")
         incident_mission = (payload.agent_id, payload.agent_version) == ("A18", "0.2.0")
         supervisor_mission = payload.agent_id == "A01" and payload.agent_version in (
             "0.2.0",
             "0.3.0",
             "0.4.0",
+            "0.5.0",
         )
         event_mission = (payload.agent_id, payload.agent_version) == ("A06", "0.2.0")
         macro_mission = (payload.agent_id, payload.agent_version) == ("A03", "0.2.0")
@@ -1883,20 +1941,24 @@ def create_app(
                 )
             elif evolution_mission:
                 quality_receipts = None
+                quality_traces = None
                 quality_unavailable_reason = "GRAPH_LEDGER_UNAVAILABLE"
                 if app.state.graph_runtime is not None:
                     from ai_quant_os.graph_ledger import GraphQualityCapacityExceeded
 
                     try:
-                        quality_receipts = await asyncio.to_thread(
-                            app.state.graph_runtime.quality_receipts
+                        quality_receipts, quality_traces = await asyncio.to_thread(
+                            app.state.graph_runtime.quality_inventory
                         )
                     except GraphQualityCapacityExceeded:
                         quality_unavailable_reason = "GRAPH_RUN_CAPACITY_EXCEEDED"
+                    except (OSError, ValueError, sqlite3.Error):
+                        quality_unavailable_reason = "GRAPH_LEDGER_UNAVAILABLE"
                 sources = evolution_sources(
                     agent_registry,
                     now=current_time(),
                     quality_receipts=quality_receipts,
+                    quality_traces=quality_traces,
                     quality_unavailable_reason=quality_unavailable_reason,
                 )
             elif payload.agent_id == "A07":
@@ -2011,40 +2073,177 @@ def create_app(
             raise ValueError("Supervisor parent context missing")
         return checkpoint.context
 
-    async def compile_research_context(task_id: str) -> CompiledContext:
+    async def compile_research_context(
+        task_id: str, agent_version: str = "0.2.0"
+    ) -> CompiledContext:
+        if agent_version not in {"0.2.0", "0.3.0"}:
+            raise ValueError("Unsupported research agent version")
         require_graph_runtime()
         await supervisor_admission()
-        agent_registry.require_tool("A08", "0.2.0", "TRAINING_READ", scope="SANDBOX")
+        agent_registry.require_tool("A08", agent_version, "TRAINING_READ", scope="SANDBOX")
 
         def capture_research():
             training = research_data_catalog.training(
-                agent_registry, "A08", "0.2.0", scope="SANDBOX"
+                agent_registry, "A08", agent_version, scope="SANDBOX"
             )
             graph_path = configured_path.with_name(configured_path.stem + ".agents.sqlite3")
             with GraphLedger.archive(graph_path) as archive:
-                records = archive.records_for_agent("A08", "0.2.0")
+                records = archive.records_for_agent("A08", agent_version)
+                if agent_version == "0.3.0":
+                    records = tuple(
+                        sorted(
+                            (*archive.records_for_agent("A08", "0.2.0"), *records),
+                            key=lambda row: (row.receipt.created_at, row.receipt.run_id),
+                        )
+                    )
+                    if len(records) > 128:
+                        raise ValueError("Research graph memory exceeds the covered window")
             return training, records, world_state_store.research_snapshots()
 
         training, records, worlds = await owned_research_call(capture_research)
-        sources = hypothesis_sources(training, records, worlds, now=current_time())
-        context = await ContextCompiler(
-            agent_registry,
-            sources,
-            clock=current_time,
-            call_budget=call_budget,
-            max_input_bytes=HYPOTHESIS_INPUT_BYTES,
-            max_context_bytes=HYPOTHESIS_CONTEXT_BYTES,
-        ).compile("A08", "0.2.0", task_id=task_id, scope="SANDBOX")
+        context = None
+        for _attempt in range(4 if agent_version == "0.3.0" else 1):
+            reserved = (
+                await asyncio.to_thread(
+                    research_novelty_reservations.active_signatures, current_time()
+                )
+                if agent_version == "0.3.0"
+                else ()
+            )
+            sources = hypothesis_sources(
+                training,
+                records,
+                worlds,
+                now=current_time(),
+                agent_version=agent_version,
+                reserved_signatures=reserved,
+            )
+            context = await ContextCompiler(
+                agent_registry,
+                sources,
+                clock=current_time,
+                call_budget=call_budget,
+                max_input_bytes=HYPOTHESIS_INPUT_BYTES,
+                max_context_bytes=HYPOTHESIS_CONTEXT_BYTES,
+            ).compile("A08", agent_version, task_id=task_id, scope="SANDBOX")
+            if context.status != "READY":
+                break
+            recipe = (
+                hypothesis_recipe_v3(context)
+                if agent_version == "0.3.0"
+                else hypothesis_recipe(context)
+            )
+            signatures = tuple(sorted(row.signature for row in recipe["hypotheses"]))
+            conflicts = await asyncio.to_thread(
+                research_novelty_reservations.claim,
+                context.context_ref,
+                signatures,
+                now=current_time(),
+                valid_until=context.valid_until,
+            )
+            if not conflicts:
+                break
+            context = None
+        if context is None:
+            raise ValueError("Concurrent research novelty reservation did not stabilize")
         state_store.record_context_checkpoint(
             ContextCheckpoint(
-                schema_version="1.0", manifest=agent_registry.get("A08", "0.2.0"), context=context
+                schema_version="1.0",
+                manifest=agent_registry.get("A08", agent_version),
+                context=context,
             )
         )
         require_context_for_agent(
             context,
             registry=agent_registry,
             agent_id="A08",
-            agent_version="0.2.0",
+            agent_version=agent_version,
+            task_id=task_id,
+            scope="SANDBOX",
+            now=current_time(),
+        )
+        return context
+
+    async def compile_research_supervisor_context(
+        task_id: str,
+        agent_version: str = "0.6.0",
+        artifact_ref: str | None = None,
+        review_ref: str | None = None,
+    ) -> CompiledContext:
+        require_graph_runtime()
+        await supervisor_admission()
+        try:
+            health = await asyncio.to_thread(health_worker.status) if health_worker else None
+        except (ValueError, OSError, sqlite3.Error) as error:
+            raise ValueError("Research supervisor health storage unavailable") from error
+        snapshot = world_state.snapshot(tuple(quotes.copy().values()), now=current_time())
+        if agent_version == "0.8.0":
+            if artifact_ref is None:
+                raise ValueError("Validation artifact reference required")
+            await asyncio.to_thread(
+                validator_client.call,
+                HoldoutRequest(
+                    request_id=uuid4().hex,
+                    operation="VALIDATION_CONTEXT",
+                    agent_id="A10",
+                    agent_version="0.2.0",
+                    task_id=task_id,
+                    context_ref="context-read:" + uuid4().hex,
+                    evidence_ref=artifact_ref,
+                ),
+            )
+        if agent_version == "0.9.0":
+            if review_ref is None:
+                raise ValueError("Active hypothesis review reference required")
+
+            def require_active_review():
+                if strategy_build_store.active(review_ref, now=current_time()) is None:
+                    raise KeyError("Active hypothesis review not found")
+
+            await owned_research_call(require_active_review)
+        sources = supervisor_sources(
+            snapshot,
+            agent_registry,
+            version=agent_version,
+            task_id=task_id,
+            task_kind=(
+                "VALIDATION_REVIEW"
+                if agent_version == "0.8.0"
+                else "STRATEGY_CONSTRUCTION"
+                if agent_version == "0.9.0"
+                else "HYPOTHESIS_RESEARCH"
+            ),
+            artifact_ref=artifact_ref,
+            review_ref=review_ref,
+            health_status="UNAVAILABLE"
+            if health is None
+            else "ERROR"
+            if health["last_error"]
+            else "MONITORED"
+            if enabled_health
+            else "RESTORED_ONLY",
+            open_incidents=None if health is None else health["open_incidents"],
+        )
+        context = await ContextCompiler(
+            agent_registry,
+            sources,
+            clock=current_time,
+            call_budget=call_budget,
+            max_input_bytes=SUPERVISOR_INPUT_BYTES,
+            max_context_bytes=SUPERVISOR_CONTEXT_BYTES,
+        ).compile("A01", agent_version, task_id=task_id, scope="SANDBOX")
+        state_store.record_context_checkpoint(
+            ContextCheckpoint(
+                schema_version="1.0",
+                manifest=agent_registry.get("A01", agent_version),
+                context=context,
+            )
+        )
+        require_context_for_agent(
+            context,
+            registry=agent_registry,
+            agent_id="A01",
+            agent_version=agent_version,
             task_id=task_id,
             scope="SANDBOX",
             now=current_time(),
@@ -2117,20 +2316,38 @@ def create_app(
         require_graph_runtime()
         await supervisor_admission()
         agent_registry.require_tool("A10", "0.2.0", "VALIDATION_RUN", scope="SANDBOX")
-
-        def capture():
-            artifact = candidate_validation_store.get(artifact_ref)
-            if artifact is None:
-                raise KeyError("Validation result not found")
-            package = validation_package_store.get(artifact.package_ref)
-            if package is None:
-                raise KeyError("Original validation package not found")
-            return package, artifact
-
-        package, artifact = await owned_research_call(capture)
+        context_request = HoldoutRequest(
+            request_id=uuid4().hex,
+            operation="VALIDATION_CONTEXT",
+            agent_id="A10",
+            agent_version="0.2.0",
+            task_id=task_id,
+            context_ref="context-read:" + uuid4().hex,
+            evidence_ref=artifact_ref,
+        )
+        response = await asyncio.to_thread(validator_client.call, context_request)
+        snapshot_envelope = response.context_snapshot
+        if type(snapshot_envelope) is not HoldoutContextSnapshot or (
+            snapshot_envelope.agent_id != "A10"
+        ):
+            raise ValueError("Validation service omitted its checked context snapshot")
+        snapshot = ValidationContextSnapshot.model_validate_json(snapshot_envelope.payload_json)
+        summary = snapshot.summary
+        if (
+            response.evidence_ref != artifact_ref
+            or response.summary_sha256 != summary.summary_sha256
+            or response.aggregate.outcome != summary.outcome
+            or response.aggregate.gate_count != len(summary.gates)
+        ):
+            raise ValueError("Validation service context differs from its checked summary")
         context = await ContextCompiler(
             agent_registry,
-            validation_sources(package, artifact, now=current_time()),
+            validation_sources_from_summary(
+                summary,
+                snapshot.holdout_receipt,
+                captured_at=snapshot.captured_at,
+                now=current_time(),
+            ),
             clock=current_time,
             call_budget=call_budget,
             max_input_bytes=16384,
@@ -2147,8 +2364,7 @@ def create_app(
             scope="SANDBOX",
             now=current_time(),
         )
-        package, artifact = await owned_research_call(capture)
-        if summary_for_context(context) != validation_summary(package, artifact):
+        if summary_for_context(context) != summary:
             raise ValueError("Validation result changed during context capture")
         state_store.record_context_checkpoint(
             ContextCheckpoint(
@@ -2170,12 +2386,49 @@ def create_app(
         require_graph_runtime()
         await supervisor_admission()
         agent_registry.require_tool("A11", "0.2.0", "STRESS_RUN", scope="SANDBOX")
-        report = await owned_research_call(
-            lambda: _load_research_report(configured_research_workspace, experiment_id)
+        context_request = HoldoutRequest(
+            request_id=uuid4().hex,
+            operation="STRESS_CONTEXT",
+            agent_id="A11",
+            agent_version="0.2.0",
+            task_id=task_id,
+            context_ref="context-read:" + uuid4().hex,
+            evidence_ref=experiment_id,
         )
+        response = await asyncio.to_thread(validator_client.call, context_request)
+        snapshot_envelope = response.context_snapshot
+        if type(snapshot_envelope) is not HoldoutContextSnapshot or (
+            snapshot_envelope.agent_id != "A11"
+        ):
+            raise ValueError("Adversarial service omitted its checked context snapshot")
+        snapshot = AdversarialContextSnapshot.model_validate_json(snapshot_envelope.payload_json)
+        stress = snapshot.stress
+        from ai_quant_os.holdout_validator_rpc import stress_summary_sha256
+
+        if (
+            response.evidence_ref != experiment_id
+            or snapshot.candidate.experiment_id != experiment_id
+            or response.summary_sha256
+            != stress_summary_sha256(stress.state, stress.reason, stress.scenarios)
+            or response.aggregate.state != stress.state
+            or response.aggregate.reason_codes != (stress.reason,)
+            or response.aggregate.scenario_count != len(stress.scenarios)
+            or tuple(row.model_dump(mode="json") for row in response.aggregate.scenarios)
+            != tuple(row.model_dump(mode="json") for row in stress.scenarios)
+        ):
+            raise ValueError("Adversarial service context differs from checked stress summary")
         context = await ContextCompiler(
             agent_registry,
-            adversarial_sources(report, now=current_time()),
+            adversarial_sources_from_snapshot(
+                snapshot.candidate,
+                snapshot.validation,
+                snapshot.stress,
+                holdout_instrument_id=snapshot.holdout_instrument_id,
+                holdout_first_observed_at=snapshot.holdout_first_observed_at,
+                holdout_last_observed_at=snapshot.holdout_last_observed_at,
+                holdout_dataset_fingerprint=snapshot.holdout_dataset_fingerprint,
+                now=current_time(),
+            ),
             clock=current_time,
             call_budget=call_budget,
             max_input_bytes=16384,
@@ -2192,13 +2445,6 @@ def create_app(
             scope="SANDBOX",
             now=current_time(),
         )
-        refreshed = await owned_research_call(
-            lambda: _load_research_report(configured_research_workspace, experiment_id)
-        )
-        from ai_quant_os.research_store import encode_research
-
-        if encode_research(refreshed) != encode_research(report):
-            raise ValueError("Research report changed during adversarial context capture")
         state_store.record_context_checkpoint(
             ContextCheckpoint(
                 schema_version="1.0",
@@ -2249,6 +2495,8 @@ def create_app(
             await owned_research_call(health_worker.observe_receipt, receipt)
 
     async def compile_supervisor_child(agent_id: str, task_id: str) -> CompiledContext:
+        if agent_id == "A08":
+            return await compile_research_context(task_id)
         try:
             result = await compile_agent_context(
                 AgentContextInput(
@@ -2264,6 +2512,39 @@ def create_app(
         return CompiledContext.model_validate(
             {key: value for key, value in result.items() if key not in {"mode", "checkpoint_ref"}}
         )
+
+    async def compile_supervisor_child_versioned(
+        agent_id: str, agent_version: str, task_id: str
+    ) -> CompiledContext:
+        if (agent_id, agent_version) == ("A08", "0.3.0"):
+            return await compile_research_context(task_id, "0.3.0")
+        raise PermissionError("Unsupported versioned supervisor child")
+
+    async def compile_supervisor_child_parent_aware(
+        parent: CompiledContext, agent_id: str, agent_version: str, source_ref: str
+    ) -> CompiledContext:
+        if (agent_id, agent_version) != ("A10", "0.2.0") and (agent_id, agent_version) != (
+            "A09",
+            "0.2.0",
+        ):
+            raise PermissionError("Unsupported bound supervisor child")
+        if (parent.agent_id, parent.agent_version, parent.scope) == ("A01", "0.8.0", "SANDBOX"):
+            if (agent_id, agent_version) != ("A10", "0.2.0"):
+                raise PermissionError("Unsupported validation supervisor child")
+            from ai_quant_os.task_supervisor_research import read_context_v4
+
+            if read_context_v4(parent).task_spec.artifact_ref != source_ref:
+                raise PermissionError("Validation artifact differs from declared parent task")
+            return await compile_validation_context(parent.task_id, source_ref)
+        if (parent.agent_id, parent.agent_version, parent.scope) == ("A01", "0.9.0", "SANDBOX"):
+            if (agent_id, agent_version) != ("A09", "0.2.0"):
+                raise PermissionError("Unsupported construction supervisor child")
+            from ai_quant_os.task_supervisor_research import read_context_v5
+
+            if read_context_v5(parent).task_spec.review_ref != source_ref:
+                raise PermissionError("Review differs from declared parent task")
+            return await compile_builder_context(parent.task_id, source_ref)
+        raise PermissionError("Bound child requires its supported A01 parent")
 
     @app.post("/api/v1/paper/agents/execute", dependencies=[Depends(require_operator)])
     async def execute_agent_graph(payload: AgentGraphInput) -> dict[str, object]:
@@ -2891,6 +3172,54 @@ def create_app(
         archived_context=archived_agent_context,
         runtime=require_graph_runtime,
         observe_receipt=observe_research_receipt,
+    )
+    install_research_supervisor_routes(
+        app,
+        require_operator,
+        compile_context=compile_research_supervisor_context,
+        archived_context=archived_agent_context,
+        runtime=require_graph_runtime,
+        observe_receipt=observe_research_receipt,
+    )
+    install_research_supervisor_routes(
+        app,
+        require_operator,
+        compile_context=lambda task_id: compile_research_supervisor_context(task_id, "0.7.0"),
+        archived_context=archived_agent_context,
+        runtime=require_graph_runtime,
+        observe_receipt=observe_research_receipt,
+        route_prefix="/api/v1/sandbox/research/supervise/v3",
+        agent_version="0.7.0",
+    )
+    from ai_quant_os.task_supervisor_research import ValidationResearchSupervisionInput
+
+    install_research_supervisor_routes(
+        app,
+        require_operator,
+        compile_context=lambda task_id, artifact_ref: compile_research_supervisor_context(
+            task_id, "0.8.0", artifact_ref
+        ),
+        archived_context=archived_agent_context,
+        runtime=require_graph_runtime,
+        observe_receipt=observe_research_receipt,
+        route_prefix="/api/v1/sandbox/research/supervise/v4",
+        agent_version="0.8.0",
+        context_input_model=ValidationResearchSupervisionInput,
+    )
+    from ai_quant_os.task_supervisor_research import ConstructionResearchSupervisionInput
+
+    install_research_supervisor_routes(
+        app,
+        require_operator,
+        compile_context=lambda task_id, review_ref: compile_research_supervisor_context(
+            task_id, "0.9.0", review_ref=review_ref
+        ),
+        archived_context=archived_agent_context,
+        runtime=require_graph_runtime,
+        observe_receipt=observe_research_receipt,
+        route_prefix="/api/v1/sandbox/research/supervise/v5",
+        agent_version="0.9.0",
+        context_input_model=ConstructionResearchSupervisionInput,
     )
     install_daily_routes(
         app,

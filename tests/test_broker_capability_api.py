@@ -19,8 +19,11 @@ def test_capabilities_are_protected_and_distinguish_paper_demo_and_skeletons():
         assert set(rows) == {"PAPER", "EXNESS_MT5_DEMO", "EXNESS", "IBKR", "ZERODHA"}
         assert rows["PAPER"]["paper_admission_policy_allows"] is True
         assert rows["PAPER"]["compliance_scope"] == "LOCAL_SIMULATION_ONLY"
-        assert rows["EXNESS_MT5_DEMO"]["implementation"] == "DEMO_OBSERVATION_LIBRARY"
+        assert rows["EXNESS_MT5_DEMO"]["implementation"] == "ISOLATED_DEMO_ORDER_CLI"
         assert "ACCOUNT_READ" in rows["EXNESS_MT5_DEMO"]["operations"]
+        assert "DEMO_ORDER_SUBMIT_EXPLICIT" in rows["EXNESS_MT5_DEMO"]["operations"]
+        assert "DEMO_ORDER_RECONCILE_READ_ONLY" in rows["EXNESS_MT5_DEMO"]["operations"]
+        assert rows["EXNESS_MT5_DEMO"]["source_module"] == "ai_quant_os.exness_demo_order_cli"
         assert rows["EXNESS_MT5_DEMO"]["bound_to_execution_router"] is False
         for identity in ["EXNESS", "IBKR", "ZERODHA"]:
             assert rows[identity]["implementation"] == "DISABLED_SKELETON"

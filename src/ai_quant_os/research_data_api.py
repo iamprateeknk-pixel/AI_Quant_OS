@@ -13,7 +13,7 @@ from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog
 class ResearchDataPublication(BaseModel):
     model_config = ConfigDict(extra="forbid")
     source_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$")
-    resource_class: Literal["TRAINING", "HOLDOUT"]
+    resource_class: Literal["TRAINING"]
     csv: str = Field(min_length=1, max_length=1048576)
 
 

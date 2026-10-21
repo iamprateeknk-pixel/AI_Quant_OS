@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,128}$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "review_ref": {
+      "pattern": "^hypothesis-review:[a-f0-9]{64}$",
+      "title": "Review Ref",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "review_ref"
+  ],
+  "title": "ConstructionResearchSupervisionInput",
+  "type": "object"
+}

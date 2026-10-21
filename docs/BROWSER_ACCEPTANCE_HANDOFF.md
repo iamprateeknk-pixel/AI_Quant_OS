@@ -34,7 +34,7 @@ The broker contract only exposes `CONNECTED`, `DISCONNECTED`, and `UNKNOWN`; it 
 
 These checks do not establish release readiness. The following remain open:
 
-- other authenticated workflows, responsive keyboard paths beyond the Risk Center and destination dialog, and manual screen-reader review;
+- keyboard paths for authenticated interactive workflows outside the Risk Center and destination dialog, manual target-spacing review and screen-reader review;
 - the exact broker `DEGRADED` design state, if that state is added to the backend contract;
 - independent security and risk review, production identity/secret/compliance decisions, and all applicable P00-P13 release gates;
 - shadow and live acceptance; live execution remains unreleased.
@@ -47,7 +47,31 @@ selector. The synthetic session was signed out, the protected session read retur
 401, and no safety action was submitted. See
 `docs/evaluations/mission-control-authenticated-keyboard-2026-10-19.json`.
 
+On 2026-10-20, an isolated production UI/API run established a synthetic operator
+session and visited the authenticated Agents, Brokers, Orders, Audit, Costs,
+Settings, Traces, and Incidents routes. Every route stayed at its requested URL;
+the current-session inventory and backend-backed page states rendered, with zero
+browser console errors or warnings and all listed UI/API requests returning HTTP
+200. The run used a fresh empty PAPER database and submitted no safety action or
+order. The viewport was not pinned; overflow, axe, target-size, screen-reader, and
+responsive keyboard checks were not part of this smoke run. Exact observations and
+limits are in `docs/evaluations/mission-control-authenticated-route-smoke-2026-10-20.json`.
+
 The local screenshot folder is ignored by Git. Preserve it locally when reviewing the states; it is not part of a commit.
+
+On 2026-10-20, all 16 Mission Control navigation routes, the incident runbook,
+and an unknown-trace detail were scanned against axe-core WCAG 2.1 and 2.2 A/AA
+tags at 1280x800, 390x844, and 320x800 on the production build. All 54
+route/viewport combinations had zero axe violations, including the WCAG 2.2
+`target-size` rule, zero incomplete checks, zero horizontal page overflow, zero
+route mismatches, and zero console errors. Eight overflowing
+table regions on Dashboard, Brokers, World State, and Portfolio were explicitly
+focused at 390 px and moved right 96 px with ArrowRight, then back to the left
+edge with ArrowLeft. A separate real Tab walk at 320 px reached all eight table regions. See
+`docs/evaluations/mission-control-authenticated-accessibility-2026-10-20.json`.
+This automated scan does not replace manual screen-reader and target-spacing review.
+The PAPER database had no orders or fills, so populated order/fill and saved-demo
+portfolio rows were not covered.
 
 ## Local visual comparison
 

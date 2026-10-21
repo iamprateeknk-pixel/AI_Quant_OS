@@ -8,7 +8,9 @@ const fixture=JSON.parse(readFileSync(new URL('./fixtures/broker-capabilities.js
 test('broker registry projects only current public metadata from backend fixture',()=>{
  const view=parseBrokerCapabilities({...fixture,password:'fixture-private',brokers:fixture.brokers.map(row=>({...row,account_login:'fixture-private'}))});
  assert.equal(view.length,5);assert.equal(view[0].paper_admission_policy_allows,true);
- assert.equal(view[1].implementation,'DEMO_OBSERVATION_LIBRARY');
+ assert.equal(view[1].implementation,'ISOLATED_DEMO_ORDER_CLI');
+ assert(view[1].operations.includes('DEMO_ORDER_SUBMIT_EXPLICIT'));
+ assert(view[1].operations.includes('DEMO_ORDER_RECONCILE_READ_ONLY'));
  assert(!JSON.stringify(view).includes('fixture-private'));assert(!JSON.stringify(view).includes('source_module'));
 });
 test('missing duplicate unknown and unbounded profiles are withheld',()=>{

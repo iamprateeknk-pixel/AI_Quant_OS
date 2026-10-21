@@ -7,6 +7,8 @@ from ai_quant_os.backtest import BacktestCosts
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
 from ai_quant_os.tick_data import TickDataset
 
+MAX_NATIVE_REPLAY_EVENTS = 100_000
+
 
 def canonical_tick_source(dataset, quantity, costs, *, require_complete_liquidity=True):
     """Snapshot bounded native inputs before a strategy or engine can run."""
@@ -16,9 +18,11 @@ def canonical_tick_source(dataset, quantity, costs, *, require_complete_liquidit
         raise ValueError("Invalid native tick quantity")
     if type(costs) is not BacktestCosts or costs.slippage_bps:
         raise ValueError("Recorded tick replay requires zero synthetic slippage")
+    if not 1 <= len(dataset.ticks) <= MAX_NATIVE_REPLAY_EVENTS:
+        raise ValueError("Native replay exceeds the 100000 event budget")
     source = TickDataset(tuple(dataset.ticks))
-    if not 1 <= len(source.ticks) <= 1000000 or source.duplicate_rows:
-        raise ValueError("Native replay requires 1..1000000 unique ticks")
+    if source.duplicate_rows:
+        raise ValueError("Native replay requires unique ticks")
     identifiers = {row.instrument_id for row in source.ticks}
     if len(identifiers) != 1 or len({row.source_id for row in source.ticks}) != 1:
         raise ValueError("Native tick replay requires one instrument and source")

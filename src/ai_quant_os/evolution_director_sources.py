@@ -41,6 +41,7 @@ def evolution_sources(
     *,
     now: datetime,
     quality_receipts: tuple[object, ...] | None = None,
+    quality_traces: tuple[object, ...] | None = None,
     quality_unavailable_reason="GRAPH_LEDGER_UNAVAILABLE",
 ) -> dict[str, SourceBinding]:
     if type(now) is not datetime or now.tzinfo is None or type(registry) is not AgentRegistry:
@@ -67,6 +68,7 @@ def evolution_sources(
     quality = operational_quality_observation(
         registry,
         quality_receipts,
+        traces=quality_traces,
         now=now,
         unavailable_reason=quality_unavailable_reason,
     )

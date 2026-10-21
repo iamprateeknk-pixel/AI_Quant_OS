@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import FrozenInstanceError
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -194,6 +195,16 @@ def test_empty_protected_collection_requires_an_explicit_empty_catalog():
     )
     item = next(row for row in result.inputs if row.input_name == "historical_catalog")
     assert item.status == "DENIED"
+
+
+def test_dataset_resource_catalog_entries_cannot_change_after_content_addressing():
+    dataset = receipt("HOLDOUT")
+    catalog = DatasetResourceCatalog.from_receipts((dataset,))
+    with pytest.raises(FrozenInstanceError):
+        catalog.entries[0].resource_class = "TRAINING"
+    catalog.require((dataset.dataset_ref,), "HOLDOUT")
+    with pytest.raises(PermissionError):
+        catalog.require((dataset.dataset_ref,), "TRAINING")
 
 
 @pytest.mark.parametrize("kind", ["STALE", "FUTURE", "UNTRUSTED", "TIMEOUT", "FAILED"])

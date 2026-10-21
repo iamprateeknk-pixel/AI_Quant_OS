@@ -20,6 +20,7 @@ from ai_quant_os.agent_envelope import AgentEnvelope
 from ai_quant_os.agent_registry import AgentRegistry, AgentToolBoundary
 from ai_quant_os.context_checkpoints import ContextCheckpoint
 from ai_quant_os.graph_ledger import GraphLedger, GraphReceipt, GraphRecord
+from ai_quant_os.graph_trace import GraphTrace
 
 
 class GraphState(TypedDict):
@@ -268,6 +269,12 @@ class GraphRuntime:
     def quality_receipts(self) -> tuple[GraphReceipt, ...]:
         """Read the verified durable receipt inventory for operational quality metrics."""
         return self._ledger.quality_receipts()
+
+    def quality_inventory(self) -> tuple[tuple[GraphReceipt, ...], tuple[GraphTrace, ...]]:
+        """Read bounded checked receipts and their matching audited execution traces."""
+        receipts = self._ledger.quality_receipts()
+        traces = tuple(self._ledger.trace(receipt.run_id) for receipt in receipts)
+        return receipts, traces
 
     def receipt(self, run_id: str) -> GraphReceipt:
         """Read archival state without invoking or changing the graph."""

@@ -7,7 +7,7 @@ import sqlite3
 from unittest.mock import patch
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from ai_quant_os.contracts import RiskDecision, TradeIntent
 from ai_quant_os.broker import (
@@ -125,6 +125,7 @@ def test_risk_reducing_order_does_not_get_blocked_by_existing_overage() -> None:
     assert decision.decision == "APPROVE"
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(
     st.integers(min_value=-2000, max_value=2000),
     st.integers(min_value=0, max_value=1000),
@@ -164,6 +165,39 @@ def test_safety_halt_blocks_new_risk() -> None:
     risk.set_safety_state(SafetyState.HALT)
     decision = risk.evaluate(intent(), market(), now=NOW)
     assert decision.decision == "HALT"
+
+
+def test_flatten_only_approves_only_non_reversing_position_reduction() -> None:
+    risk = kernel()
+    risk.set_safety_state(SafetyState.FLATTEN_ONLY)
+    long_position = PortfolioExposure(
+        "paper:long", "EURUSD", Decimal("100"), Decimal(0), Decimal(0)
+    )
+
+    close = replace(intent(exposure="100"), side="SELL")
+    close_decision = risk.evaluate(close, market(), now=NOW, portfolio=long_position)
+    add_or_reverse = replace(intent(exposure="1"), side="BUY")
+    add_decision = risk.evaluate(add_or_reverse, market(), now=NOW, portfolio=long_position)
+    oversized_close = replace(intent(exposure="101"), side="SELL")
+    overshoot_decision = risk.evaluate(oversized_close, market(), now=NOW, portfolio=long_position)
+
+    assert close_decision.decision == "APPROVE"
+    assert add_decision.decision == "REJECT"
+    assert overshoot_decision.decision == "REJECT"
+    with risk.authorization(close, close_decision) as authorized:
+        assert authorized
+
+
+def test_flatten_decision_is_invalidated_by_later_safety_escalation() -> None:
+    risk = kernel()
+    risk.set_safety_state(SafetyState.FLATTEN_ONLY)
+    close = replace(intent(exposure="100"), side="SELL")
+    position = PortfolioExposure("paper:long", "EURUSD", Decimal("100"), Decimal(0), Decimal(0))
+    decision = risk.evaluate(close, market(), now=NOW, portfolio=position)
+    risk.set_safety_state(SafetyState.HALT)
+
+    with risk.authorization(close, decision) as authorized:
+        assert not authorized
 
 
 def test_approved_intent_creates_one_paper_order_under_retry() -> None:

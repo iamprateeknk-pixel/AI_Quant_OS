@@ -9,6 +9,7 @@ import pytest
 
 from test_mt5_demo_observation import NOW, NativeFixture, request
 from ai_quant_os.mt5_demo_observation import capture_demo
+from test_mt5_demo_execution import command, enrollment
 
 
 def implementation():
@@ -16,6 +17,111 @@ def implementation():
     from ai_quant_os import mt5_demo_worker
 
     return mt5_demo_worker
+
+
+def test_disabled_demo_order_worker_does_not_load_native_sdk(tmp_path):
+    module = implementation()
+    raw = module.encode_order_request(
+        enrollment(enabled=False), command(), tmp_path / "orders.sqlite3"
+    )
+    reply = module.worker_request(raw)
+    assert reply.code == "OK"
+    assert reply.report.state == "DISABLED"
+
+
+def test_worker_dispatches_reconciliation_without_dispatching_submission(monkeypatch, tmp_path):
+    module = implementation()
+    import sys
+    from types import ModuleType
+    from ai_quant_os.mt5_demo_execution import DemoOrderReceipt
+
+    calls = []
+
+    def reconcile(enrollment_value, command_value, native, store_path, *, clock):
+        calls.append((command_value.idempotency_key, store_path))
+        return DemoOrderReceipt(
+            state="UNKNOWN",
+            code="NATIVE_FAILURE",
+            idempotency_key=command_value.idempotency_key,
+            order_id=command_value.order_id,
+            instrument_id=command_value.instrument_id,
+            side=command_value.side,
+            quantity_units=command_value.quantity,
+            account_scope_ref=module.account_scope(enrollment_value.connection),
+        )
+
+    monkeypatch.setattr(module.os, "name", "nt")
+    monkeypatch.setattr(module.Path, "is_file", lambda self: True)
+    monkeypatch.setattr(module, "reconcile_demo_order", reconcile)
+    monkeypatch.setattr(module, "submit_demo_order", lambda *a, **k: pytest.fail("Must not submit"))
+    monkeypatch.setitem(sys.modules, "MetaTrader5", ModuleType("MetaTrader5"))
+    raw = module.encode_order_request(
+        enrollment(),
+        command(),
+        tmp_path / "orders.sqlite3",
+        operation="RECONCILE_EXNESS_DEMO_ORDER",
+    )
+    reply = module.worker_request(raw)
+    assert reply.code == "OK" and reply.report.state == "UNKNOWN"
+    assert calls == [("demo-order-1", (tmp_path / "orders.sqlite3").resolve())]
+
+
+def test_supervised_demo_order_rejects_a_mismatched_receipt(monkeypatch, tmp_path):
+    module = implementation()
+    from ai_quant_os.mt5_demo_execution import DemoOrderReceipt
+
+    bad = DemoOrderReceipt(
+        state="ACKNOWLEDGED",
+        idempotency_key="another-order",
+        order_id="another-id",
+        instrument_id="EURUSD",
+        side="BUY",
+        quantity_units="1000",
+        account_scope_ref=module.account_scope(enrollment().connection),
+        broker_order_id="5001",
+        broker_deal_id="6001",
+        filled_lots="0.01",
+        average_price="1.1002",
+    )
+    reply = json.dumps({"code": "OK", "report": json.loads(bad.model_dump_json())})
+    launch_fixture(
+        monkeypatch, module, f"import sys; sys.stdin.buffer.read(); sys.stdout.write({reply!r})"
+    )
+    result = module.supervise_demo_order(
+        enrollment(), command(), tmp_path / "orders.sqlite3", clock=lambda: NOW
+    )
+    assert result.code == "PROTOCOL" and result.report is None
+
+
+def test_supervised_demo_order_returns_bound_receipt_without_exposing_credentials(
+    monkeypatch, tmp_path
+):
+    module = implementation()
+    from ai_quant_os.mt5_demo_execution import DemoOrderReceipt
+
+    receipt = DemoOrderReceipt(
+        state="ACKNOWLEDGED",
+        idempotency_key=command().idempotency_key,
+        order_id=command().order_id,
+        instrument_id="EURUSD",
+        side="BUY",
+        quantity_units="1000",
+        account_scope_ref=module.account_scope(enrollment().connection),
+        broker_order_id="5001",
+        broker_deal_id="6001",
+        filled_lots="0.01",
+        average_price="1.1002",
+    )
+    reply = json.dumps({"code": "OK", "report": json.loads(receipt.model_dump_json())})
+    launch_fixture(
+        monkeypatch, module, f"import sys; sys.stdin.buffer.read(); sys.stdout.write({reply!r})"
+    )
+    result = module.supervise_demo_order(
+        enrollment(), command(), tmp_path / "orders.sqlite3", clock=lambda: NOW
+    )
+    assert result.state == "RETURNED" and result.report == receipt
+    assert result.automatic_retry_allowed is False
+    assert "fixture-demo-read" not in result.model_dump_json()
 
 
 def test_disabled_supervision_never_launches_process(monkeypatch):

@@ -50,6 +50,36 @@ def verify_implementation(implementation: StrategyImplementation, source_root=PA
             raise ValueError("Strategy source does not match registered implementation")
 
 
+def builtin_catalog() -> tuple[str, tuple[StrategyImplementation, ...]]:
+    """Return the verified, deterministic package catalog without registering anything."""
+    with (PACKAGE_ROOT / "strategy_manifests.json").open("rb") as source:
+        raw = source.read(65537)
+    if len(raw) > 65536:
+        raise ValueError("Built-in strategy catalog exceeds size limit")
+    try:
+        records = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("Invalid built-in strategy catalog") from error
+    if type(records) is not list or not 1 <= len(records) <= 64:
+        raise ValueError("Invalid built-in strategy catalog inventory")
+    implementations = tuple(
+        sorted((_decode(record) for record in records), key=lambda row: row.strategy_ref)
+    )
+    if len({row.strategy_ref for row in implementations}) != len(implementations):
+        raise ValueError("Duplicate built-in strategy reference")
+    for implementation in implementations:
+        if implementation.entry_point not in _BUILDERS:
+            raise ValueError("Unregistered built-in strategy entry point")
+        verify_implementation(implementation)
+    digest = sha256(
+        json.dumps(
+            [[row.strategy_ref, row.fingerprint] for row in implementations],
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+    return digest, implementations
+
+
 class StrategyRegistry:
     def __init__(self, root: Path):
         self.root = root.resolve()
@@ -151,11 +181,15 @@ class StrategyRegistry:
         return self._read_sources(self.get(strategy_ref))
 
 
-def prepare_builtin(genome: StrategyGenome, registry: StrategyRegistry):
-    records = json.loads((PACKAGE_ROOT / "strategy_manifests.json").read_text(encoding="utf-8"))
-    manifests = tuple(_decode(record) for record in records)
-    if len({row.strategy_ref for row in manifests}) != len(manifests):
-        raise ValueError("Duplicate built-in implementation version")
+def prepare_builtin(
+    genome: StrategyGenome,
+    registry: StrategyRegistry,
+    *,
+    expected_catalog_sha256: str | None = None,
+):
+    catalog_sha256, manifests = builtin_catalog()
+    if expected_catalog_sha256 is not None and expected_catalog_sha256 != catalog_sha256:
+        raise ValueError("Built-in strategy catalog fingerprint changed")
     implementation = next(
         (row for row in manifests if row.strategy_ref == genome.strategy_ref), None
     )

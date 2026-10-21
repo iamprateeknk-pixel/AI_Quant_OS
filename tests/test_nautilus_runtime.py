@@ -19,6 +19,20 @@ class RoundTrip:
         return 1 if len(history) == 1 else 0
 
 
+class StreamingRoundTrip:
+    def __init__(self):
+        self.closed_bars = 0
+        self.decision_counts = []
+
+    def on_bar(self, bar):
+        assert bar.instrument_id == "EURUSD"
+        self.closed_bars += 1
+
+    def target_position(self):
+        self.decision_counts.append(self.closed_bars)
+        return 1 if self.closed_bars == 1 else 0
+
+
 def dataset(identifier="EURUSD", start=None):
     start = start or datetime(2026, 1, 1, tzinfo=timezone.utc)
     return BarDataset(
@@ -61,6 +75,27 @@ def test_actual_native_engine_orders_fill_on_next_bar_without_lookahead():
     ]
     assert [len(rows) for rows in strategy.seen] == [1, 2]
     assert result.final_position == 0 and result.net_pnl == Decimal("0.1")
+
+
+def test_native_bar_replay_supports_causal_streaming_strategy_without_history_tuples():
+    strategy = StreamingRoundTrip()
+    result = run(dataset(), strategy)
+    assert result == run(dataset(), RoundTrip())
+    assert strategy.decision_counts == [1, 2]
+    assert strategy.closed_bars == 3
+
+
+def test_native_bar_event_budget_rejects_before_building_quote_tape(monkeypatch):
+    import ai_quant_os.nautilus_runtime as runtime
+
+    monkeypatch.setattr(runtime, "MAX_NATIVE_REPLAY_EVENTS", 5, raising=False)
+    monkeypatch.setattr(
+        runtime,
+        "_bar_quotes",
+        lambda *args: pytest.fail("oversized dataset reached quote-tape construction"),
+    )
+    with pytest.raises(ValueError, match="event budget"):
+        run(dataset())
 
 
 def test_native_replay_is_reproducible_and_costs_are_charged_by_exchange():
@@ -162,6 +197,53 @@ def test_native_cli_produces_schema_bound_artifact(tmp_path):
     assert output["native_order_count"] == 1
     assert Decimal(output["net_pnl"]) == Decimal("0.1")
     assert output["source_sha256"]
+
+
+@pytest.mark.parametrize(
+    "dataset_format, header, first_row, extra_row",
+    [
+        (
+            "bars",
+            "instrument_id,observed_at,open,high,low,close,volume\n",
+            "EURUSD,2026-01-01T00:00:00+00:00,1.09,1.11,1.08,1.10,100\n",
+            "EURUSD,2026-01-01T00:01:00+00:00,not-a-price,1.11,1.08,1.10,100\n",
+        ),
+        (
+            "ticks",
+            "instrument_id,source_id,sequence,observed_at,bid,ask,bid_size,ask_size\n",
+            "EURUSD,fixture,1,2026-01-01T00:00:00+00:00,1.09,1.10,100,100\n",
+            "EURUSD,fixture,2,2026-01-01T00:00:01+00:00,1.09,1.10,100,100\n"
+            "EURUSD,fixture,3,2026-01-01T00:00:02+00:00,not-a-price,1.10,100,100\n",
+        ),
+    ],
+)
+def test_native_cli_enforces_row_budget_during_csv_parse(
+    tmp_path, monkeypatch, capsys, dataset_format, header, first_row, extra_row
+):
+    import sys
+
+    from ai_quant_os import nautilus_cli
+
+    monkeypatch.setattr(nautilus_cli, "MAX_NATIVE_REPLAY_EVENTS", 2)
+    source = tmp_path / "oversized.csv"
+    source.write_text(header + first_row + extra_row, encoding="utf-8")
+    output = tmp_path / "result.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ai-quant-backtest",
+            str(source),
+            "--format",
+            dataset_format,
+            "--output",
+            str(output),
+        ],
+    )
+    with pytest.raises(SystemExit, match="2"):
+        nautilus_cli.main()
+    assert "CSV row limit exceeded" in capsys.readouterr().err
+    assert not output.exists()
 
 
 def test_performance_baseline_runs_real_replays_and_checks_reproducibility(tmp_path):

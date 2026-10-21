@@ -38,6 +38,82 @@ def test_bounded_research_batches_retain_all_anomalies_and_defer_remaining_draft
         )
 
 
+def test_active_novelty_reservation_suppresses_a_concurrent_research_context(tmp_path):
+    with TestClient(
+        create_app(
+            operator_token="fixture-hypothesis",
+            clock=lambda: NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+        )
+    ) as client:
+        seed(client)
+
+        def compile_context(task_id, agent_version="0.3.0"):
+            response = client.post(
+                "/api/v1/sandbox/research/context",
+                headers=HEADERS,
+                json={"task_id": task_id, "agent_version": agent_version},
+            )
+            assert response.status_code == 200, response.text
+            return response.json()
+
+        first = compile_context("novelty-first", "0.2.0")
+        second = compile_context("novelty-second")
+        assert first["agent_version"] == "0.2.0" and second["agent_version"] == "0.3.0"
+        assert first["status"] == "READY" and second["status"] == "READY"
+        first_run = client.post(
+            "/api/v1/sandbox/research/execute",
+            headers=HEADERS,
+            json={"run_id": "novelty-first", "context_ref": first["context_ref"]},
+        )
+        second_run = client.post(
+            "/api/v1/sandbox/research/execute",
+            headers=HEADERS,
+            json={"run_id": "novelty-second", "context_ref": second["context_ref"]},
+        )
+        assert first_run.status_code == second_run.status_code == 200
+        first_output = json.loads(first_run.json()["receipt"]["output_json"])
+        second_output = json.loads(second_run.json()["receipt"]["output_json"])
+        assert len(first_output["hypotheses"]) == 1
+        assert second_output["hypotheses"] == []
+        assert second_output["reserved_hypothesis_count"] == 1
+        assert second_output["novelty_scope"] == "COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE"
+        third = compile_context("novelty-third")
+        third_run = client.post(
+            "/api/v1/sandbox/research/execute",
+            headers=HEADERS,
+            json={"run_id": "novelty-third", "context_ref": third["context_ref"]},
+        )
+        assert third_run.status_code == 200
+        third_output = json.loads(third_run.json()["receipt"]["output_json"])
+        assert third_output["hypotheses"] == []
+        assert third_output["already_proposed_count"] == 1
+        assert third_output["reserved_hypothesis_count"] == 0
+
+
+def test_v2_context_is_refused_when_an_a08_v3_context_holds_its_draft(tmp_path):
+    with TestClient(
+        create_app(
+            operator_token="fixture-hypothesis",
+            clock=lambda: NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+        )
+    ) as client:
+        seed(client)
+        first = client.post(
+            "/api/v1/sandbox/research/context",
+            headers=HEADERS,
+            json={"task_id": "lease-owner", "agent_version": "0.3.0"},
+        )
+        assert first.status_code == 200, first.text
+        second = client.post(
+            "/api/v1/sandbox/research/context",
+            headers=HEADERS,
+            json={"task_id": "legacy-contender", "agent_version": "0.2.0"},
+        )
+        assert second.status_code == 503
+
+
 def test_research_routes_require_operator_identity_and_reject_invented_authority(tmp_path):
     with TestClient(create_app()) as client:
         assert (
@@ -288,7 +364,7 @@ def test_flat_or_missing_development_observations_withhold_hypotheses(tmp_path):
         assert flat["status"] == "WAIT_FOR_EVIDENCE" and flat["hypotheses"] == []
 
 
-def test_holdout_observations_never_reach_research_context_or_drafts(tmp_path):
+def test_paper_api_refuses_holdout_publication_and_research_context_stays_training_only(tmp_path):
     with TestClient(
         create_app(
             operator_token="fixture-hypothesis",
@@ -305,9 +381,8 @@ def test_holdout_observations_never_reach_research_context_or_drafts(tmp_path):
                 "csv": training_csv(),
             },
         )
-        assert holdout.status_code == 200
+        assert holdout.status_code == 422
         context, _, output = run(client)
         serialized = json.dumps({"context": context, "output": output})
         assert "heldout-secret-history" not in serialized
-        assert holdout.json()["receipt"]["dataset_ref"] not in serialized
         assert output["training_dataset_count"] == 0 and output["hypotheses"] == []

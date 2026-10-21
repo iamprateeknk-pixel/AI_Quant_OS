@@ -10,13 +10,33 @@ Slippage is an adverse synthetic half-spread in basis points. Bid/ask rounding i
 
 The adapter owns a fresh 28-digit Decimal context, so caller precision/trap changes cannot change results. Timestamps use integer UTC nanoseconds without floating-point conversion. Results retain the dataset fingerprint, raw CSV SHA-256, versioned strategy reference, costs, native fills, native order count and final position. Random IDs and wall time are excluded from deterministic results.
 
+Native bar and directional-bar replay also accept the opt-in `StreamingStrategy`
+contract from `backtest.py`: `on_bar(bar)` receives each completed bar once, and
+`target_position()` runs at the next bar's open. The callback must return `None`;
+the target still passes the same fixed target validation as history-based
+strategies. Existing `Strategy.target_position(history)` implementations retain
+their prior behavior. Streaming plugins own their state and are responsible for
+keeping it bounded. This avoids retaining and repeatedly copying the complete
+bar history inside the plugin bridge, but Nautilus still receives the bounded
+event tape and the verifier retains source evidence; it is not a total-process
+memory limit. Recorded-quote tick replay continues to require `TickStrategy` and
+refuses this bar-only protocol.
+
+The native CLI scans its already byte-bounded CSV and enforces a fixed
+100,000-event admission budget before constructing the canonical dataset: each
+synthetic bar contributes two events, and each recorded tick contributes one.
+Library calls enforce the same budget before constructing the Nautilus quote
+tape; oversized tick datasets are refused before the canonical source copy.
+This bounds admitted replay inventory; it is not an OS memory/CPU limit, and a
+library caller's input dataset already exists in memory.
+
 net_pnl is exact Decimal cash flows from native fills plus the final canonical close mark. native_realized_pnl is Nautilus's realized value rounded to account currency precision and excludes unrealized positions. They can differ and are not interchangeable. No forced liquidation is invented at replay end.
 
 ## Recorded quote replay
 
 run_nautilus_tick_backtest accepts the canonical TickDataset, including a checksum-verified TickArchive.replay result. It submits actual recorded bid/ask prices and sizes to Nautilus without synthesizing a spread. The pure TickStrategy protocol receives only prior ticks; each decision executes at the following quote. Targets are -1, 0 or 1, multiplied by the requested unit quantity. Native fills reconcile after short entries and complete long/short reversals. Open positions are marked at the final recorded quote midpoint, identified explicitly in pnl_method; this mark is not a liquidation price.
 
-This slice accepts one instrument and one source with strictly increasing UTC timestamps. Same-time quotes are rejected until an arrival-order contract exists. Prices must match instrument precision and sizes must be integer units up to 1,000,000. Every quote side must cover twice the configured trade quantity, so the runner rejects insufficient top-of-book liquidity rather than reporting an incomplete reversal as success. Synthetic slippage must be zero; the recorded spread and native per-order fixed fees apply. No depth or delayed-execution model is inferred. TickMomentum is a trusted interface example, not an evaluated trading strategy.
+This slice accepts one instrument and one source with strictly increasing UTC timestamps, up to 100,000 quote events. Same-time quotes are rejected until an arrival-order contract exists. Prices must match instrument precision and sizes must be integer units up to 1,000,000. Every quote side must cover twice the configured trade quantity, so the runner rejects insufficient top-of-book liquidity rather than reporting an incomplete reversal as success. Synthetic slippage must be zero; the recorded spread and native per-order fixed fees apply. No depth or delayed-execution model is inferred. TickMomentum is a trusted interface example, not an evaluated trading strategy.
 
 The archive/CSV integration test runs the same recorded dataset through both verified Parquet replay and CSV replay, checks native result equality and checks the installed CLI artifact. Result schema 1.0 retains the original bar fields and adds explicit recorded-quote replay and midpoint-mark enum alternatives.
 
@@ -38,7 +58,7 @@ The recorded local baseline runs 1,000 synthetic bars three times and checks exa
 
 CI adds Windows/Linux jobs installing the trading extra and asserting the exact runtime version before testing. Hosted jobs have not run. Base installs skip the optional native test module; the dedicated job cannot silently omit the dependency.
 
-The registered runner now adds immutable source manifests, retained source artifacts and validated genome bindings. See [strategy provenance handoff](STRATEGY_PROVENANCE_HANDOFF.md) for construction, persistence, package checks and limits.
+The registered runner adds immutable source manifests, retained source artifacts and validated genome bindings. Its CLI lists the verified package catalog and supports exact version selection pinned to a catalog fingerprint checked before and after native execution. See [strategy provenance handoff](STRATEGY_PROVENANCE_HANDOFF.md) for construction, persistence, package checks and limits.
 
 ## Remaining P03 gates
 
@@ -46,7 +66,7 @@ Opt-in native directional bar replay now supports short positions and complete r
 
 A synchronized bar basket now runs two to four pairs in one native USD account with shared collateral admission, provenance and converted final marks. See [native portfolio handoff](NATIVE_PORTFOLIO_HANDOFF.md).
 
-Independent critical review, hosted cross-platform CI evidence, isolation for untrusted plugins, catalog selection, depth/latency and partial-liquidity models, asynchronous/tick portfolios, liquidation policy and the complete strategy harness remain open. Current plugins are trusted Python receiving full history; large-replay memory/CPU behavior needs a streaming contract before scale. The paper order API retains its separately gated simulator; this adapter does not replace the Risk Kernel or broker gateway. Live routing remains absent.
+Independent critical review, hosted cross-platform CI evidence, isolation for untrusted plugins, depth/latency modeling, asynchronous/tick portfolios, liquidation policy and the complete strategy harness remain open. The fixed event budget bounds admitted input inventory, while the opt-in bar streaming contract bounds plugin-owned history only. Nautilus and the verifier retain event/source data, so this is not a hard process memory or CPU limit; hostile code still requires process/container isolation. The paper order API retains its separately gated simulator; this adapter does not replace the Risk Kernel or broker gateway. Live routing remains absent.
 
 Rollback preserves archived data and result evidence. Removing the optional dependency does not alter the paper order database. Runtime upgrades require a new pin and replay comparison.
 

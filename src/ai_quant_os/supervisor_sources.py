@@ -114,11 +114,19 @@ def supervisor_sources(
     version="0.2.0",
     task_id=None,
     task_kind=None,
+    artifact_ref=None,
+    review_ref=None,
 ) -> dict[str, SourceBinding]:
     common = dict(as_of=world.as_of, world_state_version=world.world_state_version)
     extra = {}
-    if version != "0.4.0" and (task_id is not None or task_kind is not None):
-        raise ValueError("Task declaration requires supervisor 0.4.0")
+    permissions_type, permission_tools = PermissionsEvidence, effective_tools
+    if version not in {"0.4.0", "0.5.0", "0.6.0", "0.7.0", "0.8.0", "0.9.0"} and (
+        task_id is not None
+        or task_kind is not None
+        or artifact_ref is not None
+        or review_ref is not None
+    ):
+        raise ValueError("Task declaration requires a declared-task supervisor version")
     if version == "0.4.0":
         from ai_quant_os.task_supervisor import (
             TaskRegistryEvidence,
@@ -129,6 +137,83 @@ def supervisor_sources(
 
         registry_type, evidence_type = TaskRegistryEvidence, TaskSupervisorEvidence
         extra = {"task_spec": TaskDeclaration(**common, task_id=task_id, task_kind=task_kind)}
+    elif version == "0.5.0":
+        from ai_quant_os.task_supervisor_incident import (
+            TaskRegistryEvidence,
+            TaskSupervisorEvidence,
+            TaskDeclaration,
+            executable,
+        )
+
+        registry_type, evidence_type = TaskRegistryEvidence, TaskSupervisorEvidence
+        extra = {"task_spec": TaskDeclaration(**common, task_id=task_id, task_kind=task_kind)}
+    elif version == "0.6.0":
+        from ai_quant_os.task_supervisor_research import (
+            SandboxPermissionsEvidence,
+            TaskDeclaration,
+            TaskRegistryEvidence,
+            TaskSupervisorEvidence,
+            executable,
+            sandbox_effective_tools,
+        )
+
+        registry_type, evidence_type = TaskRegistryEvidence, TaskSupervisorEvidence
+        permissions_type, permission_tools = SandboxPermissionsEvidence, sandbox_effective_tools
+        extra = {"task_spec": TaskDeclaration(**common, task_id=task_id, task_kind=task_kind)}
+    elif version == "0.7.0":
+        from ai_quant_os.task_supervisor_research import (
+            SandboxPermissionsEvidence,
+            TaskDeclaration,
+            TaskRegistryEvidenceV3 as TaskRegistryEvidence,
+            TaskSupervisorEvidenceV3 as TaskSupervisorEvidence,
+            executable_v3 as executable,
+            sandbox_effective_tools,
+        )
+
+        registry_type, evidence_type = TaskRegistryEvidence, TaskSupervisorEvidence
+        permissions_type, permission_tools = SandboxPermissionsEvidence, sandbox_effective_tools
+        extra = {"task_spec": TaskDeclaration(**common, task_id=task_id, task_kind=task_kind)}
+    elif version == "0.8.0":
+        from ai_quant_os.task_supervisor_research import (
+            SandboxPermissionsEvidence,
+            ValidationTaskDeclaration,
+            TaskRegistryEvidenceV4 as TaskRegistryEvidence,
+            TaskSupervisorEvidenceV4 as TaskSupervisorEvidence,
+            executable_v4 as executable,
+            sandbox_effective_tools,
+        )
+
+        if task_kind != "VALIDATION_REVIEW" or artifact_ref is None:
+            raise ValueError("Validation review declaration requires its artifact reference")
+        registry_type, evidence_type = TaskRegistryEvidence, TaskSupervisorEvidence
+        permissions_type, permission_tools = SandboxPermissionsEvidence, sandbox_effective_tools
+        extra = {
+            "task_spec": ValidationTaskDeclaration(
+                **common,
+                task_id=task_id,
+                task_kind=task_kind,
+                artifact_ref=artifact_ref,
+            )
+        }
+    elif version == "0.9.0":
+        from ai_quant_os.task_supervisor_research import (
+            ConstructionTaskDeclaration,
+            TaskRegistryEvidenceV5 as TaskRegistryEvidence,
+            TaskSupervisorEvidenceV5 as TaskSupervisorEvidence,
+            executable_v5 as executable,
+            SandboxPermissionsEvidence,
+            sandbox_effective_tools,
+        )
+
+        if task_kind != "STRATEGY_CONSTRUCTION" or review_ref is None:
+            raise ValueError("Construction declaration requires its active review reference")
+        registry_type, evidence_type = TaskRegistryEvidence, TaskSupervisorEvidence
+        permissions_type, permission_tools = SandboxPermissionsEvidence, sandbox_effective_tools
+        extra = {
+            "task_spec": ConstructionTaskDeclaration(
+                **common, task_id=task_id, task_kind=task_kind, review_ref=review_ref
+            )
+        }
     elif version == "0.3.0":
         from ai_quant_os.supervisor_drift import (
             DriftRegistryEvidence,
@@ -157,10 +242,13 @@ def supervisor_sources(
         agent_registry=registry_type(**common, entries=entries),
         world_state=MacroWorldEvidence(world=world),
         health=HealthEvidence(**common, status=health_status, open_incidents=open_incidents),
-        permissions=PermissionsEvidence(
+        permissions=permissions_type(
             **common,
             entries=tuple(
-                PermissionEntry(manifest_ref=row.manifest.manifest_ref, tools=effective_tools(row))
+                PermissionEntry(
+                    manifest_ref=row.manifest.manifest_ref,
+                    tools=permission_tools(row),
+                )
                 for row in entries
             ),
         ),

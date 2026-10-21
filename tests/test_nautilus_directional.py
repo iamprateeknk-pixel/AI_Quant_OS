@@ -35,6 +35,19 @@ class Flip:
         return (1, -1, 0)[len(history) - 1]
 
 
+class StreamingFlip:
+    def __init__(self):
+        self.closed_bars = 0
+        self.decision_counts = []
+
+    def on_bar(self, bar):
+        self.closed_bars += 1
+
+    def target_position(self):
+        self.decision_counts.append(self.closed_bars)
+        return (1, -1, 0)[self.closed_bars - 1]
+
+
 def test_native_bar_long_short_reversal_is_causal_and_ledger_reconciled():
     from ai_quant_os.nautilus_runtime import run_nautilus_directional_backtest
     from ai_quant_os.backtest import BacktestCosts
@@ -60,6 +73,23 @@ def test_native_bar_long_short_reversal_is_causal_and_ledger_reconciled():
         verify_native_bar_result(
             replace(result, final_position=Decimal(10)), source.bars, 10, costs
         )
+
+
+def test_directional_native_bar_replay_supports_streaming_plugins():
+    from ai_quant_os.nautilus_runtime import run_nautilus_directional_backtest
+    from ai_quant_os.backtest import BacktestCosts
+
+    source, costs = bars(), BacktestCosts(Decimal(0), Decimal("0.1"))
+    plugin = StreamingFlip()
+    result = run_nautilus_directional_backtest(
+        source, plugin, costs, strategy_ref="directional-stream-fixture@1.0.0", quantity=10
+    )
+    reference = run_nautilus_directional_backtest(
+        source, Flip(), costs, strategy_ref="directional-stream-fixture@1.0.0", quantity=10
+    )
+    assert result == reference
+    assert plugin.decision_counts == [1, 2, 3]
+    assert plugin.closed_bars == len(source.bars)
 
 
 @pytest.mark.parametrize(

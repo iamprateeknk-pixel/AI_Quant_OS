@@ -60,3 +60,13 @@ def test_retained_hypothesis_report_pins_sources_and_schema():
         == HypothesisSpec.model_json_schema()
     )
     assert report["matching_cases"] == report["case_count"] == 5
+
+
+def test_reserved_novelty_output_schema_is_published_for_a08_v3():
+    from ai_quant_os.research_hypothesis_contracts import HypothesisSpecV3
+
+    root = Path(__file__).resolve().parent.parent
+    schema = json.loads(
+        (root / "docs/schemas/hypothesis-spec-0.3.0.schema.json").read_text(encoding="utf-8-sig")
+    )
+    assert schema == HypothesisSpecV3.model_json_schema()

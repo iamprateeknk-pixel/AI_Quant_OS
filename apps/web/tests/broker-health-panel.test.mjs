@@ -7,10 +7,11 @@ import ts from 'typescript';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 const require=createRequire(import.meta.url);
+globalThis.tableScrollLabel=({label,children})=>React.createElement('div',{className:'table-scroll',role:'region','aria-label':label,tabIndex:0},children);
 function compile(source){return ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;}
 const parser=`data:text/javascript;base64,${Buffer.from(compile(readFileSync(new URL('../src/features/brokers/health.ts',import.meta.url),'utf8'))).toString('base64')}`;
 globalThis.healthLink=({children,...props})=>React.createElement('a',props,children);
-const source=readFileSync(new URL('../src/features/brokers/health-panel.tsx',import.meta.url),'utf8').replace('import Link from "next/link";','const Link=globalThis.healthLink;').replace('from "./health"',`from "${parser}"`);
+const source=readFileSync(new URL('../src/features/brokers/health-panel.tsx',import.meta.url),'utf8').replace('import Link from "next/link";','const Link=globalThis.healthLink;').replace('import { TableScrollRegion } from "../shared/table-scroll-region";','const TableScrollRegion=globalThis.tableScrollLabel;').replace('from "./health"',`from "${parser}"`);
 const {BrokerHealthPanel}=await import(`data:text/javascript;base64,${Buffer.from(compile(source).replace('"react/jsx-runtime"',JSON.stringify(pathToFileURL(require.resolve('react/jsx-runtime')).href))).toString('base64')}`);
 delete globalThis.healthLink;
 const ids=['PAPER','EXNESS_MT5_DEMO','EXNESS','IBKR','ZERODHA'];
@@ -23,4 +24,9 @@ test('health panel distinguishes sign-in, unavailable and invalid evidence',()=>
  assert(render({ok:false,reason:'SIGN_IN'}).includes('Sign in at Risk Center'));
  assert(render({ok:false,reason:'UNAVAILABLE'}).includes('unavailable'));
  assert(render({ok:true,value:{...payload,live_execution_released:true}}).includes('unavailable'));
+});
+
+test('health table scroll region is keyboard accessible and named',()=>{
+ const html=render({ok:true,value:payload});
+ assert.match(html,/<div class="table-scroll" role="region" aria-label="Broker health observations table" tabindex="0">/);
 });

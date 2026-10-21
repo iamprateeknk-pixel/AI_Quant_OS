@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.0",
+  "observed_at_utc": "2026-10-20T01:50:13Z",
+  "environment": {
+    "launcher": "ai-quant-local",
+    "build_mode": "production Next.js build",
+    "api_origin": "http://127.0.0.1:8128",
+    "web_origin": "http://127.0.0.1:3128",
+    "browser": "Microsoft Edge 155.0.4283.62",
+    "playwright": "1.64.0-alpha-1790635538000",
+    "axe_core": "4.13.0",
+    "state_directory": "data-local/p12-all-routes"
+  },
+  "authentication": {
+    "method": "fresh isolated local session using a synthetic test-only operator access code",
+    "result": "authenticated route reads completed",
+    "real_credentials_used": false
+  },
+  "scope": {
+    "routes": [
+      "/",
+      "/world-state",
+      "/markets/EURUSD",
+      "/brokers",
+      "/strategies",
+      "/agents",
+      "/risk",
+      "/portfolio",
+      "/orders",
+      "/research",
+      "/evolution",
+      "/incidents",
+      "/traces",
+      "/costs",
+      "/audit",
+      "/settings",
+      "/incidents/runbook",
+      "/traces/unknown"
+    ],
+    "viewports": [
+      {
+        "width": 1280,
+        "height": 800
+      },
+      {
+        "width": 390,
+        "height": 844
+      },
+      {
+        "width": 320,
+        "height": 800
+      }
+    ],
+    "authenticated_page_visits": 54,
+    "automated_accessibility_standard": "axe-core WCAG 2.1 A/AA and WCAG 2.2 A/AA tags"
+  },
+  "results": {
+    "axe_violations": 0,
+    "axe_incomplete_checks": 0,
+    "horizontal_page_overflow_cases": 0,
+    "browser_console_errors": 0,
+    "route_mismatches": 0,
+    "keyboard_scroll_regions_tested_at_390px": [
+      {
+        "path": "/",
+        "label": "Current paper instrument state table",
+        "tab_index": 0,
+        "scroll_width_px": 452,
+        "client_width_px": 356,
+        "after_arrow_right_px": 96,
+        "after_arrow_left_px": 0,
+        "reached_by_sequential_tab_at_320px": true
+      },
+      {
+        "path": "/",
+        "label": "Broker health observations table",
+        "tab_index": 0,
+        "scroll_width_px": 1184,
+        "client_width_px": 356,
+        "after_arrow_right_px": 96,
+        "after_arrow_left_px": 0,
+        "reached_by_sequential_tab_at_320px": true
+      },
+      {
+        "path": "/world-state",
+        "label": "Paper regime and instrument evidence table",
+        "tab_index": 0,
+        "scroll_width_px": 905,
+        "client_width_px": 356,
+        "after_arrow_right_px": 96,
+        "after_arrow_left_px": 0,
+        "reached_by_sequential_tab_at_320px": true
+      },
+      {
+        "path": "/world-state",
+        "label": "Paper currency coverage table",
+        "tab_index": 0,
+        "scroll_width_px": 629,
+        "client_width_px": 356,
+        "after_arrow_right_px": 96,
+        "after_arrow_left_px": 0,
+        "reached_by_sequential_tab_at_320px": true
+      },
+      {
+        "path": "/portfolio",
+        "label": "Filled paper positions table",
+        "tab_index": 0,
+        "scroll_width_px": 543,
+        "client_width_px": 356,
+        "after_arrow_right_px": 96,
+        "after_arrow_left_px": 0,
+        "reached_by_sequential_tab_at_320px": true
+      },
+      {
+        "path": "/brokers",
+        "label": "Broker capabilities table",
+        "tab_index": 0,
+        "scroll_width_px": 859,
+        "client_width_px": 356,
+        "after_arrow_right_px": 96,
+        "after_arrow_left_px": 0,
+        "reached_by_sequential_tab_at_320px": true
+      },
+      {
+        "path": "/brokers",
+        "label": "Broker health observations table",
+        "tab_index": 0,
+        "scroll_width_px": 1184,
+        "client_width_px": 356,
+        "after_arrow_right_px": 96,
+        "after_arrow_left_px": 0,
+        "reached_by_sequential_tab_at_320px": true
+      },
+      {
+        "path": "/brokers",
+        "label": "Configured broker routes table",
+        "tab_index": 0,
+        "scroll_width_px": 552,
+        "client_width_px": 356,
+        "after_arrow_right_px": 96,
+        "after_arrow_left_px": 0,
+        "reached_by_sequential_tab_at_320px": true
+      }
+    ],
+    "sequential_tab_routes_tested": 18,
+    "table_scroll_regions_reached_by_tab": 8,
+    "wcag22_violations": 0,
+    "wcag22_incomplete_checks": 0,
+    "wcag22_target_size_rule_violations": 0,
+    "wcag22_target_size_rule_id": "target-size",
+    "wcag22_target_size_rule_tag": "wcag258 / wcag22aa",
+    "wcag22_scan_page_visits": 54,
+    "wcag22_route_mismatches": 0,
+    "wcag22_horizontal_page_overflow_cases": 0,
+    "wcag22_browser_console_errors": 0
+  },
+  "paper_state": {
+    "safety_state": "NORMAL",
+    "orders": 0,
+    "fills": 0,
+    "safety_action_submitted": false,
+    "order_submitted": false
+  },
+  "limitations": [
+    "This automated run does not replace manual screen-reader or target-size review.",
+    "The PAPER database had no orders or fills; dynamic order, fill, and saved demo portfolio rows were not exercised.",
+    "Only the listed routes and viewports were checked; this is not signed P12 or P00-P13 release acceptance.",
+    "The automated WCAG 2.2 target-size rule passed, but no separate manual review of target spacing was performed."
+  ],
+  "cleanup": {
+    "browser_closed": true,
+    "owned_local_supervisor_stopped": true,
+    "owned_api_and_web_ports_released": true
+  }
+}

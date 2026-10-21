@@ -132,7 +132,7 @@ def test_supervisor_calls_six_actual_specialists_and_retains_receipts_after_rest
 def test_supervisor_manifest_is_partial_and_original_is_still_planned(tmp_path):
     with TestClient(create_app(paper_db_path=tmp_path / "paper.sqlite3")) as client:
         agents = client.get("/api/v1/agents/registry").json()["agents"]
-        assert len(agents) == 42
+        assert len(agents) == 48
         allocator = next(
             row for row in agents if row["agent_id"] == "A13" and row["agent_version"] == "0.3.0"
         )
@@ -149,6 +149,14 @@ def test_supervisor_manifest_is_partial_and_original_is_still_planned(tmp_path):
         assert rows["0.4.0"]["lifecycle"] == "SHADOW"
         assert rows["0.4.0"]["allowed_tools"] == rows["0.3.0"]["allowed_tools"]
         assert rows["0.4.0"]["required_inputs"] == rows["0.3.0"]["required_inputs"] + ["task_spec"]
+        assert rows["0.5.0"]["implementation_status"] == "PARTIAL"
+        assert rows["0.6.0"]["implementation_status"] == "PARTIAL"
+        assert rows["0.7.0"]["implementation_status"] == "PARTIAL"
+        assert rows["0.8.0"]["output_type"] == "TaskPlanV4"
+        assert rows["0.8.0"]["implementation_status"] == "PARTIAL"
+        assert rows["0.9.0"]["output_type"] == "TaskPlanV5"
+        assert rows["0.9.0"]["implementation_status"] == "PARTIAL"
+        assert rows["0.6.0"]["lifecycle"] == "SHADOW"
         assert set(rows["0.2.0"]["allowed_tools"]) == {
             "WORLD_STATE_READ",
             "HEALTH_READ",

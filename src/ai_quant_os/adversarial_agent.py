@@ -3,10 +3,11 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from hashlib import sha256
+import re
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from ai_quant_os.agent_context import (
     CompiledContext,
@@ -60,9 +61,46 @@ class StressObservation(BaseModel):
     input_name: Literal["stress_library"] = "stress_library"
     experiment_id: str
     report_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    training_ref: str | None = Field(default=None, min_length=1, max_length=512)
+    holdout_ref: str | None = Field(default=None, min_length=1, max_length=512)
     state: Literal["PASS", "FAIL", "PENDING"]
     reason: str = Field(min_length=1, max_length=128)
     scenarios: tuple[StressScenarioObservation, ...] = Field(min_length=1, max_length=16)
+
+    @model_validator(mode="after")
+    def scope_refs_are_paired(self):
+        if (self.training_ref is None) != (self.holdout_ref is None):
+            raise ValueError("Adversarial dataset scope references must be paired")
+        return self
+
+
+class AdversarialContextSnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    candidate: CandidateObservation
+    validation: ValidationObservation
+    stress: StressObservation
+    holdout_instrument_id: Literal["EURUSD", "GBPUSD", "USDJPY", "EURJPY"]
+    holdout_first_observed_at: AwareDatetime
+    holdout_last_observed_at: AwareDatetime
+    holdout_dataset_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+    @model_validator(mode="after")
+    def consistent_evidence(self):
+        if (
+            self.candidate.experiment_id != self.validation.experiment_id
+            or self.candidate.experiment_id != self.stress.experiment_id
+            or self.candidate.report_sha256 != self.validation.report_sha256
+            or self.candidate.report_sha256 != self.stress.report_sha256
+            or self.candidate.as_of != self.validation.as_of
+            or self.candidate.as_of != self.stress.as_of
+            or self.stress.holdout_ref != "research-data-scope:" + self.holdout_dataset_fingerprint
+            or self.holdout_first_observed_at >= self.holdout_last_observed_at
+            or next((row[:2] for row in self.validation.gates if row[0] == "ADVERSARIAL"), None)
+            != ("ADVERSARIAL", self.stress.state)
+        ):
+            raise ValueError("Adversarial context snapshot bindings disagree")
+        return self
 
 
 class AdversarialScenarioResult(BaseModel):
@@ -199,6 +237,7 @@ def _observations(context: CompiledContext):
         or candidate.experiment_id != stress.experiment_id
         or candidate.report_sha256 != validation.report_sha256
         or candidate.report_sha256 != stress.report_sha256
+        or (stress.training_ref is None) != (stress.holdout_ref is None)
         or not candidate.as_of
         <= context.created_at
         < context.valid_until
@@ -214,7 +253,9 @@ def _observations(context: CompiledContext):
     return candidate, validation, stress
 
 
-def adversarial_sources(report: ResearchReport, *, now: datetime) -> dict[str, SourceBinding]:
+def adversarial_context_snapshot(
+    report: ResearchReport, *, now: datetime
+) -> AdversarialContextSnapshot:
     if (
         type(report) is not ResearchReport
         or report.schema_version != "1.2"
@@ -248,6 +289,8 @@ def adversarial_sources(report: ResearchReport, *, now: datetime) -> dict[str, S
         as_of=now,
         experiment_id=report.plan.experiment_id,
         report_sha256=digest,
+        training_ref="research-data-scope:" + report.plan.development_fingerprint,
+        holdout_ref="research-data-scope:" + report.plan.holdout_fingerprint,
         state=report.adversarial.state,
         reason=report.adversarial.reason,
         scenarios=tuple(
@@ -261,30 +304,96 @@ def adversarial_sources(report: ResearchReport, *, now: datetime) -> dict[str, S
             for row in report.adversarial.scenarios
         ),
     )
+    holdout_scope = report.plan.holdout_scope
+    return AdversarialContextSnapshot(
+        candidate=candidate,
+        validation=validation,
+        stress=stress,
+        holdout_instrument_id=holdout_scope.instrument_id,
+        holdout_first_observed_at=holdout_scope.first_observed_at,
+        holdout_last_observed_at=holdout_scope.last_observed_at,
+        holdout_dataset_fingerprint=holdout_scope.dataset_fingerprint,
+    )
+
+
+def adversarial_sources(report: ResearchReport, *, now: datetime) -> dict[str, SourceBinding]:
+    snapshot = adversarial_context_snapshot(report, now=now)
+    return adversarial_sources_from_snapshot(
+        snapshot.candidate,
+        snapshot.validation,
+        snapshot.stress,
+        holdout_instrument_id=snapshot.holdout_instrument_id,
+        holdout_first_observed_at=snapshot.holdout_first_observed_at,
+        holdout_last_observed_at=snapshot.holdout_last_observed_at,
+        holdout_dataset_fingerprint=snapshot.holdout_dataset_fingerprint,
+        now=now,
+    )
+
+
+def adversarial_sources_from_snapshot(
+    candidate: CandidateObservation,
+    validation: ValidationObservation,
+    stress: StressObservation,
+    *,
+    holdout_instrument_id: str,
+    holdout_first_observed_at: datetime,
+    holdout_last_observed_at: datetime,
+    holdout_dataset_fingerprint: str,
+    now: datetime,
+) -> dict[str, SourceBinding]:
+    """Build A11 sources from a checked snapshot without opening its report archive."""
+    if type(now) is not datetime or now.tzinfo is None:
+        raise ValueError("Aware observation time required")
+    candidate = CandidateObservation.model_validate_json(candidate.model_dump_json())
+    validation = ValidationObservation.model_validate_json(validation.model_dump_json())
+    stress = StressObservation.model_validate_json(stress.model_dump_json())
+    from pydantic import TypeAdapter
+
+    holdout_first_observed_at = TypeAdapter(AwareDatetime).validate_python(
+        holdout_first_observed_at
+    )
+    holdout_last_observed_at = TypeAdapter(AwareDatetime).validate_python(holdout_last_observed_at)
+    if (
+        holdout_instrument_id not in {"EURUSD", "GBPUSD", "USDJPY", "EURJPY"}
+        or holdout_first_observed_at >= holdout_last_observed_at
+        or not re.fullmatch(r"[a-f0-9]{64}", holdout_dataset_fingerprint)
+        or candidate.as_of != validation.as_of
+        or candidate.as_of != stress.as_of
+        or not candidate.as_of <= now < candidate.as_of + timedelta(seconds=5)
+        or candidate.experiment_id != validation.experiment_id
+        or candidate.experiment_id != stress.experiment_id
+        or candidate.report_sha256 != validation.report_sha256
+        or candidate.report_sha256 != stress.report_sha256
+        or stress.training_ref is None
+        or stress.holdout_ref != "research-data-scope:" + holdout_dataset_fingerprint
+        or next((row[:2] for row in validation.gates if row[0] == "ADVERSARIAL"), None)
+        != ("ADVERSARIAL", stress.state)
+    ):
+        raise ValueError("Adversarial snapshot and HOLDOUT scope disagree")
+
     payloads = {
         "strategy_candidate": (candidate, "RESEARCH_MEMORY_READ", "GENERAL"),
         "validation_results": (validation, "RESEARCH_MEMORY_READ", "GENERAL"),
         "stress_library": (stress, "HOLDOUT_READ", "HOLDOUT"),
     }
     sources = {}
-    holdout_scope = report.plan.holdout_scope
     scope_material = "|".join(
         (
-            holdout_scope.instrument_id,
-            holdout_scope.first_observed_at.isoformat(),
-            holdout_scope.last_observed_at.isoformat(),
-            holdout_scope.dataset_fingerprint,
+            holdout_instrument_id,
+            holdout_first_observed_at.isoformat(),
+            holdout_last_observed_at.isoformat(),
+            holdout_dataset_fingerprint,
         )
     )
-    holdout_ref = "research-data-scope:" + holdout_scope.dataset_fingerprint
+    holdout_ref = "research-data-scope:" + holdout_dataset_fingerprint
     holdout_catalog = DatasetResourceCatalog.from_verified_resources(
         ((holdout_ref, "HOLDOUT", scope_material),)
     )
     for name, (model, tool, resource) in payloads.items():
         record = EvidenceRecord(
-            source_id=f"research-report:{report.plan.experiment_id}:{digest}:{name}",
-            as_of=now,
-            valid_until=now + timedelta(seconds=5),
+            source_id=f"research-report:{candidate.experiment_id}:{candidate.report_sha256}:{name}",
+            as_of=candidate.as_of,
+            valid_until=candidate.as_of + timedelta(seconds=5),
             trusted=True,
             payload_json=model.model_dump_json(),
         )

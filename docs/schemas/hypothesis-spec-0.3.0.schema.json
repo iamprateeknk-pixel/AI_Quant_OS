@@ -1,0 +1,443 @@
+{
+  "$defs": {
+    "ResearchExpectedCosts": {
+      "additionalProperties": false,
+      "properties": {
+        "commission_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Commission Status",
+          "type": "string"
+        },
+        "financing_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Financing Status",
+          "type": "string"
+        },
+        "maximum_recorded_spread_bps": {
+          "anyOf": [
+            {
+              "maximum": 20000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Maximum Recorded Spread Bps"
+        },
+        "minimum_recorded_spread_bps": {
+          "anyOf": [
+            {
+              "maximum": 20000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Minimum Recorded Spread Bps"
+        },
+        "slippage_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Slippage Status",
+          "type": "string"
+        },
+        "source": {
+          "const": "ARCHIVED_PAPER_QUOTES_ONLY",
+          "default": "ARCHIVED_PAPER_QUOTES_ONLY",
+          "title": "Source",
+          "type": "string"
+        },
+        "spread_observation_count": {
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Spread Observation Count",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "UNAVAILABLE",
+            "HISTORICAL_SPREAD_ONLY"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "spread_observation_count",
+        "minimum_recorded_spread_bps",
+        "maximum_recorded_spread_bps"
+      ],
+      "title": "ResearchExpectedCosts",
+      "type": "object"
+    },
+    "ResearchHypothesis": {
+      "additionalProperties": false,
+      "properties": {
+        "alpha_acceptance": {
+          "const": "UNASSESSED",
+          "default": "UNASSESSED",
+          "title": "Alpha Acceptance",
+          "type": "string"
+        },
+        "dataset_fingerprint": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Dataset Fingerprint",
+          "type": "string"
+        },
+        "dataset_ref": {
+          "pattern": "^research-data:[a-f0-9]{64}$",
+          "title": "Dataset Ref",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "development_end": {
+          "format": "date-time",
+          "title": "Development End",
+          "type": "string"
+        },
+        "eligible_pairs": {
+          "maximum": 4094,
+          "minimum": 8,
+          "title": "Eligible Pairs",
+          "type": "integer"
+        },
+        "execution_timing": {
+          "const": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "default": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "title": "Execution Timing",
+          "type": "string"
+        },
+        "expected_costs": {
+          "$ref": "#/$defs/ResearchExpectedCosts"
+        },
+        "falsification_test": {
+          "const": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+          "default": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+          "title": "Falsification Test",
+          "type": "string"
+        },
+        "instrument_id": {
+          "enum": [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "EURJPY"
+          ],
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "observed_direction_persistence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Observed Direction Persistence"
+        },
+        "required_data": {
+          "default": [
+            "SEPARATE_CHRONOLOGICAL_OUT_OF_SAMPLE_BARS",
+            "MEASURED_BROKER_COST_MODEL",
+            "CAUSAL_NEXT_BAR_OPEN_REPLAY",
+            "PREDECLARED_MULTIPLE_TESTING_POLICY"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Data",
+          "type": "array"
+        },
+        "rule": {
+          "enum": [
+            "FOLLOW_PREVIOUS_CLOSE_DIRECTION",
+            "FADE_PREVIOUS_CLOSE_DIRECTION"
+          ],
+          "title": "Rule",
+          "type": "string"
+        },
+        "same_direction_pairs": {
+          "maximum": 4094,
+          "minimum": 0,
+          "title": "Same Direction Pairs",
+          "type": "integer"
+        },
+        "signal_history_bars": {
+          "const": 2,
+          "default": 2,
+          "title": "Signal History Bars",
+          "type": "integer"
+        },
+        "validation_status": {
+          "const": "NOT_RUN",
+          "default": "NOT_RUN",
+          "title": "Validation Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_ref",
+        "dataset_fingerprint",
+        "instrument_id",
+        "development_end",
+        "rule",
+        "description",
+        "eligible_pairs",
+        "same_direction_pairs",
+        "observed_direction_persistence",
+        "expected_costs"
+      ],
+      "title": "ResearchHypothesis",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "agent_id": {
+      "const": "A08",
+      "default": "A08",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.3.0",
+      "default": "0.3.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "already_proposed_count": {
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Already Proposed Count",
+      "type": "integer"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Confidence"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "deferred_hypothesis_count": {
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Deferred Hypothesis Count",
+      "type": "integer"
+    },
+    "eligible_anomaly_count": {
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Eligible Anomaly Count",
+      "type": "integer"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "hard_gate_owner": {
+      "const": "ResearchPipeline",
+      "default": "ResearchPipeline",
+      "title": "Hard Gate Owner",
+      "type": "string"
+    },
+    "hypotheses": {
+      "items": {
+        "$ref": "#/$defs/ResearchHypothesis"
+      },
+      "maxItems": 4,
+      "title": "Hypotheses",
+      "type": "array"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "novelty_scope": {
+      "const": "COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE",
+      "default": "COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE",
+      "title": "Novelty Scope",
+      "type": "string"
+    },
+    "output_type": {
+      "const": "HypothesisSpecV3",
+      "default": "HypothesisSpecV3",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "policy_version": {
+      "const": "development-direction-screen-v2",
+      "default": "development-direction-screen-v2",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "promotion_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Authorized",
+      "type": "boolean"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "reserved_hypothesis_count": {
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Reserved Hypothesis Count",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_consistency": {
+      "const": "PER_STORE_CHECKED_NOT_ATOMIC_ACROSS_STORES",
+      "default": "PER_STORE_CHECKED_NOT_ATOMIC_ACROSS_STORES",
+      "title": "Source Consistency",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "PROPOSED",
+        "NO_NEW_HYPOTHESIS",
+        "WAIT_FOR_EVIDENCE"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "training_dataset_count": {
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Training Dataset Count",
+      "type": "integer"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "1",
+      "title": "Uncertainty"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "status",
+    "hypotheses",
+    "training_dataset_count",
+    "eligible_anomaly_count",
+    "already_proposed_count",
+    "deferred_hypothesis_count",
+    "reserved_hypothesis_count"
+  ],
+  "title": "HypothesisSpecV3",
+  "type": "object"
+}

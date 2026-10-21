@@ -7,12 +7,13 @@ import ts from 'typescript';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 const require=createRequire(import.meta.url);
+globalThis.tableScrollRegion=({label,children})=>React.createElement('div',{className:'table-scroll',role:'region','aria-label':label,tabIndex:0},children);
 const compile=source=>ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
 const frames=`data:text/javascript;base64,${Buffer.from(compile(readFileSync(new URL('../src/features/realtime/frames.ts',import.meta.url),'utf8'))).toString('base64')}`;
 const store=`data:text/javascript;base64,${Buffer.from(compile(readFileSync(new URL('../src/features/realtime/store.ts',import.meta.url),'utf8').replace('from "./frames"',`from "${frames}"`))).toString('base64')}`;
 const authorization=`data:text/javascript;base64,${Buffer.from(compile(readFileSync(new URL('../src/features/operator-session/browser.ts',import.meta.url),'utf8'))).toString('base64')}`;
 const hook=`data:text/javascript;base64,${Buffer.from(compile(readFileSync(new URL('../src/features/realtime/use-realtime.ts',import.meta.url),'utf8').replace('from "./store"',`from "${store}"`).replace('from "@/features/operator-session/browser"',`from "${authorization}"`)).replace('from "react"',`from "${pathToFileURL(require.resolve('react')).href}"`)).toString('base64')}`;
-const source=compile(readFileSync(new URL('../src/features/realtime/realtime-panel.tsx',import.meta.url),'utf8').replace('from "./use-realtime"',`from "${hook}"`)).replace('"react/jsx-runtime"',JSON.stringify(pathToFileURL(require.resolve('react/jsx-runtime')).href));
+const source=compile(readFileSync(new URL('../src/features/realtime/realtime-panel.tsx',import.meta.url),'utf8').replace('from "./use-realtime"',`from "${hook}"`).replace('import {TableScrollRegion} from "../shared/table-scroll-region";','const TableScrollRegion=globalThis.tableScrollRegion;')).replace('"react/jsx-runtime"',JSON.stringify(pathToFileURL(require.resolve('react/jsx-runtime')).href));
 const panel=(await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)).RealtimePanel;
 test('initial realtime panel communicates connection and unknown state without invented observations',()=>{
  const html=renderToStaticMarkup(React.createElement(panel));

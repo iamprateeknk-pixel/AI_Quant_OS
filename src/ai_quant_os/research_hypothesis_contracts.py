@@ -53,18 +53,28 @@ class HistoricalResearchEvidence(ResearchObservation):
 class ResearchMemoryEvidence(ResearchObservation):
     completed_run_count: int = Field(strict=True, ge=0, le=128)
     known_signatures: tuple[str, ...] = Field(max_length=512)
-    coverage: Literal["CHECKED_A08_0_2_COMPLETED_GRAPH_OUTPUTS"] = (
-        "CHECKED_A08_0_2_COMPLETED_GRAPH_OUTPUTS"
-    )
+    reserved_signatures: tuple[str, ...] = Field(default=(), max_length=512)
+    active_reservation_count: int = Field(default=0, strict=True, ge=0, le=512)
+    coverage: Literal[
+        "CHECKED_A08_0_2_COMPLETED_GRAPH_OUTPUTS",
+        "CHECKED_COMPLETED_OUTPUTS_AND_ACTIVE_RESERVATIONS",
+    ] = "CHECKED_A08_0_2_COMPLETED_GRAPH_OUTPUTS"
 
     @model_validator(mode="after")
     def bounded_signatures(self):
         if (
             self.known_signatures != tuple(sorted(set(self.known_signatures)))
             or len(self.known_signatures) > self.completed_run_count * 4
+            or self.reserved_signatures != tuple(sorted(set(self.reserved_signatures)))
+            or set(self.known_signatures) & set(self.reserved_signatures)
+            or len(self.reserved_signatures) != self.active_reservation_count
+            or (
+                self.reserved_signatures
+                and self.coverage != "CHECKED_COMPLETED_OUTPUTS_AND_ACTIVE_RESERVATIONS"
+            )
             or any(
                 len(value) != 64 or any(c not in "0123456789abcdef" for c in value)
-                for value in self.known_signatures
+                for value in (*self.known_signatures, *self.reserved_signatures)
             )
         ):
             raise ValueError("Invalid research memory signatures")
@@ -197,11 +207,13 @@ class ResearchHypothesis(BaseModel):
         ).hexdigest()
 
 
-def read_hypothesis_inputs(context: CompiledContext) -> HypothesisInputs:
+def read_hypothesis_inputs(
+    context: CompiledContext, *, agent_version: Literal["0.2.0", "0.3.0"] = "0.2.0"
+) -> HypothesisInputs:
     verify_context(context)
     if (context.agent_id, context.agent_version, context.scope, context.status) != (
         "A08",
-        "0.2.0",
+        agent_version,
         "SANDBOX",
         "READY",
     ):
@@ -229,6 +241,15 @@ def read_hypothesis_inputs(context: CompiledContext) -> HypothesisInputs:
 
 def hypothesis_recipe(context: CompiledContext) -> dict:
     inputs = read_hypothesis_inputs(context)
+    return _hypothesis_recipe(inputs, include_reservations=False)
+
+
+def hypothesis_recipe_v3(context: CompiledContext) -> dict:
+    inputs = read_hypothesis_inputs(context, agent_version="0.3.0")
+    return _hypothesis_recipe(inputs, include_reservations=True)
+
+
+def _hypothesis_recipe(inputs: HypothesisInputs, *, include_reservations: bool) -> dict:
     proposed = {}
     for row in inputs.historical_catalog.datasets:
         rule = research_rule(row.eligible_pairs, row.same_direction_pairs)
@@ -265,7 +286,8 @@ def hypothesis_recipe(context: CompiledContext) -> dict:
         )
         proposed.setdefault(hypothesis.signature, hypothesis)
     known = set(inputs.research_memory.known_signatures)
-    unseen = [row for signature, row in proposed.items() if signature not in known]
+    reserved = set(inputs.research_memory.reserved_signatures) if include_reservations else set()
+    unseen = [row for signature, row in proposed.items() if signature not in known | reserved]
     unseen.sort(
         key=lambda row: (
             -Fraction(abs(2 * row.same_direction_pairs - row.eligible_pairs), row.eligible_pairs),
@@ -283,7 +305,7 @@ def hypothesis_recipe(context: CompiledContext) -> dict:
         contradictions.add("WORLD_ARCHIVES_EMPTY")
     if not inputs.historical_catalog.datasets:
         contradictions.add("TRAINING_CATALOG_EMPTY")
-    return {
+    result = {
         "status": "PROPOSED"
         if hypotheses
         else "NO_NEW_HYPOTHESIS"
@@ -296,6 +318,9 @@ def hypothesis_recipe(context: CompiledContext) -> dict:
         "deferred_hypothesis_count": max(0, len(unseen) - 4),
         "contradictions": tuple(sorted(contradictions)),
     }
+    if include_reservations:
+        result["reserved_hypothesis_count"] = len(set(proposed) & reserved)
+    return result
 
 
 class HypothesisSpec(AgentEnvelope):
@@ -326,6 +351,27 @@ class HypothesisSpec(AgentEnvelope):
     def require_context(self, context: CompiledContext) -> None:
         super().require_context(context)
         expected = hypothesis_recipe(context)
+        if (
+            self.evidence_refs != context.input_refs
+            or self.created_at != context.created_at
+            or self.valid_until != context.valid_until
+            or any(getattr(self, field) != value for field, value in expected.items())
+        ):
+            raise ValueError("Research hypothesis differs from retained source recipe")
+
+
+class HypothesisSpecV3(HypothesisSpec):
+    agent_version: Literal["0.3.0"] = "0.3.0"
+    output_type: Literal["HypothesisSpecV3"] = "HypothesisSpecV3"
+    policy_version: Literal["development-direction-screen-v2"] = "development-direction-screen-v2"
+    novelty_scope: Literal["COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE"] = (
+        "COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE"
+    )
+    reserved_hypothesis_count: int = Field(strict=True, ge=0, le=64)
+
+    def require_context(self, context: CompiledContext) -> None:
+        AgentEnvelope.require_context(self, context)
+        expected = hypothesis_recipe_v3(context)
         if (
             self.evidence_refs != context.input_refs
             or self.created_at != context.created_at
