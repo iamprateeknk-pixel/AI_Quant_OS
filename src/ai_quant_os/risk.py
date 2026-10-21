@@ -14,8 +14,18 @@ from ai_quant_os.currency_portfolio import CurrencyPendingOrder
 from ai_quant_os.currency_risk import CurrencyReservation, CurrencyRiskContext, CurrencyRiskPolicy
 
 
+# V3.2 section 28 global safety ladder, lowest to highest severity:
+# NORMAL -> CAUTION -> REDUCED -> NO_NEW_RISK -> FLATTEN_ONLY -> HALT
+# Wire values match the names the Mission Control operator console already
+# expects (REDUCED_RISK for the REDUCED rung). Kernel semantics: CAUTION
+# still permits new risk (warning rung); REDUCED and NO_NEW_RISK refuse new
+# risk; FLATTEN_ONLY permits only non-reversing reductions; HALT refuses
+# everything. NOTE: keep this class docstring-free - a docstring leaks into
+# published JSON schemas as a "description" and breaks schema parity tests.
 class SafetyState(str, Enum):
     NORMAL = "NORMAL"
+    CAUTION = "CAUTION"
+    REDUCED = "REDUCED_RISK"
     NO_NEW_RISK = "NO_NEW_RISK"
     FLATTEN_ONLY = "FLATTEN_ONLY"
     HALT = "HALT"
@@ -72,10 +82,17 @@ class RiskKernel:
                 before_change()
             self._safety_state = state
 
+    #: States from which the gated paper recovery workflow may return the
+    #: kernel to NORMAL. HALT and FLATTEN_ONLY stay excluded: they require
+    #: their own operator workflows, never this shortcut.
+    RECOVERABLE_STATES = (SafetyState.CAUTION, SafetyState.REDUCED, SafetyState.NO_NEW_RISK)
+
     def recover_paper_safety(self, *, before_change: Callable[[], None]) -> None:
         with self._lock:
-            if self._safety_state != SafetyState.NO_NEW_RISK:
-                raise ValueError("Only NO_NEW_RISK paper state can be recovered")
+            if self._safety_state not in self.RECOVERABLE_STATES:
+                raise ValueError(
+                    "Only CAUTION, REDUCED or NO_NEW_RISK paper state can be recovered"
+                )
             before_change()
             self._issued.clear()
             self._decision_safety_states.clear()
@@ -92,7 +109,8 @@ class RiskKernel:
             yield (
                 decision.decision == "APPROVE"
                 and self._decision_safety_states.get(decision.risk_id) == self._safety_state
-                and self._safety_state in (SafetyState.NORMAL, SafetyState.FLATTEN_ONLY)
+                and self._safety_state
+                in (SafetyState.NORMAL, SafetyState.CAUTION, SafetyState.FLATTEN_ONLY)
                 and decision.risk_id not in self._consumed
             )
 
@@ -230,7 +248,7 @@ class RiskKernel:
                 )
                 if not is_non_reversing_reduction:
                     violations.append("FLATTEN_ONLY_REDUCTION_REQUIRED")
-            elif decision_safety_state != SafetyState.NORMAL:
+            elif decision_safety_state not in (SafetyState.NORMAL, SafetyState.CAUTION):
                 violations.append(decision_safety_state.value)
             outcome = (
                 "HALT"

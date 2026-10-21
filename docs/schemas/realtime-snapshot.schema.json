@@ -223,6 +223,8 @@
     "safety_state": {
       "enum": [
         "NORMAL",
+        "CAUTION",
+        "REDUCED_RISK",
         "NO_NEW_RISK",
         "FLATTEN_ONLY",
         "HALT"

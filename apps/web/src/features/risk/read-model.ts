@@ -1,4 +1,4 @@
-export type SafetyState = "NORMAL" | "NO_NEW_RISK" | "FLATTEN_ONLY" | "HALT";
+export type SafetyState = "NORMAL" | "CAUTION" | "REDUCED_RISK" | "NO_NEW_RISK" | "FLATTEN_ONLY" | "HALT";
 export const RISK_INSTRUMENTS = ["EURUSD", "GBPUSD", "USDJPY", "EURJPY"] as const;
 export type RiskInstrument = typeof RISK_INSTRUMENTS[number];
 export type SystemStatus = { mode: "PAPER"; safety_state: SafetyState; order_count: number };
@@ -17,7 +17,7 @@ export type RiskView = {
   max_gross_currency_exposure_reporting: string;
 };
 
-const safetyStates = ["NORMAL", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"] as const;
+const safetyStates = ["NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"] as const;
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

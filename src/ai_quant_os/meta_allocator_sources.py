@@ -55,7 +55,7 @@ class PortfolioObservation(BaseModel):
 class RiskObservation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     as_of: AwareDatetime
-    safety_state: Literal["NORMAL", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"]
+    safety_state: Literal["NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"]
     max_order_exposure: Decimal = Field(gt=0, allow_inf_nan=False)
     max_portfolio_exposure: Decimal = Field(gt=0, allow_inf_nan=False)
     risk_budget_status: Literal["UNCALIBRATED"] = "UNCALIBRATED"
