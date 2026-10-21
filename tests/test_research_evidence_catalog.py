@@ -210,9 +210,9 @@ def test_offline_legacy_migration_prepares_catalog_for_training_only_api(tmp_pat
     with catalog(path, training_only=True) as store:
         assert store.list() == (training,)
     with closing(sqlite3.connect(path.with_name("legacy.holdout.sqlite3"))) as db:
-        assert db.execute(
-            "SELECT dataset_ref,raw_csv FROM research_datasets"
-        ).fetchall() == [(holdout.dataset_ref, holdout_raw)]
+        assert db.execute("SELECT dataset_ref,raw_csv FROM research_datasets").fetchall() == [
+            (holdout.dataset_ref, holdout_raw)
+        ]
 
 
 def test_training_only_startup_rejects_legacy_holdout_by_metadata_first(tmp_path):
