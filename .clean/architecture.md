@@ -127,9 +127,10 @@ checkers expect; if this block and `architecture.json` ever disagree,
       ]
     },
     "strategies": {
-      "module_count": 41,
+      "module_count": 42,
       "modules": [
         "src/ai_quant_os/directional_strategy.py",
+        "src/ai_quant_os/edge_hypotheses.py",
         "src/ai_quant_os/strategy_archive_views.py",
         "src/ai_quant_os/strategy_build_store.py",
         "src/ai_quant_os/strategy_builder.py",
@@ -242,7 +243,7 @@ checkers expect; if this block and `architecture.json` ever disagree,
       ]
     },
     "application": {
-      "module_count": 185,
+      "module_count": 186,
       "modules": [
         "src/ai_quant_os/adversarial.py",
         "src/ai_quant_os/adversarial_service.py",
@@ -419,6 +420,7 @@ checkers expect; if this block and `architecture.json` ever disagree,
         "src/ai_quant_os/tick_data.py",
         "src/ai_quant_os/tick_portfolio_cli.py",
         "src/ai_quant_os/trace_export_queue.py",
+        "src/ai_quant_os/validation_fortress.py",
         "src/ai_quant_os/validation_interruption.py",
         "src/ai_quant_os/validation_interruption_cli.py",
         "src/ai_quant_os/validation_interruption_contracts.py",
