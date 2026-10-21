@@ -21,6 +21,7 @@ from ai_quant_os.currency_twin import CurrencyTwin, pair_score
 from ai_quant_os.graph_ledger import GraphReceipt
 from ai_quant_os.portfolio import PortfolioExposure
 from ai_quant_os.risk import RiskLimits
+from ai_quant_os.risk_policy import PaperRiskPolicy
 from ai_quant_os.strategy_selector_agent import EligibleStrategySetV3
 
 INPUT_NAMES = (
@@ -233,6 +234,34 @@ class TwinPairObservation(BaseModel):
     coverage: Literal["SINGLE_INSTRUMENT"] = "SINGLE_INSTRUMENT"
 
 
+class WeightedTwinPairObservation(TwinPairObservation):
+    """Twin observation extended with the risk-policy evidence weighting.
+
+    Used only when a :class:`PaperRiskPolicy` is supplied to
+    :func:`allocator_sources_with_twin`; the unweighted ``pair_score``
+    stays as-is and ``weighted_pair_score`` carries the policy-scaled
+    signal, so the no-policy payload is untouched.
+    """
+
+    twin_evidence_weight: Decimal = Field(ge=0, le=1, allow_inf_nan=False)
+    weighted_pair_score: Decimal = Field(ge=-1, le=1, allow_inf_nan=False)
+
+
+def apply_twin_weight(pair_score: Decimal, weight: Decimal) -> Decimal:
+    """Scale ``pair_score`` by ``weight``, clamped to ``[-weight, +weight]``.
+
+    The weighting never widens the signal: the result satisfies
+    ``abs(result) <= min(abs(pair_score), weight)``. ``weight`` must be a
+    finite Decimal in [0, 1] and ``pair_score`` a finite Decimal.
+    """
+    for label, number in (("pair_score", pair_score), ("weight", weight)):
+        if not isinstance(number, Decimal) or not number.is_finite():
+            raise ValueError(f"Twin weight {label} must be a finite Decimal")
+    if weight < 0 or weight > 1:
+        raise ValueError("Twin evidence weight must lie in [0, 1]")
+    return max(-weight, min(weight, weight * pair_score))
+
+
 def twin_pair_signal(
     twin_a: CurrencyTwin,
     twin_b: CurrencyTwin,
@@ -269,6 +298,7 @@ def allocator_sources_with_twin(
     regime_state: Decimal = Decimal(0),
     event_state: Decimal = Decimal(0),
     costs: Decimal = Decimal(0),
+    risk_policy: PaperRiskPolicy | None = None,
 ) -> dict[str, SourceBinding]:
     """Allocator sources, optionally extended with a currency-twin source.
 
@@ -277,7 +307,15 @@ def allocator_sources_with_twin(
     whether or not the twin source is present -- the bounded signal is
     published for consumers, never auto-traded. With neither twin supplied
     this returns exactly ``allocator_sources(inputs, now=now)``.
+
+    When ``risk_policy`` is supplied, the twin observation additionally
+    carries the policy's ``twin_evidence_weight`` and a
+    ``weighted_pair_score`` (see :func:`apply_twin_weight`); with
+    ``risk_policy=None`` the observation payload is exactly the Phase 2
+    :class:`TwinPairObservation` payload.
     """
+    if risk_policy is not None and type(risk_policy) is not PaperRiskPolicy:
+        raise ValueError("Twin weighting requires a PaperRiskPolicy")
     sources = allocator_sources(inputs, now=now)
     if twin_a is None and twin_b is None:
         return sources
@@ -298,14 +336,27 @@ def allocator_sources_with_twin(
         costs=costs,
     )
     combined = min(twin_a.overall_confidence(), twin_b.overall_confidence())
-    observation = TwinPairObservation(
-        as_of=now,
-        instrument_id=instrument_id,
-        base_currency=base_currency,
-        quote_currency=quote_currency,
-        pair_score=signal,
-        combined_confidence=combined,
-    )
+    if risk_policy is None:
+        observation: TwinPairObservation = TwinPairObservation(
+            as_of=now,
+            instrument_id=instrument_id,
+            base_currency=base_currency,
+            quote_currency=quote_currency,
+            pair_score=signal,
+            combined_confidence=combined,
+        )
+    else:
+        weight = risk_policy.twin_evidence_weight
+        observation = WeightedTwinPairObservation(
+            as_of=now,
+            instrument_id=instrument_id,
+            base_currency=base_currency,
+            quote_currency=quote_currency,
+            pair_score=signal,
+            combined_confidence=combined,
+            twin_evidence_weight=weight,
+            weighted_pair_score=apply_twin_weight(signal, weight),
+        )
     encoded = json.dumps(
         observation.model_dump(mode="json"),
         sort_keys=True,

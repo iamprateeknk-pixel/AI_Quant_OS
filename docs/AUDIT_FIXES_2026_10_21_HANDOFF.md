@@ -244,3 +244,197 @@ architecture boundary suite passes (10 tests).
   in-place formatter run; all were recreated through the safe write
   channel and re-verified by size and test counts, and formatting was
   finished via a stdin/stdout pass. No source content was lost.
+
+## Phase 3 — completing the Phase 2 wiring (2026-10-21)
+
+This increment executes the four wirings Phase 2 deliberately left as
+stubs/shadow. Safety semantics are unchanged except where stated, and
+risk-policy defaults are unchanged. Nothing below promotes an agent,
+opens a release gate, or changes the go-live **NO-GO**.
+
+### What is now wired end to end
+
+1. **MCP per-tool handlers** (`src/ai_quant_os/mcp_handlers.py`, new;
+   `mcp_api.py` extended; bound in `api.py`'s `create_app`).
+   `paper_mcp_service` now takes an optional `McpToolBindings`; a
+   handler is registered only when its real backing source is bound.
+   With `bindings=None` the service behaves exactly as Phase 2.
+   `create_app` binds the composition-root sources, so on the live
+   paper path these tools now execute honestly: `get_risk_state`
+   (Phase 2), `query_dataset` (ResearchEvidenceCatalog),
+   `get_exposure` (execution gateway snapshot + real fills),
+   `simulate_allocation` and `stress_portfolio` (pure computations
+   over real fills, labelled non-mutating), `simulate_risk_change`
+   (pure, over the real kernel state; never applies),
+   `get_broker_health` (BrokerRouter snapshot/eligibility),
+   `get_incident` (HealthStore), `get_policy` (the versioned
+   `PaperRiskPolicy`, served only by its exact version id, with
+   digest), `export_evidence` (PaperStateStore chain-validated audit
+   read). `mcp_handlers` imports stdlib only — bindings are
+   duck-typed, so the fabric structurally cannot reach broker/order
+   code. The registry's approval gating is untouched.
+2. **Twin weighting** (`risk_policy.py`, `meta_allocator_sources.py`).
+   `PaperRiskPolicy` gains one optional field,
+   `twin_evidence_weight` (Decimal, default `0`, validated to
+   [0, 1]); the JSON loader keeps the eight original fields required,
+   defaults this one, and still fails closed on unknown fields or bad
+   values. `allocator_sources_with_twin(..., risk_policy=...)` now
+   publishes a `WeightedTwinPairObservation` whose
+   `weighted_pair_score = clamp(weight × pair_score, −weight,
+   +weight)` via `apply_twin_weight` — the weight can never widen the
+   signal, and the confidence floor still zeroes `pair_score` first.
+   With no policy supplied the twin payload and `source_id` are
+   byte-for-byte Phase 2; with weight 0 the weighted score is exactly
+   0. The example policy file is unmodified.
+3. **Recovery quorum evidence production**
+   (`src/ai_quant_os/recovery_evidence.py`, new; `api.py` recovery
+   region rewired). The shadow closure now calls
+   `produce_recovery_evidence`, which computes every gate live from
+   the paper system in the same call, each section independently
+   fail-closed: `agent_health` (health store present, no open
+   incidents), `data_state` (completed triage + audit integrity +
+   snapshot hash), `repair_verification` (only from verified
+   completed-triage artifacts — a plain operator stop with no triage
+   artifact honestly yields False), `risk_execution` (kernel state ==
+   store state, kernel/policy limit digests equal), `broker_truth`
+   (no unresolved orders and `compare_paper_positions` matches,
+   computed before any mutation), `security` (explicit endpoint
+   attestation — the handler sits behind both the control-operator
+   and recovery dependencies, whose tokens app construction forces
+   to differ), `resume_controller` (narrow structural sense only:
+   the verdict is computed synchronously by the deterministic
+   endpoint). `independent_replay` is a real replay: the paper
+   SQLite DB is copied via the backup API under the store lock and
+   re-opened through the store classes on the copy (never the live
+   connection); audit head/count, safety state and ledger digest must
+   all match live. The endpoint's accept/refuse logic, ordering and
+   receipt shape are unchanged; any producer exception degrades to
+   the Phase 2 all-gates-failed shadow posture, so evidence
+   production can never change a recovery outcome.
+4. **Promotion lifecycle consumer**
+   (`src/ai_quant_os/promotion_lifecycle.py`, new;
+   `promotion_contracts.py` gated). `PromotionDecision` no longer
+   pins approval to `Literal[False]`: `approved_by_policy` is a real
+   bool and `decision` may be `WAIT_FOR_EVIDENCE` / `PROMOTED` /
+   `REJECTED`, with new optional gate-evidence fields
+   (`fortress_hypothesis_id`, `fortress_verdict_ref`,
+   `council_name`, `council_verdict`, `decided_at`). A model
+   validator makes approval true **iff** the record is PROMOTED with
+   complete gate evidence (fortress ref + research-council ACCEPTED +
+   timestamps); every other approval claim raises. Legacy stored
+   records still validate, so `PromotionEvidenceStore` re-verification
+   is unaffected. `docs/schemas/promotion-decision-v1.schema.json`
+   was regenerated from the model (dict-identical; parity test
+   compares dicts). `request_promotion` derives the fortress verdict
+   ref as a SHA-256 content hash (the verdict type has no id), calls
+   `strategy_promotion.evaluate_promotion` (never reimplements it),
+   records a `PromotionDecision` in the evidence store — the fortress
+   leg honestly fills `offline_eval`; the other four evaluations stay
+   `NOT_RUN` with the reason "not part of the fortress+council
+   promotion gate" — and flips the strategy to `PAPER_ACTIVE` in the
+   new audited `PromotionRegistry` only when the gate returns
+   promoted. Registry status is derived from recorded attempts, and
+   repeating a request with identical gate evidence is idempotent
+   (same outcome, no duplicate attempt or flip).
+
+### What remains stubbed / shadow — and precisely why
+
+- **Recovery verifier stays SHADOW.** The `canary` gate is not
+  honestly producible on this path: paper recovery lands directly at
+  NORMAL (`RiskKernel.recover_paper_safety`), and no staged
+  REDUCED_RISK canary phase exists. Producing a canary would require
+  changing where recovery lands — a safety-semantics change outside
+  this increment. In a healthy on-disk deployment every other gate
+  and the independent replay now pass, so the shadow verdict is
+  REJECTED with `failed_gates == ["canary"]`; on the in-memory app
+  (no health watchdog, no triage artifact, no on-disk DB) the honest
+  failed set is `["agent_health", "repair_verification", "canary",
+  "independent_replay"]`. Enforcement awaits a staged-landing
+  recovery design owned by the safety lifecycle.
+- **14 MCP tools stay 409** (no handler in the default app):
+  `create_hypothesis` and `build_strategy_artifact` (creation sits
+  behind compiled-context/graph custody; a direct store write would
+  bypass it), `create_experiment`, `run_backtest`, `compare_runs`,
+  `run_walk_forward`, `leakage_scan`, `stress_regime`,
+  `capacity_test` (candidate-validation legs that need the full
+  validation bundle / isolated worker; the Monte Carlo engine
+  specifically has no by-candidate lookup, and running it over paper
+  fills would misattribute paper trades to a candidate),
+  `create_branch`, `run_tests` (isolated worker custody only),
+  `create_approval_request` (no generic approval-request store
+  exists), `replay_session` (needs a full candidate dataset package,
+  no session store). `deploy_shadow`, `pause_shadow` and
+  `compare_challenger` have handler *seams* (optional callables on
+  the bindings, approval gating fully in force) but are deliberately
+  unbound in `create_app`: no shadow deployment service exists in
+  the default composition root, so they stay 409 there.
+- **`CandidatePaperAssignment.promotion_allowed` stays
+  `Literal[False]`** — deliberately not widened. It is a frozen
+  challenger-admission binding whose `authorize()` keys off
+  CHALLENGER state/revision/fingerprints; giving stored assignments
+  promotion authority would silently change trade-authorization
+  semantics. Promotion authority lives in the gated
+  `PromotionDecision` + registry `PAPER_ACTIVE` status above.
+- **Twin weighting has no live consumer yet** — the same position as
+  Phase 2, one level up: the weighted signal is computed and
+  published on the twin observation, but `api.py`'s A13 context path
+  still compiles only from `INPUT_NAMES` and no twin feed exists in
+  the live path to bind. The policy plumbing is complete so a future
+  twin feed lands on a finished gate.
+- Everything in the Phase 1/2 "still open" lists remains open (INR
+  activation, Rust services, cloud, live brokers, agent status,
+  release gates).
+
+### Architecture registration
+
+`mcp_handlers`, `recovery_evidence` and `promotion_lifecycle`
+(application layer, supporting) are registered in
+`.clean/architecture.json` (372 modules total) and the
+machine-readable block in `.clean/architecture.md` was regenerated
+to match (verified byte-identical to the generator output); the
+architecture boundary suite passes (10 tests).
+
+### Verification (this increment)
+
+- Integrated runnable suites: **169 passed, 0 failed** (`test_mcp_api`
+  11, `test_mcp_tools` 16, `test_strategy_promotion` 11,
+  `test_councils` 19, `test_cost_governor` 21,
+  `test_meta_allocator_twin` 9, `test_meta_allocator_agent` 4,
+  `test_currency_twin` 40, `test_recovery_verifier` 13,
+  `test_recovery_verifier_shadow` 6, `test_safety_states` 5,
+  `test_validation_fortress` 14) — plus the architecture boundary
+  suite 10/10. A live `create_app` smoke over HTTP confirms the new
+  bindings end to end: `get_policy` returns the real policy + digest
+  (unknown id → 409), `get_exposure` returns the real snapshot,
+  `deploy_shadow` is 403 unapproved and 409 approved (unbound),
+  `run_backtest` is 409.
+- New Phase 3 tests total 76 (`test_mcp_handlers` 16,
+  `test_twin_weighting` 40, `test_recovery_evidence` 8,
+  `test_promotion_lifecycle` 12) plus the reworked
+  `test_promotion_contracts` (25). Of these, every test that does not
+  need on-disk SQLite passed here; the disk-bound remainder
+  (11 MCP-handler store tests, 7 twin-weighting file-loader tests,
+  7 recovery-evidence on-disk tests, 12 promotion-lifecycle store
+  tests, and the pre-existing disk-bound tests in
+  `test_promotion_store` / `test_risk_policy`) is blocked **only** by
+  the sandbox write guard: all 47 failure/error lines in that batch
+  carry exclusively the environment signatures
+  (`sqlite3.OperationalError: disk I/O error`,
+  `PermissionError: Operation not permitted` on tempfile/write), a
+  bare `CREATE TABLE` probe fails identically in every directory,
+  and the unmodified `PromotionEvidenceStore` fails construction the
+  same way — tree-independent environment failure, not regressions.
+  The blocked assertions were additionally validated by equivalent
+  in-memory runs of the same store classes (handler smoke: all
+  passed; fortress/council/promotion logic: 36 real passes in the
+  contract + gate suites). `test_promotion_contracts` cannot collect
+  in this venv (no `jsonschema` package — environment); its schema
+  parity was re-verified by direct dict comparison
+  (published == model: True).
+- `test_api.py`: 12 passed / 16 failed — 15 environment (tempfile /
+  disk I/O) plus the one Pydantic-version schema-parity failure
+  documented on the unmodified tree in Phases 1–2. No Phase 3 file
+  touches the trade-intent schema.
+- Ruff check passes on all Phase 3 new/changed files; AST parse
+  verified for all of them; byte sizes re-verified after every edit
+  (no in-place rewriters were used anywhere in this phase).

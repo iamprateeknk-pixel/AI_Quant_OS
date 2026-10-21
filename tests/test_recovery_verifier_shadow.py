@@ -74,13 +74,28 @@ def test_accepted_recovery_carries_well_formed_shadow_verdict() -> None:
     assert receipt["reason"] == REASON
     shadow = _shadow(receipt)
     assert shadow["mode"] == "SHADOW"
-    # No independent replay exists on this path, so the section 13 quorum
-    # cannot be satisfied in shadow mode today: the verdict is REJECTED
-    # and names the missing independence gate. It still must not block.
+    # Phase 3: the shadow now carries evidence produced from the live
+    # paper system, so gates with real evidence pass (data_state,
+    # risk_execution, broker_truth, security, resume_controller). This
+    # fixture is an in-memory app with no health watchdog and no triage
+    # artifact, and the section 13 canary gate is unproducible on this
+    # direct-to-NORMAL path, so the verdict is still REJECTED -- naming
+    # exactly those genuinely missing gates. It still must not block.
+    # (On an on-disk healthy app the replay genuinely runs and
+    # independent_replay drops out; see test_recovery_evidence.py.)
     assert shadow["verdict"] == "REJECTED"
+    assert shadow["failed_gates"] == [
+        "agent_health",
+        "repair_verification",
+        "canary",
+        "independent_replay",
+    ]
     assert "independent_replay" in shadow["failed_gates"]
     assert all(isinstance(gate, str) for gate in shadow["failed_gates"])
-    assert shadow["evidence_refs"] == [f"paper-recovery:{receipt['receipt_id']}"]
+    # Evidence refs are now the produced hashes, not the bare receipt ref.
+    assert shadow["evidence_refs"] != [f"paper-recovery:{receipt['receipt_id']}"]
+    assert any(ref.startswith("paper-state-snapshot:sha256:") for ref in shadow["evidence_refs"])
+    assert any(ref.startswith("audit-chain:sha256:") for ref in shadow["evidence_refs"])
     assert client.get("/api/v1/risk").json()["safety_state"] == "NORMAL"
 
 

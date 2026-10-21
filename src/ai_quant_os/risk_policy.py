@@ -39,6 +39,10 @@ _FIELDS = {
     "max_rate_age_seconds",
 }
 
+# Optional fields: accepted when present, defaulted when absent. The eight
+# fields in ``_FIELDS`` remain required; anything else fails closed.
+_OPTIONAL_FIELDS = {"twin_evidence_weight"}
+
 
 @dataclass(frozen=True)
 class PaperRiskPolicy:
@@ -50,6 +54,7 @@ class PaperRiskPolicy:
     max_currency_exposure_reporting: Decimal = Decimal("2000")
     max_gross_exposure_reporting: Decimal = Decimal("4000")
     max_rate_age_seconds: int = 5
+    twin_evidence_weight: Decimal = Decimal("0")
 
     def __post_init__(self) -> None:
         if not self.policy_version or len(self.policy_version) > 64:
@@ -66,6 +71,9 @@ class PaperRiskPolicy:
             raise ValueError("Risk policy age limits must be positive")
         if len(self.reporting_currency) != 3 or not self.reporting_currency.isupper():
             raise ValueError("Risk policy reporting currency must be a 3-letter code")
+        weight = self.twin_evidence_weight
+        if not isinstance(weight, Decimal) or not weight.is_finite() or weight < 0 or weight > 1:
+            raise ValueError("Risk policy twin evidence weight must lie in [0, 1]")
 
     @property
     def digest(self) -> str:
@@ -122,11 +130,17 @@ def load_risk_policy(path: Path | None = None) -> PaperRiskPolicy:
     if not isinstance(raw, dict) or raw.get("format_version") != POLICY_FORMAT_VERSION:
         raise ValueError("Risk policy file has an unsupported format version")
     fields = set(raw) - {"format_version"}
-    if fields != _FIELDS:
+    known = _FIELDS | _OPTIONAL_FIELDS
+    if _FIELDS - fields or fields - known:
         raise ValueError(
             f"Risk policy fields mismatch; missing={sorted(_FIELDS - fields)}, "
-            f"unknown={sorted(fields - _FIELDS)}"
+            f"unknown={sorted(fields - known)}"
         )
+    twin_weight = (
+        _decimal(raw["twin_evidence_weight"], "twin_evidence_weight")
+        if "twin_evidence_weight" in raw
+        else Decimal("0")
+    )
     return PaperRiskPolicy(
         policy_version=str(raw["policy_version"]),
         max_order_exposure=_decimal(raw["max_order_exposure"], "max_order_exposure"),
@@ -140,4 +154,5 @@ def load_risk_policy(path: Path | None = None) -> PaperRiskPolicy:
             raw["max_gross_exposure_reporting"], "max_gross_exposure_reporting"
         ),
         max_rate_age_seconds=int(raw["max_rate_age_seconds"]),
+        twin_evidence_weight=twin_weight,
     )

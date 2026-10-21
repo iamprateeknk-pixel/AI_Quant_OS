@@ -3075,31 +3075,54 @@ def create_app(
     def halt(command: ControlInput, idempotency_key: str = Header(min_length=1)) -> dict[str, str]:
         return transition(SafetyState.HALT, command, idempotency_key)
 
-    def recovery_verifier_shadow(*, receipt_id: str, health_verified: bool) -> str:
+    def recovery_verifier_shadow(*, receipt_id: str) -> str:
         """Shadow-mode Recovery Verifier verdict for one paper recovery.
 
         The verdict is computed alongside the operator paper-recovery path
         and recorded on the recovery receipt for comparison only: it never
-        changes whether recovery is accepted or refused. A quorum gate is
-        marked passed only where this path holds direct evidence at the
-        moment of recovery -- ``agent_health`` when the health watchdog is
-        enabled and no incident is open, and ``data_state`` because
-        recovery cannot reach this point until the audit chain's triage
-        evidence is complete. Every other gate is left failed and no
-        independent replay exists on this path, so the shadow verdict is
-        REJECTED until the section 13 quorum is wired end to end. The
-        receipt field is a compact JSON string so the receipt stays a
-        ``dict[str, str]`` and idempotent replays return it unchanged.
+        changes whether recovery is accepted or refused. Gate evidence is
+        produced by ``recovery_evidence.produce_recovery_evidence`` from
+        the live paper components in this call (see that module for the
+        per-gate honesty rules); the mode stays SHADOW and the verdict
+        stays REJECTED because the section 13 ``canary`` gate cannot be
+        honestly produced on this path -- recovery here lands directly at
+        NORMAL, with no staged canary phase. If evidence production itself
+        fails, an all-gates-failed shadow is recorded instead, so the
+        accept/refuse behaviour above is exactly the pre-shadow behaviour
+        either way. The receipt field is a compact JSON string so the
+        receipt stays a ``dict[str, str]`` and idempotent replays return
+        it unchanged.
+
+        ``security_verified=True`` is passed to the producer only because
+        this closure is invoked solely from ``recover_paper``, whose route
+        sits behind BOTH ``require_control_operator`` and
+        ``require_recovery`` -- distinct tokens, enforced at app
+        construction -- so the handler body runs only after both
+        credential checks have passed.
         """
+        from ai_quant_os.recovery_evidence import (
+            produce_recovery_evidence,
+            unavailable_evidence,
+        )
         from ai_quant_os.recovery_verifier import verify_recovery
 
+        try:
+            evidence = produce_recovery_evidence(
+                state_store=state_store,
+                execution=execution,
+                risk=risk,
+                health_store=health_worker.store if health_worker is not None else None,
+                paper_db_path=configured_path,
+                receipt_id=receipt_id,
+                security_verified=True,
+                risk_policy=configured_risk_policy,
+            )
+        except Exception:
+            evidence = unavailable_evidence(receipt_id)
         report = verify_recovery(
-            gate_results={
-                "agent_health": health_verified,
-                "data_state": True,
-            },
-            evidence_refs=(f"paper-recovery:{receipt_id}",),
-            independent_replay_passed=False,
+            gate_results=evidence.gate_results,
+            evidence_refs=evidence.evidence_refs,
+            independent_replay_passed=evidence.independent_replay_passed,
         )
         return json.dumps(
             {
@@ -3142,7 +3165,6 @@ def create_app(
                     raise ValueError("Open health incidents require independently gated repair")
                 receipt["recovery_verifier_shadow"] = recovery_verifier_shadow(
                     receipt_id=receipt["receipt_id"],
-                    health_verified=health_worker is not None,
                 )
                 execution.recover_paper_safety(
                     before_change=lambda: state_store.record_recovery(
@@ -3284,16 +3306,32 @@ def create_app(
     )
     install_agent_call_routes(app, call_budget, require_operator)
     from ai_quant_os.mcp_api import install_mcp_routes, paper_mcp_service
+    from ai_quant_os.mcp_handlers import McpToolBindings
 
     # MCP tool fabric (V3.2 section 11) on the paper path. The registry in
     # mcp_tools.py owns allow-lists and approval gating; the cost governor
-    # admits calls that declare a token cost before dispatch. Only the
-    # get_risk_state read handler is registered here -- every other
-    # catalog tool fails closed until its own gated wiring lands.
+    # admits calls that declare a token cost before dispatch. Handlers are
+    # registered for exactly the tools whose real sources the bindings
+    # below carry (see mcp_handlers.py); every other catalog tool fails
+    # closed with 409. No shadow-deployment callable is bound here -- the
+    # default app has no shadow deployment service -- so deploy_shadow,
+    # pause_shadow and compare_challenger stay refused.
     install_mcp_routes(
         app,
         require_operator,
-        paper_mcp_service(risk=risk, agent_tools=mcp_agent_tools),
+        paper_mcp_service(
+            risk=risk,
+            agent_tools=mcp_agent_tools,
+            bindings=McpToolBindings(
+                research_catalog=research_data_catalog,
+                execution=execution,
+                broker_router=router,
+                health_store=health_worker.store if health_worker is not None else None,
+                risk_policy=configured_risk_policy,
+                risk_kernel=risk,
+                paper_state_store=state_store,
+            ),
+        ),
     )
     install_spending_routes(
         app,

@@ -6,6 +6,13 @@ weakened here. Allow-lists and approval gating are likewise the
 registry's; this module only transports them over HTTP for known agents.
 Calls that declare a token cost are admitted by the cost governor
 (see :mod:`ai_quant_os.mcp_costs`) before the registry dispatches them.
+
+Handlers beyond ``get_risk_state`` come from
+:mod:`ai_quant_os.mcp_handlers`: :func:`paper_mcp_service` registers a
+tool's handler only when the caller supplies an :class:`McpToolBindings`
+carrying that tool's paper-system source. With no bindings the service
+behaves exactly as it did when only ``get_risk_state`` existed -- every
+other catalog tool fails closed with ``LookupError`` (HTTP 409).
 """
 
 import re
@@ -15,6 +22,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from ai_quant_os.mcp_costs import McpCostGovernor
+from ai_quant_os.mcp_handlers import McpToolBindings, build_tool_handlers
 from ai_quant_os.mcp_tools import TOOL_CATALOG, ToolRegistry
 
 #: Names of every catalog tool whose scope is ``read``. This is the
@@ -91,12 +99,19 @@ def paper_mcp_service(
     risk,
     agent_tools: Mapping[str, Collection[str]] | None = None,
     cost_governor: McpCostGovernor | None = None,
+    bindings: McpToolBindings | None = None,
 ) -> McpToolService:
     """Build the paper-path MCP service.
 
-    Only the ``get_risk_state`` read handler is registered; every other
-    catalog tool fails closed with ``LookupError`` until its own gated
-    wiring lands.
+    The ``get_risk_state`` read handler is always registered from
+    ``risk``. When ``bindings`` is supplied, handlers from
+    :mod:`ai_quant_os.mcp_handlers` are additionally registered for
+    exactly the tools whose paper-system source the bindings carry;
+    a bindings ``risk_kernel`` left as ``None`` falls back to ``risk``
+    so ``simulate_risk_change`` can serve the same kernel. With
+    ``bindings=None`` (the Phase 2 default) only ``get_risk_state``
+    is registered and every other catalog tool fails closed with
+    ``LookupError``.
     """
     registry = ToolRegistry()
 
@@ -104,6 +119,14 @@ def paper_mcp_service(
         return {"safety_state": risk.safety_state.value, "mode": "PAPER"}
 
     registry.register_handler("get_risk_state", _get_risk_state)
+    if bindings is not None:
+        effective = bindings
+        if effective.risk_kernel is None:
+            from dataclasses import replace
+
+            effective = replace(effective, risk_kernel=risk)
+        for name, handler in build_tool_handlers(effective).items():
+            registry.register_handler(name, handler)
     return McpToolService(registry, agent_tools=agent_tools, cost_governor=cost_governor)
 
 
