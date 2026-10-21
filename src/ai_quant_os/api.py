@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Collection, Mapping
 import hmac
 import json
 import os
@@ -421,6 +422,7 @@ def create_app(
     monitoring_alert_source: MonitoringAlertSource | None = None,
     holdout_rpc_client=None,
     risk_policy: PaperRiskPolicy | None = None,
+    mcp_agent_tools: Mapping[str, Collection[str]] | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -3073,6 +3075,43 @@ def create_app(
     def halt(command: ControlInput, idempotency_key: str = Header(min_length=1)) -> dict[str, str]:
         return transition(SafetyState.HALT, command, idempotency_key)
 
+    def recovery_verifier_shadow(*, receipt_id: str, health_verified: bool) -> str:
+        """Shadow-mode Recovery Verifier verdict for one paper recovery.
+
+        The verdict is computed alongside the operator paper-recovery path
+        and recorded on the recovery receipt for comparison only: it never
+        changes whether recovery is accepted or refused. A quorum gate is
+        marked passed only where this path holds direct evidence at the
+        moment of recovery -- ``agent_health`` when the health watchdog is
+        enabled and no incident is open, and ``data_state`` because
+        recovery cannot reach this point until the audit chain's triage
+        evidence is complete. Every other gate is left failed and no
+        independent replay exists on this path, so the shadow verdict is
+        REJECTED until the section 13 quorum is wired end to end. The
+        receipt field is a compact JSON string so the receipt stays a
+        ``dict[str, str]`` and idempotent replays return it unchanged.
+        """
+        from ai_quant_os.recovery_verifier import verify_recovery
+
+        report = verify_recovery(
+            gate_results={
+                "agent_health": health_verified,
+                "data_state": True,
+            },
+            evidence_refs=(f"paper-recovery:{receipt_id}",),
+            independent_replay_passed=False,
+        )
+        return json.dumps(
+            {
+                "mode": "SHADOW",
+                "verdict": report.verdict,
+                "failed_gates": list(report.failed_gates),
+                "evidence_refs": list(report.evidence_refs),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
     @app.post(
         "/api/v1/control/recover-paper",
         dependencies=[Depends(require_control_operator), Depends(require_recovery)],
@@ -3101,6 +3140,10 @@ def create_app(
                 require_completed_triage(state_store.audit_events())
                 if health_worker is not None and health_worker.store.open_incidents():
                     raise ValueError("Open health incidents require independently gated repair")
+                receipt["recovery_verifier_shadow"] = recovery_verifier_shadow(
+                    receipt_id=receipt["receipt_id"],
+                    health_verified=health_worker is not None,
+                )
                 execution.recover_paper_safety(
                     before_change=lambda: state_store.record_recovery(
                         idempotency_key, reason, receipt
@@ -3240,6 +3283,18 @@ def create_app(
         candidate_admission_guard,
     )
     install_agent_call_routes(app, call_budget, require_operator)
+    from ai_quant_os.mcp_api import install_mcp_routes, paper_mcp_service
+
+    # MCP tool fabric (V3.2 section 11) on the paper path. The registry in
+    # mcp_tools.py owns allow-lists and approval gating; the cost governor
+    # admits calls that declare a token cost before dispatch. Only the
+    # get_risk_state read handler is registered here -- every other
+    # catalog tool fails closed until its own gated wiring lands.
+    install_mcp_routes(
+        app,
+        require_operator,
+        paper_mcp_service(risk=risk, agent_tools=mcp_agent_tools),
+    )
     install_spending_routes(
         app,
         configured_reviewer if isinstance(configured_reviewer, OpenAIReviewer) else None,

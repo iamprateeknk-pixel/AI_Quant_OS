@@ -104,3 +104,143 @@ go-live decision remains **NO-GO**. Paper-only authority is unchanged.
   identically within seconds). The authoritative full-suite check for
   this increment is the repo's own GitHub Actions CI on the branch.
 - Ruff check and format pass on all new/changed Python files.
+
+## Phase 2 — wiring the standalone modules into the paper path (2026-10-21)
+
+This increment wires the Phase 1 standalone modules into `api.py`'s
+paper path. Safety semantics are unchanged: the safety ladder,
+recovery accept/refuse logic and risk-policy defaults were not
+touched. All new HTTP behaviour fails closed.
+
+### What was wired
+
+1. **MCP HTTP surface** (`src/ai_quant_os/mcp_api.py`, new).
+   `GET /api/v1/mcp/tools` and `POST /api/v1/mcp/tools/call`, both
+   behind the existing `require_operator` dependency, installed from
+   `create_app` next to the agent-call routes. `create_app` gained an
+   optional `mcp_agent_tools` allow-list mapping kwarg. Default
+   allow-lists expose read-scope tools only (`operator`, or agent ids
+   `A01`–`A18`); unknown agents are refused with 403. Registry errors
+   map like the rest of the paper API: `PermissionError` → 403,
+   `LookupError` → 409, `ValueError` → 422. Approval-gated tools are
+   refused without approval exactly as the registry dictates.
+   **Only one handler is registered in the paper path:**
+   `get_risk_state` (returns the current safety state with
+   `"mode": "PAPER"`). Every other catalogued tool fails closed with
+   409 (no handler) until a tool-specific wiring increment registers
+   it. No broker-order or credential tool exists in the registry and
+   none was added.
+2. **Cost accounting on the MCP path** (`src/ai_quant_os/mcp_costs.py`,
+   new). A thin adapter over `cost_governor.BudgetHierarchy` — the
+   governor core was not edited. Each tool call that declares
+   `estimated_tokens` is modelled as a `material` LLM task in the
+   `mcp-tools` squad; admission is checked **before** registry
+   dispatch, a non-ADMIT verdict raises `CostCapRefusal`
+   (`PermissionError` → 403), and usage is recorded only after a
+   successful call. The per-task cap is discovered by probing
+   `admit()` (the governor exposes no public getter; no private state
+   is read) — 250,000 tokens with the default hierarchy.
+3. **Strategy promotion gate** (`src/ai_quant_os/strategy_promotion.py`,
+   new). The existing promotion contracts deliberately grant no
+   authority (`PromotionDecision.approved_by_policy` is
+   `Literal[False]`; `CandidatePaperAssignment.promotion_allowed` is
+   `Literal[False]`), so there is **no lifecycle hook to attach to** —
+   the gate is delivered as an encapsulated module and lifecycle
+   integration awaits the lifecycle owner's hook.
+   `evaluate_promotion` requires BOTH (a) a Validation Fortress PASS
+   verdict bound to the same hypothesis id and (b) an ACCEPTED verdict
+   from the councils.py **research** council (councils.py defines no
+   council literally named "strategy"; the research council holds the
+   hypothesis / strategy-designer / statistician / skeptic roles).
+   The council is always consulted, even when the fortress leg fails,
+   so both signals are recorded. Missing verdict, id mismatch, FAIL,
+   REJECTED and ESCALATED verdicts all block (fail closed).
+4. **Currency-twin signal into the meta allocator**
+   (`meta_allocator_sources.py`, extended). New optional
+   `allocator_sources_with_twin(...)`: with both twin legs absent it
+   returns `allocator_sources(...)` byte-identically (zero
+   contribution, existing behaviour untouched); with both legs present
+   it adds a `currency_twin` EvidenceRecord whose payload carries
+   `pair_score` clamped to [-1, 1]. Exactly-one-leg and
+   currency-mismatch inputs raise `ValueError`. The twin's
+   confidence floor applies: below the floor the contributed score is
+   exactly 0. **Deviation, recorded deliberately:** the source binding
+   uses the existing `WORLD_STATE_READ` tool (the same binding
+   `currency_strength_sources.py` already uses for its currency-twins
+   input) because `CURRENCY_TWIN_READ` is not in `READ_TOOLS` in
+   `agent_permissions.py` and bindings reject unregistered tools.
+   Registering it is a permissions-owner change and was not slipped
+   in here.
+5. **Recovery Verifier in shadow mode** (`api.py`, additive only).
+   The paper recovery endpoint now computes a
+   `recovery_verifier.evaluate_recovery` verdict and stores it on the
+   recovery receipt as `recovery_verifier_shadow` — a compact JSON
+   string `{"mode":"SHADOW","verdict":…,"failed_gates":[…],
+   "evidence_refs":[…]}`. Accept/refuse behaviour is byte-for-byte
+   unchanged; the shadow is computed after the accept decision's
+   preconditions and rides the stored receipt, so idempotent replays
+   return it unchanged. The gate evidence is honest about what the
+   endpoint actually holds at that point (completed triage = audit
+   evidence completeness, agent-health worker presence); the remaining
+   quorum gates are absent, so shadow verdicts are deterministically
+   REJECTED naming `independent_replay` until the blueprint §13
+   quorum is wired end to end. That is the expected shadow posture,
+   not a defect.
+
+### Architecture registration
+
+`mcp_api` (api layer), `mcp_costs` and `strategy_promotion`
+(application layer) are registered in `.clean/architecture.json`
+(369 modules total) and the machine-readable block in
+`.clean/architecture.md` was regenerated from the JSON; the
+architecture boundary suite passes (10 tests).
+
+### What remains shadow / off / not wired
+
+- **Promotion gate is unconsumed.** No lifecycle code calls
+  `evaluate_promotion` yet; promotion still cannot happen (the
+  contracts' `Literal[False]` fields stand). Wiring it in is the
+  lifecycle owner's increment.
+- **MCP executes one tool.** Only `get_risk_state` has a handler in
+  the paper composition root; all other tools list per allow-list but
+  refuse calls with 409. Registering handlers (especially any
+  approval-tier write tool) is a separate gated increment per tool.
+- **Twin source is published, not consumed.** `allocator_sources_with_twin`
+  emits the `currency_twin` evidence record, but A13's context still
+  compiles only from `INPUT_NAMES`; no allocator weighting reads the
+  twin signal yet.
+- **Recovery verifier is shadow-only.** Verdicts are recorded, never
+  enforced; the §13 8-gate quorum is not wired end to end (see the
+  deterministic REJECTED note above).
+- Everything in the Phase 1 "Still open" list above remains open
+  (INR activation, Rust services, cloud, live brokers, agent status).
+
+### Verification (this increment)
+
+- New tests: `test_mcp_api.py` 11, `test_strategy_promotion.py` 11,
+  `test_meta_allocator_twin.py` 9, `test_recovery_verifier_shadow.py`
+  6 — all pass. Module suites: MCP tools 16, councils 19, cost
+  governor 21, recovery verifier 13, currency twin 40, validation
+  fortress 14, meta-allocator agent 4, safety states 5, architecture
+  boundary 10 — all pass (179 passed across these files, 0 failed).
+- Existing API suites were run in the sandbox: every non-tempfile
+  test passes (e.g. `test_api.py` 12 passed, operator controls 10,
+  rejections 2, pending 1, health 1, recovery API 1). The remaining
+  results are **environment errors, not regressions**: the sandbox's
+  intermittent write guard makes `tempfile` report "No usable
+  temporary directory", erroring every `tmp_path`-fixture test at
+  setup (test_api 15, operator controls 3, meta-allocator API 3,
+  promotion store 4, incident/paper-recovery/risk-policy batches
+  similarly) on unmodified files identically. `test_api.py`'s one
+  failure is the Phase 1-documented Pydantic-version schema-parity
+  failure, also present on the unmodified tree. `test_promotion_contracts.py`
+  cannot collect in the sandbox venv (no `jsonschema` package); with
+  the package staged it passes 6/6.
+  The authoritative full-suite check remains the repo's GitHub
+  Actions CI.
+- Ruff check passes repo-wide (`src`, `tests`); Ruff format passes on
+  all Phase 2 new/changed files. Note for the record: mid-increment,
+  the sandbox write guard corrupted several new files during an
+  in-place formatter run; all were recreated through the safe write
+  channel and re-verified by size and test counts, and formatting was
+  finished via a stdin/stdout pass. No source content was lost.

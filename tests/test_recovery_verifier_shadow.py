@@ -1,0 +1,141 @@
+"""Recovery Verifier shadow mode on the operator paper-recovery path.
+
+The shadow verdict is recorded on the recovery receipt for comparison
+only. These tests prove the accept/refuse behaviour of
+``POST /api/v1/control/recover-paper`` is exactly the pre-shadow
+behaviour (200 on a gated recovery from NO_NEW_RISK; 401 without the
+recovery token; 503 when recovery is not configured; 409 for HALT,
+for recovery from NORMAL, and for idempotency-key reuse with a
+different reason) while the receipt additionally carries a well-formed
+``recovery_verifier_shadow`` field that survives idempotent replay.
+
+The app runs on the in-memory paper store: accept/refuse semantics and
+receipt recording are identical there, and replay equality is checked
+against the same store the receipt was recorded in.
+"""
+
+import json
+
+from fastapi.testclient import TestClient
+
+from ai_quant_os.api import create_app
+
+OPERATOR = "operator-secret"
+RECOVERY = "recovery-secret"
+RECOVER_URL = "/api/v1/control/recover-paper"
+REASON = "feed restored and paper ledger checked"
+
+
+def _client(*, recovery_token=RECOVERY):
+    return TestClient(create_app(operator_token=OPERATOR, recovery_token=recovery_token))
+
+
+def _control_headers(key: str) -> dict[str, str]:
+    return {"X-Operator-Token": OPERATOR, "Idempotency-Key": key}
+
+
+def _recovery_headers(key: str) -> dict[str, str]:
+    return {**_control_headers(key), "X-Recovery-Token": RECOVERY}
+
+
+def _stop(client: TestClient, state: str = "no-new-risk", key: str = "stop"):
+    response = client.post(
+        f"/api/v1/control/{state}",
+        json={"reason": "feed interruption"},
+        headers=_control_headers(key),
+    )
+    assert response.status_code == 200
+
+
+def _shadow(receipt: dict) -> dict:
+    raw = receipt["recovery_verifier_shadow"]
+    assert isinstance(raw, str)
+    return json.loads(raw)
+
+
+def test_accepted_recovery_carries_well_formed_shadow_verdict() -> None:
+    client = _client()
+    _stop(client)
+    response = client.post(
+        RECOVER_URL, json={"reason": REASON}, headers=_recovery_headers("recover")
+    )
+    assert response.status_code == 200
+    receipt = response.json()
+    # Pre-existing receipt fields are unchanged; exactly one field is added.
+    assert set(receipt) == {
+        "receipt_id",
+        "status",
+        "safety_state",
+        "reason",
+        "recovery_verifier_shadow",
+    }
+    assert receipt["status"] == "COMPLETED"
+    assert receipt["safety_state"] == "NORMAL"
+    assert receipt["reason"] == REASON
+    shadow = _shadow(receipt)
+    assert shadow["mode"] == "SHADOW"
+    # No independent replay exists on this path, so the section 13 quorum
+    # cannot be satisfied in shadow mode today: the verdict is REJECTED
+    # and names the missing independence gate. It still must not block.
+    assert shadow["verdict"] == "REJECTED"
+    assert "independent_replay" in shadow["failed_gates"]
+    assert all(isinstance(gate, str) for gate in shadow["failed_gates"])
+    assert shadow["evidence_refs"] == [f"paper-recovery:{receipt['receipt_id']}"]
+    assert client.get("/api/v1/risk").json()["safety_state"] == "NORMAL"
+
+
+def test_shadow_verdict_survives_idempotent_replay() -> None:
+    client = _client()
+    _stop(client)
+    first = client.post(RECOVER_URL, json={"reason": REASON}, headers=_recovery_headers("recover"))
+    assert first.status_code == 200
+    replay = client.post(RECOVER_URL, json={"reason": REASON}, headers=_recovery_headers("recover"))
+    assert replay.status_code == 200
+    assert replay.json() == first.json()
+
+
+def test_refusals_match_pre_shadow_behaviour() -> None:
+    client = _client()
+    # Recovery token missing -> 401, exactly as before the shadow existed.
+    _stop(client)
+    missing = client.post(RECOVER_URL, json={"reason": REASON}, headers=_control_headers("recover"))
+    assert missing.status_code == 401
+    # Idempotency key reused with a different reason -> 409.
+    accepted = client.post(
+        RECOVER_URL, json={"reason": REASON}, headers=_recovery_headers("recover")
+    )
+    assert accepted.status_code == 200
+    reused = client.post(
+        RECOVER_URL,
+        json={"reason": "changed reason"},
+        headers=_recovery_headers("recover"),
+    )
+    assert reused.status_code == 409
+
+
+def test_recovery_from_halt_is_refused_and_state_unchanged() -> None:
+    client = _client()
+    _stop(client, state="halt", key="halt")
+    response = client.post(
+        RECOVER_URL, json={"reason": REASON}, headers=_recovery_headers("recover")
+    )
+    assert response.status_code == 409
+    assert client.get("/api/v1/risk").json()["safety_state"] == "HALT"
+
+
+def test_recovery_from_normal_is_refused() -> None:
+    client = _client()
+    response = client.post(
+        RECOVER_URL, json={"reason": REASON}, headers=_recovery_headers("recover")
+    )
+    assert response.status_code == 409
+    assert client.get("/api/v1/risk").json()["safety_state"] == "NORMAL"
+
+
+def test_recovery_disabled_without_recovery_token() -> None:
+    client = _client(recovery_token=None)
+    _stop(client)
+    response = client.post(
+        RECOVER_URL, json={"reason": REASON}, headers=_recovery_headers("recover")
+    )
+    assert response.status_code == 503

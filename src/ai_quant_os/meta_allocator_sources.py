@@ -1,4 +1,11 @@
-"""Source-bound A13 portfolio evidence with explicit missing allocation inputs."""
+"""Source-bound A13 portfolio evidence with explicit missing allocation inputs.
+
+The currency-twin source added by :func:`allocator_sources_with_twin` is
+optional evidence only: the A13 allocator's context still compiles from
+``INPUT_NAMES``, so allocation behaviour is unchanged whether or not the
+twin source is present -- the bounded signal is published for consumers,
+never auto-traded.
+"""
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -10,6 +17,7 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from ai_quant_os.agent_context import EvidenceRecord, SourceBinding
+from ai_quant_os.currency_twin import CurrencyTwin, pair_score
 from ai_quant_os.graph_ledger import GraphReceipt
 from ai_quant_os.portfolio import PortfolioExposure
 from ai_quant_os.risk import RiskLimits
@@ -55,7 +63,9 @@ class PortfolioObservation(BaseModel):
 class RiskObservation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     as_of: AwareDatetime
-    safety_state: Literal["NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"]
+    safety_state: Literal[
+        "NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"
+    ]
     max_order_exposure: Decimal = Field(gt=0, allow_inf_nan=False)
     max_portfolio_exposure: Decimal = Field(gt=0, allow_inf_nan=False)
     risk_budget_status: Literal["UNCALIBRATED"] = "UNCALIBRATED"
@@ -208,4 +218,114 @@ def allocator_sources_v3(
         return record
 
     sources["strategy_set"] = SourceBinding("STRATEGY_REGISTRY_READ", "GENERAL", fetch)
+    return sources
+
+
+class TwinPairObservation(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    as_of: AwareDatetime
+    availability: Literal["AVAILABLE"] = "AVAILABLE"
+    instrument_id: str = Field(min_length=1, max_length=32)
+    base_currency: str = Field(pattern=r"^[A-Z]{3}$")
+    quote_currency: str = Field(pattern=r"^[A-Z]{3}$")
+    pair_score: Decimal = Field(ge=-1, le=1, allow_inf_nan=False)
+    combined_confidence: Decimal = Field(ge=0, le=1, allow_inf_nan=False)
+    coverage: Literal["SINGLE_INSTRUMENT"] = "SINGLE_INSTRUMENT"
+
+
+def twin_pair_signal(
+    twin_a: CurrencyTwin,
+    twin_b: CurrencyTwin,
+    *,
+    microstructure: Decimal = Decimal(0),
+    regime_state: Decimal = Decimal(0),
+    event_state: Decimal = Decimal(0),
+    costs: Decimal = Decimal(0),
+) -> Decimal:
+    """Bounded twin signal in [-1, 1] for the pair ``twin_a`` / ``twin_b``.
+
+    Delegates to :func:`ai_quant_os.currency_twin.pair_score` and clamps the
+    result into [-1, 1]; the result is exactly ``Decimal(0)`` when the combined
+    confidence is below the ``pair_score`` confidence floor.
+    """
+    score = pair_score(
+        twin_a,
+        twin_b,
+        microstructure=microstructure,
+        regime_state=regime_state,
+        event_state=event_state,
+        costs=costs,
+    )
+    return max(Decimal(-1), min(Decimal(1), score))
+
+
+def allocator_sources_with_twin(
+    inputs: AllocationInputs,
+    *,
+    now: datetime,
+    twin_a: CurrencyTwin | None = None,
+    twin_b: CurrencyTwin | None = None,
+    microstructure: Decimal = Decimal(0),
+    regime_state: Decimal = Decimal(0),
+    event_state: Decimal = Decimal(0),
+    costs: Decimal = Decimal(0),
+) -> dict[str, SourceBinding]:
+    """Allocator sources, optionally extended with a currency-twin source.
+
+    The twin source is optional evidence only: the A13 allocator's context
+    still compiles from ``INPUT_NAMES``, so allocation behaviour is unchanged
+    whether or not the twin source is present -- the bounded signal is
+    published for consumers, never auto-traded. With neither twin supplied
+    this returns exactly ``allocator_sources(inputs, now=now)``.
+    """
+    sources = allocator_sources(inputs, now=now)
+    if twin_a is None and twin_b is None:
+        return sources
+    if twin_a is None or twin_b is None:
+        raise ValueError("Currency twin evidence requires both legs of the pair")
+    instrument_id = inputs.portfolio.instrument_id
+    if len(instrument_id) != 6 or not all("A" <= char <= "Z" for char in instrument_id):
+        raise ValueError("Currency twin evidence requires a six-letter instrument id")
+    base_currency, quote_currency = instrument_id[:3], instrument_id[3:]
+    if twin_a.currency != base_currency or twin_b.currency != quote_currency:
+        raise ValueError("Currency twin evidence does not match the portfolio instrument")
+    signal = twin_pair_signal(
+        twin_a,
+        twin_b,
+        microstructure=microstructure,
+        regime_state=regime_state,
+        event_state=event_state,
+        costs=costs,
+    )
+    combined = min(twin_a.overall_confidence(), twin_b.overall_confidence())
+    observation = TwinPairObservation(
+        as_of=now,
+        instrument_id=instrument_id,
+        base_currency=base_currency,
+        quote_currency=quote_currency,
+        pair_score=signal,
+        combined_confidence=combined,
+    )
+    encoded = json.dumps(
+        observation.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+    record = EvidenceRecord(
+        source_id=f"meta-allocator:currency_twin:{sha256(encoded.encode()).hexdigest()}",
+        as_of=now,
+        valid_until=now + timedelta(seconds=5),
+        trusted=True,
+        payload_json=encoded,
+    )
+
+    async def fetch(record=record):
+        return record
+
+    # "CURRENCY_TWIN_READ" is not a registered read tool: SourceBinding
+    # rejects any tool outside READ_TOOLS, so the twin evidence uses
+    # WORLD_STATE_READ -- the same tool currency_strength_sources binds
+    # for its currency_twins input.
+    sources["currency_twin"] = SourceBinding("WORLD_STATE_READ", "GENERAL", fetch)
     return sources
