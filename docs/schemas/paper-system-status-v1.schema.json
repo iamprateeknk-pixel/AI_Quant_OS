@@ -12,6 +12,6 @@
     "order_count": { "type": "integer", "minimum": 0 }
   },
   "$defs": {
-    "SafetyState": { "enum": ["NORMAL", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"] }
+    "SafetyState": { "enum": ["NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"] }
   }
 }

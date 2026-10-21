@@ -23,7 +23,7 @@ class RealtimeSnapshot(BaseModel):
     sequence: int = Field(strict=True, ge=1, le=2**53 - 1)
     captured_at: AwareDatetime
     valid_until: AwareDatetime
-    safety_state: Literal["NORMAL", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"]
+    safety_state: Literal["NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"]
     order_count: int = Field(strict=True, ge=0, le=100000)
     world: WorldState
 

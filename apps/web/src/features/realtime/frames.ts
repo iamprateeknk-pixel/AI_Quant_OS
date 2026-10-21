@@ -1,6 +1,6 @@
 export type RealtimeFrame = {
   epoch: string; sequence: number; captured_at: string; valid_until: string;
-  safety_state: "NORMAL" | "NO_NEW_RISK" | "FLATTEN_ONLY" | "HALT"; order_count: number;
+  safety_state: "NORMAL" | "CAUTION" | "REDUCED_RISK" | "NO_NEW_RISK" | "FLATTEN_ONLY" | "HALT"; order_count: number;
   world_version: string; world_status: string;
   instruments: {instrument_id: string; quote_status: string; history_status: string; bar_count: number; regime: string; mid_price:string|null; spread_bps:string|null; return_bps:string|null; realized_volatility_bps:string|null}[];
   currency_twins:{currency:string;instrument_ids:string[];fresh_quote_count:number;macro_available:boolean}[];
@@ -21,7 +21,7 @@ export function frameCurrent(frame: RealtimeFrame, now: number): boolean {
   return Number.isFinite(now) && Date.parse(frame.captured_at) <= now+MAX_FUTURE_CLOCK_SKEW_MS && now < Date.parse(frame.valid_until);
 }
 export function parseRealtimeFrame(value: unknown, now: number): RealtimeFrame | null {
-  if (!record(value) || value.schema_version !== "1.0" || value.mode !== "PAPER" || typeof value.epoch !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(value.epoch) || !Number.isSafeInteger(value.sequence) || (value.sequence as number)<1 || !stamp(value.captured_at) || !stamp(value.valid_until) || !includes(["NORMAL","NO_NEW_RISK","FLATTEN_ONLY","HALT"],value.safety_state) || !Number.isSafeInteger(value.order_count) || (value.order_count as number)<0 || (value.order_count as number)>100000 || !record(value.world)) return null;
+  if (!record(value) || value.schema_version !== "1.0" || value.mode !== "PAPER" || typeof value.epoch !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(value.epoch) || !Number.isSafeInteger(value.sequence) || (value.sequence as number)<1 || !stamp(value.captured_at) || !stamp(value.valid_until) || !includes(["NORMAL","CAUTION","REDUCED_RISK","NO_NEW_RISK","FLATTEN_ONLY","HALT"],value.safety_state) || !Number.isSafeInteger(value.order_count) || (value.order_count as number)<0 || (value.order_count as number)>100000 || !record(value.world)) return null;
   const world=value.world;
   if(world.schema_version!=="1.0" || world.source!=="PAPER_SIMULATED" || typeof world.world_state_version!=="string" || !/^world:[a-f0-9]{64}$/.test(world.world_state_version) || !stamp(world.as_of) || Date.parse(world.as_of)!==Date.parse(value.captured_at) || !stamp(world.valid_until) || !includes(["EMPTY","READY","DEGRADED"],world.status) || !Array.isArray(world.instruments) || world.instruments.length<1 || world.instruments.length>8) return null;
   const start=Date.parse(value.captured_at),end=Date.parse(value.valid_until);

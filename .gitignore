@@ -13,3 +13,8 @@ node_modules/
 .next/
 .playwright-cli/
 .strategy-registry/
+.task-temp/
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+.venv-test/

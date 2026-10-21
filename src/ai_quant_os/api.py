@@ -107,7 +107,7 @@ from ai_quant_os.monitoring_journal import MonitoringJournal
 from ai_quant_os.monitoring_journal_api import install_monitoring_journal_routes
 from ai_quant_os.contracts import TradeIntent
 from ai_quant_os.currency_portfolio import FxRate, summarize_currency_portfolio
-from ai_quant_os.currency_risk import CurrencyRiskContext, CurrencyRiskPolicy
+from ai_quant_os.currency_risk import CurrencyRiskContext
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
 from ai_quant_os.paper_market_ingress import require_paper_prices
 from ai_quant_os.broker import BrokerRouter, SimulatedBroker
@@ -124,7 +124,8 @@ from ai_quant_os.operator_session_api import OperatorAuthorization
 from ai_quant_os.operator_control_api import install_operator_control_routes
 from ai_quant_os.broker_route_control_api import install_broker_route_control_routes
 from ai_quant_os.portfolio import PaperFill, summarize_position
-from ai_quant_os.risk import RiskKernel, RiskLimits, SafetyState
+from ai_quant_os.risk import RiskKernel, SafetyState
+from ai_quant_os.risk_policy import PaperRiskPolicy, load_risk_policy
 from ai_quant_os.research_api import install_research_routes
 from ai_quant_os.provider_call_admission import (
     AdmittedClassifier,
@@ -419,6 +420,7 @@ def create_app(
     collector_trace_file: Path | None = None,
     monitoring_alert_source: MonitoringAlertSource | None = None,
     holdout_rpc_client=None,
+    risk_policy: PaperRiskPolicy | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -448,14 +450,12 @@ def create_app(
         if os.getenv("AI_QUANT_DEMO_SYNC_STATE")
         else None
     )
-    limits = RiskLimits(
-        max_order_exposure=Decimal("1000"),
-        max_portfolio_exposure=Decimal("1500"),
-        max_quote_age_seconds=5,
-    )
-    currency_policy = CurrencyRiskPolicy(
-        "USD", Decimal("2000"), Decimal("4000"), 5, PAPER_INSTRUMENTS
-    )
+    # Versioned risk policy (V3.2 sections 28/34). Defaults reproduce the
+    # ceilings that used to be literals here; AI_QUANT_RISK_POLICY_PATH may
+    # point at a versioned JSON policy file. See risk_policy.py.
+    configured_risk_policy = risk_policy if risk_policy is not None else load_risk_policy()
+    limits = configured_risk_policy.risk_limits()
+    currency_policy = configured_risk_policy.currency_policy(PAPER_INSTRUMENTS)
     configured_classifier = (
         fast_classifier if fast_classifier is not None else jev_from_environment()
     )
