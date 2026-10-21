@@ -1,5 +1,14 @@
 # Repair sandbox admission
 
+## Current local evidence (2026-10-14)
+
+Docker Desktop is running on the fixed Linux endpoint. The pinned image returns
+`PREREQUISITES_PRESENT`; live dependency and fixed adversarial probes passed, and
+the repair create/admission/removal path passed on a synthetic source fixture.
+See `docs/evaluations/repair-runtime-live-0160.json`. Candidate/verifier execution,
+independent behavioral verification, durable execution recovery and promotion
+remain disabled.
+
 ## Delivered
 
 `DockerConfinement` is a fail-closed **prerequisite and created-container metadata
@@ -78,8 +87,10 @@ non-v2 cgroups are not admitted by this initial fixed policy.
 Next: restore a usable local isolated runtime, prepare an owned pinned offline
 toolchain and verifier program, run the actual behavioral worker, validate live
 kernel confinement and timeout/output/cleanup failure paths, then retain candidate
-source/version-bound verification evidence. Shadow/canary, incident closure,
-Temporal repair stages and gated recovery/rollback remain required.
+source/version-bound verification evidence. Shadow/canary, critical/agent
+incident resolution, Temporal repair stages and gated recovery/rollback remain
+required. Quote incident acknowledgement is available separately through the
+watchdog.
 
 Parent-side Docker reads now use a streaming combined-output cap with command
 termination/reaping instead of collecting unbounded output before checking size.

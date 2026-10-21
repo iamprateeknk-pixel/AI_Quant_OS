@@ -8,7 +8,12 @@ from ai_quant_os.backtest import BacktestCosts
 from ai_quant_os.market_data import BarDataset
 from ai_quant_os.nautilus_contracts import NautilusResult
 from ai_quant_os.strategy_contracts import StrategyBinding, StrategyGenome
-from ai_quant_os.strategy_registry import StrategyRegistry, prepare_builtin, verify_implementation
+from ai_quant_os.strategy_registry import (
+    StrategyRegistry,
+    builtin_catalog,
+    prepare_builtin,
+    verify_implementation,
+)
 from ai_quant_os.tick_data import TickDataset
 from ai_quant_os.directional_strategy import DIRECTIONAL_REF
 
@@ -26,6 +31,7 @@ def run_registered_backtest(
     registry: StrategyRegistry,
     *,
     quantity: int = 1,
+    expected_catalog_sha256: str | None = None,
 ) -> RegisteredBacktest:
     from ai_quant_os.nautilus_runtime import (
         run_nautilus_backtest,
@@ -36,7 +42,9 @@ def run_registered_backtest(
     expected = BarDataset if genome.input_kind == "BAR" else TickDataset
     if not isinstance(dataset, expected):
         raise ValueError("Strategy input does not match genome")
-    plugin, binding = prepare_builtin(genome, registry)
+    plugin, binding = prepare_builtin(
+        genome, registry, expected_catalog_sha256=expected_catalog_sha256
+    )
     runner = run_nautilus_backtest if genome.input_kind == "BAR" else run_nautilus_tick_backtest
     if genome.strategy_ref == DIRECTIONAL_REF:
         runner = run_nautilus_directional_backtest
@@ -44,4 +52,6 @@ def run_registered_backtest(
     verify_implementation(binding.implementation)
     if registry.get(genome.strategy_ref) != binding.implementation:
         raise ValueError("Registered implementation changed during execution")
+    if expected_catalog_sha256 is not None and builtin_catalog()[0] != expected_catalog_sha256:
+        raise ValueError("Built-in strategy catalog changed during execution")
     return RegisteredBacktest(result, binding)

@@ -41,8 +41,10 @@ output. No proposed workflow is dispatched. Actual deterministic risk services
 continue to own containment and recovery. Reading evidence deliberately avoids
 the existing mutating paper reconciliation control path.
 
-A01 0.2.0 retains its six-specialist wake policy. It reports A18 0.2.0 as
-UNSUPPORTED; adding A18 scheduling requires a new supervisor policy/version.
+A01 0.2.0 retains its six-specialist wake policy. A01 0.4.0 adds declared
+market, data, event and drift review cohorts. A01 0.5.0 adds a separate
+`INCIDENT_REVIEW` cohort that dispatches only A18 0.2.0; it does not dispatch
+the resulting workflow. See `TASK_SUPERVISOR_HANDOFF.md` and ADR 0216.
 
 ## Evidence and remaining work
 

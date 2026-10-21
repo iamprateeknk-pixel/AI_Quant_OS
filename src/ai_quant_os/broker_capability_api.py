@@ -21,13 +21,20 @@ Operation = Literal[
     "POSITIONS_READ",
     "ACTIVE_ORDERS_READ",
     "DEALS_READ",
+    "DEMO_ORDER_SUBMIT_EXPLICIT",
+    "DEMO_ORDER_RECONCILE_READ_ONLY",
 ]
 
 
 class BrokerCapability(ObservationModel):
     broker_id: Literal["PAPER", "EXNESS_MT5_DEMO", "EXNESS", "IBKR", "ZERODHA"]
     profile_version: Literal["0.1.0"] = "0.1.0"
-    implementation: Literal["PAPER_SIMULATOR", "DEMO_OBSERVATION_LIBRARY", "DISABLED_SKELETON"]
+    implementation: Literal[
+        "PAPER_SIMULATOR",
+        "DEMO_OBSERVATION_LIBRARY",
+        "ISOLATED_DEMO_ORDER_CLI",
+        "DISABLED_SKELETON",
+    ]
     operations: tuple[Operation, ...] = Field(max_length=9)
     source_module: str = Field(pattern=r"^ai_quant_os\.[a-z0-9_]+$", max_length=96)
     bound_to_execution_router: bool = Field(strict=True)

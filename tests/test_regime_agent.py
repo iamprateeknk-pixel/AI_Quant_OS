@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from ai_quant_os.api import create_app
+from ai_quant_os.graph_runtime import AgentImplementation
 from ai_quant_os.market_data import Bar
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -144,6 +145,33 @@ def test_real_agent_executes_through_graph_with_versioned_envelope(tmp_path, kin
     ) as client:
         archived = client.get("/api/v1/agents/graph-runs/regime-1", headers=HEADERS)
         assert archived.json()["receipt"] == receipt
+
+
+def test_agent_failure_is_contained_while_paper_core_remains_available(tmp_path):
+    app = create_app(
+        operator_token="fixture",
+        clock=lambda: NOW,
+        paper_db_path=tmp_path / "paper.sqlite3",
+    )
+    with TestClient(app) as client:
+        runtime = app.state.graph_runtime
+        key = ("A02", "0.2.0")
+        installed = runtime._implementations[key]
+
+        async def failed_handler(_invocation):
+            raise RuntimeError("private agent failure")
+
+        runtime._implementations[key] = AgentImplementation(
+            installed.manifest_ref, installed.output_schema, failed_handler
+        )
+        publish(client, [Decimal(1) + Decimal("0.001") * i for i in range(64)])
+        _, receipt = execute(client, "failed-agent-run")
+        assert receipt["status"] == "FAILED"
+        assert receipt["output_json"] is None
+        assert "private agent failure" not in json.dumps(receipt)
+        assert client.get("/api/v1/system/status").status_code == 200
+        assert client.get("/api/v1/orders").status_code == 200
+        assert client.get("/api/v1/risk").json()["safety_state"] == "NORMAL"
 
 
 def test_horizon_disagreement_is_reported(tmp_path):

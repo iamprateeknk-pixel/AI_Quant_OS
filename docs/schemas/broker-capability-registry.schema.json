@@ -24,6 +24,7 @@
           "enum": [
             "PAPER_SIMULATOR",
             "DEMO_OBSERVATION_LIBRARY",
+            "ISOLATED_DEMO_ORDER_CLI",
             "DISABLED_SKELETON"
           ],
           "title": "Implementation",
@@ -40,7 +41,9 @@
               "ACCOUNT_READ",
               "POSITIONS_READ",
               "ACTIVE_ORDERS_READ",
-              "DEALS_READ"
+              "DEALS_READ",
+              "DEMO_ORDER_SUBMIT_EXPLICIT",
+              "DEMO_ORDER_RECONCILE_READ_ONLY"
             ],
             "type": "string"
           },

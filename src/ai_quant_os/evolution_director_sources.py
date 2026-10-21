@@ -7,6 +7,7 @@ from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictInt
 
+from ai_quant_os.agent_quality import operational_quality_observation
 from ai_quant_os.agent_context import EvidenceRecord, SourceBinding
 from ai_quant_os.agent_registry import AgentRegistry
 
@@ -35,7 +36,14 @@ class AgentRegistryObservation(BaseModel):
     planned_mission_count: StrictInt = Field(ge=0, le=128)
 
 
-def evolution_sources(registry: AgentRegistry, *, now: datetime) -> dict[str, SourceBinding]:
+def evolution_sources(
+    registry: AgentRegistry,
+    *,
+    now: datetime,
+    quality_receipts: tuple[object, ...] | None = None,
+    quality_traces: tuple[object, ...] | None = None,
+    quality_unavailable_reason="GRAPH_LEDGER_UNAVAILABLE",
+) -> dict[str, SourceBinding]:
     if type(now) is not datetime or now.tzinfo is None or type(registry) is not AgentRegistry:
         raise ValueError("Current server-owned evolution evidence required")
     manifests = registry.manifests()
@@ -57,8 +65,14 @@ def evolution_sources(registry: AgentRegistry, *, now: datetime) -> dict[str, So
         partial_mission_count=sum(row["implementation_status"] == "PARTIAL" for row in rows),
         planned_mission_count=sum(row["implementation_status"] == "PLANNED" for row in rows),
     )
+    quality = operational_quality_observation(
+        registry,
+        quality_receipts,
+        traces=quality_traces,
+        now=now,
+        unavailable_reason=quality_unavailable_reason,
+    )
     gaps = {
-        "quality_metrics": "CALIBRATED_QUALITY_METRICS_NOT_CONNECTED",
         "training_datasets": "TRAINING_DATASET_CATALOG_NOT_CONNECTED",
         "costs": "TOKEN_AND_MONETARY_COSTS_NOT_CONNECTED",
         "traces": "CAUSAL_TRACE_QUALITY_NOT_CONNECTED",
@@ -70,6 +84,10 @@ def evolution_sources(registry: AgentRegistry, *, now: datetime) -> dict[str, So
         )
         for name, reason in gaps.items()
     }
+    payloads["quality_metrics"] = (
+        quality,
+        "ATTRIBUTION_READ",
+    )
     payloads["agent_registry"] = (inventory, "HEALTH_READ")
     sources = {}
     for name, (payload, tool) in payloads.items():

@@ -67,6 +67,20 @@ def test_recorded_spreads_execute_next_tick_and_reconcile_short_reversal():
     assert result == run(ticks())
 
 
+def test_recorded_tick_event_budget_rejects_before_copying_source(monkeypatch):
+    import ai_quant_os.native_tick_evidence as evidence
+
+    source = ticks()
+    monkeypatch.setattr(evidence, "MAX_NATIVE_REPLAY_EVENTS", 3, raising=False)
+
+    def unexpected_copy(self, rows):
+        pytest.fail("oversized dataset was copied before the event-budget check")
+
+    monkeypatch.setattr(TickDataset, "__init__", unexpected_copy)
+    with pytest.raises(ValueError, match="event budget"):
+        run(source)
+
+
 def test_open_short_is_marked_at_final_quote_midpoint():
     class Short:
         def target_position(self, history):
@@ -168,6 +182,22 @@ def test_recorded_spread_cannot_be_replaced_with_synthetic_slippage():
     with pytest.raises(ValueError, match="zero synthetic slippage"):
         run_nautilus_tick_backtest(
             ticks(), Flip(), BacktestCosts(Decimal(1), Decimal(0)), strategy_ref="fixture@1.0.0"
+        )
+
+
+def test_bar_streaming_strategy_is_refused_for_recorded_quote_replay():
+    from ai_quant_os.nautilus_runtime import run_nautilus_tick_backtest
+
+    class BarOnly:
+        def on_bar(self, bar):
+            pass
+
+        def target_position(self):
+            return 0
+
+    with pytest.raises(ValueError, match="Bar streaming strategies"):
+        run_nautilus_tick_backtest(
+            ticks(), BarOnly(), BacktestCosts(Decimal(0), Decimal(0)), strategy_ref="bar-only@1.0"
         )
 
 

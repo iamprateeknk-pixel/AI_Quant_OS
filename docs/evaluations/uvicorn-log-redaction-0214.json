@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "uvicorn-log-redaction-0214",
+  "date": "2026-10-19",
+  "started_at": "2026-10-19T18:08:59Z",
+  "completed_at": "2026-10-19T18:09:06Z",
+  "source_revision": "57f2c64148b7dd6282c92e7ee9c630daeaf8e4d2",
+  "scope": "LOCAL_PAPER_UVICORN_EXCEPTION_LOG_REDACTION",
+  "test_command_scope": [
+    "tests/test_local_api_logging.py",
+    "tests/test_paper_http_metrics.py",
+    "tests/test_paper_telemetry.py",
+    "tests/test_paper_trace_context.py"
+  ],
+  "result": {
+    "passed": 37,
+    "failed": 0,
+    "duration_seconds": 4.31,
+    "status": "PASS"
+  },
+  "verified": [
+    "The application emits a trace-correlated failure summary containing only a validated route template, fixed method, and bounded status.",
+    "The local launcher configures Uvicorn's actual error logger to suppress exception messages and traceback frames before formatting.",
+    "A 5xx response increments the bounded failure metric and a failing logging sink cannot alter the response.",
+    "Raw request path, query value, and exception message are absent from the application failure summary and configured Uvicorn exception output.",
+    "Ruff lint and formatting pass for changed Python files."
+  ],
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "Redaction is installed only by the supplied local Uvicorn launcher; direct ASGI embedding or a different server needs its own log policy.",
+    "Failure summaries remain process output and are not persisted, collected, or externally forwarded.",
+    "No independent security review or broader P00-P13 acceptance was performed; all P00-P13 release gates remain open."
+  ]
+}

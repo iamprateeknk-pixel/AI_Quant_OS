@@ -28,8 +28,11 @@ deadline. Terminal receipts from API execution/resume are observed immediately.
 Normal shutdown and startup cancellation drain in-flight state operations, including
 repeated cancellation and late write failure. Failed required Temporal startup
 cleans graph/worker references and never leaves a watchdog task running. Forced
-process/event-loop termination cannot guarantee completing disk I/O. One owner
-process per paper file remains required; cross-process leases remain unfinished.
+process/event-loop termination cannot guarantee completing disk I/O. The API
+lifespan holds a crash-released kernel owner lock for the persistent PAPER root,
+so a second API process using that root is refused before serving requests. This
+is local-filesystem single-owner coordination, not a distributed or multi-host lease;
+other programs writing the SQLite files must not run concurrently.
 
 ## Failure taxonomy
 
@@ -73,11 +76,12 @@ Corrupt journal restore refuses startup. Preserve both files for forensic repair
 Pinned quarantine denies context admission and tool access. The ordinary registry
 lifecycle setter cannot turn a pinned version ACTIVE, LIMITED or SHADOW. Other
 versions retain their own lifecycle. No agent gains control, credential, broker or
-deployment tools. The existing manual recovery command now also refuses **every
-open health incident**, even after its source later appears healthy. No automatic
-unquarantine, incident resolution or safety downgrade exists in this increment.
-Those operations require the unfinished independently verified repair and
-shadow/canary recovery gates.
+deployment tools. The existing manual recovery command refuses while any health
+incident remains open. An operator may close only a quote incident after the
+watchdog observes a fresh trusted quote for that instrument. Closure appends an
+audited transition and does not lower risk state; a later matching failure
+reopens the incident. Agent incidents cannot be closed, and closure never clears
+quarantine. Safety recovery remains a separate gated paper workflow.
 
 ## Protected commands
 
@@ -89,6 +93,7 @@ All routes require `X-Operator-Token` and valid owning audit/journal integrity.
 | `POST /api/v1/paper/health/scan` | Current server-source scan; accepts no health verdict or agent identity |
 | `GET /api/v1/paper/health/incidents` | Metadata for bounded retained incidents |
 | `GET /api/v1/paper/health/incidents/{incident_id}` | Complete first-observation evidence |
+| `POST /api/v1/paper/health/incidents/{incident_id}/close` | Close a quote incident after a fresh trusted quote; requires `Idempotency-Key` and a reason |
 
 New-incident logs contain only content identity, taxonomy code and actual safety
 state; source prices, model payloads, credentials and raw error messages are not
@@ -124,6 +129,7 @@ The agent failure is an injected test mission, not a credentialed model call or
 evidence that all eighteen missions have been implemented.
 
 Full failure coverage, service heartbeats, running/orphan detection, monitoring
-budgets/latency guarantees, retention and incident closure, durable multi-process
-leases, candidate repair branches, independent verification, shadow/canary release,
-rollback automation and production review remain. P11/P13 are unfinished.
+budgets/latency guarantees, retention, durable multi-process leases, candidate
+repair branches, independent verification, shadow/canary release, rollback
+automation and production review remain. Quote closure is implemented; critical
+incident resolution remains gated. P11/P13 are unfinished.

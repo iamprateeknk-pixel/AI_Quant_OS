@@ -23,6 +23,8 @@ from ai_quant_os.repair_jobs import (
 from ai_quant_os.repair_containers import (
     prepared_repair_container,
     cleanup_retained_repair_container,
+    run_repair_verifier,
+    read_repair_execution,
 )
 
 
@@ -67,6 +69,15 @@ def main(argv: list[str] | None = None) -> int:
     admit.add_argument("--suite-sha256", required=True)
     admit.add_argument("--suite-file", required=True, type=Path)
     admit.add_argument("--graph-store", type=Path)
+    execute = commands.add_parser(
+        "execute",
+        help="Run the pinned verifier once in the owned Linux sandbox; result stays unattested",
+    )
+    execute.add_argument("candidate_id")
+    execute.add_argument("--image-id", required=True)
+    execute.add_argument("--suite-sha256", required=True)
+    execute.add_argument("--suite-file", required=True, type=Path)
+    execute.add_argument("--graph-store", type=Path)
     cleanup = commands.add_parser(
         "cleanup", help="Reconcile a retained job's exact owned container after restart"
     )
@@ -89,6 +100,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     sandbox.add_argument("--image-id", required=True)
     sandbox.add_argument("--suite-sha256", required=True)
+    execution_status = commands.add_parser(
+        "execution-status", help="Read retained verifier evidence without contacting Docker"
+    )
+    execution_status.add_argument("owner")
     args = parser.parse_args(argv)
     try:
         if args.command == "sandbox-status":
@@ -104,6 +119,13 @@ def main(argv: list[str] | None = None) -> int:
                     sort_keys=True,
                 )
             )
+            return 0
+        if args.command == "execution-status":
+            root = (
+                args.root if args.root is not None else args.repository / "data-local" / "repairs"
+            )
+            report = read_repair_execution(root / "jobs", args.owner)
+            print(json.dumps(asdict(report), sort_keys=True))
             return 0
         plan = None
         if args.command == "prepare":
@@ -123,15 +145,16 @@ def main(argv: list[str] | None = None) -> int:
                 )
         root = args.root if args.root is not None else args.repository / "data-local" / "repairs"
         workspace = RepairWorkspace(args.repository, root, health, registry)
-        if args.command in {"admit", "cleanup", "cleanup-staging"}:
+        if args.command in {"admit", "execute", "cleanup", "cleanup-staging"}:
             policy = (
                 None
                 if args.command == "cleanup-staging"
                 else DockerConfinement(args.image_id, args.suite_sha256)
             )
             source = workspace.snapshot(args.candidate_id)
-            with args.suite_file.open("rb") as suite:
-                program = suite.read(65537)
+            from ai_quant_os.repair_image_inputs import read_repair_image_input
+
+            program = read_repair_image_input(args.suite_file, 65536)
             replay = (
                 None if args.graph_store is None else load_incident_replay(source, args.graph_store)
             )
@@ -157,6 +180,23 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 receipt = cleanup_retained_repair_container(policy, job)
                 receipt["candidate_id"] = source.candidate_id
+            elif args.command == "execute":
+                with prepared_repair_job(
+                    source,
+                    program,
+                    suite_sha256=args.suite_sha256,
+                    root=root / "jobs",
+                    replay=replay,
+                ) as job:
+                    with prepared_repair_container(policy, job) as created:
+                        execution = run_repair_verifier(policy, job, created)
+                        receipt = {
+                            "evidence_root": str((root / "jobs").resolve()),
+                            "candidate_id": source.candidate_id,
+                            **asdict(execution),
+                            "stdout_artifact": f"repair-execution-{created.owner}.stdout",
+                            "stderr_artifact": f"repair-execution-{created.owner}.stderr",
+                        }
             else:
                 with prepared_repair_job(
                     source,
@@ -219,7 +259,11 @@ def main(argv: list[str] | None = None) -> int:
                 regression_plan=tuple(plan.regression_plan),
             )
         print(json.dumps(receipt, sort_keys=True))
-        return 0
+        return (
+            1
+            if args.command == "execute" and (receipt["exit_code"] != 0 or receipt["oom_killed"])
+            else 0
+        )
     except (ValueError, OSError, RuntimeError, sqlite3.Error, subprocess.TimeoutExpired):
         parser.exit(
             2,

@@ -2,6 +2,28 @@ const names = ["paper.http", "paper.market.snapshot", "paper.risk.evaluate", "pa
 const stringFields = ["http_method", "http_route", "risk_decision", "order_id", "order_status", "envelope_id", "parent_envelope_id", "agent_route", "review_status"] as const;
 export type CollectorSpan = {trace_id: string; span_id: string; parent_span_id: string | null; name: typeof names[number]; start_ns: string; end_ns: string; status: "UNSET" | "OK" | "ERROR"; http_status: number | null} & Record<typeof stringFields[number], string | null>;
 export type CollectorTrace = {schema_version: "1.0"; mode: "PAPER"; delivery_verified: false; independently_attested: false; complete_trace: false; trace_id: string; observed_at: string; state: "RECORDED_SPANS" | "NOT_OBSERVED" | "DISABLED" | "UNAVAILABLE"; spans: CollectorSpan[]; files: {ordinal: number; prefix_bytes: number; prefix_sha256: string}[]};
+export function orderCollectorSpans(spans: CollectorSpan[]): {span: CollectorSpan; depth: number}[] {
+  const byId=new Map(spans.map(span=>[span.span_id,span]));
+  const originalIndex=new Map(spans.map((span,index)=>[span.span_id,index]));
+  const children=new Map<string,CollectorSpan[]>();
+  const roots:CollectorSpan[]=[];
+  for(const span of spans){
+    const parent=span.parent_span_id?byId.get(span.parent_span_id):undefined;
+    if(!parent) roots.push(span);
+    else {const siblings=children.get(parent.span_id)??[];siblings.push(span);children.set(parent.span_id,siblings);}
+  }
+  const chronological=(left:CollectorSpan,right:CollectorSpan)=>{
+    const leftStart=BigInt(left.start_ns),rightStart=BigInt(right.start_ns);
+    return leftStart<rightStart?-1:leftStart>rightStart?1:originalIndex.get(left.span_id)!-originalIndex.get(right.span_id)!;
+  };
+  const result:{span:CollectorSpan;depth:number}[]=[];
+  const visit=(span:CollectorSpan,depth:number)=>{
+    result.push({span,depth});
+    for(const child of (children.get(span.span_id)??[]).sort(chronological)) visit(child,depth+1);
+  };
+  for(const root of roots.sort(chronological)) visit(root,0);
+  return result;
+}
 const object = (v: unknown): Record<string, unknown> | null => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : null;
 const hex = (v: unknown, size: number): v is string => typeof v === "string" && new RegExp(`^[a-f0-9]{${size}}$`).test(v);
 export const validSdkTraceId = (v: unknown): v is string => hex(v, 32) && /[1-9a-f]/.test(v);

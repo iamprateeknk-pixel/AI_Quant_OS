@@ -106,9 +106,8 @@ Build/type checking, lint and staged secret scanning passed. All 64 prior schema
 remain unchanged. This is local development evidence, not independent acceptance.
 
 P12 and the full P00–P13 objective remain incomplete. Outstanding P12 work includes
-pending-action administrative cancellation/archival, recovery/incident workflow UI, denial
-audit/rate limits, complete
-session lifecycle/resource shutdown, realtime sequence-gap recovery, stale-data
+pending-action administrative cancellation/archival, recovery/incident workflow UI,
+denial audit/rate limits, complete session lifecycle/resource shutdown, stale-data
 indication, all remaining service views, observability/cost governance, reference
 visual regression and independent accessibility/security review. Tab closure can
 discard the browser checkpoint; retain the displayed action UUID for backend

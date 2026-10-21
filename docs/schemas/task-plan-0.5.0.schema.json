@@ -1,0 +1,395 @@
+{
+  "$defs": {
+    "TaskDeferredTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "pattern": "^A(0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "maxLength": 32,
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "manifest_ref": {
+          "pattern": "^agent-manifest:[a-f0-9]{64}$",
+          "title": "Manifest Ref",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "PLANNED",
+            "UNSUPPORTED",
+            "QUARANTINED",
+            "HEALTH_ERROR",
+            "NOT_REQUESTED"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_id",
+        "agent_version",
+        "manifest_ref",
+        "reason"
+      ],
+      "title": "TaskDeferredTarget",
+      "type": "object"
+    },
+    "TaskSpecialistCall": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "pattern": "^A(0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "maxLength": 32,
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "manifest_ref": {
+          "pattern": "^agent-manifest:[a-f0-9]{64}$",
+          "title": "Manifest Ref",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^supervisor_[a-f0-9]{64}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "CREATED",
+                "RUNNING",
+                "COMPLETED",
+                "UNAVAILABLE",
+                "EXPIRED",
+                "DENIED",
+                "WAIT_FOR_DATA",
+                "INVALID",
+                "FAILED",
+                "TIMEOUT",
+                "UNCERTAIN"
+              ],
+              "type": "string"
+            },
+            {
+              "enum": [
+                "NOT_STARTED_PERMISSION",
+                "NOT_STARTED_SOURCE"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Status"
+        },
+        "context_ref": {
+          "anyOf": [
+            {
+              "pattern": "^agent-context:[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context Ref"
+        },
+        "output_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Sha256"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Until"
+        },
+        "requires_escalation": {
+          "const": true,
+          "default": true,
+          "title": "Requires Escalation",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "agent_id",
+        "agent_version",
+        "manifest_ref",
+        "run_id",
+        "status"
+      ],
+      "title": "TaskSpecialistCall",
+      "type": "object"
+    },
+    "WakeTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "pattern": "^A(0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "maxLength": 32,
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "manifest_ref": {
+          "pattern": "^agent-manifest:[a-f0-9]{64}$",
+          "title": "Manifest Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_id",
+        "agent_version",
+        "manifest_ref"
+      ],
+      "title": "WakeTarget",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent_id": {
+      "const": "A01",
+      "default": "A01",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "agent_version": {
+      "const": "0.5.0",
+      "default": "0.5.0",
+      "title": "Agent Version",
+      "type": "string"
+    },
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "1",
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
+      "type": "boolean"
+    },
+    "output_type": {
+      "const": "TaskPlan",
+      "default": "TaskPlan",
+      "title": "Output Type",
+      "type": "string"
+    },
+    "policy_version": {
+      "const": "paper-task-supervisor-v2",
+      "default": "paper-task-supervisor-v2",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "task_kind": {
+      "enum": [
+        "MARKET_REVIEW",
+        "DATA_REVIEW",
+        "EVENT_REVIEW",
+        "DRIFT_REVIEW",
+        "INCIDENT_REVIEW"
+      ],
+      "title": "Task Kind",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
+      "type": "string"
+    },
+    "hard_gate_owner": {
+      "const": "RiskKernel",
+      "default": "RiskKernel",
+      "title": "Hard Gate Owner",
+      "type": "string"
+    },
+    "max_calls": {
+      "maximum": 7,
+      "minimum": 1,
+      "title": "Max Calls",
+      "type": "integer"
+    },
+    "dispatch_mode": {
+      "const": "SEQUENTIAL_PARENT_DEADLINE",
+      "default": "SEQUENTIAL_PARENT_DEADLINE",
+      "title": "Dispatch Mode",
+      "type": "string"
+    },
+    "parent_context_ref": {
+      "pattern": "^agent-context:[a-f0-9]{64}$",
+      "title": "Parent Context Ref",
+      "type": "string"
+    },
+    "world_state_version": {
+      "pattern": "^world:[a-f0-9]{64}$",
+      "title": "World State Version",
+      "type": "string"
+    },
+    "health_status": {
+      "enum": [
+        "UNAVAILABLE",
+        "RESTORED_ONLY",
+        "MONITORED",
+        "ERROR"
+      ],
+      "title": "Health Status",
+      "type": "string"
+    },
+    "selected": {
+      "items": {
+        "$ref": "#/$defs/WakeTarget"
+      },
+      "maxItems": 7,
+      "title": "Selected",
+      "type": "array"
+    },
+    "deferred": {
+      "items": {
+        "$ref": "#/$defs/TaskDeferredTarget"
+      },
+      "maxItems": 128,
+      "title": "Deferred",
+      "type": "array"
+    },
+    "calls": {
+      "items": {
+        "$ref": "#/$defs/TaskSpecialistCall"
+      },
+      "maxItems": 7,
+      "title": "Calls",
+      "type": "array"
+    }
+  },
+  "required": [
+    "task_id",
+    "input_refs",
+    "evidence_refs",
+    "created_at",
+    "valid_until",
+    "contradictions",
+    "trace_id",
+    "task_kind",
+    "max_calls",
+    "parent_context_ref",
+    "world_state_version",
+    "health_status",
+    "selected",
+    "deferred",
+    "calls"
+  ],
+  "title": "TaskPlan",
+  "type": "object"
+}

@@ -23,7 +23,7 @@ installed-command check is:
 ```
 
 `--run-seconds` accepts 0.1â€“60 seconds after readiness. `--checkout` identifies the
-frontend checkout; the API comes from the active Python installation. Keep those
+repository root containing `apps/web`; the API comes from the active Python installation. Keep those
 versions aligned. `--state` retains `paper.sqlite3` and its sibling agent/health
 archives. It does not migrate an existing differently named database. Back up the
 complete directory and its SQLite/WAL/SHM files together.
@@ -52,16 +52,33 @@ Frontend `.env` variants are refused because Next would otherwise load them itse
 This relies on a trusted host, checkout, dependencies and build; it is not a browser,
 credential or candidate-code security sandbox.
 
+OpenTelemetry stays disabled by default. To have `ai-quant-local` start the pinned
+local Windows Collector before the API and keep it available during bounded API
+shutdown, explicitly set `AI_QUANT_OTEL_ENABLED=1` and
+`AI_QUANT_OTEL_COLLECTOR_MANAGED=1`. The launcher verifies the Collector hash,
+validates a generated loopback config and stores rotated traces and the generated
+config under `<state>/observability`. It passes the trace-file path to the API for
+the existing protected trace reader; Collector settings and credentials are not
+forwarded to the frontend. `AI_QUANT_OTEL_COLLECTOR_MANAGED=1` requires telemetry
+to be enabled. Leave the managed flag at `0` when an operator already runs the
+explicitly configured local Collector separately.
+
 ## Ownership and readiness
 
-- The API process acquires a nonblocking kernel lease before importing/opening the
-  application. It holds `.local-api-owner.lock` throughout its lifetime, using the
-  shared root-ownership implementation. The existing repair namespace remains
-  `.repair-owner.lock`. Files are never unlinked to infer/revoke ownership.
-  Kernel release allows a successor after the API has stopped. Only launchers using
-  this protocol participate; manual uvicorn and other database writers must not
-  share a running state directory. Trusted directory ancestry/local filesystem
-  assumptions from the existing kernel lock remain.
+- The local supervisor acquires a nonblocking kernel lock before importing/opening
+  the application. It holds `.local-api-owner.lock` throughout its lifetime, using
+  the shared root-ownership implementation. The existing repair namespace remains
+  `.repair-owner.lock`. Files are never unlinked to infer/revoke ownership. Kernel
+  release allows a successor after the supervisor stops. This outer lock coordinates
+  local supervisors; the API lifespan lock below also covers direct Uvicorn starts.
+  Trusted directory ancestry/local filesystem assumptions from the kernel lock
+  remain. Other programs writing the same SQLite files must not run concurrently.
+- The FastAPI lifespan also holds `.paper-api-owner.lock` for the canonical PAPER
+  root. Direct Uvicorn launches and additional ASGI workers that reach application
+  lifespan cannot open a second API owner for the same root. Kernel release after
+  shutdown or process death permits the next owner. This protects cooperating API
+  processes on one local filesystem; unrelated database writers and multi-host
+  shared-storage leases are outside this lock protocol.
 - Windows creates each child suspended, assigns its exact retained process handle
   to a private job with kill-on-close, verifies/resumes its unique initial thread,
   then permits startup. This closes the demonstrated spawn-before-assignment race.

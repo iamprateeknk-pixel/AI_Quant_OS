@@ -4,7 +4,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from decimal import Context, localcontext
 
-from ai_quant_os.agent_context import EvidenceRecord, SourceBinding
+from ai_quant_os.agent_context import DatasetResourceCatalog, EvidenceRecord, SourceBinding
 from ai_quant_os.graph_ledger import GraphRecord
 from ai_quant_os.macro_sources import MacroWorldEvidence
 from ai_quant_os.market_data import BarDataset
@@ -14,6 +14,7 @@ from ai_quant_os.research_hypothesis_contracts import (
     DirectionEvidence,
     HistoricalResearchEvidence,
     HypothesisSpec,
+    HypothesisSpecV3,
     ResearchMemoryEvidence,
     ResearchWorldEvidence,
     ResearchWorldSummary,
@@ -31,8 +32,17 @@ def hypothesis_sources(
     worlds: tuple[WorldState, ...],
     *,
     now: datetime,
+    agent_version: str = "0.2.0",
+    reserved_signatures: tuple[str, ...] = (),
 ) -> dict[str, SourceBinding]:
-    if len(training) > 64 or len(records) > 128 or len(worlds) > 64:
+    if (
+        agent_version not in {"0.2.0", "0.3.0"}
+        or len(training) > 64
+        or len(records) > 256
+        or len(worlds) > 64
+        or len(reserved_signatures) > 512
+        or reserved_signatures != tuple(sorted(set(reserved_signatures)))
+    ):
         raise ValueError("Research source collection exceeds bound")
     histories = []
     for receipt, dataset in training:
@@ -60,20 +70,34 @@ def hypothesis_sources(
     completed = []
     for record in records:
         record = GraphRecord.model_validate_json(record.model_dump_json())
-        if (record.receipt.agent_id, record.receipt.agent_version) != ("A08", "0.2.0"):
+        if (record.receipt.agent_id, record.receipt.agent_version) not in {
+            ("A08", "0.2.0"),
+            ("A08", "0.3.0"),
+        }:
             raise ValueError("Research memory contains unsupported agent output")
         if record.receipt.created_at > now:
             raise ValueError("Research memory contains future observations")
         if record.receipt.status != "COMPLETED":
             continue
-        output = HypothesisSpec.model_validate_json(record.receipt.output_json)
+        output_type = (
+            HypothesisSpec if record.receipt.agent_version == "0.2.0" else HypothesisSpecV3
+        )
+        output = output_type.model_validate_json(record.receipt.output_json)
         output.require_context(record.checkpoint.context)
         signatures.update(row.signature for row in output.hypotheses)
         completed.append(record)
+    reserved_signatures = tuple(sorted(set(reserved_signatures) - signatures))
     memory = ResearchMemoryEvidence(
         as_of=now,
         completed_run_count=len(completed),
         known_signatures=tuple(sorted(signatures)),
+        reserved_signatures=reserved_signatures,
+        active_reservation_count=len(reserved_signatures),
+        coverage=(
+            "CHECKED_COMPLETED_OUTPUTS_AND_ACTIVE_RESERVATIONS"
+            if reserved_signatures
+            else "CHECKED_A08_0_2_COMPLETED_GRAPH_OUTPUTS"
+        ),
         collection_sha256=fingerprint([row.model_dump(mode="json") for row in completed]),
     )
     summaries = []
@@ -100,6 +124,9 @@ def hypothesis_sources(
         collection_sha256=fingerprint([asdict(row) for row in worlds]),
     )
     sources = {}
+    dataset_catalog = DatasetResourceCatalog.from_receipts(
+        tuple(receipt for receipt, _ in training)
+    )
     for name, payload, tool, resource in (
         ("historical_catalog", historical, "HISTORY_READ", "TRAINING"),
         ("research_memory", memory, "RESEARCH_MEMORY_READ", "TRAINING"),
@@ -116,5 +143,13 @@ def hypothesis_sources(
         async def fetch(record=record):
             return record
 
-        sources[name] = SourceBinding(tool, resource, fetch)
+        sources[name] = SourceBinding(
+            tool,
+            resource,
+            fetch,
+            resource_refs=tuple(receipt.dataset_ref for receipt, _ in training)
+            if resource == "TRAINING"
+            else (),
+            resource_catalog=dataset_catalog if resource == "TRAINING" else None,
+        )
     return sources

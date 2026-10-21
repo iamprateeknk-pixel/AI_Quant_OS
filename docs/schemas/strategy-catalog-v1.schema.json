@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:schema:strategy-catalog:1.0",
+  "title": "Verified Built-in Strategy Catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "catalog_sha256",
+    "strategies"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "catalog_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "strategies": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "strategy_ref",
+          "input_kind",
+          "parameter_defaults",
+          "implementation_sha256"
+        ],
+        "properties": {
+          "strategy_ref": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[a-z][a-z0-9-]{0,63}@[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "input_kind": {
+            "enum": [
+              "BAR",
+              "TICK"
+            ]
+          },
+          "parameter_defaults": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z_]{0,31}$"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 4096
+                }
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "implementation_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

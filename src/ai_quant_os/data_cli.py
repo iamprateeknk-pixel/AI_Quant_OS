@@ -33,6 +33,12 @@ def main(argv: list[str] | None = None) -> int:
         health.add_argument("--max-age-seconds", type=float, required=True)
         health.add_argument("--catalog", action="store_true", help="Save quality to PostgreSQL")
         health.add_argument("--trace-id", help="Trace identifier for a saved quality observation")
+        publish = commands.add_parser(
+            f"publish-clickhouse{suffix}", help="Publish a verified archive to ClickHouse"
+        )
+        publish.add_argument("archive_id")
+        publish.add_argument("--root", type=Path, required=True)
+        publish.add_argument("--endpoint-url", help="ClickHouse HTTP endpoint")
     for name in ("mirror", "restore"):
         remote = commands.add_parser(name, help=f"{name.title()} an archive through S3")
         remote.add_argument("archive_id")
@@ -85,6 +91,26 @@ def main(argv: list[str] | None = None) -> int:
                 else mirror.restore_bar(args.archive_id, args.root)
             )
         print(json.dumps(asdict(manifest), default=lambda value: value.isoformat(), sort_keys=True))
+        return 0
+    if args.command in {"publish-clickhouse", "publish-clickhouse-ticks"}:
+        from ai_quant_os.clickhouse_publication import ClickHouseArchivePublisher
+
+        endpoint = args.endpoint_url or os.getenv("AI_QUANT_CLICKHOUSE_URL")
+        user = os.getenv("AI_QUANT_CLICKHOUSE_USER")
+        password = os.getenv("AI_QUANT_CLICKHOUSE_PASSWORD")
+        if not endpoint or not user or not password:
+            parser.error(
+                "Set AI_QUANT_CLICKHOUSE_URL, AI_QUANT_CLICKHOUSE_USER, and "
+                "AI_QUANT_CLICKHOUSE_PASSWORD"
+            )
+        publisher = ClickHouseArchivePublisher(endpoint, user=user, password=password)
+        is_tick = args.command.endswith("-ticks")
+        result = (
+            publisher.publish_ticks(TickArchive(args.root), args.archive_id)
+            if is_tick
+            else publisher.publish_bars(BarArchive(args.root), args.archive_id)
+        )
+        print(json.dumps(asdict(result), sort_keys=True))
         return 0
     is_tick = args.command.endswith("-ticks")
     archive = TickArchive(args.root) if is_tick else BarArchive(args.root)

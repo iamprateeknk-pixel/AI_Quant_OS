@@ -42,9 +42,12 @@ command. There are no credentials, broker calls, provider calls or order authori
   decision using prior own-instrument history. Instrument ordering is canonical.
   This declared priority is not measured execution latency. Source/fill reports
   retain original microsecond timestamps and recorded prices.
-- Full market targets are -quantity, zero or +quantity; a reversal is twice the
-  quantity. Buys fill at the current recorded ask and sells at the recorded bid.
-  Input liquidity must cover a full reversal. Synthetic slippage is zero.
+- Strategy targets remain -quantity, zero or +quantity; a reversal requests twice
+  the quantity. Each market order is sliced to the unconsumed displayed size on
+  its execution side at the current source quote. A remaining target is retried
+  at later source quotes; the paired PRICE/TICK events share one depth budget.
+  Buys fill at the recorded ask and sells at the recorded bid. Synthetic slippage
+  is zero. The source provides top-of-book size only, not deeper depth or latency.
 - New exposure requires fresh, nonfuture quotes for every held/proposed exposure.
   Gross USD notional uses each ask, and JPY notional uses a fresh USDJPY bid.
   Admission requires proposed gross notional plus the current order fee to fit
@@ -82,9 +85,16 @@ New additive schemas:
 - `schemas/native-tick-portfolio-plan.schema.json`
 - `schemas/native-tick-portfolio-report.schema.json` (the nested `report` member)
 
+Report schema 1.1 identifies replay model `ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2`
+and liquidity model `SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1`. The independent fill
+reconciler checks that cumulative fills at each source event and side do not
+exceed its displayed size; a portfolio may finish below a strategy's requested
+target when later quotes do not provide enough displayed liquidity.
+
 Limits: 64 KiB unique-key JSON plan, 4 MiB per CSV, 2..4 unique instruments,
-10,000 source quotes per leg, complete-reversal quantity at most 500,000, and
-four legs/80,000 native quote events at most. USDJPY is mandatory for JPY valuation.
+10,000 source quotes per leg, target quantity at most 500,000, and four
+legs/80,000 native quote events at most. Each displayed side must contain at
+least one unit. USDJPY is mandatory for JPY valuation.
 
 `verify_tick_portfolio_report` independently checks retained source/fill cash,
 positions, final quote ages, currency conversion and totals. It does not rerun

@@ -15,19 +15,19 @@
     },
     {
       "path": "research_hypothesis_sources.py",
-      "sha256": "fd7dee85b3410b9340f79bf07504ee1b6e921d322721d3cebeb22194ff707b39"
+      "sha256": "25e2e8cfcd73ed95acdc9828dc4d4896cf5c605b1a05e1bf5990f375dfdccf22"
     },
     {
       "path": "research_hypothesis_contracts.py",
-      "sha256": "d5758a85e63b01a86ac7d60794c3e194f6bd4ce5d301d89f6a18ba1138c2a167"
+      "sha256": "29d9b413310dbc08afc17ec65b36d4f7e437a3425417518b7716322ee87ab0b5"
     },
     {
       "path": "research_hypothesis_agent.py",
-      "sha256": "d1042c4276063ac66973f3edd8779b654b776d24a1353b46c90fd63132f68067"
+      "sha256": "b37dd515edb4c740b8c80a5d56d01afac1d17d7bda9174be9d5537353b0d1208"
     },
     {
       "path": "research_hypothesis_api.py",
-      "sha256": "bc8dd4f10c1e12abe38aaf910184e7ecaf639142518cff10b11f5728a6d8271a"
+      "sha256": "0fd6fbc697177b036d147c03138f5520ea952d09cc896f1d7b5d72542e558f04"
     }
   ],
   "evaluator_sha256": "f62fe44b7ec6007bacce46aaff451dcf69447c85c4c04a9c6fc0adea0f583c79",
@@ -68,13 +68,13 @@
         "agent_version": "0.2.0",
         "task_id": "trend",
         "input_refs": [
-          "context-evidence:8380568fd61b87dfb9928ad6cb50d618b6ab21405db731f7148228c08d1d6373",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:b34522346e14a91a565875cdcaef75c488f319fb61d67aaaadcfe900e2ba75aa",
+          "context-evidence:8e90af486239f77008f5c7f3ac6af952c29e8a29af092a1b6781fd5f81c54773",
           "context-evidence:93151d041da39ab7dfe34bc413375f7dc37f5c9eb3d7b4b770685a3f511debac"
         ],
         "evidence_refs": [
-          "context-evidence:8380568fd61b87dfb9928ad6cb50d618b6ab21405db731f7148228c08d1d6373",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:b34522346e14a91a565875cdcaef75c488f319fb61d67aaaadcfe900e2ba75aa",
+          "context-evidence:8e90af486239f77008f5c7f3ac6af952c29e8a29af092a1b6781fd5f81c54773",
           "context-evidence:93151d041da39ab7dfe34bc413375f7dc37f5c9eb3d7b4b770685a3f511debac"
         ],
         "confidence": "0",
@@ -88,7 +88,7 @@
           "MULTIPLE_TESTING_UNASSESSED",
           "WORLD_ARCHIVES_EMPTY"
         ],
-        "trace_id": "6346e2ac-e71a-4dcf-bcc3-031782efeb7b",
+        "trace_id": "e289372d-604c-449e-b140-5d7368d1cfed",
         "requires_escalation": true,
         "output_type": "HypothesisSpec",
         "model_route": "DETERMINISTIC_ONLY",
@@ -171,13 +171,13 @@
         "agent_version": "0.2.0",
         "task_id": "reversal",
         "input_refs": [
-          "context-evidence:51feeade51afd144732c6f934863956640e730c1156bc5545afe55a7bd4d0106",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:01c5349762026c0b95d6a46ede5ef38600ebfcdf45daa2bc3a3e2249afb5a8cd",
+          "context-evidence:c69238bec9647df880b85ebde060342a4f80b3d5e58d7942d1f7c4811875b068",
           "context-evidence:9fbd610ba1c2f1df5adb62dd9a1ccb839e84540c3fb11e26d9cc3f7b35eeafea"
         ],
         "evidence_refs": [
-          "context-evidence:51feeade51afd144732c6f934863956640e730c1156bc5545afe55a7bd4d0106",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:01c5349762026c0b95d6a46ede5ef38600ebfcdf45daa2bc3a3e2249afb5a8cd",
+          "context-evidence:c69238bec9647df880b85ebde060342a4f80b3d5e58d7942d1f7c4811875b068",
           "context-evidence:9fbd610ba1c2f1df5adb62dd9a1ccb839e84540c3fb11e26d9cc3f7b35eeafea"
         ],
         "confidence": "0",
@@ -190,7 +190,7 @@
           "MARKET_AUTHENTICITY_UNVERIFIED",
           "MULTIPLE_TESTING_UNASSESSED"
         ],
-        "trace_id": "9ab20927-bbb2-4fb0-804a-3ac32f94b881",
+        "trace_id": "4967db18-8f2c-48c8-8a8d-a5211cdfdd38",
         "requires_escalation": true,
         "output_type": "HypothesisSpec",
         "model_route": "DETERMINISTIC_ONLY",
@@ -273,13 +273,13 @@
         "agent_version": "0.2.0",
         "task_id": "flat",
         "input_refs": [
-          "context-evidence:993c1eee7e12c1c88947cf4b8b565619a5bf8b4e496c9b6e09d46326cdc2a8ee",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:7f4f73311944f298e8575881dea02789be342be2b90d4a848d68e2bb4beda22b",
+          "context-evidence:75eb85fba0a4b666b3f717ce0742874f2deb2d698d7da7a9eaa221d773f8b354",
           "context-evidence:93151d041da39ab7dfe34bc413375f7dc37f5c9eb3d7b4b770685a3f511debac"
         ],
         "evidence_refs": [
-          "context-evidence:993c1eee7e12c1c88947cf4b8b565619a5bf8b4e496c9b6e09d46326cdc2a8ee",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:7f4f73311944f298e8575881dea02789be342be2b90d4a848d68e2bb4beda22b",
+          "context-evidence:75eb85fba0a4b666b3f717ce0742874f2deb2d698d7da7a9eaa221d773f8b354",
           "context-evidence:93151d041da39ab7dfe34bc413375f7dc37f5c9eb3d7b4b770685a3f511debac"
         ],
         "confidence": "0",
@@ -293,7 +293,7 @@
           "MULTIPLE_TESTING_UNASSESSED",
           "WORLD_ARCHIVES_EMPTY"
         ],
-        "trace_id": "12bbe977-b697-404d-8323-fe8b83bd4c8d",
+        "trace_id": "ade66931-6421-47d1-bd7d-4edc2269c878",
         "requires_escalation": true,
         "output_type": "HypothesisSpec",
         "model_route": "DETERMINISTIC_ONLY",
@@ -343,13 +343,13 @@
         "agent_version": "0.2.0",
         "task_id": "empty",
         "input_refs": [
-          "context-evidence:bdb5f96ba7a39747109db66301c9ccd3ffa9f037888a623f2269f8e3056e303d",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:da5eec19ec0c71d8b99f8329ef3064f79dc7057a2c7dd39600e2746b361254a6",
+          "context-evidence:9fd9931831dce031387fb05f5edfca2957242ab702564cac378e8bf0716d4f98",
           "context-evidence:93151d041da39ab7dfe34bc413375f7dc37f5c9eb3d7b4b770685a3f511debac"
         ],
         "evidence_refs": [
-          "context-evidence:bdb5f96ba7a39747109db66301c9ccd3ffa9f037888a623f2269f8e3056e303d",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:da5eec19ec0c71d8b99f8329ef3064f79dc7057a2c7dd39600e2746b361254a6",
+          "context-evidence:9fd9931831dce031387fb05f5edfca2957242ab702564cac378e8bf0716d4f98",
           "context-evidence:93151d041da39ab7dfe34bc413375f7dc37f5c9eb3d7b4b770685a3f511debac"
         ],
         "confidence": "0",
@@ -364,7 +364,7 @@
           "TRAINING_CATALOG_EMPTY",
           "WORLD_ARCHIVES_EMPTY"
         ],
-        "trace_id": "304974f7-26e0-409d-a611-b783d12ae7ce",
+        "trace_id": "16f23b8f-a539-4874-b63b-a27e7d8107c0",
         "requires_escalation": true,
         "output_type": "HypothesisSpec",
         "model_route": "DETERMINISTIC_ONLY",
@@ -414,13 +414,13 @@
         "agent_version": "0.2.0",
         "task_id": "holdout",
         "input_refs": [
-          "context-evidence:bdb5f96ba7a39747109db66301c9ccd3ffa9f037888a623f2269f8e3056e303d",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:da5eec19ec0c71d8b99f8329ef3064f79dc7057a2c7dd39600e2746b361254a6",
+          "context-evidence:9fd9931831dce031387fb05f5edfca2957242ab702564cac378e8bf0716d4f98",
           "context-evidence:93151d041da39ab7dfe34bc413375f7dc37f5c9eb3d7b4b770685a3f511debac"
         ],
         "evidence_refs": [
-          "context-evidence:bdb5f96ba7a39747109db66301c9ccd3ffa9f037888a623f2269f8e3056e303d",
-          "context-evidence:12b5a2d988a0fe13dca605ae28a5dfcbbf5fecf512e0480e7781a5fc45b25357",
+          "context-evidence:da5eec19ec0c71d8b99f8329ef3064f79dc7057a2c7dd39600e2746b361254a6",
+          "context-evidence:9fd9931831dce031387fb05f5edfca2957242ab702564cac378e8bf0716d4f98",
           "context-evidence:93151d041da39ab7dfe34bc413375f7dc37f5c9eb3d7b4b770685a3f511debac"
         ],
         "confidence": "0",
@@ -435,7 +435,7 @@
           "TRAINING_CATALOG_EMPTY",
           "WORLD_ARCHIVES_EMPTY"
         ],
-        "trace_id": "ec7f0240-9422-49e7-b55f-0acff4e13069",
+        "trace_id": "6240fafb-3be0-4932-b25c-190583daa631",
         "requires_escalation": true,
         "output_type": "HypothesisSpec",
         "model_route": "DETERMINISTIC_ONLY",

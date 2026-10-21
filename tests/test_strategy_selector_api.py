@@ -61,6 +61,34 @@ def test_a12_runs_as_shadow_selector_and_withholds_eligibility(tmp_path):
         assert client.get("/api/v1/system/status").json() == before
 
 
+def test_a12_v3_binds_shadow_performance_and_keeps_eligibility_fail_closed(tmp_path):
+    with TestClient(create_app(**settings(tmp_path))) as client:
+        compiled = client.post(
+            "/api/v1/paper/agents/context",
+            headers=HEADERS,
+            json={"agent_id": "A12", "agent_version": "0.3.0", "task_id": "selector-v3"},
+        )
+        assert compiled.status_code == 200, compiled.text
+        context = compiled.json()
+        performance = next(row for row in context["inputs"] if row["input_name"] == "performance")
+        assert performance["status"] == "AVAILABLE"
+        assert json.loads(performance["payload_json"])["availability"] == "UNAVAILABLE"
+        executed = client.post(
+            "/api/v1/paper/agents/execute",
+            headers=HEADERS,
+            json={"run_id": "selector-v3", "context_ref": context["context_ref"]},
+        )
+        assert executed.status_code == 200, executed.text
+        receipt = executed.json()["receipt"]
+        assert receipt["status"] == "COMPLETED", receipt
+        output = json.loads(receipt["output_json"])
+        assert output["agent_version"] == "0.3.0"
+        assert output["eligible_strategies"] == []
+        assert output["performance_available"] is False
+        assert output["drift_available"] is False
+        assert output["promotion_allowed"] is False
+
+
 def test_a12_context_and_execution_require_operator(tmp_path):
     with TestClient(create_app(**settings(tmp_path))) as client:
         response = client.post(

@@ -1,13 +1,22 @@
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from ai_quant_os.market_data import Bar, BarDataset
 
 
 class Strategy(Protocol):
     def target_position(self, history: tuple[Bar, ...]) -> int: ...
+
+
+@runtime_checkable
+class StreamingStrategy(Protocol):
+    """Opt-in bar strategy that maintains its own bounded state between callbacks."""
+
+    def on_bar(self, bar: Bar) -> None: ...
+
+    def target_position(self) -> int: ...
 
 
 @dataclass(frozen=True)

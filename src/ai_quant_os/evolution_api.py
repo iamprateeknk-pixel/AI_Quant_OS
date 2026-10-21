@@ -9,8 +9,21 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from ai_quant_os.evolution_views import EvolutionGenomePage, genome_preview
 
 
-def install_evolution_routes(app: FastAPI, workspace: Path | None, require_operator):
+def install_evolution_routes(
+    app: FastAPI, workspace: Path | None, require_operator, scheduler=None
+):
     root = workspace.resolve() if workspace is not None else None
+
+    @app.get("/api/v1/evolution/scheduler", dependencies=[Depends(require_operator)])
+    def scheduler_status():
+        from fastapi.responses import JSONResponse
+
+        value = (
+            {"schema_version": "1.0", "enabled": False, "state": "DISABLED"}
+            if scheduler is None
+            else scheduler.status()
+        )
+        return JSONResponse(value, headers={"Cache-Control": "no-store"})
 
     @app.get("/api/v1/evolution/genomes/page", dependencies=[Depends(require_operator)])
     def genome_page(

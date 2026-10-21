@@ -119,18 +119,19 @@ class ResearchPlan:
         ):
             raise ValueError("Cost stress must be strictly adverse")
         if (
-            self.schema_version not in ("1.0", "1.1", "1.2")
+            self.schema_version not in ("1.0", "1.1", "1.2", "1.3")
             or self.selection_objective != "NET_PNL_THEN_GENOME_SHA256"
             or self.partition_model != "EXPANDING_COLD_START_V1"
         ):
             raise ValueError("Unsupported research plan contract")
         if (self.schema_version == "1.0" and self.monte_carlo_spec is not None) or (
-            self.schema_version in ("1.1", "1.2")
+            self.schema_version in ("1.1", "1.2", "1.3")
             and type(self.monte_carlo_spec) is not MonteCarloSpec
         ):
             raise ValueError("Research version requires its declared Monte Carlo policy")
-        if (self.schema_version != "1.2" and self.adversarial_spec is not None) or (
-            self.schema_version == "1.2" and type(self.adversarial_spec) is not AdversarialSpec
+        if (self.schema_version not in ("1.2", "1.3") and self.adversarial_spec is not None) or (
+            self.schema_version in ("1.2", "1.3")
+            and type(self.adversarial_spec) is not AdversarialSpec
         ):
             raise ValueError("Research version requires its declared adversarial policy")
 

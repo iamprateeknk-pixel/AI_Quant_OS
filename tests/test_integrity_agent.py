@@ -122,6 +122,32 @@ def test_rejected_and_duplicated_ingress_is_reported_without_replacement_prices(
         assert "price" not in eur and "replacement_price" not in output
 
 
+def test_schema_rejected_ingress_is_reported_without_request_contents(tmp_path):
+    with TestClient(
+        create_app(
+            operator_token="fixture", clock=lambda: NOW, paper_db_path=tmp_path / "paper.sqlite3"
+        )
+    ) as client:
+        bad_quote = client.post(
+            "/api/v1/paper/quotes",
+            headers=HEADERS,
+            json={"instrument_id": "EURUSD", "bid": "private-invalid-value"},
+        )
+        bad_bars = client.post(
+            "/api/v1/paper/world-state/bars",
+            headers=HEADERS,
+            json={"bars": [{"instrument_id": "EURUSD", "private": "payload-secret"}]},
+        )
+        assert bad_quote.status_code == 422
+        assert bad_bars.status_code == 422
+
+        output = assess(client)
+        assert output["ingress_counts"]["SCHEMA_REJECTED_QUOTE"] == 1
+        assert output["ingress_counts"]["SCHEMA_REJECTED_BAR"] == 1
+        assert "private-invalid-value" not in json.dumps(output)
+        assert "payload-secret" not in json.dumps(output)
+
+
 def test_integrity_receipt_remains_retrievable_after_restart(tmp_path):
     args = dict(
         operator_token="fixture", clock=lambda: NOW, paper_db_path=tmp_path / "paper.sqlite3"

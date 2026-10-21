@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "pattern": "^[A-Za-z0-9_-]{1,128}$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "artifact_ref": {
+      "pattern": "^candidate-(validation|prerequisite-failure):[a-f0-9]{64}$",
+      "title": "Artifact Ref",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "artifact_ref"
+  ],
+  "title": "ValidationResearchSupervisionInput",
+  "type": "object"
+}

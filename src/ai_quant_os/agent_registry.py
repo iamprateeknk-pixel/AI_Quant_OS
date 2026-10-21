@@ -62,7 +62,27 @@ class AgentRegistry:
         self._manifests: dict[tuple[str, str], AgentManifest] = {}
         self._states: dict[tuple[str, str], Lifecycle] = {}
         self._quarantine_pins: dict[tuple[str, str], str] = {}
+        self._lifecycle_store = None
         self._lock = Lock()
+
+    def bind_lifecycle_store(self, store) -> None:
+        restored = store.restore(self.manifests())
+        with self._lock:
+            if self._lifecycle_store is not None and self._lifecycle_store is not store:
+                raise RuntimeError("Agent lifecycle store is already bound")
+            for key, state in restored.items():
+                if key not in self._manifests or state not in {
+                    "ACTIVE",
+                    "LIMITED",
+                    "SHADOW",
+                    "QUARANTINED",
+                }:
+                    raise ValueError("Invalid restored agent lifecycle")
+            self._states.update(restored)
+            for key, state in restored.items():
+                if state == "QUARANTINED":
+                    self._quarantine_pins[key] = self._manifests[key].manifest_ref
+            self._lifecycle_store = store
 
     def register(self, manifest: AgentManifest) -> bool:
         manifest = AgentManifest.model_validate_json(manifest.model_dump_json())
@@ -100,12 +120,20 @@ class AgentRegistry:
     def set_lifecycle(self, agent_id: str, version: str, state: Lifecycle) -> None:
         if state not in {"ACTIVE", "LIMITED", "SHADOW", "QUARANTINED"}:
             raise ValueError("Unknown agent lifecycle")
+        if state == "QUARANTINED":
+            self.quarantine(agent_id, version, self.get(agent_id, version).manifest_ref)
+            return
         with self._lock:
             key = (agent_id, version)
             if key not in self._manifests:
                 raise ValueError("Unknown agent version")
             if key in self._quarantine_pins and state != "QUARANTINED":
                 raise PermissionError("Pinned quarantine requires independently gated recovery")
+            prior = self._states[key]
+            if state == prior:
+                return
+            if self._lifecycle_store is not None:
+                self._lifecycle_store.transition(self._manifests[key], prior, state)
             self._states[key] = state
 
     def quarantine(self, agent_id: str, version: str, manifest_ref: str) -> None:
@@ -114,6 +142,9 @@ class AgentRegistry:
             manifest = self._manifests.get(key)
             if manifest is None or manifest.manifest_ref != manifest_ref:
                 raise ValueError("Quarantine manifest pin mismatch")
+            prior = self._states[key]
+            if prior != "QUARANTINED" and self._lifecycle_store is not None:
+                self._lifecycle_store.transition(manifest, prior, "QUARANTINED")
             self._quarantine_pins[key] = manifest_ref
             self._states[key] = "QUARANTINED"
 
@@ -279,6 +310,80 @@ def load_agent_catalog() -> AgentRegistry:
                 **registry.get("A01", "0.3.0").model_dump(),
                 "agent_version": "0.4.0",
                 "required_inputs": (*registry.get("A01", "0.3.0").required_inputs, "task_spec"),
+            }
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A01", "0.4.0").model_dump(),
+                "agent_version": "0.5.0",
+            }
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A01", "0.5.0").model_dump(),
+                "agent_version": "0.6.0",
+            }
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A01", "0.6.0").model_dump(),
+                "agent_version": "0.7.0",
+                "output_type": "TaskPlanV3",
+            }
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A01", "0.7.0").model_dump(),
+                "agent_version": "0.8.0",
+                "output_type": "TaskPlanV4",
+            }
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A01", "0.8.0").model_dump(),
+                "agent_version": "0.9.0",
+                "output_type": "TaskPlanV5",
+                "implementation_status": "PARTIAL",
+            }
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A12", "0.2.0").model_dump(),
+                "agent_version": "0.3.0",
+                "output_type": "EligibleStrategySetV3",
+                "implementation_status": "PARTIAL",
+            }
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A08", "0.2.0").model_dump(),
+                "agent_version": "0.3.0",
+                "output_type": "HypothesisSpecV3",
+                "implementation_status": "PARTIAL",
+            }
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
+                **registry.get("A13", "0.2.0").model_dump(),
+                "agent_version": "0.3.0",
+                "output_type": "AllocationProposalV3",
+                "implementation_status": "PARTIAL",
             }
         )
     )

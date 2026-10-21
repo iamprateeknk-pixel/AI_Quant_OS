@@ -8,6 +8,26 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from ai_quant_os.health_contracts import AGENT_CODES, FAILURE_STATES
 
 
+class HealthIncidentTransition(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    action: Literal["CLOSED", "REOPENED"]
+    at: datetime
+    command_id: str | None = Field(min_length=1, max_length=128)
+    incident_id: str = Field(pattern=r"^[a-f0-9]{64}$")
+    reason: str | None = Field(max_length=256)
+    transition_id: str = Field(min_length=1, max_length=160)
+
+    @model_validator(mode="after")
+    def utc_transition(self):
+        if self.at.utcoffset() is None or self.at.utcoffset().total_seconds() != 0:
+            raise ValueError("Incident transition timestamp must be UTC")
+        if self.action == "CLOSED" and (self.command_id is None or self.reason is None):
+            raise ValueError("Closure must carry operator command evidence")
+        if self.action == "REOPENED" and (self.command_id is not None or self.reason is not None):
+            raise ValueError("Reopening cannot carry operator command evidence")
+        return self
+
+
 class HealthIncidentSummary(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     schema_version: Literal["1.0"]
@@ -34,7 +54,8 @@ class HealthIncidentSummary(BaseModel):
     manifest_ref: str | None = Field(pattern=r"^agent-manifest:[a-f0-9]{64}$")
     safety_state: Literal["HALT", "NO_NEW_RISK"]
     quarantine: bool
-    status: Literal["OPEN"]
+    status: Literal["OPEN", "CLOSED"]
+    transitions: tuple[HealthIncidentTransition, ...] = ()
     promotion_allowed: Literal[False]
 
     @model_validator(mode="after")
@@ -53,6 +74,12 @@ class HealthIncidentSummary(BaseModel):
             not self.quarantine and any(pin is not None for pin in pins)
         ):
             raise ValueError("Incident manifest pins mismatch")
+        if any(event.incident_id != self.incident_id for event in self.transitions):
+            raise ValueError("Incident transition identity mismatch")
+        if self.status != (
+            "CLOSED" if self.transitions and self.transitions[-1].action == "CLOSED" else "OPEN"
+        ):
+            raise ValueError("Incident transition status mismatch")
         return self
 
 

@@ -121,4 +121,5 @@ Changed files: `repair_workspace.py`, `repair_cli.py`, their two test modules,
 console registration in `pyproject.toml`, CI, this handoff, ADR 0035, README and
 build status. Next dependencies are independent source/version-bound behavioral
 verification with proper execution isolation, durable Temporal repair stages,
-shadow/canary evidence, incident closure and gated recovery/rollback.
+shadow/canary evidence, critical/agent incident resolution and gated
+recovery/rollback.

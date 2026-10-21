@@ -48,6 +48,17 @@ def _write_immutable(path: Path, content: bytes) -> None:
         except FileExistsError:
             if path.read_bytes() != content:
                 raise ValueError(f"Immutable archive object changed: {path}") from None
+        except PermissionError as error:
+            # Some Windows sandboxes deny hard-link creation even within the same
+            # volume. Windows rename is atomic and, unlike POSIX rename, refuses
+            # to replace an existing destination, preserving immutable publish.
+            if os.name != "nt" or getattr(error, "winerror", None) != 5:
+                raise
+            try:
+                os.rename(temporary_path, path)
+            except FileExistsError:
+                if path.read_bytes() != content:
+                    raise ValueError(f"Immutable archive object changed: {path}") from None
     finally:
         temporary_path.unlink(missing_ok=True)
 

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Repair execution receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "candidate_id": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "owner": { "type": "string", "pattern": "^[a-f0-9]{32}$" },
+    "container_id": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "image_id": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "snapshot_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "suite_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "request_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "state": {
+      "enum": [
+        "EXECUTION_FINISHED_AWAITING_INDEPENDENT_VERIFICATION",
+        "EXECUTION_FAILED_AWAITING_REVIEW"
+      ]
+    },
+    "exit_code": { "type": "integer", "minimum": 0, "maximum": 255 },
+    "oom_killed": { "type": "boolean" },
+    "stdout_bytes": { "type": "integer", "minimum": 0, "maximum": 65536 },
+    "stdout_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "stderr_bytes": { "type": "integer", "minimum": 0, "maximum": 65536 },
+    "stderr_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "execution_verified": { "const": false },
+    "promotion_allowed": { "const": false },
+    "evidence_root": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "stdout_artifact": {
+      "type": "string",
+      "pattern": "^repair-execution-[a-f0-9]{32}\\.stdout$"
+    },
+    "stderr_artifact": {
+      "type": "string",
+      "pattern": "^repair-execution-[a-f0-9]{32}\\.stderr$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "owner",
+    "container_id",
+    "image_id",
+    "snapshot_sha256",
+    "suite_sha256",
+    "request_sha256",
+    "state",
+    "exit_code",
+    "oom_killed",
+    "stdout_bytes",
+    "stdout_sha256",
+    "stderr_bytes",
+    "stderr_sha256",
+    "execution_verified",
+    "promotion_allowed"
+  ]
+}

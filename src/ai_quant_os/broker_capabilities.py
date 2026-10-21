@@ -34,7 +34,12 @@ def default_eligibility(broker_id: str) -> BrokerEligibility:
 @dataclass(frozen=True)
 class BrokerProfile:
     broker_id: str
-    implementation: Literal["PAPER_SIMULATOR", "DEMO_OBSERVATION_LIBRARY", "DISABLED_SKELETON"]
+    implementation: Literal[
+        "PAPER_SIMULATOR",
+        "DEMO_OBSERVATION_LIBRARY",
+        "ISOLATED_DEMO_ORDER_CLI",
+        "DISABLED_SKELETON",
+    ]
     operations: tuple[str, ...]
     module: str
     native_acceptance: Literal["NOT_APPLICABLE", "UNVERIFIED"]
@@ -55,9 +60,17 @@ BROKER_PROFILES = (
     ),
     BrokerProfile(
         "EXNESS_MT5_DEMO",
-        "DEMO_OBSERVATION_LIBRARY",
-        ("QUOTE_READ", "ACCOUNT_READ", "POSITIONS_READ", "ACTIVE_ORDERS_READ", "DEALS_READ"),
-        "ai_quant_os.mt5_sync_service",
+        "ISOLATED_DEMO_ORDER_CLI",
+        (
+            "QUOTE_READ",
+            "ACCOUNT_READ",
+            "POSITIONS_READ",
+            "ACTIVE_ORDERS_READ",
+            "DEALS_READ",
+            "DEMO_ORDER_SUBMIT_EXPLICIT",
+            "DEMO_ORDER_RECONCILE_READ_ONLY",
+        ),
+        "ai_quant_os.exness_demo_order_cli",
         "UNVERIFIED",
     ),
     BrokerProfile("EXNESS", "DISABLED_SKELETON", (), "ai_quant_os.broker_skeletons", "UNVERIFIED"),

@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "mission-control-authenticated-keyboard-2026-10-19",
+  "capture_started_at": "2026-10-19T00:54:08Z",
+  "capture_completed_at": "2026-10-19T00:56:42Z",
+  "scope": "LOCAL_PAPER_AUTHENTICATED_KEYBOARD_AND_DIALOG_ACCEPTANCE",
+  "source_revision": "2b83188d9161d510c603b29cbe42f5e2b40c9db2",
+  "build_id_sha256": "f531ce8f9207752fdba35b9f4018dac2eef6cd8561642ac0006aeeca27e0a577",
+  "working_tree_source_sha256": {
+    "apps/web/src/features/navigation/navigation-command.tsx": "0a2cc331054276ec3bc64721f5f931273cc1cdaa745613486c9e23b03fb8e34f",
+    "apps/web/src/features/operator-session/operator-console.tsx": "63ff103203c48a4b3ed39912c836c02f49fe3e63469aa522f947c2a4045bb551",
+    "apps/web/src/app/globals.css": "92c019048fc5e5378c3d766920cd6fdc436a839b7e24b2fd9a7a7ac0de635f5e"
+  },
+  "environment": {
+    "application": "local PAPER API and production-built Mission Control",
+    "origin": "http://127.0.0.1:3124",
+    "browser": "Microsoft Edge through Playwright CLI",
+    "viewport_desktop_px": [1360, 900],
+    "viewport_mobile_px": [320, 800],
+    "credentials": "synthetic local operator credential; value omitted",
+    "broker_or_live_access": false
+  },
+  "checks": [
+    {
+      "name": "destination dialog focus containment",
+      "result": "PASS",
+      "observations": [
+        "The native dialog opened in modal state with focus on its search input.",
+        "Five Tab presses moved to a destination link contained within the dialog.",
+        "Twenty-four additional Tab presses kept focus inside the dialog."
+      ]
+    },
+    {
+      "name": "destination dialog close and shortcut at 320px",
+      "result": "PASS",
+      "observations": [
+        "Escape closed the dialog and restored focus to the trigger.",
+        "Ctrl+K reopened the modal and focused its input.",
+        "Document width remained 320px for a 320px viewport."
+      ]
+    },
+    {
+      "name": "authenticated Risk Center keyboard path",
+      "result": "PASS",
+      "observations": [
+        "Tab moved from the mobile Menu control to the operator access input and then Sign in; Enter established the synthetic local session.",
+        "After sign-in, Tab reached Sign out, the paper safety selector, the reason field, the re-authentication field, and the instrument selector in order.",
+        "The disabled safety-action button was skipped; no safety action was submitted."
+      ]
+    },
+    {
+      "name": "sign-out and protected session state",
+      "result": "PASS",
+      "observations": [
+        "Sign out returned the UI to the signed-out state.",
+        "A post-sign-out protected session read returned HTTP 401.",
+        "The explicit 401 browser fetch emitted one expected failed-resource console entry; the preceding application interaction check had zero console errors or warnings."
+      ]
+    }
+  ],
+  "runtime_cleanup": {
+    "browser_closed": true,
+    "local_application_reported_stopped": true,
+    "state_root": "data-local/p12-browser-acceptance",
+    "state_root_contains_only_synthetic_local_test_state": true
+  },
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "This is a scoped local browser acceptance probe, not independent accessibility certification.",
+    "Manual screen-reader review and other authenticated workflows remain open.",
+    "The checks do not establish production deployment, broker eligibility, or P13 release readiness."
+  ]
+}

@@ -25,6 +25,14 @@ test("native saved spans select metadata and preserve exact nanoseconds and requ
  const cycle=structuredClone(v),parent=cycle.spans.find(s=>s.parent_span_id===null),child=cycle.spans.find(s=>s.parent_span_id===parent.span_id);parent.parent_span_id=child.span_id;assert.equal(parse(cycle,v.trace_id),null);
  for(const field of ["ordinal","prefix_bytes"]){const corrupt=structuredClone(v);corrupt.files[0][field]=true;assert.equal(parse(corrupt,v.trace_id),null);}
 });
+test("saved spans render in deterministic parent-first order even when collector order is scrambled",async()=>{
+ const {CollectorTracePanel:Panel}=await modules(),v=fixture();
+ const scrambled={...v,spans:[v.spans[3],v.spans[1],v.spans[0],v.spans[2]]};
+ const html=renderToStaticMarkup(React.createElement(Panel,{traceId:v.trace_id,result:{ok:true,value:scrambled}}));
+ const positions=["e84c406ac6587a6c","16b5ca0e205419bc","bad36e71903d6601","c2b02ba7f2600ac7"].map(id=>html.indexOf(id));
+ assert(positions.every(position=>position>=0));assert.deepEqual([...positions],[...positions].sort((a,b)=>a-b));
+ assert.match(html,/data-span-depth="1"/);assert.match(html,/data-span-depth="0"/);
+});
 test("rendered spans show exact durations, parent IDs, missing ancestry and no complete-delivery inference",async()=>{
  const {CollectorTracePanel:Panel}=await modules(),v=fixture();
  const html=renderToStaticMarkup(React.createElement(Panel,{traceId:v.trace_id,result:{ok:true,value:v}}));

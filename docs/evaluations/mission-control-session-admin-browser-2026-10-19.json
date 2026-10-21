@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "mission-control-session-admin-browser-2026-10-19",
+  "capture_started_at": "2026-10-19T17:02:49Z",
+  "capture_completed_at": "2026-10-19T17:07:41Z",
+  "scope": "LOCAL_PAPER_OWNER_SESSION_INVENTORY_AND_TARGETED_REVOCATION_BROWSER_ACCEPTANCE",
+  "source_revision": "c0c90325afe9e0c10db8f1adca1c13462d13d2e7",
+  "build_id_sha256": "7edb4ec5c64b5ea771424c40bb5f42e6ac5a7f6f65df1ae98eb48f18accb5469",
+  "environment": {
+    "application": "local PAPER API and production-built Mission Control",
+    "origin": "http://127.0.0.1:3124",
+    "browser": "Playwright CLI Chromium",
+    "viewport_px": [1280, 800],
+    "credentials": "synthetic local operator credential; value omitted",
+    "broker_or_live_access": false,
+    "state_root": ".task-temp/p12-browser-state"
+  },
+  "checks": [
+    {
+      "name": "owner inventory and targeted revocation",
+      "result": "PASS",
+      "observations": [
+        "Signed in through the Settings owner-session form; the returned inventory identified the browser's current session without exposing credential or nonce data.",
+        "A second isolated browser context signed in and appeared as an Active session in the owner's inventory.",
+        "Selected only the second session, checked the explicit single-session confirmation, re-entered the owner credential, and received the Selected session revoked receipt.",
+        "The refreshed inventory contained only the current owner session.",
+        "The second browser reloaded Settings and returned to the sign-in form, confirming that its revoked session no longer authorized the view."
+      ]
+    },
+    {
+      "name": "runtime and console after stable app restart",
+      "result": "PASS",
+      "observations": [
+        "The isolated app remained available throughout the successful end-to-end flow.",
+        "No new browser console errors were observed after the stable app restart; errors from earlier attempts corresponded to the documented bounded launcher stopping during browser-tool startup."
+      ]
+    }
+  ],
+  "artifacts": [
+    "apps/web/output/playwright/p12-session-admin-20261019/owner-revocation-receipt.png",
+    "apps/web/output/playwright/p12-session-admin-20261019/revoked-session-sign-in.png"
+  ],
+  "runtime_cleanup": {
+    "browser_contexts_closed": true,
+    "local_application_stopped": true,
+    "ports_8124_and_3124_released": true,
+    "state_root_contains_only_synthetic_local_test_state": true
+  },
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "This is scoped browser acceptance for owner session inventory and single-target revocation, not independent security acceptance.",
+    "Other authenticated workflows, manual screen-reader review, deployment controls, provider compliance and all P00-P13 release gates remain open."
+  ]
+}

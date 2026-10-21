@@ -9,6 +9,20 @@ experiments from checked training CSV, prior completed A08 graphs and checked
 paper world archives. The global capital mode remains PAPER. SANDBOX is a
 permission scope; it establishes no operating-system isolation.
 
+A08 0.3.0 preserves the 0.2.0 contract and adds durable, five-second novelty
+leases through its authenticated context route. Both A08 versions claim their
+proposed signatures in the shared lease store, so the existing A01 0.6.0 to
+A08 0.2.0 path participates in collision control. For A08 0.3.0, active
+signatures are included in checked research-memory evidence and excluded from
+new drafts; a context atomically claims its proposed signatures. Concurrent
+conflicts trigger a bounded context rebuild. The new output reports
+`COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE` and a reserved-draft count.
+Reservations use a local SQLite sidecar and are not protected from a process
+that can rewrite the complete local state directory. A08 0.2.0 keeps its exact
+output contract and fails context compilation if it loses a claim race; the
+operator can retry after the lease expires. A01 0.6.0 continues to dispatch A08
+0.2.0. See ADR 0218.
+
 Three server bindings supply historical_catalog (HISTORY_READ/TRAINING),
 research_memory (RESEARCH_MEMORY_READ/TRAINING) and world_state_archives
 (WORLD_STATE_READ/GENERAL). The catalog enforces current TRAINING_READ permission
@@ -85,11 +99,13 @@ Full verification and preservation results are recorded in BUILD_STATUS.
 Shared storage provides no physical holdout separation or independent audit
 anchor. Context summaries rely on trusted local publishers; compact hashes are
 not independent evidence of authentic market data. Per-read durable auditing,
-real provider feeds, global novelty scheduling, model routing, calibration,
+real provider feeds, reservation expiry recovery beyond the context TTL, model routing, calibration,
 automatic strategy construction, isolated execution, independent holdout quality,
 promotion and live broker authority remain open. This mission never runs its
-drafted trading rule. A01's sealed six-specialist policy defers A08 and A18 as
-unsupported; its earlier source and evaluation pins remain unchanged.
+drafted trading rule. A01 0.6.0 now supports only the fixed
+`HYPOTHESIS_RESEARCH` cohort for A08 in SANDBOX; earlier A01 versions retain
+their original contracts. A09 construction remains a separate
+operator-reviewed action.
 
 ## Rollback
 
@@ -97,3 +113,7 @@ Preserve the whole state root, including classified raw data, context checkpoint
 graph journal, world archive and health/quarantine state. A rollback may retain
 historical A08 receipts but the older runtime cannot execute the new mission.
 Never relabel holdout data or discard quarantine to make an older reader work.
+
+## A01 0.7.0 versioned research supervisor
+
+A01 0.7.0 exposes `/api/v1/sandbox/research/supervise/v3` and is fixed to A08 0.3.0. It preserves A01 0.6.0's A08 0.2.0 contract, uses exact version-bound source evidence, and retains the parent receipt across restart. The child output includes the active lease novelty scope and remains `execution_authorized=false`. Generic PAPER context compilation rejects A01 0.7.0. See ADR 0219 and the Task Supervisor handoff. Physical isolation, independent holdout quality, model routing/calibration, approval and P00-P13 acceptance remain open.

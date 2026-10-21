@@ -1,0 +1,836 @@
+PERSONAL AI QUANT OS
+Ultimate 18-Agent Architecture
+Final Architecture • Phase Plan • Agent Workpacks • Auto-Evolution • Exness-Priority Multi-Broker Design
+Purpose
+Parallel AI-agent development handoff
+Core
+NautilusTrader + deterministic Risk/Execution
+Intelligence
+LangGraph + Temporal + Jev + multi-model gateway
+Evolution
+Immutable challenger genomes + eval/replay/shadow/canary
+Architecture quality can improve reliability and research discipline; it cannot guarantee trading profit.
+1. Final Decision
+This document freezes the architecture for a personal automated trading system. The goal is not to maximize agent count; it is to maximize reliable research, controlled adaptation, execution integrity and measurable learning per unit of complexity.
+Personal single-owner automated trading system: optimize for reliable edge, not maximum framework count.
+18 elite cognitive agents; only the agents needed for a task wake up. No 50-agent synchronous chain.
+LangGraph orchestrates agent graphs. Temporal owns long-running recovery/promotion workflows.
+Jev is a fast typed decision layer for classification/routing/triage; it is not an oracle and never owns capital authority.
+NautilusTrader, Portfolio Engine, deterministic Risk Kernel and Execution Gateway own the live trading path.
+Exness is the Priority-1 technical broker adapter through an isolated MT5 Gateway, but live enablement is gated by eligibility/compliance, health and instrument support.
+Strategies never call broker SDKs directly. All brokers implement a canonical BrokerAdapter contract.
+Every order path is idempotent, traceable, reconciled and linked to strategy/risk/decision identifiers.
+Agent self-improvement creates immutable challenger versions; production versions are promoted only after offline eval, replay, shadow and canary gates.
+Risk limits, kill switch, broker permissions, credentials and capital ceilings are non-self-modifying.
+2. System Architecture
+MARKET / MACRO / BROKER DATA          |  Data Integrity + World State          |   +------+------------------+   |                         | Jev Fast Layer       Deep Model Gateway   |                  OpenAI / Claude / ...   +-----------+-------------+               v           LangGraph          18 Agents               |        Meta Allocation               |========== DETERMINISTIC WALL ==========               |        Portfolio Engine               |          Risk Kernel               |       Execution Gateway               |        Broker Router       /       |       \  Exness      IBKR   Zerodha/other  PriorityBackground: Temporal recovery + Research/Validation + Evolution Factory + Observability
+3. Repository & Ownership Model
+apps/  web/                         # Next.js Mission Controlservices/  api/                         # FastAPI control plane  trading_core/                # Nautilus runtime + deterministic signal bridge  portfolio_engine/            # exposure, allocation application, positions  risk_kernel/                 # hard deterministic risk rules  execution_gateway/           # idempotent order state machine  broker_gateway/              # canonical adapter router    exness_mt5_gateway/         # isolated Windows/MT5 integration    ibkr_adapter/    zerodha_adapter/  data_ingestion/              # market/macro/event ingestion  world_state/                 # canonical FX world state + currency twins  jev_decision/                # typed fast decision gateway + fallbacks  agent_runtime/               # LangGraph graphs + agent registry  temporal_workers/            # durable recovery/evolution workflows  research_factory/            # hypotheses, strategy generation, experiments  validation_fortress/         # OOS/WFA/MC/adversarial/replay  evolution_factory/           # genomes, DSPy optimization, promotion  observability/               # OTel, metrics, tracing, incident signalspackages/  contracts/                   # versioned event/API/data contracts  broker_sdk/                  # internal broker abstraction  agent_sdk/                   # AgentEnvelope, evidence, permissions  testing/                     # fixtures, simulators, replay harnessinfra/  docker/  terraform/  ci/  monitoring/data/  schemas/  fixtures/  replay/docs/  adr/                         # Architecture Decision Records  runbooks/tests/  unit/  integration/  replay/  chaos/  security/
+Parallel AI workers are separated by folder ownership. Shared contracts are the only approved coupling boundary. Critical modules require independent challenge/review before merge.
+4. Canonical Contracts
+TradeIntent
+Required fields: `intent_id`, `strategy_id`, `strategy_version`, `instrument_id`, `side`, `desired_exposure`, `risk_budget`, `max_spread`, `max_slippage`, `valid_until`, `world_state_version`, `evidence_refs`, `created_at`.
+RiskDecision
+Required fields: `risk_id`, `intent_id`, `decision` (`APPROVE|RESIZE|REJECT|HALT`), `approved_exposure`, `rules_evaluated`, `violations`, `portfolio_snapshot_id`, `created_at`.
+OrderCommand
+Required fields: `order_id`, `idempotency_key`, `risk_id`, `broker_route`, `instrument_id`, `order_type`, `side`, `quantity`, `limit_price`, `stop_price`, `time_in_force`, `expires_at`.
+AgentEnvelope
+Required fields: `agent_id`, `agent_version`, `task_id`, `world_state_version`, `input_refs`, `output_type`, `output`, `confidence`, `uncertainty`, `evidence_refs`, `contradictions`, `expires_at`, `requires_escalation`, `model_route`, `trace_id`.
+BrokerHealth
+Required fields: `broker_id`, `connection_state`, `quote_age_ms`, `order_latency_ms`, `reject_rate`, `reconciliation_state`, `spread_state`, `account_state`, `health_score`, `updated_at`.
+PromotionDecision
+Required fields: `candidate_id`, `current_champion_id`, `offline_eval`, `replay_eval`, `adversarial_eval`, `shadow_eval`, `canary_eval`, `decision`, `rollback_target`, `approved_by_policy`, `created_at`.
+5. Development Phases
+ID
+Phase
+Window
+Depends
+Criticality
+P00
+Program Charter, Architecture & Guardrails
+1-2
+None
+Critical
+P01
+Repo, Dev Platform, CI/CD & Environments
+2-4
+P00
+High
+P02
+Data Platform & Canonical Market State
+3-6
+P00,P01
+Critical
+P03
+Nautilus Trading Core & Backtest Harness
+5-9
+P02
+Critical
+P04
+Broker Abstraction & Exness Priority Gateway
+6-11
+P01,P02
+Critical
+P05
+Portfolio, Risk Kernel, Execution & Reconciliation
+8-14
+P03,P04
+Highest
+P06
+World State, Currency Twins & Jev Fast Decision Layer
+11-16
+P02,P03
+High
+P07
+LangGraph Runtime & 18 Elite Agents
+14-21
+P06,P01
+High
+P08
+Research Factory & Validation Fortress
+18-26
+P03,P06,P07
+High
+P09
+Shadow, Paper, Attribution & Counterfactual Learning
+23-30
+P05,P08
+High
+P10
+Health, Repair & Temporal Recovery
+27-34
+P05,P07,P09
+Critical
+P11
+Agent Evolution Factory & Controlled Auto-Upgrade
+31-39
+P08,P09,P10
+High
+P12
+Mission Control, Observability, Security & Cost Governance
+32-41
+P01,P05,P07
+High
+P13
+Restricted Live Rollout & Hardening
+40+
+P05-P12
+Highest
+P00 — Program Charter, Architecture & Guardrails
+Freeze boundaries, contracts, ownership, security rules, repo conventions and release gates before implementation.
+Build scope:
+Architecture Decision Records for core stack
+Canonical schemas and event naming
+Critical vs non-critical module classification
+Agent permission matrix
+Environment strategy: local/dev, AWS staging, shadow, live
+Secrets and compliance-gate design
+Deliverables:
+ADR set
+versioned contracts v1
+repo skeleton
+threat model
+Definition of Done
+release/rollback rules
+Acceptance:
+Architecture review has no direct agent-to-broker path
+Every critical action has a deterministic owner
+All mutable AI outputs are schema validated
+No secrets stored in repo
+P01 — Repo, Dev Platform, CI/CD & Environments
+Create reproducible local/staging environments and quality gates so multiple AI coding workers can work safely in parallel.
+Build scope:
+Monorepo/workspace setup
+Docker Compose local stack
+CI lint/type/unit/security checks
+branch/PR conventions
+artifact/version registry
+environment configuration and secret injection
+Deliverables:
+one-command local startup
+CI pipeline
+staging deploy path
+version stamping
+dependency lockfiles
+Acceptance:
+Fresh clone boots successfully
+CI blocks failing tests
+secrets scanner passes
+rollback to prior build is documented
+P02 — Data Platform & Canonical Market State
+Establish trustworthy market/event data, immutable raw storage, normalized schemas and replayable datasets.
+Build scope:
+Market data ingestion adapters
+PostgreSQL operational schema
+ClickHouse market/analytics schema
+S3/MinIO raw Parquet layout
+Redis/Valkey cache
+data-quality checks and timestamps
+Deliverables:
+data lineage
+schema migrations
+historical importer
+data replay fixtures
+data health metrics
+Acceptance:
+stale data detected
+duplicate bars/ticks handled
+timezone normalization tested
+replay is deterministic for a fixed dataset
+P03 — Nautilus Trading Core & Backtest Harness
+Build deterministic strategy runtime/backtesting around NautilusTrader before adding agent intelligence.
+Build scope:
+Nautilus runtime wrapper
+instrument registry
+strategy plugin contract
+backtest runner
+cost/slippage models
+replay and simulation interfaces
+Deliverables:
+sample deterministic strategies
+reproducible backtests
+result schema
+baseline performance tests
+Acceptance:
+same inputs -> same backtest result
+fees/slippage applied
+clock/timezone correctness
+no external LLM dependency in core
+P04 — Broker Abstraction & Exness Priority Gateway
+Create broker-independent execution contracts with Exness as the first technical adapter and safe stubs/adapters for alternatives.
+Build scope:
+BrokerAdapter interface
+Execution Router
+Exness MT5 isolated gateway
+symbol normalization
+account/position/order/fill sync
+IBKR and Zerodha adapter skeletons
+broker capability registry
+eligibility/compliance enablement flag
+Deliverables:
+Exness demo connector
+health/reconnect logic
+broker simulator
+normalized fill events
+Acceptance:
+gateway restart does not duplicate orders
+symbol mapping tested
+disconnect/reconnect tested
+unsupported/disabled venue cannot receive an order
+P05 — Portfolio, Risk Kernel, Execution & Reconciliation
+Implement the deterministic capital-control wall. No LLM is permitted to bypass this phase.
+Build scope:
+Portfolio/exposure engine
+currency aggregate exposure
+hard risk rules/state machine
+order idempotency
+OMS execution state machine
+broker reconciliation
+kill/no-new-risk/flatten states
+Deliverables:
+Risk Kernel
+Execution Gateway
+reconciliation service
+fault-safe state transitions
+audit events
+Acceptance:
+duplicate order impossible under retry
+stale price blocks new risk
+broker mismatch triggers safe state
+risk limits cannot be changed by agent payload
+property-based tests for limits
+P06 — World State, Currency Twins & Jev Fast Decision Layer
+Create a compact FX-specific world model and a fast typed classifier/router layer with deterministic/statistical fallbacks.
+Build scope:
+World State Engine
+currency digital twins
+regime feature snapshots
+Jev adapter and typed schemas
+confidence/calibration store
+fallback to quantitative/LLM routes
+decision TTL and provenance
+Deliverables:
+versioned WorldState
+Jev benchmark harness
+decision gateway
+calibration report format
+Acceptance:
+Jev failure falls back safely
+low confidence escalates
+expired decisions rejected
+schema validity cannot authorize orders
+P07 — LangGraph Runtime & 18 Elite Agents
+Implement the agent registry, graphs, context compiler, permissions, evidence contracts and first production-grade versions of all 18 agents.
+Build scope:
+LangGraph supervisor
+agent registry/versioning
+Context Compiler
+model routing
+agent permissions
+18 agent nodes/graphs
+structured evidence outputs
+agent quality metrics
+Deliverables:
+agent SDK
+graph definitions
+agent manifests
+tool permission map
+agent trace schema
+Acceptance:
+agents cannot call broker directly
+timeouts degrade gracefully
+context provenance retained
+agent outputs schema validated
+agent failure does not crash trading core
+P08 — Research Factory & Validation Fortress
+Automate hypothesis generation and strategy construction while making falsification/validation much harder than generation.
+Build scope:
+hypothesis registry
+strategy genome schema
+sandbox strategy builder
+OOS/WFA/Monte Carlo
+leakage/overfit checks
+adversarial stress suite
+champion/challenger registry
+Deliverables:
+research pipeline
+validation scorecard
+promotion-ready candidate bundle
+experiment lineage
+Acceptance:
+no candidate skips gates
+test data separated from training/design data
+cost/slippage stress included
+failed candidate archived with reason
+P09 — Shadow, Paper, Attribution & Counterfactual Learning
+Measure the reality gap before live money and learn whether signal, regime, sizing or execution caused outcomes.
+Build scope:
+shadow portfolio
+paper execution
+live-vs-shadow comparator
+PnL attribution
+execution attribution
+counterfactual replay
+reality-gap alerts
+Deliverables:
+daily evidence report
+strategy contribution report
+agent contribution report
+counterfactual dataset
+Acceptance:
+shadow decisions cannot route to live broker
+attribution sums reconcile
+counterfactual runs are isolated
+reality-gap threshold demotes candidate
+P10 — Health, Repair & Temporal Recovery
+Create deterministic failure detection plus durable repair/recovery workflows without unsafe instant restarts.
+Build scope:
+health watchdog
+agent quarantine
+Temporal repair workflow
+candidate repair branch
+independent verification
+shadow/canary recovery
+checkpoint/resume
+incident runbooks
+Deliverables:
+repair pipeline
+recovery state machine
+rollback automation
+failure taxonomy
+Acceptance:
+no HALT->NORMAL direct transition
+failed repair never reaches production
+workflow resumes from checkpoint
+critical failure enters safe risk state
+P11 — Agent Evolution Factory & Controlled Auto-Upgrade
+Continuously measure and improve agents/strategies through immutable challengers, never through live self-editing.
+Build scope:
+Agent Genome registry
+quality/reputation scoring
+weakness detector
+DSPy optimization jobs
+candidate generation
+Jev pre-screening
+offline eval datasets
+shadow/canary promotion
+automatic rollback
+Deliverables:
+evolution scheduler
+promotion policy
+version lineage
+monthly benchmark tournament
+Acceptance:
+production version immutable
+hard safety modules excluded
+candidate must improve predefined metric without violating guardrails
+rollback tested
+P12 — Mission Control, Observability, Security & Cost Governance
+Provide one operator console and complete traces across market -> agent -> risk -> order, with security and cost controls.
+Build scope:
+Next.js Mission Control with frozen UI01 frontend scope (15 operational routes)
+OpenTelemetry tracing
+Grafana dashboards
+incident alerts
+agent/model cost budgets
+model gateway quotas/fallbacks
+security audit logs
+approval queue
+Deliverables:
+Mission Control overview + World State/Markets/Brokers/Strategies/Agents/Risk/Orders/Research/Evolution/Incidents/Traces/Costs/Audit/Settings
+trace explorer
+cost dashboard
+security alerts
+manual controls
+Acceptance:
+every live order has trace chain
+manual NO-NEW-RISK works
+budget exhaustion never disables risk kernel
+secrets never rendered in UI/logs
+P13 — Restricted Live Rollout & Hardening
+Move from evidence to tiny restricted live capital with hard stop conditions and gradual scaling only after measured stability.
+Build scope:
+go-live checklist
+broker/account eligibility gate
+micro-live configuration
+daily loss and exposure ceilings
+operational rehearsals
+chaos tests
+DR/backup
+scale criteria
+Deliverables:
+signed release evidence pack
+live runbook
+rollback/flatten procedures
+weekly risk/performance review
+Acceptance:
+paper/shadow evidence meets threshold
+kill switch drill passes
+reconciliation drill passes
+data/broker outage drill passes
+no automatic capital scaling without policy
+6. The 18 Elite Agents
+ID
+Agent
+Squad
+Mission
+A01
+Master Supervisor
+Control
+Coordinates LangGraph task graphs, chooses which specialist agents wake, enforces task budgets and escalations.
+A02
+Market Regime Agent
+Market
+Classifies trend/range/volatility/event/crisis regimes across relevant horizons.
+A03
+Macro & Central Bank Agent
+Market
+Interprets macro releases, rates/yields and central-bank information into currency-level drivers.
+A04
+Currency Strength Agent
+Market
+Maintains relative strength/weakness state for each currency independently of a single pair.
+A05
+Volatility & Liquidity Agent
+Market
+Measures volatility, spread, liquidity and market-quality conditions used by strategy and execution filters.
+A06
+Event Risk Agent
+Market
+Scores proximity/severity of scheduled and detected events and recommends operating mode.
+A07
+Data Integrity Agent
+Data
+Continuously detects stale, missing, duplicated, time-shifted or inconsistent data and marks affected state unusable.
+A08
+Quant Research Scientist
+Research
+Generates falsifiable alpha hypotheses and experiment designs based on observed anomalies and prior evidence.
+A09
+Strategy Builder
+Research
+Converts approved hypotheses into sandboxed strategy candidates and Strategy Genomes.
+A10
+Validation Scientist
+Validation
+Runs statistical and trading validation: OOS, walk-forward, Monte Carlo, stability, cost and reality-gap tests.
+A11
+Adversarial Validator
+Validation
+Attempts to break candidates with leakage checks, stress regimes, perturbations, bad fills/data and alternative explanations.
+A12
+Strategy Selector
+Portfolio
+Selects only validated candidates appropriate for current regime and portfolio constraints; produces ranked eligibility, not orders.
+A13
+Meta Allocator
+Portfolio
+Proposes risk-budget allocation across approved strategies based on uncertainty, correlation, regime, capacity and drawdown.
+A14
+Drift & Attribution Agent
+Learning
+Detects live/shadow degradation and attributes outcome changes to signal, regime, sizing, execution or data.
+A15
+Counterfactual Scientist
+Learning
+Replays alternative decisions to learn what would have happened under no-trade, delayed, resized or alternate-policy actions.
+A16
+Health & Repair Agent
+Reliability
+Diagnoses degraded agents/services and creates repair candidates in isolated branches/sandboxes.
+A17
+Learning & Evolution Director
+Evolution
+Scores the agent population, selects weak components, generates challenger genomes and manages controlled improvement tournaments.
+A18
+Incident & Safety Supervisor
+Safety
+Coordinates incident severity, operator alerts and safe-state workflows when data, broker, agent or infrastructure integrity is threatened.
+A01 — Master Supervisor
+Coordinates LangGraph task graphs, chooses which specialist agents wake, enforces task budgets and escalations.
+Inputs
+Outputs
+Authority / restriction
+Agent/task registry, WorldState, health, permissions
+Task plan, agent calls, escalation decision
+May orchestrate tools/agents; cannot change Risk Kernel, broker credentials or place orders.
+A02 — Market Regime Agent
+Classifies trend/range/volatility/event/crisis regimes across relevant horizons.
+Inputs
+Outputs
+Authority / restriction
+WorldState, price/volatility features, session state
+Regime distribution, confidence, expiry, contradictory evidence
+No trading authority. Prefer deterministic/statistical features and Jev fast classification before deep LLM escalation.
+A03 — Macro & Central Bank Agent
+Interprets macro releases, rates/yields and central-bank information into currency-level drivers.
+Inputs
+Outputs
+Authority / restriction
+Macro/event feed, rates/yields, WorldState
+Currency macro bias, driver map, uncertainty, evidence
+Must attach source/time validity. Cannot issue broker actions.
+A04 — Currency Strength Agent
+Maintains relative strength/weakness state for each currency independently of a single pair.
+Inputs
+Outputs
+Authority / restriction
+Currency twins, cross-pair returns, macro/regime state
+Currency score vector, decomposition, confidence
+Must avoid double-counting correlated pairs.
+A05 — Volatility & Liquidity Agent
+Measures volatility, spread, liquidity and market-quality conditions used by strategy and execution filters.
+Inputs
+Outputs
+Authority / restriction
+Quotes/bars, spreads, session, broker telemetry
+Vol/liquidity state, abnormality score, tradeability flags
+Hard stale/spread blocks remain deterministic outside agent.
+A06 — Event Risk Agent
+Scores proximity/severity of scheduled and detected events and recommends operating mode.
+Inputs
+Outputs
+Authority / restriction
+Economic calendar, event/news classifications, positions
+Event state, blackout recommendation, uncertainty
+Cannot override hard event/risk policies.
+A07 — Data Integrity Agent
+Continuously detects stale, missing, duplicated, time-shifted or inconsistent data and marks affected state unusable.
+Inputs
+Outputs
+Authority / restriction
+All feeds, lineage metadata, clock health
+DataHealth, quarantine flags, affected instruments/features
+Can request NO-NEW-RISK via incident path; cannot fabricate replacement prices.
+A08 — Quant Research Scientist
+Generates falsifiable alpha hypotheses and experiment designs based on observed anomalies and prior evidence.
+Inputs
+Outputs
+Authority / restriction
+Historical data catalog, research memory, WorldState archives
+HypothesisSpec, required data, falsification test, expected costs
+No direct production deployment; novelty without validation has zero live authority.
+A09 — Strategy Builder
+Converts approved hypotheses into sandboxed strategy candidates and Strategy Genomes.
+Inputs
+Outputs
+Authority / restriction
+HypothesisSpec, strategy SDK, allowed feature catalog
+Candidate code/config, genome, tests, assumptions
+Sandbox only; no direct production modification.
+A10 — Validation Scientist
+Runs statistical and trading validation: OOS, walk-forward, Monte Carlo, stability, cost and reality-gap tests.
+Inputs
+Outputs
+Authority / restriction
+Candidate strategy, immutable datasets, execution models
+ValidationScorecard, pass/fail by gate, evidence bundle
+Evaluation datasets must remain isolated from strategy generation context where required.
+A11 — Adversarial Validator
+Attempts to break candidates with leakage checks, stress regimes, perturbations, bad fills/data and alternative explanations.
+Inputs
+Outputs
+Authority / restriction
+Candidate + validation results + stress library
+Failure cases, adversarial score, rejection reasons
+Default posture is falsification, not approval.
+A12 — Strategy Selector
+Selects only validated candidates appropriate for current regime and portfolio constraints; produces ranked eligibility, not orders.
+Inputs
+Outputs
+Authority / restriction
+Approved strategy registry, WorldState, performance/drift
+Eligible strategy set, rationale, confidence/expiry
+Risk Kernel may reject any downstream intent.
+A13 — Meta Allocator
+Proposes risk-budget allocation across approved strategies based on uncertainty, correlation, regime, capacity and drawdown.
+Inputs
+Outputs
+Authority / restriction
+Strategy set, portfolio/risk snapshots, covariance/exposure
+Allocation proposal with uncertainty and concentration warnings
+Proposal only; deterministic Portfolio/Risk services apply limits.
+A14 — Drift & Attribution Agent
+Detects live/shadow degradation and attributes outcome changes to signal, regime, sizing, execution or data.
+Inputs
+Outputs
+Authority / restriction
+Live/shadow results, fills, predictions, versions
+Drift alerts, attribution decomposition, demotion recommendation
+Do not optimize from raw PnL alone.
+A15 — Counterfactual Scientist
+Replays alternative decisions to learn what would have happened under no-trade, delayed, resized or alternate-policy actions.
+Inputs
+Outputs
+Authority / restriction
+Replay datasets, decisions, fills, WorldState snapshots
+Counterfactual comparisons, causal cautions, learning records
+Never rewrites history or treats simulated result as observed fact.
+A16 — Health & Repair Agent
+Diagnoses degraded agents/services and creates repair candidates in isolated branches/sandboxes.
+Inputs
+Outputs
+Authority / restriction
+Health telemetry, traces, code/tests, incident context
+Root cause, repair candidate, regression plan
+Cannot live-edit production or bypass independent verification.
+A17 — Learning & Evolution Director
+Scores the agent population, selects weak components, generates challenger genomes and manages controlled improvement tournaments.
+Inputs
+Outputs
+Authority / restriction
+Quality metrics, eval datasets, costs, traces, agent registry
+Evolution plan, candidate versions, promotion request
+Cannot alter immutable safety modules or promote without gates.
+A18 — Incident & Safety Supervisor
+Coordinates incident severity, operator alerts and safe-state workflows when data, broker, agent or infrastructure integrity is threatened.
+Inputs
+Outputs
+Authority / restriction
+Watchdog events, BrokerHealth, DataHealth, reconciliation, risk state
+Incident classification, recommended state, recovery workflow trigger
+Actual NO-NEW-RISK/FLATTEN/HALT transitions are deterministic services, not LLM commands.
+7. Service Workpacks
+ID
+Service
+Primary ownership
+Phases
+S01
+Trading Core / NautilusTrader
+services/trading_core
+P03,P13
+S02
+Data Platform
+services/data_ingestion + data/
+P02
+S03
+Portfolio & Risk Kernel
+services/portfolio_engine + services/risk_kernel
+P05,P13
+S04
+Execution Gateway / OMS
+services/execution_gateway
+P05,P13
+S05
+Broker Layer / Exness Priority
+services/broker_gateway
+P04,P13
+S06
+World State & Jev Decision Layer
+services/world_state + services/jev_decision
+P06
+S07
+LangGraph & Temporal Runtime
+services/agent_runtime + services/temporal_workers
+P07,P10
+S08
+Research & Validation Factory
+services/research_factory + services/validation_fortress
+P03,P08,P09
+S09
+Evolution, Memory & Model Gateway
+services/evolution_factory
+P07,P11
+S10
+Observability, Security & Governance
+services/observability + infra/
+P00,P01,P09,P10,P12,P13
+S11
+Mission Control UI & Control API
+apps/web + services/api
+P00,P01,P12,P13
+S01 — Trading Core / NautilusTrader
+Own deterministic clocks, instruments, strategy runtime, backtest/replay integration and live signal bridge.
+Primary code path: services/trading_core. Related phases: P03,P13.
+S02 — Data Platform
+PostgreSQL/ClickHouse/S3/Redis schemas, ingestion, lineage, quality and replayable datasets.
+Primary code path: services/data_ingestion + data/. Related phases: P02.
+S03 — Portfolio & Risk Kernel
+Positions/exposures, currency aggregation, hard risk invariants and safe-state machine.
+Primary code path: services/portfolio_engine + services/risk_kernel. Related phases: P05,P13.
+S04 — Execution Gateway / OMS
+Idempotent order lifecycle, retries, fill handling, reconciliation linkage and execution audit trail.
+Primary code path: services/execution_gateway. Related phases: P05,P13.
+S05 — Broker Layer / Exness Priority
+BrokerAdapter contract, router, Exness MT5 isolated gateway, health, symbol normalization and alternate adapters.
+Primary code path: services/broker_gateway. Related phases: P04,P13.
+S06 — World State & Jev Decision Layer
+FX world state, currency twins, typed fast decisions, calibration, fallbacks and decision TTL/provenance.
+Primary code path: services/world_state + services/jev_decision. Related phases: P06.
+S07 — LangGraph & Temporal Runtime
+Agent registry, LangGraph graphs, durable Temporal workflows, checkpointing, quarantine and recovery.
+Primary code path: services/agent_runtime + services/temporal_workers. Related phases: P07,P10.
+S08 — Research & Validation Factory
+Hypotheses, strategy genomes, experiments, backtest/WFA/OOS/MC/adversarial/shadow pipelines.
+Primary code path: services/research_factory + services/validation_fortress. Related phases: P03,P08,P09.
+S09 — Evolution, Memory & Model Gateway
+Agent genomes, DSPy jobs, long-term memory policy, model routing, budgets, candidate promotion.
+Primary code path: services/evolution_factory. Related phases: P07,P11.
+S10 — Observability, Security & Governance
+OTel/Grafana, audit logs, incident telemetry, policy/permission enforcement, secrets and cost controls.
+Primary code path: services/observability + infra/. Related phases: P00,P01,P09,P10,P12,P13.
+S11 — Mission Control UI & Control API
+Next.js/FastAPI operator console with frozen UI01 design system, 15 operational routes, realtime state, approvals, broker/strategy/agent/risk dashboards, incident/trace/cost/audit surfaces and manual safety controls.
+Primary code path: apps/web + services/api. Related phases: P00,P01,P12,P13.
+8. Hybrid Cognitive Engine: Jev + Deep Models
+Jev is used only for fast typed classification/routing/triage where benchmarked. Deep models handle complex analysis, research, coding, repair and difficult disagreements. Deterministic code remains the first choice whenever a mathematical/rule-based answer exists.
+Level 0  Deterministic math/rules -> risk, accounting, order stateLevel 1  Jev -> fast typed classification/routing/triageLevel 2  economical LLM -> routine reasoningLevel 3  frontier/challenger council -> uncertain or high-impact reasoning
+Low confidence or disagreement escalates; it never becomes certainty by formatting.
+Jev outage must have a safe fallback.
+No model can authorize broker submission without RiskDecision.
+Every model output has TTL, provenance, calibration hooks and trace ID.
+9. Broker Architecture — Exness Priority, Not Dependency
+Strategy -> TradeIntent -> Portfolio -> RiskDecision -> Execution Router                                      |                              Broker Capability/Policy                                      |                         +------------+------------+                         |            |            |                    Exness MT5       IBKR       Zerodha/other                    Priority-1
+Exness lives behind an isolated MT5 Gateway; the main trading core does not embed MT5-specific logic.
+Priority applies only if broker/instrument is enabled, healthy and allowed by configuration/compliance gate.
+Existing positions are not transferred automatically across brokers.
+Every broker has independent health, capability and reconciliation state.
+Strategies use canonical instrument IDs; broker-specific symbol mapping is an adapter concern.
+10. Agent Evolution Factory — Auto-Smarter, Controlled
+Production traces/evals -> weakness detector -> root cause -> immutable challenger genome -> Jev/cheap pre-screen -> DSPy/optimization -> offline eval -> historical replay -> adversarial/security eval -> shadow -> canary -> promote OR rollback
+Production agents never overwrite themselves.
+Risk Kernel, kill switch, broker credentials, capital/leverage ceilings and order-idempotency logic are excluded from autonomous evolution.
+Agent quality measures correctness, calibration, evidence freshness, reliability, latency, tool errors, cost and regime performance.
+Continuous measurement; evolution is periodic and evidence-driven, not constant random mutation.
+11. Failure & Recovery
+NORMAL -> CAUTION -> REDUCED RISK -> NO NEW RISK -> FLATTEN ONLY -> HALTED
+There is no direct HALTED -> NORMAL path. Critical recovery uses deterministic watchdogs plus Temporal workflows: diagnose -> repair candidate -> independent verification -> shadow -> canary -> reduced-risk -> normal.
+12. Validation & Release Gates
+Historical backtest
+Strict out-of-sample
+Walk-forward
+Monte Carlo and execution-cost stress
+Adversarial/leakage/parameter stability checks
+Shadow on live data
+Paper execution
+Reality-gap analysis
+Demo broker reconciliation drills
+Restricted micro-live only after all hard gates pass
+A profitable backtest is not a release criterion by itself. The system is designed to falsify weak strategies before capital exposure.
+13. Deployment Topology
+LOCAL DEV  Code / tests / small research / UI / AI coding tools       | GitHub / CI       vAWS STAGING / SHADOW  data + agents + broker demo gateways + observability       | release gates       vRESTRICTED LIVE  isolated trading core + deterministic risk/execution  separate AI/runtime workers  broker gateway(s)  Postgres + ClickHouse + object storage + cache
+Live trading core is isolated from heavy research workloads.
+Windows MT5 gateway can be separate from Linux trading services.
+Research compute may scale/batch; live capital path is stable and predictable.
+Backups and offsite copies are mandatory before live.
+14. Cost Categories
+The execution pack intentionally avoids locking exact vendor pricing into architecture. Before purchase, re-check current prices. Budget categories are: developer AI plans, runtime model APIs, AWS compute/database/storage/networking, broker/data APIs, optional challenger model provider, and optional managed observability. Open-source components should be self-hosted initially where operationally sensible.
+15. How to Assign Work to Different AI Coding Agents
+Give every worker `01_SHARED_CONTRACTS/`.
+Give one phase folder or one agent folder; add the matching service workpack for code ownership.
+Use `ASSIGNMENT_MATRIX.csv` to avoid conflicting ownership.
+Critical modules get a separate reviewer/challenger worker.
+Require HANDOFF.md and test output before integration.
+Do not merge contract changes without integration review.
+16. Final Freeze
+This is the target architecture. Future additions must prove measurable improvement in correctness, calibration, reliability, cost efficiency, research quality, execution quality or risk reduction. "More agents" or "more frameworks" alone is not an acceptable reason to increase complexity.
+Primary success metric: a safe, measurable, replayable trading research-and-execution system that can improve controlled components over time while keeping capital-control rules deterministic.
+17. Mission Control Frontend — Final Frozen UI/UX Scope
+This addendum freezes the frontend/control-room scope. The visual reference below is the design direction; values shown in the mockup are illustrative only. Backend services remain authoritative for risk, accounting, broker state and execution.
+Reference: Mission Control dashboard visual direction
+17.1 Frozen route map
+Route
+Primary purpose
+Control level
+Mission Control
+Portfolio, chart, World State, brokers, risk, agents, strategies, positions, alerts
+Limited
+World State
+Regime, currency twins, macro/event state, evidence/freshness
+Read
+Markets
+Instrument chart, spreads, features, strategy intents
+Read
+Brokers
+Exness priority + all adapter health/capabilities/reconciliation
+Gated
+Strategies
+Live/Shadow/Paper/Candidate lifecycle and performance
+Gated
+Agents
+18-agent health, versions, traces, quarantine/diagnostics
+Gated
+Risk
+Safety state, exposures, limits, NO-NEW-RISK/FLATTEN/HALT
+Critical
+Orders
+Intent -> risk -> command -> broker/fill/reconciliation
+Gated
+Research
+Hypotheses and validation pipeline
+Non-capital
+Evolution
+Champion/challenger, genomes, promotion/rollback
+Gated
+Incidents
+Timeline, runbook, recovery state
+Gated
+Traces
+Causal trace explorer
+Read
+Costs
+AI/API/compute spend and budgets
+Non-capital
+Audit
+Immutable operator/action/security history
+Read
+Settings
+Preferences, integrations, feature flags
+Policy-gated
+17.2 Global safety UX
+Operating modes: OFFLINE, BACKTEST, SHADOW, PAPER and RESTRICTED_LIVE are backend-authoritative.
+Safety states: NORMAL -> CAUTION -> REDUCED_RISK -> NO_NEW_RISK -> FLATTEN_ONLY -> HALTED. Recovery follows backend policy; no direct HALTED -> NORMAL jump.
+NO-NEW-RISK, FLATTEN-ONLY and HALT require deliberate confirmation, reason, re-authentication, idempotency and an authoritative backend receipt.
+The UI never calls broker APIs directly and never owns authoritative P&L, risk, margin or reconciliation calculations.
+Unknown, disconnected or stale state is shown explicitly instead of optimistically displaying healthy/live.
+17.3 Realtime and control API
+Initial state is loaded from versioned REST snapshots; realtime changes arrive through WebSocket/SSE envelopes containing schema version, sequence and timestamps.
+Sequence gaps trigger a safe snapshot resync; stale values display age and a visible STALE state.
+Every capital-affecting command returns a receipt ID, decision, authoritative resulting state, policy checks, server timestamp and trace ID.
+Trace Explorer links market/event context -> agent decision -> strategy intent -> RiskDecision -> OrderCommand -> broker acknowledgement/fill -> reconciliation.
+17.4 Frontend engineering gate
+Next.js + TypeScript; typed API/view models from canonical contracts.
+Component/error boundaries by domain; long tables/traces virtualized.
+Accessibility target: keyboard navigation, visible focus, semantic labels, non-color-only status cues and reduced-motion support.
+Visual regression fixtures: normal, NO-NEW-RISK, broker degraded, agent quarantine, active incident and shadow/paper mode.
+Security: no secrets in browser/localStorage/logs; server-side authorization for every command; high-consequence actions require re-authentication. AI worker handoff uses P12 + S10 + S11 + UI01; missing backend contracts require an ADR/proposal.

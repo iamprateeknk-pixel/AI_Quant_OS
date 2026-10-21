@@ -1,0 +1,21 @@
+{
+  "evaluation_id": "agent-resource-catalog-0208",
+  "date": "2026-10-19",
+  "scope": "Protected TRAINING/HOLDOUT source binding in the bounded context compiler",
+  "command": ".venv/Scripts/python.exe -m pytest -q tests/test_agent_context.py tests/test_context_call_budgets.py tests/test_research_hypothesis_sources.py tests/test_validation_scientist_sources.py tests/test_strategy_builder_sources.py tests/test_strategy_builder_api.py tests/test_adversarial_agent.py",
+  "result": "PASS",
+  "passed": 72,
+  "failed": 0,
+  "environment": "Windows Python 3.11",
+  "full_suite": {
+    "result": "PASS",
+    "passed": 3141,
+    "skipped": 42,
+    "duration_seconds": 1280.96
+  },
+  "limitations": [
+    "This is a focused regression set, not the full repository suite.",
+    "Catalog provenance does not provide physical TRAINING/HOLDOUT storage isolation.",
+    "Independent mission acceptance and promotion gates remain open."
+  ]
+}

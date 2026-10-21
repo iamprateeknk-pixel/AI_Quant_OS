@@ -11,7 +11,13 @@ export type Incident = {
   schema_version: "1.0"; incident_id: string; code: string; subject: string;
   detected_at: string; agent_id: string | null; agent_version: string | null;
   manifest_ref: string | null; safety_state: "HALT" | "NO_NEW_RISK";
-  quarantine: boolean; status: "OPEN"; promotion_allowed: false;
+  quarantine: boolean; status: "OPEN" | "CLOSED"; transitions: IncidentTransition[];
+  promotion_allowed: false;
+};
+
+export type IncidentTransition = {
+  action: "CLOSED" | "REOPENED"; at: string; command_id: string | null;
+  incident_id: string; reason: string | null; transition_id: string;
 };
 
 export type Timeline = {
@@ -50,7 +56,7 @@ const halted = ["AUDIT_INVALID", "GRAPH_INTEGRITY_FAILED", "POSITION_MISMATCH", 
 const stopped = ["BROKER_UNCONFIRMED", "QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED", "AGENT_FAILED", "AGENT_TIMEOUT", "AGENT_INVALID", "AGENT_UNCERTAIN"];
 
 function parseIncident(value: unknown): Incident | null {
-  if (!record(value) || value.schema_version !== "1.0" || !digest(value.incident_id) || !bounded(value.subject, 128) || !utc(value.detected_at) || typeof value.code !== "string" || (!halted.includes(value.code) && !stopped.includes(value.code)) || value.status !== "OPEN" || value.promotion_allowed !== false) return null;
+  if (!record(value) || value.schema_version !== "1.0" || !digest(value.incident_id) || !bounded(value.subject, 128) || !utc(value.detected_at) || typeof value.code !== "string" || (!halted.includes(value.code) && !stopped.includes(value.code)) || (value.status !== "OPEN" && value.status !== "CLOSED") || value.promotion_allowed !== false || !Array.isArray(value.transitions) || value.transitions.length > 10000) return null;
   const safety = halted.includes(value.code) ? "HALT" : "NO_NEW_RISK";
   const quarantine = value.code.startsWith("AGENT_");
   if (value.safety_state !== safety || value.quarantine !== quarantine) return null;
@@ -59,7 +65,21 @@ function parseIncident(value: unknown): Incident | null {
     if (!bounded(value.agent_id, 3) || !/^A(0[1-9]|1[0-8])$/.test(value.agent_id) || !bounded(value.agent_version, 32) || !/^\d+\.\d+\.\d+$/.test(value.agent_version) || typeof value.manifest_ref !== "string" || !/^agent-manifest:[a-f0-9]{64}$/.test(value.manifest_ref)) return null;
     agentId = value.agent_id; version = value.agent_version; manifest = value.manifest_ref;
   } else if (value.agent_id !== null || value.agent_version !== null || value.manifest_ref !== null) return null;
-  return { schema_version: "1.0", incident_id: value.incident_id, code: value.code, subject: value.subject, detected_at: value.detected_at, agent_id: agentId, agent_version: version, manifest_ref: manifest, safety_state: safety, quarantine, status: "OPEN", promotion_allowed: false };
+  const transitions: IncidentTransition[] = [];
+  let closed = false;
+  for (const [index, raw] of value.transitions.entries()) {
+    if (!record(raw) || (raw.action !== "CLOSED" && raw.action !== "REOPENED") || !utc(raw.at) || raw.incident_id !== value.incident_id || raw.transition_id !== `${value.incident_id}:${index + 1}`) return null;
+    if (raw.action === "CLOSED") {
+      if (closed || quarantine || !["QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"].includes(value.code) || !bounded(raw.command_id, 128) || !bounded(raw.reason, 256)) return null;
+      closed = true;
+    } else {
+      if (!closed || raw.command_id !== null || raw.reason !== null) return null;
+      closed = false;
+    }
+    transitions.push({ action: raw.action, at: raw.at, command_id: raw.command_id as string | null, incident_id: raw.incident_id as string, reason: raw.reason as string | null, transition_id: raw.transition_id as string });
+  }
+  if ((value.status === "CLOSED") !== closed) return null;
+  return { schema_version: "1.0", incident_id: value.incident_id, code: value.code, subject: value.subject, detected_at: value.detected_at, agent_id: agentId, agent_version: version, manifest_ref: manifest, safety_state: safety, quarantine, status: value.status, transitions, promotion_allowed: false };
 }
 
 export function parseTimeline(value: unknown): Timeline | null {

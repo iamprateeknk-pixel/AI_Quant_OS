@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "observability-launcher-0215",
+  "date": "2026-10-19",
+  "started_at": "2026-10-19T17:37:28Z",
+  "completed_at": "2026-10-19T17:38:28Z",
+  "source_revision": "deddb9f6a160e47a5b1dea7c30db1771f5a60ef9",
+  "scope": "LOCAL_PAPER_PROMETHEUS_GRAFANA_SUPERVISOR",
+  "binaries": {
+    "prometheus": {
+      "version": "3.15.0",
+      "directory": "data-local/tools/prometheus-3.15.0",
+      "prometheus_exe_sha256": "c19135130c94e17aa02520ba40c3c8a35727653cd2c667b6a12f9a18313df7ac",
+      "release_manifest_verified": true
+    },
+    "grafana": {
+      "version": "13.2.3",
+      "directory": "data-local/tools/grafana-13.2.3",
+      "grafana_exe_sha256": "05659593ca8dc6d1b0a9fffc72636a598b44c2b30506f5c18ccf8d11f55fc227",
+      "release_tree_verified": true
+    }
+  },
+  "test_command_scope": [
+    "tests/test_observability_cli.py",
+    "tests/test_prometheus_deployment.py",
+    "tests/test_paper_http_alerts.py",
+    "tests/test_grafana_deployment.py"
+  ],
+  "result": {
+    "passed": 9,
+    "failed": 0,
+    "duration_seconds": 60.36,
+    "status": "PASS"
+  },
+  "verified": [
+    "The supervisor preflights the protected local API, starts pinned Prometheus and Grafana on loopback, waits for both readiness endpoints, and exits after a bounded smoke interval.",
+    "The supervisor test uses an isolated PAPER API, state directory, dynamic ports, and test credentials; it confirms credentials are absent from child environments and output.",
+    "The temporary per-run configuration and credential directory is removed on normal shutdown, and Prometheus and Grafana ports are released.",
+    "The native Prometheus/Grafana acceptance checks protected scraping and queries, alert hold and recovery, authenticated dashboard provisioning, and explicit source failure.",
+    "Ruff lint and format checks pass for the new launcher and tests."
+  ],
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "The supervisor is an opt-in Windows single-operator local workflow; Linux and Windows service installation are not implemented.",
+    "The OTel collector and PAPER API must be started separately. No external alert delivery or metrics/log correlation is provided.",
+    "Forced termination or power loss can leave a per-run directory with bootstrap secrets; operators must inspect and remove stale run directories after confirming no launcher is active.",
+    "No independent review or broader P00-P13 acceptance was performed; all P00-P13 release gates remain open."
+  ]
+}

@@ -6,7 +6,7 @@ export type BrokerCapabilityView = {
 };
 const profiles = {
   PAPER: {implementation:"PAPER_SIMULATOR",source:"ai_quant_os.broker",operations:["SIMULATED_ORDER_PLACE","SIMULATED_ORDER_LOOKUP","SIMULATED_FILLS_READ","SIMULATED_FILL_REPORT"],acceptance:"NOT_APPLICABLE"},
-  EXNESS_MT5_DEMO: {implementation:"DEMO_OBSERVATION_LIBRARY",source:"ai_quant_os.mt5_sync_service",operations:["QUOTE_READ","ACCOUNT_READ","POSITIONS_READ","ACTIVE_ORDERS_READ","DEALS_READ"],acceptance:"UNVERIFIED"},
+  EXNESS_MT5_DEMO: {implementation:"ISOLATED_DEMO_ORDER_CLI",source:"ai_quant_os.exness_demo_order_cli",operations:["QUOTE_READ","ACCOUNT_READ","POSITIONS_READ","ACTIVE_ORDERS_READ","DEALS_READ","DEMO_ORDER_SUBMIT_EXPLICIT","DEMO_ORDER_RECONCILE_READ_ONLY"],acceptance:"UNVERIFIED"},
   EXNESS: {implementation:"DISABLED_SKELETON",source:"ai_quant_os.broker_skeletons",operations:[],acceptance:"UNVERIFIED"},
   IBKR: {implementation:"DISABLED_SKELETON",source:"ai_quant_os.broker_skeletons",operations:[],acceptance:"UNVERIFIED"},
   ZERODHA: {implementation:"DISABLED_SKELETON",source:"ai_quant_os.broker_skeletons",operations:[],acceptance:"UNVERIFIED"},

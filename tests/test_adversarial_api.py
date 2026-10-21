@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+from hashlib import sha256
 
 from fastapi.testclient import TestClient
 from pydantic import TypeAdapter
@@ -10,6 +11,10 @@ from pydantic import TypeAdapter
 from ai_quant_os.api import create_app
 from ai_quant_os.research_results import ResearchReport
 from ai_quant_os.research_store import ResearchStore
+from ai_quant_os.holdout_validator_rpc import (
+    HoldoutResponse,
+    stress_summary_sha256,
+)
 
 NOW = datetime(2026, 10, 12, tzinfo=timezone.utc)
 HEADERS = {"x-operator-token": "fixture-a11"}
@@ -24,7 +29,7 @@ def report_fixture():
     return TypeAdapter(ResearchReport).validate_python(payload["report"])
 
 
-def settings(tmp_path, clock=lambda: NOW):
+def settings(tmp_path, clock=lambda: NOW, holdout_rpc_client=None):
     workspace = tmp_path / "research"
     workspace.mkdir(exist_ok=True)
     return dict(
@@ -32,19 +37,95 @@ def settings(tmp_path, clock=lambda: NOW):
         clock=clock,
         paper_db_path=tmp_path / "paper.sqlite3",
         research_workspace=workspace,
+        holdout_rpc_client=holdout_rpc_client,
     )
+
+
+def service_client(report):
+    scenarios = tuple(
+        {
+            "name": row.name,
+            "dataset_fingerprint": row.dataset_fingerprint,
+            "net_pnl": str(row.run.result.net_pnl),
+            "pnl_currency": row.run.result.pnl_currency,
+            "native_order_count": row.run.result.native_order_count,
+        }
+        for row in report.adversarial.scenarios
+    )
+    digest = sha256(
+        __import__("ai_quant_os.research_store", fromlist=["encode_research"]).encode_research(
+            report
+        )
+    ).hexdigest()
+
+    class Client:
+        def call(self, request):
+            summary = stress_summary_sha256(
+                report.adversarial.state, report.adversarial.reason, scenarios
+            )
+            if request.operation == "STRESS_CONTEXT":
+                from ai_quant_os.adversarial_agent import adversarial_context_snapshot
+
+                assert request.candidate_ref is request.training_ref is request.holdout_ref is None
+                assert request.evidence_ref == report.plan.experiment_id
+                snapshot = adversarial_context_snapshot(report, now=NOW)
+                return HoldoutResponse.model_validate_json(
+                    json.dumps(
+                        {
+                            "request_id": request.request_id,
+                            "task_id": request.task_id,
+                            "context_ref": request.context_ref,
+                            "status": "CHECKED_ARCHIVED_STRESS_CONTEXT",
+                            "evidence_ref": request.evidence_ref,
+                            "summary_sha256": summary,
+                            "aggregate": {
+                                "state": report.adversarial.state,
+                                "reason_codes": [report.adversarial.reason],
+                                "scenario_count": len(scenarios),
+                                "scenarios": scenarios,
+                            },
+                            "context_snapshot": {
+                                "agent_id": "A11",
+                                "payload_json": snapshot.model_dump_json(),
+                            },
+                        }
+                    )
+                )
+            assert request.operation == "STRESS_RUN"
+            assert request.candidate_ref == report.plan.experiment_id
+            assert request.training_ref == (
+                "research-data-scope:" + report.plan.development_fingerprint
+            )
+            assert request.holdout_ref == "research-data-scope:" + report.plan.holdout_fingerprint
+            assert request.evidence_ref.endswith(digest)
+            return HoldoutResponse.model_validate_json(
+                json.dumps(
+                    {
+                        "request_id": request.request_id,
+                        "task_id": request.task_id,
+                        "context_ref": request.context_ref,
+                        "status": "CHECKED_ARCHIVED_STRESS",
+                        "evidence_ref": request.evidence_ref,
+                        "summary_sha256": summary,
+                        "aggregate": {
+                            "state": report.adversarial.state,
+                            "reason_codes": [report.adversarial.reason],
+                            "scenario_count": len(scenarios),
+                            "scenarios": scenarios,
+                        },
+                    }
+                )
+            )
+
+    return Client()
 
 
 def test_a11_graph_verifies_archived_adversarial_results_and_cannot_trade(tmp_path):
     report = report_fixture()
-    workspace = tmp_path / "research"
-    workspace.mkdir()
-    store = ResearchStore(workspace / "research.sqlite3")
-    reservation = store.reserve(report.plan)
-    store.freeze_selection(report.plan.experiment_id, reservation.token, report.selection)
-    store.finish(report.plan.experiment_id, reservation.token, report)
 
-    with TestClient(create_app(**settings(tmp_path))) as client:
+    with TestClient(
+        create_app(**settings(tmp_path, holdout_rpc_client=service_client(report)))
+    ) as client:
         before = client.get("/api/v1/system/status").json()
         context_response = client.post(
             "/api/v1/sandbox/adversarial-validator/context",
@@ -94,7 +175,7 @@ def test_a11_routes_require_operator_and_reject_unknown_experiments(tmp_path):
             headers=HEADERS,
             json={"task_id": "review", "experiment_id": "not-found"},
         )
-        assert missing.status_code == 404
+        assert missing.status_code == 503
 
 
 def test_a11_reports_native_adversarial_failure_as_a_rejection(tmp_path):
@@ -131,7 +212,9 @@ def test_a11_reports_native_adversarial_failure_as_a_rejection(tmp_path):
     )
     assert report.adversarial.state == "FAIL"
 
-    with TestClient(create_app(**settings(tmp_path))) as client:
+    with TestClient(
+        create_app(**settings(tmp_path, holdout_rpc_client=service_client(report)))
+    ) as client:
         context = client.post(
             "/api/v1/sandbox/adversarial-validator/context",
             headers=HEADERS,

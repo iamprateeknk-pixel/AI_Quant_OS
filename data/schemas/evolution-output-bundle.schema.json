@@ -1,0 +1,61 @@
+{
+  "$defs": {
+    "CaseOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "output_json": {
+          "maxLength": 16384,
+          "minLength": 2,
+          "title": "Output Json",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "output_json"
+      ],
+      "title": "CaseOutput",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "baseline_outputs": {
+      "items": {
+        "$ref": "#/$defs/CaseOutput"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Baseline Outputs",
+      "type": "array"
+    },
+    "challenger_outputs": {
+      "items": {
+        "$ref": "#/$defs/CaseOutput"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Challenger Outputs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "baseline_outputs",
+    "challenger_outputs"
+  ],
+  "title": "EvaluationOutputBundle",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ai-quant-os:evolution-output-bundle:1.0"
+}

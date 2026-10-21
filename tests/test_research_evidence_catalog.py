@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from datetime import datetime, timezone
 import importlib.util
+from pathlib import Path
 import sqlite3
 
 import pytest
@@ -60,6 +61,224 @@ def test_operator_preparation_reads_exact_classified_pair_without_training_leak(
         with pytest.raises(KeyError):
             store.validation_pair(training.dataset_ref, "research-data:" + "0" * 64)
         assert len(store.training(load_agent_catalog(), "A08", "0.2.0", scope="SANDBOX")) == 1
+
+
+def test_training_and_holdout_bytes_are_persisted_in_separate_sqlite_files(tmp_path):
+    path = tmp_path / "research-data.sqlite3"
+    holdout_path = tmp_path / "research-data.holdout.sqlite3"
+    with catalog(path) as store:
+        training = publish(store, raw_bars(), source_id="training")
+        holdout = publish(store, raw_bars(minute=10), "HOLDOUT", "holdout")
+        assert store.list() == (training, holdout)
+
+    with closing(sqlite3.connect(path)) as training_db:
+        training_rows = training_db.execute(
+            "SELECT dataset_ref, raw_csv FROM research_datasets"
+        ).fetchall()
+    with closing(sqlite3.connect(holdout_path)) as holdout_db:
+        holdout_rows = holdout_db.execute(
+            "SELECT dataset_ref, raw_csv FROM research_datasets"
+        ).fetchall()
+    assert [row[0] for row in training_rows] == [training.dataset_ref]
+    assert [row[0] for row in holdout_rows] == [holdout.dataset_ref]
+    assert training_rows[0][1] == raw_bars()
+    assert holdout_rows[0][1] == raw_bars(minute=10)
+
+
+def test_verified_legacy_mixed_catalog_moves_holdout_bytes_without_losing_receipts(tmp_path):
+    from ai_quant_os.audit_chain import AuditChain
+    from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog, _receipt
+
+    path = tmp_path / "legacy.sqlite3"
+    legacy_rows = (
+        (raw_bars(), "training", "TRAINING"),
+        (raw_bars(minute=10), "holdout", "HOLDOUT"),
+    )
+    with closing(sqlite3.connect(path)) as db:
+        db.executescript(
+            "CREATE TABLE research_datasets (dataset_ref TEXT PRIMARY KEY, raw_csv BLOB NOT NULL, receipt_json TEXT NOT NULL);"
+            "CREATE TABLE audit_events (event_key TEXT PRIMARY KEY, event_json TEXT NOT NULL);"
+        )
+        audit = AuditChain(db)
+        audit.initialize()
+        expected = []
+        for raw, source_id, resource_class in legacy_rows:
+            receipt = _receipt(raw, source_id, resource_class, NOW)
+            db.execute(
+                "INSERT INTO research_datasets VALUES (?,?,?)",
+                (receipt.dataset_ref, raw, receipt.model_dump_json()),
+            )
+            audit.append(receipt.dataset_ref, ResearchEvidenceCatalog._event(receipt))
+            expected.append(receipt)
+        db.commit()
+
+    with catalog(path) as store:
+        assert store.list() == tuple(expected)
+        assert (
+            store.training(load_agent_catalog(), "A08", "0.2.0", scope="SANDBOX")[0][0]
+            == expected[0]
+        )
+    with closing(sqlite3.connect(path)) as training_db:
+        training_rows = training_db.execute(
+            "SELECT dataset_ref, raw_csv FROM research_datasets"
+        ).fetchall()
+    with closing(sqlite3.connect(tmp_path / "legacy.holdout.sqlite3")) as holdout_db:
+        holdout_rows = holdout_db.execute(
+            "SELECT dataset_ref, raw_csv FROM research_datasets"
+        ).fetchall()
+    assert training_rows == [(expected[0].dataset_ref, raw_bars())]
+    assert holdout_rows == [(expected[1].dataset_ref, raw_bars(minute=10))]
+
+
+def test_legacy_migration_resumes_after_holdout_copy_was_committed(tmp_path):
+    from ai_quant_os.audit_chain import AuditChain
+    from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog, _receipt
+
+    path = tmp_path / "legacy.sqlite3"
+    holdout_path = tmp_path / "legacy.holdout.sqlite3"
+    training_raw, holdout_raw = raw_bars(), raw_bars(minute=10)
+    training = _receipt(training_raw, "training", "TRAINING", NOW)
+    holdout = _receipt(holdout_raw, "holdout", "HOLDOUT", NOW)
+    with closing(sqlite3.connect(path)) as db:
+        db.executescript(
+            "CREATE TABLE research_datasets (dataset_ref TEXT PRIMARY KEY, raw_csv BLOB NOT NULL, receipt_json TEXT NOT NULL);"
+            "CREATE TABLE audit_events (event_key TEXT PRIMARY KEY, event_json TEXT NOT NULL);"
+        )
+        audit = AuditChain(db)
+        audit.initialize()
+        for receipt, raw in ((training, training_raw), (holdout, holdout_raw)):
+            db.execute(
+                "INSERT INTO research_datasets VALUES (?,?,?)",
+                (receipt.dataset_ref, raw, receipt.model_dump_json()),
+            )
+            audit.append(receipt.dataset_ref, ResearchEvidenceCatalog._event(receipt))
+        db.commit()
+
+    with closing(sqlite3.connect(holdout_path)) as db:
+        db.executescript(
+            "CREATE TABLE research_datasets (dataset_ref TEXT PRIMARY KEY, raw_csv BLOB NOT NULL, receipt_json TEXT NOT NULL);"
+            "CREATE TABLE audit_events (event_key TEXT PRIMARY KEY, event_json TEXT NOT NULL);"
+        )
+        audit = AuditChain(db)
+        audit.initialize()
+        db.execute(
+            "INSERT INTO research_datasets VALUES (?,?,?)",
+            (holdout.dataset_ref, holdout_raw, holdout.model_dump_json()),
+        )
+        audit.append(holdout.dataset_ref, ResearchEvidenceCatalog._event(holdout))
+        db.commit()
+
+    with catalog(path) as store:
+        assert store.list() == (training, holdout)
+    with closing(sqlite3.connect(path)) as db:
+        assert (
+            db.execute(
+                "SELECT COUNT(*) FROM research_datasets WHERE dataset_ref=?", (holdout.dataset_ref,)
+            ).fetchone()[0]
+            == 0
+        )
+
+
+def test_offline_legacy_migration_prepares_catalog_for_training_only_api(tmp_path):
+    from ai_quant_os.audit_chain import AuditChain
+    from ai_quant_os.research_evidence_catalog import (
+        ResearchEvidenceCatalog,
+        _receipt,
+        migrate_legacy_holdout_catalog,
+    )
+
+    path = tmp_path / "legacy.sqlite3"
+    training_raw, holdout_raw = raw_bars(), raw_bars(minute=10)
+    training = _receipt(training_raw, "training", "TRAINING", NOW)
+    holdout = _receipt(holdout_raw, "holdout", "HOLDOUT", NOW)
+    with closing(sqlite3.connect(path)) as db:
+        db.executescript(
+            "CREATE TABLE research_datasets (dataset_ref TEXT PRIMARY KEY, raw_csv BLOB NOT NULL, receipt_json TEXT NOT NULL);"
+            "CREATE TABLE audit_events (event_key TEXT PRIMARY KEY, event_json TEXT NOT NULL);"
+        )
+        audit = AuditChain(db)
+        audit.initialize()
+        for receipt, raw in ((training, training_raw), (holdout, holdout_raw)):
+            db.execute(
+                "INSERT INTO research_datasets VALUES (?,?,?)",
+                (receipt.dataset_ref, raw, receipt.model_dump_json()),
+            )
+            audit.append(receipt.dataset_ref, ResearchEvidenceCatalog._event(receipt))
+        db.commit()
+
+    assert migrate_legacy_holdout_catalog(path) == (holdout,)
+    with catalog(path, training_only=True) as store:
+        assert store.list() == (training,)
+    with closing(sqlite3.connect(path.with_name("legacy.holdout.sqlite3"))) as db:
+        assert db.execute(
+            "SELECT dataset_ref,raw_csv FROM research_datasets"
+        ).fetchall() == [(holdout.dataset_ref, holdout_raw)]
+
+
+def test_training_only_startup_rejects_legacy_holdout_by_metadata_first(tmp_path):
+    from ai_quant_os.audit_chain import AuditChain
+    from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog, _receipt
+
+    path = tmp_path / "legacy.sqlite3"
+    holdout_raw = raw_bars(minute=10)
+    holdout = _receipt(holdout_raw, "holdout", "HOLDOUT", NOW)
+    with closing(sqlite3.connect(path)) as db:
+        db.executescript(
+            "CREATE TABLE research_datasets (dataset_ref TEXT PRIMARY KEY, raw_csv BLOB NOT NULL, receipt_json TEXT NOT NULL);"
+            "CREATE TABLE audit_events (event_key TEXT PRIMARY KEY, event_json TEXT NOT NULL);"
+        )
+        audit = AuditChain(db)
+        audit.initialize()
+        db.execute(
+            "INSERT INTO research_datasets VALUES (?,?,?)",
+            (holdout.dataset_ref, b"invalid raw HOLDOUT bytes", holdout.model_dump_json()),
+        )
+        audit.append(holdout.dataset_ref, ResearchEvidenceCatalog._event(holdout))
+        db.commit()
+
+    with pytest.raises(ValueError, match="offline catalog migration"):
+        catalog(path, training_only=True)
+
+
+def test_training_reader_does_not_load_holdout_csv_bytes(tmp_path):
+    with catalog(tmp_path / "research.sqlite3") as store:
+        training = publish(store, raw_bars())
+        holdout = publish(store, raw_bars(minute=10), "HOLDOUT", "sealed")
+        store._holdout_db.execute(
+            "UPDATE research_datasets SET raw_csv=? WHERE dataset_ref=?",
+            (b"corrupt sealed bytes", holdout.dataset_ref),
+        )
+        rows = store.training(load_agent_catalog(), "A08", "0.2.0", scope="SANDBOX")
+        assert rows[0][0] == training
+        with pytest.raises(ValueError, match="research CSV|source identity"):
+            store.validation_pair(training.dataset_ref, holdout.dataset_ref)
+
+
+def test_training_only_catalog_never_opens_or_returns_holdout_store(tmp_path, monkeypatch):
+    from ai_quant_os import research_evidence_catalog as module
+
+    path = tmp_path / "research.sqlite3"
+    holdout_path = tmp_path / "research.holdout.sqlite3"
+    with catalog(path) as store:
+        training = publish(store, raw_bars())
+        holdout = publish(store, raw_bars(minute=10), "HOLDOUT", "sealed")
+
+    original_connect = module.sqlite3.connect
+
+    def guarded_connect(database, *args, **kwargs):
+        if Path(database).resolve() == holdout_path.resolve():
+            raise AssertionError("training process attempted to open HOLDOUT storage")
+        return original_connect(database, *args, **kwargs)
+
+    monkeypatch.setattr(module.sqlite3, "connect", guarded_connect)
+    with catalog(path, training_only=True) as store:
+        assert store.list() == (training,)
+        rows = store.training(load_agent_catalog(), "A08", "0.2.0", scope="SANDBOX")
+        assert tuple(row[0] for row in rows) == (training,)
+        with pytest.raises(PermissionError, match="isolated validator service"):
+            publish(store, raw_bars(minute=20), "HOLDOUT", "new-holdout")
+        with pytest.raises(PermissionError, match="isolated validator service"):
+            store.validation_pair(training.dataset_ref, holdout.dataset_ref)
 
 
 @pytest.mark.parametrize(
@@ -169,8 +388,8 @@ def test_read_permission_revocation_withholds_an_already_loaded_dataset(tmp_path
     class RevokingCatalog(ResearchEvidenceCatalog):
         revoke = False
 
-        def _verified(self):
-            rows = super()._verified()
+        def _verified_receipts(self, *args, **kwargs):
+            rows = super()._verified_receipts(*args, **kwargs)
             if self.revoke:
                 registry.set_lifecycle("A08", "0.1.0", "QUARANTINED")
             return rows

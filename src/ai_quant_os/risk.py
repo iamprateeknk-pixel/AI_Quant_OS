@@ -45,6 +45,7 @@ class RiskKernel:
         self._limits = limits
         self._safety_state = SafetyState.NORMAL
         self._issued: dict[str, tuple[TradeIntent, RiskDecision]] = {}
+        self._decision_safety_states: dict[str, SafetyState] = {}
         self._consumed: set[str] = set()
         self._lock = RLock()
         self._currency_policy = currency_policy
@@ -77,6 +78,7 @@ class RiskKernel:
                 raise ValueError("Only NO_NEW_RISK paper state can be recovered")
             before_change()
             self._issued.clear()
+            self._decision_safety_states.clear()
             self._consumed.clear()
             self._currency_reservations.clear()
             self._decision_markets.clear()
@@ -89,7 +91,8 @@ class RiskKernel:
                 raise ValueError("Risk decision was not issued for this intent")
             yield (
                 decision.decision == "APPROVE"
-                and self._safety_state == SafetyState.NORMAL
+                and self._decision_safety_states.get(decision.risk_id) == self._safety_state
+                and self._safety_state in (SafetyState.NORMAL, SafetyState.FLATTEN_ONLY)
                 and decision.risk_id not in self._consumed
             )
 
@@ -98,6 +101,7 @@ class RiskKernel:
             if risk_id not in self._issued or risk_id in self._consumed:
                 raise ValueError("Risk decision cannot be consumed")
             self._consumed.add(risk_id)
+            self._decision_safety_states.pop(risk_id, None)
             self._decision_markets.pop(risk_id, None)
 
     def decision_market(self, decision: RiskDecision) -> MarketSnapshot:
@@ -144,8 +148,6 @@ class RiskKernel:
             "ORDER_EXPOSURE_LIMIT",
             "PORTFOLIO_EXPOSURE_LIMIT",
         )
-        if self._safety_state != SafetyState.NORMAL:
-            violations.append(self._safety_state.value)
         if now >= intent.valid_until or now < intent.created_at:
             violations.append("INTENT_EXPIRED")
         if not market.trusted:
@@ -212,11 +214,24 @@ class RiskKernel:
             ):
                 violations.append("PORTFOLIO_EXPOSURE_LIMIT")
         with self._lock:
-            if (
-                self._safety_state != SafetyState.NORMAL
-                and self._safety_state.value not in violations
-            ):
-                violations.append(self._safety_state.value)
+            decision_safety_state = self._safety_state
+            if decision_safety_state == SafetyState.FLATTEN_ONLY:
+                position = observed_portfolio.filled_net_quantity
+                is_non_reversing_reduction = (
+                    observed_portfolio.instrument_id == intent.instrument_id
+                    and observed_portfolio.pending_buy_quantity == 0
+                    and observed_portfolio.pending_sell_quantity == 0
+                    and position != 0
+                    and (
+                        (position > 0 and intent.side == "SELL")
+                        or (position < 0 and intent.side == "BUY")
+                    )
+                    and intent.desired_exposure <= abs(position)
+                )
+                if not is_non_reversing_reduction:
+                    violations.append("FLATTEN_ONLY_REDUCTION_REQUIRED")
+            elif decision_safety_state != SafetyState.NORMAL:
+                violations.append(decision_safety_state.value)
             outcome = (
                 "HALT"
                 if self._safety_state == SafetyState.HALT
@@ -235,6 +250,7 @@ class RiskKernel:
                 created_at=now,
             )
             self._issued[decision.risk_id] = (intent, decision)
+            self._decision_safety_states[decision.risk_id] = decision_safety_state
             if outcome == "APPROVE":
                 self._decision_markets[decision.risk_id] = market
             if (

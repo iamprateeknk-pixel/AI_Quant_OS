@@ -1,5 +1,14 @@
 # Repair worker input preparation
 
+## Current runtime update (2026-10-14)
+
+Docker Desktop is running again. The pinned input-only image passed the live
+metadata-only dependency probe and five fixed kernel/resource scenarios; all
+owned probe containers were removed. This does not run a proposed repair or
+verifier suite. Retained evidence: `data-local/dependency-runtime-0081-continuation`,
+`data-local/worker-enforcement-0083-continuation`, and
+`docs/evaluations/repair-runtime-live-0160.json`.
+
 Staging now applies explicit 0755 directory and 0644 file modes. This closes the
 code-level dependence on a permissive POSIX umask. Complete and remaining inventory
 checks require those modes on POSIX. Parent control files remain outside the
@@ -21,13 +30,14 @@ selected all 51 lock entries. Bytes remain in ignored local directories. The
 manifest retains each target wheel's hash/size/tags, supplier reference and host
 version for review. Fresh transitive versions still require Linux behavior checks.
 
-The current read-only Docker probe reports `ENGINE_UNAVAILABLE`. No base image
-was pulled, no image built, no candidate/suite code or container started, no
-certificate emitted, quarantine released or promotion enabled. Dependency inputs
-are not an admitted toolchain. Base/runtime pinning, reviewed image construction,
-offline installation/import/regression, live kernel/UID probes, isolated worker
-and independent verifier, Temporal repair stages, shadow/canary and the broader
-full-build/release requirements remain open. Full counts are in `BUILD_STATUS.md`.
+At the time of the original input-preparation run, the read-only Docker probe
+reported `ENGINE_UNAVAILABLE`. The later current-runtime update above records the
+live metadata and fixed enforcement probes. No proposed repair source or repair
+verifier suite has run, no certificate was emitted, quarantine was not released,
+and promotion remains disabled. Dependency inputs alone are not an admitted
+toolchain. Reviewed image/toolchain acceptance, isolated behavioral verification,
+Temporal repair stages, shadow/canary and the broader full-build/release
+requirements remain open. Full counts are in `BUILD_STATUS.md`.
 
 Before rollback, preserve pending receipts, journal and inputs. Older POSIX jobs
 with restrictive modes may fail new admission and need reviewed reconciliation.

@@ -12,6 +12,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 from ai_quant_os.agent_permissions import READ_TOOLS
 from ai_quant_os.agent_registry import AgentRegistry, CallBudget, ToolInvocation
 from ai_quant_os.contracts import _require_aware
+from ai_quant_os.research_data_contracts import ResearchDataReceipt
 
 ResourceClass = Literal["GENERAL", "TRAINING", "HOLDOUT"]
 InputStatus = Literal[
@@ -59,10 +60,99 @@ class EvidenceRecord(BaseModel):
 
 
 @dataclass(frozen=True)
+class DatasetResourceEntry:
+    dataset_ref: str
+    resource_class: Literal["TRAINING", "HOLDOUT"]
+    receipt_ref: str
+
+
+@dataclass(frozen=True)
+class DatasetResourceCatalog:
+    """Immutable, content-addressed declarations for protected research datasets."""
+
+    entries: tuple[DatasetResourceEntry, ...]
+    catalog_ref: str
+
+    def __post_init__(self) -> None:
+        refs = [entry.dataset_ref for entry in self.entries]
+        if len(refs) != len(set(refs)) or tuple(sorted(refs)) != tuple(refs):
+            raise ValueError("Dataset resource catalog entries must be unique and canonical")
+        expected = (
+            "dataset-resource-catalog:"
+            + sha256(_json([entry.__dict__ for entry in self.entries]).encode()).hexdigest()
+        )
+        if self.catalog_ref != expected:
+            raise ValueError("Dataset resource catalog identity mismatch")
+
+    @classmethod
+    def from_receipts(cls, receipts: tuple[ResearchDataReceipt, ...]) -> "DatasetResourceCatalog":
+        entries = []
+        for raw in receipts:
+            if type(raw) is not ResearchDataReceipt:
+                raise ValueError("Validated research data receipts required")
+            receipt = ResearchDataReceipt.model_validate_json(raw.model_dump_json())
+            entries.append(
+                DatasetResourceEntry(
+                    dataset_ref=receipt.dataset_ref,
+                    resource_class=receipt.resource_class,
+                    receipt_ref="research-data-receipt:"
+                    + sha256(receipt.model_dump_json().encode()).hexdigest(),
+                )
+            )
+        ordered = tuple(sorted(entries, key=lambda row: row.dataset_ref))
+        if len({row.dataset_ref for row in ordered}) != len(ordered):
+            raise ValueError("Duplicate dataset resource receipt")
+        ref = (
+            "dataset-resource-catalog:"
+            + sha256(_json([entry.__dict__ for entry in ordered]).encode()).hexdigest()
+        )
+        return cls(ordered, ref)
+
+    @classmethod
+    def from_verified_resources(
+        cls, resources: tuple[tuple[str, str, str], ...]
+    ) -> "DatasetResourceCatalog":
+        """Bind adapter-validated immutable snapshots by their canonical source material."""
+        entries = []
+        for resource_ref, resource_class, canonical_material in resources:
+            if resource_class not in {"TRAINING", "HOLDOUT"} or not canonical_material:
+                raise ValueError("Invalid verified dataset resource declaration")
+            entries.append(
+                DatasetResourceEntry(
+                    dataset_ref=resource_ref,
+                    resource_class=resource_class,
+                    receipt_ref="verified-resource:"
+                    + sha256(canonical_material.encode()).hexdigest(),
+                )
+            )
+        ordered = tuple(sorted(entries, key=lambda row: row.dataset_ref))
+        if not ordered or len({row.dataset_ref for row in ordered}) != len(ordered):
+            raise ValueError("Duplicate or empty verified dataset resources")
+        ref = (
+            "dataset-resource-catalog:"
+            + sha256(_json([entry.__dict__ for entry in ordered]).encode()).hexdigest()
+        )
+        return cls(ordered, ref)
+
+    def require(self, refs: tuple[str, ...], resource_class: str) -> None:
+        if len(set(refs)) != len(refs):
+            raise PermissionError("Protected dataset resource binding denied")
+        entries = {entry.dataset_ref: entry for entry in self.entries}
+        if not refs and not entries:
+            return
+        if not refs:
+            raise PermissionError("Protected dataset resource binding denied")
+        if any(ref not in entries or entries[ref].resource_class != resource_class for ref in refs):
+            raise PermissionError("Protected dataset resource binding denied")
+
+
+@dataclass(frozen=True)
 class SourceBinding:
     tool: str
     resource_class: ResourceClass
     fetch: Callable[[], Awaitable[EvidenceRecord]]
+    resource_refs: tuple[str, ...] = ()
+    resource_catalog: DatasetResourceCatalog | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -71,6 +161,22 @@ class SourceBinding:
             or not callable(self.fetch)
         ):
             raise ValueError("Invalid read-only context source binding")
+
+
+def bind_resource_provenance(record: EvidenceRecord, binding: SourceBinding) -> EvidenceRecord:
+    if binding.resource_class not in {"TRAINING", "HOLDOUT"}:
+        return record
+    if binding.resource_catalog is None:
+        raise PermissionError("Protected dataset resource binding denied")
+    provenance = _json([record.source_id, binding.resource_class, binding.resource_refs])
+    return EvidenceRecord.model_validate(
+        {
+            **record.model_dump(),
+            "source_id": binding.resource_catalog.catalog_ref
+            + ":"
+            + sha256(provenance.encode()).hexdigest(),
+        }
+    )
 
 
 class ContextInput(BaseModel):
@@ -237,6 +343,9 @@ class ContextCompiler:
             self._registry.require_tool(
                 agent, version, binding.resource_class + "_READ", scope=scope
             )
+            if binding.resource_catalog is None:
+                raise PermissionError("Protected dataset resource binding denied")
+            binding.resource_catalog.require(binding.resource_refs, binding.resource_class)
 
     async def compile(
         self, agent_id: str, version: str, *, task_id: str, scope: str
@@ -274,6 +383,7 @@ class ContextCompiler:
                         self._authorize(agent_id, version, binding, scope)
                     raw = await asyncio.wait_for(binding.fetch(), timeout=self._timeout)
                 record = EvidenceRecord.model_validate_json(raw.model_dump_json())
+                record = bind_resource_provenance(record, binding)
             except PermissionError:
                 return ContextInput(input_name=name, status="DENIED")
             except TimeoutError:

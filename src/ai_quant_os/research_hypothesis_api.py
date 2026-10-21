@@ -1,6 +1,6 @@
 """Operator-only trusted A08 research graphs; sandbox scope supplies no OS isolation."""
 
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, Literal
 import sqlite3
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -14,6 +14,7 @@ from ai_quant_os.graph_ledger import GraphReceipt
 class ResearchContextInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     task_id: str = Field(min_length=1, max_length=128)
+    agent_version: Literal["0.2.0", "0.3.0"] = "0.2.0"
 
 
 class ResearchGraphInput(BaseModel):
@@ -26,7 +27,7 @@ def install_hypothesis_routes(
     app: FastAPI,
     require_operator: Callable,
     *,
-    compile_context: Callable[[str], Awaitable[CompiledContext]],
+    compile_context: Callable[[str, str], Awaitable[CompiledContext]],
     archived_context: Callable[[str], CompiledContext],
     runtime: Callable[[], GraphRuntime],
     observe_receipt: Callable[[GraphReceipt], Awaitable[None]],
@@ -34,7 +35,7 @@ def install_hypothesis_routes(
     @app.post("/api/v1/sandbox/research/context", dependencies=[Depends(require_operator)])
     async def compile_research(payload: ResearchContextInput) -> dict:
         try:
-            context = await compile_context(payload.task_id)
+            context = await compile_context(payload.task_id, payload.agent_version)
         except PermissionError as error:
             raise HTTPException(403, "Research context admission denied") from error
         except (ValueError, OSError, sqlite3.Error) as error:
@@ -49,7 +50,11 @@ def install_hypothesis_routes(
 
     def research_context(context_ref: str) -> CompiledContext:
         context = archived_context(context_ref)
-        if (context.agent_id, context.agent_version, context.scope) != ("A08", "0.2.0", "SANDBOX"):
+        if (
+            context.agent_id != "A08"
+            or context.agent_version not in {"0.2.0", "0.3.0"}
+            or context.scope != "SANDBOX"
+        ):
             raise PermissionError("Research graph requires its A08 sandbox context")
         return context
 

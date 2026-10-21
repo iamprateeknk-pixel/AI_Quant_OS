@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-10-14",
+  "status": "HARMLESS_VERIFIER_EXECUTED_IN_PINNED_CONTAINER_UNATTESTED",
+  "evidence_root": "data-local/repair-execution-0164/test_actual_repair_verifier_ru0/jobs",
+  "focused_test": {
+    "name": "test_actual_repair_verifier_runs_once_in_pinned_container_and_retains_unattested_result",
+    "passed": 1,
+    "deselected": 21,
+    "real_engine": true,
+    "fixture_is_synthetic": true
+  },
+  "image_id": "sha256:5c86773e1c259ac6b89d6ff2bf8ceca386de0013b66c4e3b0cd1f1e91658e5b4",
+  "owner": "5f3f32fe99b941c8a68563ee80bc0e24",
+  "container_id": "6d6acd1b3adfa93e590aa6f44e23e7559f3999ce8c433ea18d88d91a5d6cd669",
+  "snapshot_sha256": "5d1c6046747515f0a96575c0536620a0b6fc34814c04e0ec23b32b45fe633702",
+  "suite_sha256": "80b2efcd5c4bd7cf0cf83627d5316402fcce28f512a4e669dda4855d33740467",
+  "request_sha256": "fb0dcbc55b5d141718ab93afaa0fc27c3801255a2827cd473365d06969e0945b",
+  "start_intent": {
+    "state": "START_REQUEST_MAY_HAVE_BEEN_SENT",
+    "timeout_seconds": 45,
+    "output_limit": 65536,
+    "arguments": [
+      "container",
+      "start",
+      "--attach",
+      "6d6acd1b3adfa93e590aa6f44e23e7559f3999ce8c433ea18d88d91a5d6cd669"
+    ]
+  },
+  "observed_result": {
+    "state": "EXECUTION_FINISHED_AWAITING_INDEPENDENT_VERIFICATION",
+    "exit_code": 0,
+    "oom_killed": false,
+    "stdout_bytes": 31,
+    "stdout_sha256": "04d7d0a322f32922df80c48e0373c741c269659fda3eb2f7189f3295125204eb",
+    "stderr_bytes": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "removed": true,
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "candidate_repair_source_executed": false,
+  "limitations": [
+    "The executed program was a harmless fixed output probe in a synthetic Git fixture, not a proposed repair or real candidate.",
+    "The result is a one-shot execution receipt, not an independent correctness certificate.",
+    "Automated restart reading/reconciliation of execution sidecars, Temporal repair stages, independent behavioral verification, shadow/canary and release gates remain pending."
+  ]
+}

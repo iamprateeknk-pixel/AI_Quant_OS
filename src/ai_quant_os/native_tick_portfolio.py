@@ -61,12 +61,15 @@ class TickPortfolioReport:
     total_fees_usd: Decimal
     net_pnl_usd: Decimal
     native_balance_usd: Decimal
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.1"] = "1.1"
     engine: Literal["NAUTILUS_BACKTEST"] = "NAUTILUS_BACKTEST"
     engine_version: Literal["1.221.0"] = "1.221.0"
     venue: Literal["PAPER"] = "PAPER"
-    replay_model: Literal["ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V1"] = (
-        "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V1"
+    replay_model: Literal["ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"] = (
+        "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"
+    )
+    liquidity_model: Literal["SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1"] = (
+        "SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1"
     )
     decision_model: Literal["ALL_EVENT_QUOTES_BEFORE_PRIOR_HISTORY_TARGETS_V1"] = (
         "ALL_EVENT_QUOTES_BEFORE_PRIOR_HISTORY_TARGETS_V1"
@@ -98,7 +101,10 @@ def _sources(legs, fee, balance, age):
         if type(row) is not TickPortfolioInput or row.genome.input_kind != "TICK":
             raise ValueError("Trusted tick genomes required")
         source, metadata = canonical_tick_source(
-            row.dataset, row.quantity, BacktestCosts(Decimal(0), Decimal(0))
+            row.dataset,
+            row.quantity,
+            BacktestCosts(Decimal(0), Decimal(0)),
+            require_complete_liquidity=False,
         )
         if len(source.ticks) > 10000:
             raise ValueError("Tick portfolio source capacity exceeded")
@@ -113,13 +119,46 @@ def _sources(legs, fee, balance, age):
 
 
 class _TickReplay(_PortfolioReplay):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._displayed_quote = None
+        self._remaining_bid_size = 0
+        self._remaining_ask_size = 0
+
+    def on_quote_tick(self, tick):
+        phase, row = self.phases[tick.ts_event]
+        if phase == "PRICE":
+            self._displayed_quote = row
+            self._remaining_bid_size = int(row.bid_size)
+            self._remaining_ask_size = int(row.ask_size)
+        super().on_quote_tick(tick)
+
     def submit_order(self, order, **kwargs):
+        if self._displayed_quote is None:
+            return
+        is_buy = order.side == OrderSide.BUY
+        available = self._remaining_ask_size if is_buy else self._remaining_bid_size
+        requested = int(order.quantity.as_decimal())
+        quantity = min(requested, available)
+        if quantity <= 0:
+            return
+        if quantity < requested:
+            order = self.order_factory.market(
+                instrument_id=self.instrument.id,
+                order_side=order.side,
+                quantity=Quantity.from_int(quantity),
+            )
         issue = self.collateral_check(self, order)
         if issue is not None:
             self.failure = issue
             self.stop()
             return
         _ReplayStrategy.submit_order(self, order, **kwargs)
+        if self.failure is None:
+            if is_buy:
+                self._remaining_ask_size -= quantity
+            else:
+                self._remaining_bid_size -= quantity
 
 
 def _quote(engine, prepared, identifier, now, age):
@@ -282,6 +321,7 @@ def run_native_tick_portfolio(
                     source.quantity,
                     BacktestCosts(Decimal(0), fee_per_order_usd),
                     fees_in_quote_currency=False,
+                    allow_partial_liquidity=True,
                 )
                 if position != expected:
                     raise ValueError("Tick portfolio position mismatch")
@@ -335,11 +375,12 @@ def verify_tick_portfolio_report(report):
             report.max_quote_age_seconds,
         )
         if (
-            report.schema_version != "1.0"
+            report.schema_version != "1.1"
             or report.engine != "NAUTILUS_BACKTEST"
             or report.engine_version != "1.221.0"
             or report.venue != "PAPER"
-            or report.replay_model != "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V1"
+            or report.replay_model != "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"
+            or report.liquidity_model != "SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1"
             or report.decision_model != "ALL_EVENT_QUOTES_BEFORE_PRIOR_HISTORY_TARGETS_V1"
             or report.valuation_model != "FINAL_MIDPOINT_SIGN_FX_DECIMAL28_V1"
             or report.collateral_model != "FRESH_GROSS_TARGET_NOTIONAL_USD_NATIVE_BALANCE_V1"
@@ -377,6 +418,7 @@ def verify_tick_portfolio_report(report):
                 row.quantity,
                 BacktestCosts(Decimal(0), report.fee_per_order_usd),
                 fees_in_quote_currency=False,
+                allow_partial_liquidity=True,
             )
             final = row.source_ticks[-1]
             if (

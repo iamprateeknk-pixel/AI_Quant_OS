@@ -12,6 +12,7 @@ from ai_quant_os.research_results import (
     ResearchReport,
     ResearchSelection,
     select_winner,
+    selection_diagnostic,
     measured_conditions,
 )
 from ai_quant_os.research_store import ResearchStore
@@ -68,21 +69,27 @@ def _run(plan, development, holdout, registry, store):
     partitions = partition_development(
         development, train_bars=plan.train_bars, validation_bars=plan.validation_bars
     )
+    if plan.schema_version == "1.3" and (len(partitions) < 4 or len(partitions) % 2):
+        raise ValueError("Research 1.3 requires an even set of at least four validation folds")
     scenario_count = 2 if plan.adversarial_spec is not None else 0
     if (
         plan.adversarial_spec is not None
         and len(holdout.bars) < 2 * plan.adversarial_spec.drop_every
     ):
         raise ValueError("Insufficient observations for declared adversarial policy")
-    if (
-        len(plan.candidates) * (len(partitions) + 1) + 2 * len(partitions) + 2 + scenario_count
-        > 128
-    ):
+    validation_runs = len(plan.candidates) if plan.schema_version == "1.3" else 1
+    native_calls = (
+        len(plan.candidates) * (len(partitions) + 1)
+        + (validation_runs + 1) * len(partitions)
+        + 2
+        + scenario_count
+    )
+    if native_calls > 128:
         raise ValueError("Native research execution budget exceeded")
     total_rows = (
         len(plan.candidates)
         * (sum(len(train.bars) for train, _ in partitions) + len(development.bars))
-        + 2 * sum(len(validation.bars) for _, validation in partitions)
+        + (validation_runs + 1) * sum(len(validation.bars) for _, validation in partitions)
         + 2 * len(holdout.bars)
         + scenario_count * len(holdout.bars)
     )
@@ -137,12 +144,19 @@ def _run(plan, development, holdout, registry, store):
         for index, (training, validation) in enumerate(partitions):
             results = train(training)
             winner = select_winner(results).binding.genome
+            validation_candidates = train(validation) if plan.schema_version == "1.3" else ()
+            validation_result = (
+                next(row for row in validation_candidates if row.binding.genome == winner)
+                if validation_candidates
+                else execute(validation, winner, plan.costs)
+            )
             folds.append(
                 FoldEvidence(
                     index,
                     results,
-                    execute(validation, winner, plan.costs),
+                    validation_result,
                     execute(validation, winner, plan.stress_costs),
+                    validation_candidates,
                 )
             )
         final_training = train(development)
@@ -212,6 +226,7 @@ def _run(plan, development, holdout, registry, store):
             tuple(attempts),
             monte_carlo,
             adversarial,
+            selection_diagnostic(folds) if plan.schema_version == "1.3" else None,
         )
     except Exception:
         report = ResearchReport(

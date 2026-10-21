@@ -34,6 +34,32 @@ def test_archive_preserves_raw_bytes_and_replays_normalized_parquet(tmp_path) ->
     )
 
 
+def test_immutable_publish_uses_no_replace_windows_rename_when_links_are_denied(
+    tmp_path, monkeypatch
+) -> None:
+    if data_archive.os.name != "nt":
+        pytest.skip("Windows rename fallback is platform-specific")
+    target = tmp_path / "objects" / "immutable.bin"
+    original_link = data_archive.os.link
+
+    def denied_link(source, destination):
+        error = PermissionError(13, "hard links denied")
+        error.winerror = 5
+        raise error
+
+    monkeypatch.setattr(data_archive.os, "link", denied_link)
+    data_archive._write_immutable(target, b"same")
+    assert target.read_bytes() == b"same"
+
+    # Existing identical objects remain idempotent, and conflicting bytes never
+    # replace the previously published object.
+    data_archive._write_immutable(target, b"same")
+    with pytest.raises(ValueError, match="Immutable archive object changed"):
+        data_archive._write_immutable(target, b"different")
+    assert target.read_bytes() == b"same"
+    monkeypatch.setattr(data_archive.os, "link", original_link)
+
+
 def test_archive_replay_rejects_modified_parquet(tmp_path) -> None:
     source = tmp_path / "feed.csv"
     source.write_text(CSV, encoding="utf-8")

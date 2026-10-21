@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, Inexact, localcontext
 
 import pytest
-from hypothesis import given, settings, strategies as hs
+from hypothesis import HealthCheck, given, settings, strategies as hs
 
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
@@ -12,7 +12,7 @@ from ai_quant_os.portfolio import PaperFill
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
-@settings(max_examples=40)
+@settings(max_examples=40, suppress_health_check=[HealthCheck.too_slow])
 @given(
     hs.lists(
         hs.tuples(

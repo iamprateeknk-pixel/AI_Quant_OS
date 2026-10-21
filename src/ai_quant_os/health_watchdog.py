@@ -41,7 +41,7 @@ class HealthWatchdog:
         self.last_error = None
         self._known_ids = set()
 
-    def _apply(self, incident):
+    def _apply(self, incident, *, apply_safety=True):
         if incident.quarantine:
             self.registry.quarantine(
                 incident.agent_id, incident.agent_version, incident.manifest_ref
@@ -50,6 +50,9 @@ class HealthWatchdog:
             (self.risk.safety_state, self.state.safety_state(), SafetyState(incident.safety_state)),
             key=list(SafetyState).index,
         )
+
+        if not apply_safety:
+            return
 
         def persist_stop():
             if self.state.audit_integrity().valid and list(SafetyState).index(
@@ -69,11 +72,49 @@ class HealthWatchdog:
     def restore(self):
         with self._lock:
             try:
+                open_ids = {item.incident_id for item in self.store.open_incidents()}
                 for incident in self.store.incidents():
-                    self._apply(incident)
+                    self._apply(incident, apply_safety=incident.incident_id in open_ids)
                     self._known_ids.add(incident.incident_id)
             except Exception:
                 self.risk.set_safety_state(SafetyState.HALT)
+                raise
+
+    def close_quote_incident(self, incident_id, *, command_id, reason):
+        with self._lock:
+            try:
+                incident = next(
+                    (item for item in self.store.incidents() if item.incident_id == incident_id),
+                    None,
+                )
+                if incident is None:
+                    raise ValueError("Unknown health incident")
+                if incident.code not in {"QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"}:
+                    raise ValueError("Only quote incidents may be closed")
+                now = self.clock()
+                from ai_quant_os.contracts import _require_aware
+
+                _require_aware(now)
+                if now.utcoffset().total_seconds() != 0:
+                    raise ValueError("Watchdog clock must be UTC")
+                matching = [
+                    quote for quote in self.quotes() if quote.instrument_id == incident.subject
+                ]
+                if not matching or any(
+                    not quote.trusted
+                    or (now - quote.observed_at).total_seconds() < 0
+                    or (now - quote.observed_at).total_seconds() > 5
+                    for quote in matching
+                ):
+                    raise ValueError("Closure requires a fresh trusted quote")
+                return self.store.close_incident(
+                    incident_id, closed_at=now, command_id=command_id, reason=reason
+                )
+            except ValueError:
+                raise
+            except Exception:
+                self.last_error = "WATCHDOG_VERIFICATION_OR_STORAGE_FAILURE"
+                self._failure_stop()
                 raise
 
     @property
@@ -251,11 +292,12 @@ class HealthWatchdog:
 
     def status(self):
         incidents = self.store.incidents()
+        open_ids = {item.incident_id for item in self.store.open_incidents()}
         return {
             "schema_version": "1.0",
             "mode": "PAPER",
             "state": "ERROR" if self.last_error else "MONITORING",
-            "open_incidents": len(incidents),
+            "open_incidents": len(open_ids),
             "quarantined_versions": sorted(
                 {f"{i.agent_id}@{i.agent_version}" for i in incidents if i.quarantine}
             ),

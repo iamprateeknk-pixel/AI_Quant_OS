@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from pydantic import Field
 
+from ai_quant_os.agent_quality import AgentOperationalQualityObservation
 from ai_quant_os.agent_context import CompiledContext, verify_context
 from ai_quant_os.agent_envelope import AgentEnvelope
 from ai_quant_os.agent_registry import AgentRegistry
@@ -62,15 +63,16 @@ def _observations(context: CompiledContext):
         or tuple(row.resource_class for row in context.inputs) != ("GENERAL",) * 5
     ):
         raise ValueError("Evolution director requires its exact protected paper context")
+    quality = AgentOperationalQualityObservation.model_validate_json(context.inputs[0].payload_json)
     gaps = tuple(
-        EvolutionEvidenceGap.model_validate_json(row.payload_json) for row in context.inputs[:4]
+        EvolutionEvidenceGap.model_validate_json(row.payload_json) for row in context.inputs[1:4]
     )
     inventory = AgentRegistryObservation.model_validate_json(context.inputs[4].payload_json)
     if (
-        tuple(row.input_name for row in gaps) != INPUT_NAMES[:4]
+        tuple(row.input_name for row in gaps) != INPUT_NAMES[1:4]
         or any(
             row.as_of != source.as_of
-            for row, source in zip((*gaps, inventory), context.inputs, strict=True)
+            for row, source in zip((quality, *gaps, inventory), context.inputs, strict=True)
         )
         or any(row.as_of > context.created_at for row in context.inputs)
         or tuple(row.source_id for row in context.inputs)
@@ -81,12 +83,14 @@ def _observations(context: CompiledContext):
     ):
         raise ValueError("Evolution evidence is stale or inconsistent")
     blockers = {
-        "QUALITY_METRICS_UNAVAILABLE",
         "TRAINING_DATASETS_UNAVAILABLE",
         "COSTS_UNAVAILABLE",
         "TRACE_QUALITY_UNAVAILABLE",
         "INDEPENDENT_PROMOTION_GATE_UNAVAILABLE",
+        "QUALITY_CALIBRATION_UNAVAILABLE",
     }
+    if quality.availability != "AVAILABLE":
+        blockers.add("QUALITY_METRICS_UNAVAILABLE")
     return inventory, tuple(sorted(blockers))
 
 

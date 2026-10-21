@@ -1,0 +1,33 @@
+{
+  "increment": "0171",
+  "mission": "A12 Strategy Selector 0.3.0",
+  "scope": "Candidate-keyed verified forward-shadow performance diagnostics with no eligibility or promotion authority",
+  "checks": {
+    "focused_tests": {
+      "result": "PASS",
+      "passed": 141,
+      "failed": 0,
+      "groups": [
+        "legacy selector 0.2.0 compatibility",
+        "verified latest shadow report projection",
+        "missing and failed shadow observations",
+        "performance snapshot mutation after context compilation",
+        "exact-version quarantine and tool admission",
+        "supervisor and agent registry manifest inventory",
+        "protected API execution and operator authorization",
+        "agent registry and architecture boundary",
+        "shadow portfolio lifecycle"
+      ]
+    },
+    "ruff_check": "PASS",
+    "ruff_format": "PASS"
+  },
+  "limitations": [
+    "Shadow P&L remains descriptive and unnormalized; it is not a qualification score.",
+    "CandidateStore has no approved lifecycle state or validated outcome contract.",
+    "Drift thresholds, regime and portfolio constraints, quality calibration, and independent mission acceptance remain open.",
+    "The selector always returns an empty eligible set and does not rank candidates.",
+    "This mission does not satisfy any P00-P13 release gate or authorize promotion."
+  ],
+  "promotion": "NOT_AUTHORIZED"
+}

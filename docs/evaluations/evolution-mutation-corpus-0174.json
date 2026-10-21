@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "evolution-mutation-corpus-0174",
+  "date": "2026-10-19",
+  "scope": "SYNTHETIC_TRAINING_MUTATION_SENSITIVITY",
+  "source_revision": "2b83188d9161d510c603b29cbe42f5e2b40c9db2",
+  "working_tree_source_sha256": {
+    "src/ai_quant_os/evolution_mutations.py": "3aaba7285aa7b09db1b95c4b6968d4471584e77f469cbedaf7657116aafa5dd0",
+    "tests/test_evolution_mutations.py": "229bc220e90afab87c2f0d6c25acae71f10b743101bb24a5775804d046af9298",
+    "tests/test_evolution_runner.py": "925e41145d610e9a77c0e16977117d41f94c405de392deaa70362a91b7fa6a21"
+  },
+  "runner_image_id": "sha256:5c86773e1c259ac6b89d6ff2bf8ceca386de0013b66c4e3b0cd1f1e91658e5b4",
+  "dataset_provenance": "SYNTHETIC_DEVELOPMENT_NOT_HOLDOUT",
+  "protocol_results": [
+    {
+      "mutation_id": "A02_FORCE_UNKNOWN_REGIME",
+      "agent_id": "A02",
+      "baseline_score": "1",
+      "challenger_score": "0.5",
+      "diagnostic": "GUARDRAIL_REGRESSION"
+    },
+    {
+      "mutation_id": "A07_FORCE_HEALTHY_STATUS",
+      "agent_id": "A07",
+      "baseline_score": "1",
+      "challenger_score": "0.5",
+      "diagnostic": "GUARDRAIL_REGRESSION"
+    }
+  ],
+  "cases": [
+    {
+      "mutation_id": "A02_FORCE_UNKNOWN_REGIME",
+      "agent_id": "A02",
+      "case_id": "available-range-remains-ranging",
+      "role": "UNAFFECTED_CONTROL",
+      "expected_weakness_category": null,
+      "baseline_score": "1",
+      "challenger_score": "1",
+      "candidate_behavior": "Available ranging features remain RANGING."
+    },
+    {
+      "mutation_id": "A02_FORCE_UNKNOWN_REGIME",
+      "agent_id": "A02",
+      "case_id": "available-trend-is-forced-unknown",
+      "role": "FAULT_DETECTION",
+      "expected_weakness_category": "REGIME_LABEL_MISMATCH",
+      "baseline_score": "1",
+      "challenger_score": "0",
+      "candidate_behavior": "Available positive-return trending features change from TRENDING to UNKNOWN."
+    },
+    {
+      "mutation_id": "A07_FORCE_HEALTHY_STATUS",
+      "agent_id": "A07",
+      "case_id": "fresh-inputs-preserve-degraded-status",
+      "role": "UNAFFECTED_CONTROL",
+      "expected_weakness_category": null,
+      "baseline_score": "1",
+      "challenger_score": "1",
+      "candidate_behavior": "Fresh quote inputs with an unverified clock remain DEGRADED."
+    },
+    {
+      "mutation_id": "A07_FORCE_HEALTHY_STATUS",
+      "agent_id": "A07",
+      "case_id": "stale-quote-is-unusable",
+      "role": "FAULT_DETECTION",
+      "expected_weakness_category": "INTEGRITY_STATUS_MISMATCH",
+      "baseline_score": "1",
+      "challenger_score": "0",
+      "candidate_behavior": "A quarantined stale quote changes from UNUSABLE to HEALTHY."
+    }
+  ],
+  "container_controls": {
+    "network": "none",
+    "root_filesystem_read_only": true,
+    "job_mount_read_only": true,
+    "container_user": "65534:65534",
+    "capabilities_dropped": ["ALL"],
+    "no_new_privileges": true,
+    "memory_bytes": 536870912,
+    "cpu_count": 1,
+    "pids_limit": 64
+  },
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "Two predeclared synthetic mutations were tested against two cases each; this is a narrow sensitivity probe.",
+    "The controls establish behavior only for these selected examples, not broad unchanged-input correctness.",
+    "This does not establish agent quality, holdout performance, independent validation, or statistical power.",
+    "The source revision is the current checkout base; exact working-tree source hashes are listed above."
+  ]
+}

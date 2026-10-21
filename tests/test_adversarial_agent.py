@@ -106,6 +106,38 @@ def test_adversarial_sources_require_verified_native_scenarios():
         adversarial_sources(replace(report, adversarial=None), now=datetime.now(timezone.utc))
 
 
+def test_adversarial_sources_accept_checked_snapshot_without_research_report():
+    from ai_quant_os.adversarial_agent import (
+        CandidateObservation,
+        StressObservation,
+        ValidationObservation,
+        adversarial_sources,
+        adversarial_sources_from_snapshot,
+    )
+
+    now = datetime(2026, 10, 12, tzinfo=timezone.utc)
+    report = report_fixture()
+    original = adversarial_sources(report, now=now)
+    payloads = {
+        name: json.loads(asyncio.run(binding.fetch()).payload_json)
+        for name, binding in original.items()
+    }
+    rebuilt = adversarial_sources_from_snapshot(
+        CandidateObservation.model_validate(payloads["strategy_candidate"]),
+        ValidationObservation.model_validate(payloads["validation_results"]),
+        StressObservation.model_validate(payloads["stress_library"]),
+        holdout_instrument_id=report.plan.holdout_scope.instrument_id,
+        holdout_first_observed_at=report.plan.holdout_scope.first_observed_at,
+        holdout_last_observed_at=report.plan.holdout_scope.last_observed_at,
+        holdout_dataset_fingerprint=report.plan.holdout_scope.dataset_fingerprint,
+        now=now,
+    )
+
+    assert tuple(rebuilt) == tuple(original)
+    for name in original:
+        assert asyncio.run(rebuilt[name].fetch()) == asyncio.run(original[name].fetch())
+
+
 def test_stress_tool_rechecks_original_archive_and_current_context():
     from ai_quant_os.agent_context import ContextCompiler
     from ai_quant_os.agent_registry import ToolInvocation, load_agent_catalog
@@ -153,3 +185,82 @@ def test_stress_tool_rechecks_original_archive_and_current_context():
     )
     with pytest.raises(PermissionError, match="differs from task evidence"):
         asyncio.run(tool(changed))
+
+
+def test_isolated_stress_tool_binds_scope_and_checks_service_aggregate():
+    from ai_quant_os.agent_context import ContextCompiler
+    from ai_quant_os.agent_registry import ToolInvocation, load_agent_catalog
+    from ai_quant_os.adversarial_agent import _observations, adversarial_sources
+    from ai_quant_os.adversarial_service import IsolatedStressRun
+    from ai_quant_os.holdout_validator_rpc import HoldoutResponse, stress_summary_sha256
+
+    now = datetime(2026, 10, 12, tzinfo=timezone.utc)
+    report = report_fixture()
+    registry = load_agent_catalog()
+    context = asyncio.run(
+        ContextCompiler(registry, adversarial_sources(report, now=now), clock=lambda: now).compile(
+            "A11", "0.2.0", task_id="stress-review", scope="SANDBOX"
+        )
+    )
+    candidate, _validation, stress = _observations(context)
+
+    class Client:
+        requests = []
+        alter_response = False
+
+        def call(self, request):
+            self.requests.append(request)
+            scenarios = [row.model_dump(mode="json") for row in stress.scenarios]
+            if self.alter_response:
+                scenarios[0]["net_pnl"] = "0"
+            return HoldoutResponse.model_validate_json(
+                json.dumps(
+                    {
+                        "request_id": request.request_id,
+                        "task_id": request.task_id,
+                        "context_ref": request.context_ref,
+                        "status": "CHECKED_ARCHIVED_STRESS",
+                        "evidence_ref": request.evidence_ref,
+                        "summary_sha256": stress_summary_sha256(
+                            stress.state, stress.reason, scenarios
+                        ),
+                        "aggregate": {
+                            "state": stress.state,
+                            "scenario_count": len(scenarios),
+                            "reason_codes": [stress.reason],
+                            "scenarios": scenarios,
+                        },
+                    }
+                )
+            )
+
+    client = Client()
+    tool = IsolatedStressRun(
+        client, registry, context=lambda _reference: context, clock=lambda: now
+    )
+    invocation = ToolInvocation(
+        agent_id="A11",
+        agent_version="0.2.0",
+        scope="SANDBOX",
+        tool="STRESS_RUN",
+        payload={
+            "experiment_id": candidate.experiment_id,
+            "report_sha256": candidate.report_sha256,
+        },
+        context_ref=context.context_ref,
+        task_id=context.task_id,
+    )
+    result = asyncio.run(tool(invocation))
+
+    assert result["status"] == "CHECKED_ARCHIVED_STRESS"
+    assert result["scenarios"] == [row.model_dump(mode="json") for row in stress.scenarios]
+    request = client.requests[0]
+    assert request.operation == "STRESS_RUN"
+    assert request.training_ref == stress.training_ref
+    assert request.holdout_ref == stress.holdout_ref
+    assert request.evidence_ref.endswith(candidate.report_sha256)
+    assert (request.task_id, request.context_ref) == (context.task_id, context.context_ref)
+
+    client.alter_response = True
+    with pytest.raises(ValueError, match="differs from bound context"):
+        asyncio.run(tool(invocation))

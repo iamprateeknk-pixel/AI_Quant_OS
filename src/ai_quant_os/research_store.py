@@ -17,12 +17,15 @@ from ai_quant_os.research_results import ResearchReport, ResearchSelection
 
 def encode_research(value) -> bytes:
     record = json.loads(TypeAdapter(type(value)).dump_json(value))
-    _preserve_v10_encoding(record)
+    _preserve_v10_encoding(record, record.get("schema_version"))
     return json.dumps(record, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
 
 
-def _preserve_v10_encoding(record):
+def _preserve_v10_encoding(record, contract_version=None):
     if isinstance(record, dict):
+        if contract_version != "1.3":
+            for key in ("selection_diagnostic", "validation_candidates"):
+                record.pop(key, None)
         if record.get("schema_version") == "1.0":
             for key in ("monte_carlo", "monte_carlo_spec"):
                 if key in record and record[key] is None:
@@ -32,10 +35,10 @@ def _preserve_v10_encoding(record):
                 if key in record and record[key] is None:
                     del record[key]
         for value in record.values():
-            _preserve_v10_encoding(value)
+            _preserve_v10_encoding(value, contract_version)
     elif isinstance(record, list):
         for value in record:
-            _preserve_v10_encoding(value)
+            _preserve_v10_encoding(value, contract_version)
 
 
 def _decode(blob, digest, model):

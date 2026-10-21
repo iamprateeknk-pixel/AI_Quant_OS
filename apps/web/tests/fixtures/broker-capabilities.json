@@ -29,15 +29,17 @@
     {
       "broker_id": "EXNESS_MT5_DEMO",
       "profile_version": "0.1.0",
-      "implementation": "DEMO_OBSERVATION_LIBRARY",
+      "implementation": "ISOLATED_DEMO_ORDER_CLI",
       "operations": [
         "QUOTE_READ",
         "ACCOUNT_READ",
         "POSITIONS_READ",
         "ACTIVE_ORDERS_READ",
-        "DEALS_READ"
+        "DEALS_READ",
+        "DEMO_ORDER_SUBMIT_EXPLICIT",
+        "DEMO_ORDER_RECONCILE_READ_ONLY"
       ],
-      "source_module": "ai_quant_os.mt5_sync_service",
+      "source_module": "ai_quant_os.exness_demo_order_cli",
       "bound_to_execution_router": false,
       "instruments": [],
       "eligible": false,

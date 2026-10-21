@@ -18,6 +18,8 @@ def publication(resource_class="TRAINING", minute=0):
 
 
 def test_operator_publication_retains_checked_metadata_without_changing_paper_controls(tmp_path):
+    holdout_path = tmp_path / "paper.research-data.holdout.sqlite3"
+    holdout_path.write_bytes(b"HOLDOUT must remain unopened by the PAPER API")
     settings = dict(
         operator_token="fixture-research-data",
         clock=lambda: NOW,
@@ -36,15 +38,15 @@ def test_operator_publication_retains_checked_metadata_without_changing_paper_co
         overlap = client.post(
             "/api/v1/paper/research/datasets", headers=HEADERS, json=publication("HOLDOUT")
         )
-        assert overlap.status_code == 409
+        assert overlap.status_code == 422
         heldout = client.post(
             "/api/v1/paper/research/datasets",
             headers=HEADERS,
             json=publication("HOLDOUT", minute=10),
         )
-        assert heldout.status_code == 200
+        assert heldout.status_code == 422
         records = client.get("/api/v1/research/datasets", headers=HEADERS).json()
-        assert len(records["datasets"]) == 2
+        assert len(records["datasets"]) == 1
         assert all("csv" not in row for row in records["datasets"])
         assert client.get("/api/v1/system/status").json() == before
     with TestClient(create_app(**settings)) as client:

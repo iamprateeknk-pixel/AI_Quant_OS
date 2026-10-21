@@ -51,6 +51,7 @@ export function HealthPanel({ statusResult, timelineResult, observedAt }: { stat
               <div><dt>Agent version</dt><dd>{incident.agent_id ? <Link className="health-link" href={`/agents#${incident.agent_id}-${incident.agent_version}`}>{incident.agent_id}@{incident.agent_version}</Link> : "Not an agent incident"}</dd></div>
               <div><dt>Manifest reference</dt><dd className="mono">{incident.manifest_ref ?? "Not applicable"}</dd></div>
               <div><dt>Quarantine</dt><dd>{incident.quarantine ? "Required" : "Not an agent incident"}</dd></div>
+              {incident.transitions.map((transition) => <div key={transition.transition_id}><dt>{transition.action === "CLOSED" ? "Closed" : "Reopened"}</dt><dd><time dateTime={transition.at}>{transition.at}</time>{transition.reason ? ` · ${transition.reason}` : ""}</dd></div>)}
             </dl></details></td>
           </tr>)}</tbody>
         </table></div> : <div className="empty-list">{timeline.total === 0 ? "No incidents recorded in the verified journal." : "No records on this page. Reload the first page."}</div>}
@@ -59,7 +60,7 @@ export function HealthPanel({ statusResult, timelineResult, observedAt }: { stat
           {timeline.next_offset !== null && <Link className="health-link" href={`/incidents?offset=${timeline.next_offset}&head=${timeline.head_hash}`}>Older incidents</Link>}
         </div>
         <p className="panel-muted mono health-head">Verified journal head: {timeline.head_hash}</p>
-        <p className="panel-muted">An incident’s required safety state is historical policy evidence; current safety appears in Risk Center. Incidents remain OPEN until a separately admitted resolution workflow exists. Raw captured evidence is withheld from this view.</p>
+        <p className="panel-muted">An incident’s required safety state is historical policy evidence; current safety appears in Risk Center. Quote incidents can be closed after the watchdog confirms a fresh trusted quote. Closure does not lower risk state or remove agent quarantine. Raw captured evidence is withheld from this view.</p>
       </> : <ReadIssue reason={timelineResult.ok ? "INVALID_RESPONSE" : timelineResult.reason} />}
     </section>}
   </>;

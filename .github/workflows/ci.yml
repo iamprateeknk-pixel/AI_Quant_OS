@@ -198,3 +198,52 @@ jobs:
           if test -f .local-stack.env; then
             python scripts/start_data_stack.py stop
           fi
+  minio-archive-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e ".[dev,data]"
+      - run: docker compose -f compose.minio.yaml up -d
+      - name: Wait for MinIO and create test bucket
+        run: |
+          python - <<'PY'
+          import time
+          import boto3
+          from botocore.exceptions import BotoCoreError, ClientError
+
+          client = boto3.client(
+              "s3",
+              endpoint_url="http://127.0.0.1:58000",
+              region_name="us-east-1",
+              aws_access_key_id="quant-test",
+              aws_secret_access_key="local-test-only-secret",
+          )
+          deadline = time.monotonic() + 90
+          while True:
+              try:
+                  client.create_bucket(Bucket="quant-archives")
+                  break
+              except ClientError as error:
+                  if error.response["Error"]["Code"] in {"BucketAlreadyOwnedByYou", "BucketAlreadyExists"}:
+                      break
+                  if time.monotonic() >= deadline:
+                      raise
+                  time.sleep(2)
+              except BotoCoreError:
+                  if time.monotonic() >= deadline:
+                      raise
+                  time.sleep(2)
+          PY
+      - name: Verify archive upload, immutable writes, restore, and replay
+        env:
+          P02_TEST_S3_ENDPOINT: http://127.0.0.1:58000
+          P02_TEST_S3_ACCESS_KEY: quant-test
+          P02_TEST_S3_SECRET_KEY: local-test-only-secret
+          P02_TEST_S3_BUCKET: quant-archives
+        run: python -m pytest -q tests/test_s3_http.py
+      - if: always()
+        run: docker compose -f compose.minio.yaml down -v

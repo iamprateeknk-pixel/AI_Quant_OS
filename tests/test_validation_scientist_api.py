@@ -9,6 +9,8 @@ import pytest
 
 from ai_quant_os.api import create_app
 from ai_quant_os.candidate_validation_store import CandidateValidationStore
+from ai_quant_os.holdout_validator_rpc import HoldoutContextSnapshot, HoldoutResponse
+from ai_quant_os.validation_scientist_sources import ValidationContextSnapshot
 from test_candidate_validation_store import failed_tests
 from test_candidate_validation import observed_reports
 from test_strategy_prefix_worker import package as package
@@ -129,6 +131,100 @@ def test_expired_context_and_changed_archive_withhold_agent_output(package, tmp_
         assert response.status_code == 200
         assert response.json()["receipt"]["status"] == "INVALID"
         assert response.json()["receipt"]["output_json"] is None
+
+
+def test_a10_context_is_compiled_from_service_snapshot_without_local_archive_reads(
+    tmp_path, monkeypatch
+):
+    from hashlib import sha256
+
+    from ai_quant_os.candidate_validation_contracts import GATE_NAMES
+    from ai_quant_os.research_data_contracts import ResearchDataReceipt, research_dataset_ref
+    from ai_quant_os.validation_package_store import ValidationPackageStore
+    from ai_quant_os.validation_scientist_contracts import (
+        ValidationGateSummary,
+        ValidationSummary,
+    )
+
+    raw_sha256 = sha256(b"service snapshot holdout").hexdigest()
+    receipt = ResearchDataReceipt(
+        dataset_ref=research_dataset_ref("service-test", raw_sha256, "HOLDOUT"),
+        source_id="service-test",
+        resource_class="HOLDOUT",
+        raw_sha256=raw_sha256,
+        dataset_fingerprint="1" * 64,
+        instrument_id="EURUSD",
+        row_count=2,
+        first_observed_at=NOW - timedelta(minutes=2),
+        last_observed_at=NOW - timedelta(minutes=1),
+        received_at=NOW - timedelta(seconds=30),
+    )
+    artifact_ref = "candidate-prerequisite-failure:" + "2" * 64
+    summary = ValidationSummary(
+        artifact_ref=artifact_ref,
+        package_ref="validation-package:" + "3" * 64,
+        candidate_ref="strategy-candidate:" + "4" * 64,
+        training_ref="research-data:" + "5" * 64,
+        holdout_ref=receipt.dataset_ref,
+        outcome="PREREQUISITE_FAILED",
+        gates=tuple(
+            ValidationGateSummary(
+                name=name,
+                state="FAIL" if index == 0 else "PENDING",
+                reason="PREREQUISITE_NOT_SATISFIED",
+            )
+            for index, name in enumerate(GATE_NAMES)
+        ),
+        reasons=("PREREQUISITE_NOT_SATISFIED",),
+        statistics=None,
+    )
+    snapshot = ValidationContextSnapshot(
+        summary=summary,
+        holdout_receipt=receipt,
+        captured_at=NOW,
+    )
+
+    class Client:
+        requests = []
+
+        def call(self, request):
+            self.requests.append(request)
+            return HoldoutResponse(
+                request_id=request.request_id,
+                task_id=request.task_id,
+                context_ref=request.context_ref,
+                status="CHECKED_ARCHIVED_VALIDATION_CONTEXT",
+                evidence_ref=request.evidence_ref,
+                summary_sha256=summary.summary_sha256,
+                aggregate={"outcome": summary.outcome, "gate_count": len(summary.gates)},
+                context_snapshot=HoldoutContextSnapshot(
+                    agent_id="A10", payload_json=snapshot.model_dump_json()
+                ),
+            )
+
+    client = Client()
+
+    def forbidden_archive_read(self, _reference):
+        raise AssertionError("API context compilation read a local validation archive")
+
+    monkeypatch.setattr(CandidateValidationStore, "get", forbidden_archive_read)
+    monkeypatch.setattr(ValidationPackageStore, "get", forbidden_archive_read)
+    with TestClient(create_app(**settings(tmp_path), holdout_rpc_client=client)) as api:
+        response = api.post(
+            "/api/v1/sandbox/validation-scientist/context",
+            headers=HEADERS,
+            json={"task_id": "service-validation", "artifact_ref": artifact_ref},
+        )
+
+    assert response.status_code == 200, response.text
+    context = response.json()
+    assert context["status"] == "READY"
+    assert tuple(row["resource_class"] for row in context["inputs"]) == ("HOLDOUT",) * 3
+    assert len(client.requests) == 1
+    request = client.requests[0]
+    assert request.operation == "VALIDATION_CONTEXT"
+    assert (request.candidate_ref, request.training_ref, request.holdout_ref) == (None, None, None)
+    assert request.evidence_ref == artifact_ref
 
 
 @pytest.mark.parametrize("kind, status", [("error", "FAILED"), ("timeout", "TIMEOUT")])

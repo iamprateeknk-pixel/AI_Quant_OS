@@ -15,12 +15,16 @@ from nautilus_trader.model.instruments import CurrencyPair
 from nautilus_trader.model.objects import Currency, Money, Price, Quantity
 from nautilus_trader.trading.strategy import Strategy as NativeStrategy
 
-from ai_quant_os.backtest import BacktestCosts, Strategy
+from ai_quant_os.backtest import BacktestCosts, StreamingStrategy, Strategy
 from ai_quant_os.market_data import Bar, BarDataset
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
 from ai_quant_os.tick_data import Tick, TickDataset
 from ai_quant_os.tick_strategy import TickStrategy
-from ai_quant_os.native_tick_evidence import canonical_tick_source, verify_native_tick_result
+from ai_quant_os.native_tick_evidence import (
+    MAX_NATIVE_REPLAY_EVENTS,
+    canonical_tick_source,
+    verify_native_tick_result,
+)
 from ai_quant_os.nautilus_contracts import NautilusResult, NativeFill
 
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
@@ -48,9 +52,11 @@ class _ReplayStrategy(NativeStrategy):
             )
         )
         self.instrument, self.plugin, self.phases = instrument, plugin, phases
+        self.streaming = isinstance(plugin, StreamingStrategy)
         self.trade_quantity = quantity
         self.targets = targets
         self.history: list[Bar | Tick] = []
+        self.observation_count = 0
         self.fills: list[NativeFill] = []
         self.closed_realized: list[tuple[int, Decimal]] = []
         self.position = Decimal(0)
@@ -62,16 +68,34 @@ class _ReplayStrategy(NativeStrategy):
     def on_quote_tick(self, tick):
         phase, bar = self.phases[tick.ts_event]
         if phase == "CLOSE":
-            self.history.append(bar)
+            if self.streaming:
+                try:
+                    updated = self.plugin.on_bar(bar)
+                except Exception:
+                    self.failure = "Strategy plugin failed"
+                    self.stop()
+                    return
+                if updated is not None:
+                    self.failure = "Invalid streaming strategy update"
+                    self.stop()
+                    return
+            else:
+                self.history.append(bar)
+            self.observation_count += 1
             return
-        if not self.history:
+        if self.observation_count == 0:
             if phase == "TICK":
                 self.history.append(bar)
+                self.observation_count += 1
             return
         if self.failure:
             return
         try:
-            target = self.plugin.target_position(tuple(self.history))
+            target = (
+                self.plugin.target_position()
+                if self.streaming
+                else self.plugin.target_position(tuple(self.history))
+            )
         except Exception:
             self.failure = "Strategy plugin failed"
             self.stop()
@@ -90,6 +114,7 @@ class _ReplayStrategy(NativeStrategy):
             self.submit_order(order)
         if phase == "TICK":
             self.history.append(bar)
+            self.observation_count += 1
 
     def on_order_filled(self, event):
         side = "BUY" if event.order_side == OrderSide.BUY else "SELL"
@@ -126,7 +151,7 @@ class _ReplayStrategy(NativeStrategy):
 
 def run_nautilus_backtest(
     dataset: BarDataset,
-    strategy: Strategy,
+    strategy: Strategy | StreamingStrategy,
     costs: BacktestCosts,
     *,
     strategy_ref: str,
@@ -146,7 +171,7 @@ def run_nautilus_backtest(
 
 def _run_native_backtest(
     dataset: BarDataset,
-    strategy: Strategy,
+    strategy: Strategy | StreamingStrategy,
     costs: BacktestCosts,
     *,
     strategy_ref: str,
@@ -155,8 +180,8 @@ def _run_native_backtest(
     replay_model: str = "BAR_OPEN_CLOSE_QUOTES_V1",
     targets: tuple[int, ...] = (0, 1),
 ) -> NautilusResult:
-    if not 1 <= len(dataset.bars) <= 1_000_000:
-        raise ValueError("Native replay requires 1..1000000 bars")
+    if not 1 <= len(dataset.bars) * 2 <= MAX_NATIVE_REPLAY_EVENTS:
+        raise ValueError("Native bar replay exceeds the 100000 event budget")
     identifiers = {bar.instrument_id for bar in dataset.bars}
     if len(identifiers) != 1:
         raise ValueError("Native replay requires one instrument")
@@ -216,7 +241,7 @@ def _bar_quotes(dataset, instrument, precision, increment, slippage_bps):
 
 def run_nautilus_directional_backtest(
     dataset: BarDataset,
-    strategy: Strategy,
+    strategy: Strategy | StreamingStrategy,
     costs: BacktestCosts,
     *,
     strategy_ref: str,
@@ -292,6 +317,8 @@ def run_nautilus_tick_backtest(
     quantity: int = 1,
     initial_balance: Decimal = Decimal(100000),
 ) -> NautilusResult:
+    if isinstance(strategy, StreamingStrategy):
+        raise ValueError("Bar streaming strategies cannot run on recorded quote ticks")
     with localcontext(Context(prec=28)):
         dataset, source_metadata = canonical_tick_source(dataset, quantity, costs)
         metadata, precision, increment, quote_currency, instrument = _prepare_instrument(

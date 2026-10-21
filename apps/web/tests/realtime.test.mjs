@@ -25,10 +25,14 @@ test('realtime frame allows only a bounded 25ms same-host future clock skew',asy
  assert.equal(m.parseRealtimeFrame(raw,Date.parse(now)-26),null);
  assert.equal(m.frameCurrent(parsed,Date.parse(raw.valid_until)),false);
 });
-test('sequence regressions and unexpected epochs cannot replace accepted state',async()=>{
+test('full snapshots recover sequence gaps while regressions and unexpected epochs are rejected',async()=>{
  const m=await module(),first=m.parseRealtimeFrame(frame(),Date.parse(now));assert(first);
  assert.equal(m.acceptRealtimeFrame(first,first,false),false);
- const next={...first,sequence:2};assert.equal(m.acceptRealtimeFrame(first,next,false),true);
+ // Sequence numbers are global to the API instance, so other streams can
+ // consume numbers between these complete snapshots. A later full snapshot
+ // is sufficient to restore the current view without replaying missing IDs.
+ const next={...first,sequence:7};assert.equal(m.acceptRealtimeFrame(first,next,false),true);
+ assert.equal(m.acceptRealtimeFrame(next,{...next,sequence:6},false),false);
  const epoch={...next,epoch:'12345678-1234-4123-8123-123456789abd'};
  assert.equal(m.acceptRealtimeFrame(first,epoch,false),false);assert.equal(m.acceptRealtimeFrame(first,epoch,true),true);
  assert.equal(m.acceptRealtimeFrame(null,first,false),false);assert.equal(m.acceptRealtimeFrame(null,first,true),true);

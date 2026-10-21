@@ -8,7 +8,7 @@ Missing, stale, future or untrusted quotes, insufficient/stale history, a missin
 
 Health evidence expires five seconds after the diagnostic observation, independently of market-evidence expiry. This allows diagnosis of stale data without presenting it as fresh prices. A07 emits no replacement price. A persisted NO_NEW_RISK incident request recommends review when instruments are unusable; no handler changes safety state or sends a broker order. Existing deterministic market/risk checks continue independently.
 
-IngressHealth continuously counts canonical domain ingestion rejections and duplicates in this process. Counts include invalid quote/bar, future bar and conflicting/identical duplicate bar outcomes. Rejected rows never replace accepted data. Historical rejected/duplicate counts are disclosed and do not automatically invalidate a currently valid accepted feed. Counters reset on restart and identify their process-local retention explicitly. Schema-level HTTP validation failures are not yet instrumented.
+IngressHealth continuously counts canonical domain ingestion rejections, duplicates, and schema-rejected quote/bar requests in this process. Counts include invalid quote/bar, future bar, conflicting/identical duplicate bar outcomes, and FastAPI request-validation failures on the two canonical ingress routes. Counters retain only bounded event counts, not request bodies or raw prices. Rejected rows never replace accepted data. Historical rejected/duplicate counts are disclosed and do not automatically invalidate a currently valid accepted feed. Counters reset on restart and identify their process-local retention explicitly. Other routes' schema failures are outside A07's feed-ingress counters.
 
 ## Files and use
 

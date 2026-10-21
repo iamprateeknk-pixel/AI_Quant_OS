@@ -1,0 +1,27 @@
+{
+  "evaluation_id": "research-data-isolation-0209",
+  "date": "2026-10-19",
+  "scope": "Class-specific SQLite storage and generator-side TRAINING reads",
+  "focused_command": ".venv/Scripts/python.exe -m pytest -q tests/test_research_evidence_catalog.py tests/test_research_data_api.py tests/test_research_data_cli.py tests/test_research_hypothesis_sources.py tests/test_validation_scientist_sources.py tests/test_validation_package_integrity.py tests/test_validation_package_api.py",
+  "focused_result": "PASS",
+  "focused_passed": 72,
+  "focused_failed": 0,
+  "environment": "Windows Python 3.11",
+  "full_suite": {
+    "result": "PASS",
+    "passed": 3145,
+    "skipped": 42,
+    "duration_seconds": 1347.32
+  },
+  "checks": {
+    "class_specific_sqlite_files": "PASS",
+    "verified_legacy_migration": "PASS",
+    "legacy_audit_preservation": "PASS",
+    "training_reader_avoids_holdout_raw_bytes": "PASS",
+    "cross_class_overlap_and_concurrency": "PASS"
+  },
+  "limitations": [
+    "Independent storage permissions, separate validation service, and independent data acceptance remain open.",
+    "The two files still share one trusted application identity and process."
+  ]
+}

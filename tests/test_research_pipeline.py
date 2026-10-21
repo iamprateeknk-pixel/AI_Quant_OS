@@ -156,6 +156,46 @@ def test_expanding_walk_forward_splits_never_train_on_current_validation():
         partition_development(data(count=15), train_bars=6, validation_bars=4)
 
 
+def test_selection_diagnostic_measures_symmetric_cross_validation_overfit_probability():
+    from decimal import Context, Inexact, localcontext
+    from types import SimpleNamespace
+
+    from ai_quant_os.research_results import selection_diagnostic
+
+    candidate_ids = ("a" * 64, "b" * 64)
+    pnl_by_fold = ((10, 9), (10, 9), (-10, 0), (-10, 0))
+    folds = []
+    for pnl_pair in pnl_by_fold:
+        rows = tuple(
+            SimpleNamespace(
+                binding=SimpleNamespace(genome_sha256=candidate_id),
+                result=SimpleNamespace(net_pnl=Decimal(pnl)),
+            )
+            for candidate_id, pnl in zip(candidate_ids, pnl_pair, strict=True)
+        )
+        folds.append(SimpleNamespace(validation_candidates=rows, validation=rows[0]))
+
+    with localcontext(Context(prec=2, traps=[Inexact])):
+        diagnostic = selection_diagnostic(tuple(folds))
+
+    assert diagnostic.method == "CSCV_EQUAL_BLOCK_NET_PNL_RANK_V1"
+    assert diagnostic.cscv_split_count == 3
+    assert diagnostic.cscv_below_median_count == 1
+    assert diagnostic.cscv_probability == Decimal(1) / Decimal(3)
+
+
+def test_v13_report_schema_accepts_native_decimal_exponent_strings():
+    from pathlib import Path
+
+    from jsonschema import validate
+
+    schema = json.loads(
+        (Path(__file__).parents[1] / "docs/schemas/research-result-v1.3.schema.json").read_text()
+    )
+
+    validate("0E-18", schema["$defs"]["NautilusResult"]["properties"]["net_pnl"])
+
+
 @pytest.mark.parametrize(
     "change",
     [
@@ -420,6 +460,165 @@ def test_declared_monte_carlo_is_bound_to_closed_native_trades_and_archives(tmp_
             schema_version="1.0",
             plan=replace(declared, schema_version="1.0", monte_carlo_spec=None),
         )
+
+
+def test_v13_retains_all_validation_trials_for_selection_overfit_diagnostic(tmp_path):
+    pytest.importorskip("nautilus_trader")
+    from hashlib import sha256
+    from pathlib import Path
+
+    from jsonschema import ValidationError, validate
+
+    from ai_quant_os.adversarial import AdversarialSpec
+    from ai_quant_os.monte_carlo import MonteCarloSpec
+    from ai_quant_os.research_pipeline import run_research_experiment
+    from ai_quant_os.research_store import ResearchStore, encode_research
+    from ai_quant_os.strategy_registry import StrategyRegistry
+
+    development, holdout = data(count=22), data(22, 20)
+    declared = plan(
+        development,
+        holdout,
+        schema_version="1.3",
+        monte_carlo_spec=MonteCarloSpec(iterations=100),
+        adversarial_spec=AdversarialSpec(),
+    )
+    report = run_research_experiment(
+        declared,
+        development,
+        holdout,
+        StrategyRegistry(tmp_path / "strategies"),
+        ResearchStore(tmp_path / "research.sqlite3"),
+    )
+
+    assert report.schema_version == "1.3"
+    assert all(len(fold.validation_candidates) == 2 for fold in report.folds)
+    assert all(
+        {row.binding.genome_sha256 for row in fold.validation_candidates}
+        == {row.fingerprint for row in declared.candidates}
+        for fold in report.folds
+    )
+    assert all(
+        {row.result.dataset_fingerprint for row in fold.validation_candidates}
+        == {fold.validation.result.dataset_fingerprint}
+        for fold in report.folds
+    )
+    assert report.selection_diagnostic.candidate_count == 2
+    assert len(report.selection_diagnostic.selected_winner_ranks) == len(report.folds)
+    assert report.selection_diagnostic.cscv_split_count == 3
+    assert report.promotion_allowed is False
+    assert ResearchStore(tmp_path / "research.sqlite3").get("fixture") == report
+    artifact = {
+        "schema_version": "1.3",
+        "report": json.loads(encode_research(report)),
+        "report_sha256": sha256(encode_research(report)).hexdigest(),
+        "source_lineage": [
+            {
+                "role": role,
+                "archive_id": "a" * 64,
+                "source_sha256": "b" * 64,
+                "dataset_fingerprint": fingerprint,
+            }
+            for role, fingerprint in (
+                ("DEVELOPMENT", development.fingerprint),
+                ("HOLDOUT", holdout.fingerprint),
+            )
+        ],
+    }
+    schema = json.loads(
+        (Path(__file__).parents[1] / "docs/schemas/research-result-v1.3.schema.json").read_text()
+    )
+    validate(artifact, schema)
+    invalid_artifacts = []
+    without_diagnostic = json.loads(json.dumps(artifact))
+    del without_diagnostic["report"]["selection_diagnostic"]
+    invalid_artifacts.append(without_diagnostic)
+    without_validation_trials = json.loads(json.dumps(artifact))
+    del without_validation_trials["report"]["folds"][0]["validation_candidates"]
+    invalid_artifacts.append(without_validation_trials)
+    mismatched_plan = json.loads(json.dumps(artifact))
+    mismatched_plan["report"]["plan"]["schema_version"] = "1.2"
+    invalid_artifacts.append(mismatched_plan)
+    unbound_diagnostic = json.loads(json.dumps(artifact))
+    del unbound_diagnostic["report"]["selection_diagnostic"]["cscv_probability"]
+    invalid_artifacts.append(unbound_diagnostic)
+    for invalid_artifact in invalid_artifacts:
+        with pytest.raises(ValidationError):
+            validate(invalid_artifact, schema)
+
+
+def test_v13_rejects_over_budget_candidate_trial_matrix_before_reservation(tmp_path):
+    pytest.importorskip("nautilus_trader")
+    from ai_quant_os.adversarial import AdversarialSpec
+    from ai_quant_os.monte_carlo import MonteCarloSpec
+    from ai_quant_os.research_pipeline import run_research_experiment
+    from ai_quant_os.research_store import ResearchStore
+    from ai_quant_os.strategy_registry import StrategyRegistry
+
+    development, holdout = data(count=34), data(34, 20)
+    candidates = tuple(
+        StrategyGenome(
+            "moving-average-cross@1.0.0",
+            "BAR",
+            (("fast", index + 1), ("slow", index + 2)),
+        )
+        for index in range(16)
+    )
+    declared = plan(
+        development,
+        holdout,
+        candidates=candidates,
+        train_bars=2,
+        validation_bars=2,
+        schema_version="1.3",
+        monte_carlo_spec=MonteCarloSpec(iterations=100),
+        adversarial_spec=AdversarialSpec(),
+    )
+    store = ResearchStore(tmp_path / "research.sqlite3")
+
+    with pytest.raises(ValueError, match="execution budget"):
+        run_research_experiment(
+            declared,
+            development,
+            holdout,
+            StrategyRegistry(tmp_path / "strategies"),
+            store,
+        )
+
+    assert store.get("fixture") is None
+
+
+@pytest.mark.parametrize("development_count", [14, 26])
+def test_v13_rejects_too_few_or_odd_validation_folds_before_reservation(
+    tmp_path, development_count
+):
+    pytest.importorskip("nautilus_trader")
+    from ai_quant_os.adversarial import AdversarialSpec
+    from ai_quant_os.monte_carlo import MonteCarloSpec
+    from ai_quant_os.research_pipeline import run_research_experiment
+    from ai_quant_os.research_store import ResearchStore
+    from ai_quant_os.strategy_registry import StrategyRegistry
+
+    development, holdout = data(count=development_count), data(development_count, 20)
+    declared = plan(
+        development,
+        holdout,
+        schema_version="1.3",
+        monte_carlo_spec=MonteCarloSpec(iterations=100),
+        adversarial_spec=AdversarialSpec(),
+    )
+    store = ResearchStore(tmp_path / f"research-{development_count}.sqlite3")
+
+    with pytest.raises(ValueError, match="even set of at least four"):
+        run_research_experiment(
+            declared,
+            development,
+            holdout,
+            StrategyRegistry(tmp_path / f"strategies-{development_count}"),
+            store,
+        )
+
+    assert store.get("fixture") is None
 
 
 def test_preexisting_version_one_report_remains_byte_identical():

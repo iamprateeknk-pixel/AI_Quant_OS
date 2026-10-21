@@ -100,12 +100,16 @@ class TaskDeferredTarget(DeferredTarget):
     reason: Literal["PLANNED", "UNSUPPORTED", "QUARANTINED", "HEALTH_ERROR", "NOT_REQUESTED"]
 
 
-def wake_plan(evidence: TaskSupervisorEvidence):
-    wanted = TASK_AGENTS[evidence.task_spec.task_kind]
+def plan_task_targets(
+    evidence: TaskSupervisorEvidence,
+    wanted: tuple[str, ...],
+    supervisor_version: str,
+    deferred_type: type[DeferredTarget] = TaskDeferredTarget,
+):
     selected, deferred = {}, []
     for row in evidence.agent_registry.entries:
         agent, version = row.manifest.agent_id, row.manifest.agent_version
-        if (agent, version) == ("A01", "0.4.0"):
+        if (agent, version) == ("A01", supervisor_version):
             continue
         target = dict(agent_id=agent, agent_version=version, manifest_ref=row.manifest.manifest_ref)
         reason = (
@@ -122,12 +126,48 @@ def wake_plan(evidence: TaskSupervisorEvidence):
             else None
         )
         if reason:
-            deferred.append(TaskDeferredTarget(**target, reason=reason))
+            deferred.append(deferred_type(**target, reason=reason))
         else:
             if not effective_tools(row):
                 raise ValueError("Requested specialist has no current read permissions")
             selected[agent] = WakeTarget(**target)
     return tuple(selected[agent] for agent in wanted if agent in selected), tuple(deferred)
+
+
+def require_declared_plan_context(plan, context, *, read_context, wake_plan, child_run_id):
+    AgentEnvelope.require_context(plan, context)
+    evidence = read_context(context)
+    selected, deferred = wake_plan(evidence)
+    if (
+        plan.parent_context_ref,
+        plan.world_state_version,
+        plan.health_status,
+        plan.task_kind,
+        plan.selected,
+        plan.deferred,
+    ) != (
+        context.context_ref,
+        evidence.world_state.world.world_state_version,
+        evidence.health.status,
+        evidence.task_spec.task_kind,
+        selected,
+        deferred,
+    ):
+        raise ValueError("Supervisor plan differs from original source declaration")
+    identities = [(row.agent_id, row.agent_version, row.manifest_ref) for row in plan.selected]
+    if identities != [
+        (row.agent_id, row.agent_version, row.manifest_ref) for row in plan.calls
+    ] or len(set(identities)) != len(identities):
+        raise ValueError("Supervisor calls do not match wake plan")
+    for row in plan.calls:
+        if row.run_id != child_run_id(plan.parent_context_ref, row.agent_id):
+            raise ValueError("Supervisor child identity mismatch")
+        if row.status == "COMPLETED" and plan.valid_until > row.valid_until:
+            raise ValueError("Supervisor expiry exceeds specialist evidence")
+
+
+def wake_plan(evidence: TaskSupervisorEvidence):
+    return plan_task_targets(evidence, TASK_AGENTS[evidence.task_spec.task_kind], "0.4.0")
 
 
 class TaskPlan(PreviousTaskPlan):

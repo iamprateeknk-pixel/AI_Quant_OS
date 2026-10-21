@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "observed_at_utc": "2026-10-20T01:19:54Z",
+  "environment": {
+    "launcher": "ai-quant-local",
+    "build_mode": "production Next.js build",
+    "api_origin": "http://127.0.0.1:8126",
+    "web_origin": "http://127.0.0.1:3126",
+    "browser_driver": "Playwright CLI 0.1.22",
+    "state_directory": "data-local/p12-browser-acceptance"
+  },
+  "authentication": {
+    "method": "fresh local operator session using a synthetic test-only access code",
+    "result": "signed in; owner-session view reported the current session",
+    "real_credentials_used": false
+  },
+  "paper_state": {
+    "safety_state": "NORMAL",
+    "orders": 0,
+    "fills": 0,
+    "external_broker_connected": false,
+    "paper_safety_action_submitted": false,
+    "order_submitted": false
+  },
+  "routes": [
+    { "path": "/agents", "heading": "Agents", "result": "rendered authenticated registry and version inventory" },
+    { "path": "/brokers", "heading": "Broker health", "result": "rendered PAPER route; unavailable demo observation was labeled unverified" },
+    { "path": "/orders", "heading": "Orders", "result": "rendered empty paper receipts and simulated fills; reconciliation remained unsubmitted" },
+    { "path": "/audit", "heading": "Audit", "result": "rendered verified empty local audit chain" },
+    { "path": "/costs", "heading": "Costs", "result": "rendered unconfigured capacity states without inferring usage" },
+    { "path": "/settings", "heading": "Settings", "result": "rendered current owner session inventory" },
+    { "path": "/traces", "heading": "Traces", "result": "rendered saved trace lookup and empty execution inventory" },
+    { "path": "/incidents", "heading": "Incidents", "result": "rendered disabled monitoring and empty incident history explicitly" }
+  ],
+  "browser_observations": {
+    "page_console_errors": 0,
+    "page_console_warnings": 0,
+    "listed_ui_and_api_requests": "all observed requests returned HTTP 200",
+    "routes_remained_at_requested_url": true
+  },
+  "limits": [
+    "This is an authenticated route smoke check, not the full P12 acceptance suite.",
+    "The browser viewport was not pinned and overflow, target-size, axe, screen-reader, and responsive keyboard probes were not run.",
+    "The database was fresh and empty; nonempty data states were not exercised.",
+    "Only the listed authenticated routes were visited; other routes retain prior signed-out shell evidence."
+  ],
+  "cleanup": {
+    "playwright_session_closed": true,
+    "owned_local_supervisor_stopped": true,
+    "owned_api_and_web_ports_released": true
+  }
+}

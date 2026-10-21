@@ -14,6 +14,17 @@ run_registered_backtest checks input kind, verifies current source against the p
 
 ai-quant-backtest now uses registered execution for bars and ticks. It accepts --fast-window and --slow-window for moving-average-cross and --registry for an explicit registry directory. The default directory is .strategy-registry beside the output artifact; it is ignored by Git. Saved reports add strategy_binding to the existing native result and raw source fingerprint. Both checked-in sample reports were regenerated and their schema includes the complete binding.
 
+The package catalog can be listed before selecting a strategy with
+`ai-quant-backtest --list-strategies`. The result is stable JSON validated by
+`docs/schemas/strategy-catalog-v1.schema.json` and carries a SHA-256 snapshot
+reference. Backtests may select a unique catalog name with `--strategy` or an
+exact version with `--strategy-ref`; `--expected-catalog-sha256` requires the
+catalog to match the snapshot used for selection. The runtime rechecks this
+fingerprint after native execution. Unknown versions, ambiguous names, wrong
+input kinds, stale catalog fingerprints and non-allowlisted entry points fail
+before strategy code runs. The list operation only reads package manifests and
+does not create or mutate the execution registry.
+
 ```powershell
 ai-quant-backtest tests/fixtures/nautilus_replay.csv --strategy moving-average-cross --fast-window 1 --slow-window 2 --registry data-local/strategies --output data-local/backtest.json
 python -m pytest -q tests/test_strategy_registry.py

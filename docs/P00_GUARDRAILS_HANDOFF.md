@@ -14,7 +14,7 @@ Recorded deterministic ownership for current paper control actions, established 
 - `SECURITY_BOUNDARY.md` (initial authority map; full threat model and production identity work remain open)
 - `ENVIRONMENT_STRATEGY.md` (tier roadmap; deployment owner/model/users/exposure remain unconfirmed)
 - `SECRETS_AND_COMPLIANCE_GATES.md` (credential inventory and owner-reviewed staging/shadow gates; production controls remain open)
-- `../AI_Quant_OS-threat-model.md` (repository-grounded draft; deployment and data-sensitivity assumptions remain unvalidated)
+- `../AI_Quant_OS-threat-model.md` (repository-grounded analysis scoped to the operator-selected local single-operator PAPER workstation; provider retention, data rights, jurisdiction, runtime configuration, and independent acceptance remain open)
 - `adr/0165-program-definition-and-release-gates.md`
 
 ## Commands and checks
@@ -31,6 +31,7 @@ None.
 
 - Current ownership is local paper code ownership. It does not establish production identity, dual approval, broker eligibility, or live release authority.
 - The architecture configuration now classifies every inventoried package module as critical or supporting. The import guard covers direct imports in discovered agent and strategy source files; it is not an indirect runtime call-graph proof.
+- The operator selected local single-operator PAPER workstation scope and the data inventory is drawn from repository documentation. This documents assumptions; it does not validate the running workstation configuration or close provider retention/data-rights questions.
 - P00 acceptance, staging/shadow evidence, independent critical-path review, and all remaining P00-P13 phase gates remain open.
 
 ## Rollback

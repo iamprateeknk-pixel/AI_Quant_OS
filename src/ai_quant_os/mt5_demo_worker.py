@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 from uuid import UUID, uuid4
@@ -36,6 +37,15 @@ from ai_quant_os.mt5_account_sync import (  # noqa: E402
     ORDER_KINDS,
     ORDER_STATES,
     DEAL_KINDS,
+)
+from ai_quant_os.contracts import OrderCommand  # noqa: E402
+from ai_quant_os.mt5_demo_execution import (  # noqa: E402
+    DemoOrderEnrollment,
+    DemoOrderReceipt,
+    _command_json,
+    _valid_command,
+    submit_demo_order,
+    reconcile_demo_order,
 )
 
 REQUEST_LIMIT = 16 * 1024
@@ -86,6 +96,103 @@ class SyncWorkerReply(WorkerReply):
 class SyncWorkerRequest(ObservationModel):
     operation: Literal["CAPTURE_DEMO_ACCOUNT"]
     request: DemoSyncRequest
+
+
+class DemoOrderWorkerRequest(ObservationModel):
+    operation: Literal["SUBMIT_EXNESS_DEMO_ORDER", "RECONCILE_EXNESS_DEMO_ORDER"]
+    enrollment: DemoOrderEnrollment
+    command: dict
+    store_path: str
+
+
+class DemoOrderWorkerReply(ObservationModel):
+    code: Literal[
+        "OK", "INVALID_REQUEST", "TERMINAL_UNAVAILABLE", "SDK_UNAVAILABLE", "WORKER_FAILURE"
+    ]
+    report: DemoOrderReceipt | None = None
+
+
+class SupervisedDemoOrder(ObservationModel):
+    state: Literal["DISABLED", "RETURNED", "WITHHELD"]
+    code: (
+        Literal[
+            "TIMEOUT",
+            "OUTPUT_LIMIT",
+            "WORKER_EXIT",
+            "PROTOCOL",
+            "START_FAILURE",
+            "BUSY",
+            "CUSTODY_UNCERTAIN",
+            "INVALID_REQUEST",
+        ]
+        | None
+    ) = None
+    report: DemoOrderReceipt | None = None
+    worker_reply_code: str | None = None
+    worker_custody: Literal["NOT_STARTED", "EXIT_CONFIRMED", "UNKNOWN"]
+    worker_id: UUID4 | None = None
+    terminal_custody: Literal["UNVERIFIED"] = "UNVERIFIED"
+    automatic_retry_allowed: Literal[False] = False
+
+
+def encode_order_request(
+    enrollment: DemoOrderEnrollment,
+    command: OrderCommand,
+    store_path: Path,
+    *,
+    operation: str = "SUBMIT_EXNESS_DEMO_ORDER",
+) -> bytes:
+    if operation not in {"SUBMIT_EXNESS_DEMO_ORDER", "RECONCILE_EXNESS_DEMO_ORDER"}:
+        raise ValueError("Unsupported demo order operation")
+    connection = enrollment.connection.model_dump(mode="json")
+    connection.update(
+        terminal_path=enrollment.connection.terminal_path,
+        expected_login=enrollment.connection.expected_login,
+        expected_server=enrollment.connection.expected_server.get_secret_value(),
+        password=enrollment.connection.password.get_secret_value(),
+    )
+    enrollment_data = enrollment.model_dump(mode="json")
+    enrollment_data["connection"] = connection
+    payload = json.dumps(
+        {
+            "operation": operation,
+            "enrollment": enrollment_data,
+            "command": json.loads(_command_json(command)),
+            "store_path": str(store_path.resolve()),
+        },
+        separators=(",", ":"),
+    ).encode()
+    if len(payload) > REQUEST_LIMIT:
+        raise ValueError("Request exceeds worker input limit")
+    return payload
+
+
+def _order_command(raw: dict) -> OrderCommand:
+    expected = {
+        "order_id",
+        "idempotency_key",
+        "risk_id",
+        "broker_route",
+        "instrument_id",
+        "order_type",
+        "side",
+        "quantity",
+        "limit_price",
+        "stop_price",
+        "time_in_force",
+        "expires_at",
+    }
+    if not isinstance(raw, dict) or set(raw) != expected:
+        raise ValueError("Invalid command shape")
+    return OrderCommand(
+        **{
+            **raw,
+            "quantity": Decimal(raw["quantity"]),
+            "limit_price": None if raw["limit_price"] is None else Decimal(raw["limit_price"]),
+            "stop_price": None if raw["stop_price"] is None else Decimal(raw["stop_price"]),
+            "expires_at": datetime.fromisoformat(raw["expires_at"]),
+        }
+    )
 
 
 class WorkerRequest(ObservationModel):
@@ -367,6 +474,216 @@ def confirmed_worker_exit(worker_id: UUID) -> SupervisedCapture:
         _supervision_lock.release()
 
 
+def supervise_demo_order(
+    enrollment: DemoOrderEnrollment,
+    command: OrderCommand,
+    store_path: Path,
+    *,
+    clock=lambda: datetime.now(timezone.utc),
+    worker_id: UUID | None = None,
+) -> SupervisedDemoOrder:
+    if worker_id is not None and (not isinstance(worker_id, UUID) or worker_id.version != 4):
+        raise ValueError("Worker identity must be UUID4")
+    if not enrollment.enabled:
+        from ai_quant_os.mt5_demo_execution import account_scope
+
+        return SupervisedDemoOrder(
+            state="DISABLED",
+            report=DemoOrderReceipt(
+                state="DISABLED",
+                code="DISABLED",
+                idempotency_key=command.idempotency_key,
+                order_id=command.order_id,
+                instrument_id=command.instrument_id,
+                side=command.side,
+                quantity_units=command.quantity,
+                account_scope_ref=account_scope(enrollment.connection),
+            ),
+            worker_custody="NOT_STARTED",
+        )
+    try:
+        now = clock()
+        _valid_command(command, enrollment, now)
+        payload = encode_order_request(enrollment, command, store_path)
+    except Exception:
+        return SupervisedDemoOrder(
+            state="WITHHELD", code="INVALID_REQUEST", worker_custody="NOT_STARTED"
+        )
+    if not _supervision_lock.acquire(blocking=False):
+        return SupervisedDemoOrder(state="WITHHELD", code="BUSY", worker_custody="NOT_STARTED")
+    try:
+        retained = _inspect_locked()
+        if retained.worker_custody == "UNKNOWN":
+            return SupervisedDemoOrder(
+                state="WITHHELD",
+                code="CUSTODY_UNCERTAIN",
+                worker_id=retained.worker_id,
+                worker_custody="UNKNOWN",
+            )
+        return _run_supervised_order(payload, enrollment, command, clock, worker_id or uuid4())
+    finally:
+        _supervision_lock.release()
+
+
+def supervise_demo_reconciliation(
+    enrollment: DemoOrderEnrollment,
+    command: OrderCommand,
+    store_path: Path,
+    *,
+    clock=lambda: datetime.now(timezone.utc),
+    worker_id: UUID | None = None,
+) -> SupervisedDemoOrder:
+    """Read broker history in the bounded worker; this operation cannot submit orders."""
+    if worker_id is not None and (not isinstance(worker_id, UUID) or worker_id.version != 4):
+        raise ValueError("Worker identity must be UUID4")
+    if not enrollment.enabled:
+        return supervise_demo_order(
+            enrollment, command, store_path, clock=clock, worker_id=worker_id
+        )
+    try:
+        if not isinstance(command, OrderCommand) or command.broker_route != "EXNESS_MT5_DEMO":
+            raise ValueError("Invalid stored demo order")
+        payload = encode_order_request(
+            enrollment, command, store_path, operation="RECONCILE_EXNESS_DEMO_ORDER"
+        )
+    except Exception:
+        return SupervisedDemoOrder(
+            state="WITHHELD", code="INVALID_REQUEST", worker_custody="NOT_STARTED"
+        )
+    if not _supervision_lock.acquire(blocking=False):
+        return SupervisedDemoOrder(state="WITHHELD", code="BUSY", worker_custody="NOT_STARTED")
+    try:
+        retained = _inspect_locked()
+        if retained.worker_custody == "UNKNOWN":
+            return SupervisedDemoOrder(
+                state="WITHHELD",
+                code="CUSTODY_UNCERTAIN",
+                worker_id=retained.worker_id,
+                worker_custody="UNKNOWN",
+            )
+        return _run_supervised_order(payload, enrollment, command, clock, worker_id or uuid4())
+    finally:
+        _supervision_lock.release()
+
+
+def _run_supervised_order(payload, enrollment, command, clock, worker_id):
+    global _uncertain_child
+    deadline = time.monotonic() + WORKER_SECONDS
+    try:
+        process = subprocess.Popen(
+            [sys.executable, "-I", str(Path(__file__).resolve())],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=0,
+            env={
+                key: value
+                for key, value in os.environ.items()
+                if not key.upper().startswith("AI_QUANT_MT5_")
+            },
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+        )
+    except OSError:
+        return SupervisedDemoOrder(
+            state="WITHHELD", code="START_FAILURE", worker_custody="NOT_STARTED"
+        )
+    pipes = BoundedPipes(process, payload)
+    _uncertain_child = (worker_id, process, pipes)
+    try:
+        pipes.start()
+        return _await_order_reply(process, pipes, worker_id, enrollment, command, clock, deadline)
+    except BaseException as exc:
+        stop_owned_worker(process, pipes)
+        custody = _inspect_locked().worker_custody
+        if not isinstance(exc, Exception):
+            raise
+        return SupervisedDemoOrder(
+            state="WITHHELD", code="WORKER_EXIT", worker_id=worker_id, worker_custody=custody
+        )
+    finally:
+        _inspect_locked()
+
+
+def _await_order_reply(process, pipes, worker_id, enrollment, command, clock, deadline):
+    code = None
+    while True:
+        if pipes.overflow.is_set():
+            code = "OUTPUT_LIMIT"
+            break
+        if time.monotonic() >= deadline:
+            code = "TIMEOUT"
+            break
+        if process.poll() is not None and all(not thread.is_alive() for thread in pipes.threads):
+            break
+        time.sleep(0.01)
+    if code is not None:
+        stop_owned_worker(process, pipes)
+    custody = (
+        "EXIT_CONFIRMED"
+        if process.poll() is not None and all(not thread.is_alive() for thread in pipes.threads)
+        else "UNKNOWN"
+    )
+    if code is not None:
+        return SupervisedDemoOrder(
+            state="WITHHELD", code=code, worker_custody=custody, worker_id=worker_id
+        )
+    if process.returncode != 0 or pipes.failed.is_set():
+        return SupervisedDemoOrder(
+            state="WITHHELD", code="WORKER_EXIT", worker_custody=custody, worker_id=worker_id
+        )
+    try:
+        reply = DemoOrderWorkerReply.model_validate(
+            json.loads(pipes.output, object_pairs_hook=unique_object)
+        )
+        if reply.code != "OK":
+            if reply.report is not None:
+                raise ValueError("Failure cannot carry an order receipt")
+            return SupervisedDemoOrder(
+                state="WITHHELD",
+                worker_reply_code=reply.code,
+                worker_custody=custody,
+                worker_id=worker_id,
+            )
+        if reply.report is None:
+            raise ValueError("Missing order receipt")
+        report = validate_demo_order_receipt(reply.report, enrollment, command)
+        return SupervisedDemoOrder(
+            state="RETURNED",
+            report=report,
+            worker_reply_code="OK",
+            worker_custody=custody,
+            worker_id=worker_id,
+        )
+    except Exception:
+        return SupervisedDemoOrder(
+            state="WITHHELD", code="PROTOCOL", worker_custody=custody, worker_id=worker_id
+        )
+
+
+def validate_demo_order_receipt(receipt, enrollment, command):
+    from ai_quant_os.mt5_demo_execution import account_scope
+
+    value = DemoOrderReceipt.model_validate(receipt)
+    if (
+        value.idempotency_key != command.idempotency_key
+        or value.order_id != command.order_id
+        or value.instrument_id != command.instrument_id
+        or value.side != command.side
+        or value.quantity_units != command.quantity
+        or value.account_scope_ref != account_scope(enrollment.connection)
+        or value.demo_only is not True
+        or (
+            value.state == "ACKNOWLEDGED"
+            and (value.code is not None or value.broker_order_id is None)
+        )
+        or (value.state == "DISABLED" and (enrollment.enabled or value.code != "DISABLED"))
+        or (value.state == "REJECTED" and value.code != "REMOTE_REJECTED")
+        or (value.state in {"WITHHELD", "UNKNOWN"} and value.code is None)
+    ):
+        raise ValueError("Order receipt binding or state invalid")
+    return value
+
+
 def supervise_demo(
     request: DemoCaptureRequest | DemoSyncRequest,
     *,
@@ -514,17 +831,58 @@ def worker_request(raw: bytes) -> WorkerReply:
         if len(raw) > REQUEST_LIMIT:
             raise ValueError("Input limit")
         data = json.loads(raw, object_pairs_hook=unique_object)
-        request_model = (
-            SyncWorkerRequest
-            if isinstance(data, dict) and data.get("operation") == "CAPTURE_DEMO_ACCOUNT"
-            else WorkerRequest
-        )
-        request = request_model.model_validate(data).request
+        operation = data.get("operation") if isinstance(data, dict) else None
+        if operation in {"SUBMIT_EXNESS_DEMO_ORDER", "RECONCILE_EXNESS_DEMO_ORDER"}:
+            request = DemoOrderWorkerRequest.model_validate(data)
+            enrollment = request.enrollment
+            command = _order_command(request.command)
+            store_path = Path(request.store_path)
+            if not store_path.is_absolute():
+                raise ValueError("Absolute local store path required")
+            if not enrollment.enabled:
+                from ai_quant_os.mt5_demo_execution import account_scope
+
+                report = DemoOrderReceipt(
+                    state="DISABLED",
+                    code="DISABLED",
+                    idempotency_key=command.idempotency_key,
+                    order_id=command.order_id,
+                    instrument_id=command.instrument_id,
+                    side=command.side,
+                    quantity_units=command.quantity,
+                    account_scope_ref=account_scope(enrollment.connection),
+                )
+                return DemoOrderWorkerReply(code="OK", report=report)
+            connection = enrollment.connection
+        else:
+            request_model = (
+                SyncWorkerRequest if operation == "CAPTURE_DEMO_ACCOUNT" else WorkerRequest
+            )
+            request = request_model.model_validate(data).request
+            connection = request.connection if isinstance(request, DemoSyncRequest) else request
     except Exception:
         return WorkerReply(code="INVALID_REQUEST")
+    if operation in {"SUBMIT_EXNESS_DEMO_ORDER", "RECONCILE_EXNESS_DEMO_ORDER"}:
+        if os.name != "nt" or not Path(connection.terminal_path).is_file():
+            return DemoOrderWorkerReply(code="TERMINAL_UNAVAILABLE")
+        try:
+            import MetaTrader5 as native
+        except Exception:
+            return DemoOrderWorkerReply(code="SDK_UNAVAILABLE")
+        try:
+            action = (
+                reconcile_demo_order
+                if operation == "RECONCILE_EXNESS_DEMO_ORDER"
+                else submit_demo_order
+            )
+            report = action(
+                enrollment, command, native, store_path, clock=lambda: datetime.now(timezone.utc)
+            )
+        except Exception:
+            return DemoOrderWorkerReply(code="WORKER_FAILURE")
+        return DemoOrderWorkerReply(code="OK", report=report)
     reply_model = SyncWorkerReply if isinstance(request, DemoSyncRequest) else WorkerReply
     report_model = DemoSyncReport if isinstance(request, DemoSyncRequest) else DemoCaptureReport
-    connection = request.connection if isinstance(request, DemoSyncRequest) else request
     if not request.enabled:
         return reply_model(code="OK", report=report_model(state="DISABLED", code="DISABLED"))
     if os.name != "nt" or not Path(connection.terminal_path).is_file():

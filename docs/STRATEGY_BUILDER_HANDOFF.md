@@ -95,7 +95,10 @@ quality, calibration, promotion and live authority remain open. SANDBOX is a
 permission scope; OS confinement is unverified. SDK hashes observe local bytes
 and are not independent attestation or archived dependency objects. Shared research
 storage has no physical/statistical holdout isolation. Local audit has no external
-anchor. A01 retains its sealed six-child policy and defers A08/A09/A18 as unsupported.
+anchor. A01 0.6.0 can dispatch A08 0.2.0 in the fixed SANDBOX
+`HYPOTHESIS_RESEARCH` cohort. A09 construction remains a separate
+operator-reviewed action; this cohort does not dispatch A09 or A18 through the
+builder workflow.
 
 Preserve the complete state root before reverting, especially strategy-builds,
 classified research data, world/context/graph and health/quarantine journals. Keep

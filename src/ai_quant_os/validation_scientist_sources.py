@@ -4,12 +4,19 @@ from datetime import datetime, timedelta
 from hashlib import sha256
 from typing import Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict
+from pydantic import AwareDatetime, BaseModel, ConfigDict, model_validator
 
-from ai_quant_os.agent_context import CompiledContext, EvidenceRecord, SourceBinding, verify_context
+from ai_quant_os.agent_context import (
+    CompiledContext,
+    DatasetResourceCatalog,
+    EvidenceRecord,
+    SourceBinding,
+    verify_context,
+)
 from ai_quant_os.candidate_prerequisite_failure import CandidatePrerequisiteFailure
 from ai_quant_os.candidate_validation_contracts import CandidateValidationScorecard, GATE_NAMES
 from ai_quant_os.contracts import _require_aware
+from ai_quant_os.research_data_contracts import ResearchDataReceipt
 from ai_quant_os.validation_package_contracts import ValidationPackage
 from ai_quant_os.validation_scientist_contracts import (
     ValidationGateSummary,
@@ -26,6 +33,26 @@ class ValidationObservation(BaseModel):
     input_name: Literal["strategy_candidate", "immutable_datasets", "execution_models"]
     historical_archive_only: Literal[True] = True
     summary: ValidationSummary
+
+
+class ValidationContextSnapshot(BaseModel):
+    """Service-owned A10 context material with no package bytes or raw observations."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    summary: ValidationSummary
+    holdout_receipt: ResearchDataReceipt
+    captured_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def bound_to_holdout_receipt(self):
+        if (
+            self.holdout_receipt.resource_class != "HOLDOUT"
+            or self.summary.holdout_ref != self.holdout_receipt.dataset_ref
+            or self.holdout_receipt.received_at > self.captured_at
+        ):
+            raise ValueError("Validation context snapshot HOLDOUT binding mismatch")
+        return self
 
 
 def validation_summary(
@@ -93,6 +120,37 @@ def validation_sources(
     _require_aware(now)
     if package.captured_at > now:
         raise PermissionError("Future validation packages cannot become archival evidence")
+    package = ValidationPackage.model_validate_json(package.model_dump_json())
+    return validation_sources_from_summary(
+        summary,
+        package.holdout.receipt,
+        captured_at=package.captured_at,
+        now=now,
+    )
+
+
+def validation_sources_from_summary(
+    summary: ValidationSummary,
+    holdout_receipt: ResearchDataReceipt,
+    *,
+    captured_at: datetime,
+    now: datetime,
+) -> dict[str, SourceBinding]:
+    """Build HOLDOUT-bound A10 context sources from service-returned metadata."""
+    _require_aware(now)
+    _require_aware(captured_at)
+    if captured_at > now:
+        raise PermissionError("Future validation packages cannot become archival evidence")
+    if type(summary) is not ValidationSummary or type(holdout_receipt) is not ResearchDataReceipt:
+        raise ValueError("Checked validation summary and HOLDOUT receipt required")
+    summary = ValidationSummary.model_validate_json(summary.model_dump_json())
+    holdout_receipt = ResearchDataReceipt.model_validate_json(holdout_receipt.model_dump_json())
+    if (
+        holdout_receipt.resource_class != "HOLDOUT"
+        or holdout_receipt.dataset_ref != summary.holdout_ref
+    ):
+        raise PermissionError("Validation summary HOLDOUT receipt binding mismatch")
+    catalog = DatasetResourceCatalog.from_receipts((holdout_receipt,))
     sources = {}
     for name in INPUT_NAMES:
         payload = ValidationObservation(as_of=now, input_name=name, summary=summary)
@@ -110,7 +168,13 @@ def validation_sources(
         async def fetch(record=record):
             return record
 
-        sources[name] = SourceBinding("HOLDOUT_READ", "HOLDOUT", fetch)
+        sources[name] = SourceBinding(
+            "HOLDOUT_READ",
+            "HOLDOUT",
+            fetch,
+            resource_refs=(holdout_receipt.dataset_ref,),
+            resource_catalog=catalog,
+        )
     return sources
 
 

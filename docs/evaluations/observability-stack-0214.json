@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "evaluation_id": "observability-stack-0214",
+  "date": "2026-10-19",
+  "started_at": "2026-10-19T17:20:58Z",
+  "completed_at": "2026-10-19T17:24:26Z",
+  "source_revision": "5d36d0b1b19bcb75315a2147f5c64cda9fb92842",
+  "scope": "NATIVE_WINDOWS_PROMETHEUS_GRAFANA_LOCAL_PAPER_INTEGRATION",
+  "binaries": {
+    "prometheus": {
+      "version": "3.15.0",
+      "directory": "data-local/tools/prometheus-3.15.0",
+      "prometheus_exe_sha256": "c19135130c94e17aa02520ba40c3c8a35727653cd2c667b6a12f9a18313df7ac",
+      "promtool_exe_sha256": "b02a6d8726533fbf59d40fad83646105429b6ed2f1b928f9d44659c67a83659b",
+      "release_manifest_verified": true
+    },
+    "grafana": {
+      "version": "13.2.3",
+      "directory": "data-local/tools/grafana-13.2.3",
+      "grafana_exe_sha256": "05659593ca8dc6d1b0a9fffc72636a598b44c2b30506f5c18ccf8d11f55fc227",
+      "release_tree_verified_before_and_after": true
+    }
+  },
+  "test_command_scope": [
+    "tests/test_prometheus_deployment.py",
+    "tests/test_paper_http_alerts.py",
+    "tests/test_grafana_deployment.py"
+  ],
+  "result": {
+    "passed": 6,
+    "failed": 0,
+    "duration_seconds": 208.84,
+    "status": "PASS"
+  },
+  "verified": [
+    "Pinned promtool validates the paper metrics and a bounded private scrape configuration.",
+    "Actual Prometheus scrapes authenticated paper HTTP metrics and answers queries for request counters and histogram buckets.",
+    "Revoked scrape authentication is reported without retrying or changing an admitted paper order.",
+    "Prometheus alert hold and recovery behavior is checked against native rules.",
+    "Grafana refuses startup when either private admin bootstrap file is missing.",
+    "Grafana provisions the Prometheus datasource and dashboard, enforces authentication, renders actual paper observations, and handles upstream source failure explicitly.",
+    "Test-owned service process handles are observed terminal; temporary database, credentials, configuration, and TSDB are confined to pytest temporary directories."
+  ],
+  "execution_verified": false,
+  "promotion_allowed": false,
+  "limitations": [
+    "This is native Windows integration acceptance with temporary locally owned processes, not persistent service deployment or production operations acceptance.",
+    "No external alert delivery, metrics/log correlation, independent security review, or hosted/Linux service acceptance was performed.",
+    "All applicable P00-P13 acceptance gates remain open."
+  ]
+}

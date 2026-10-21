@@ -3,6 +3,12 @@
     "AgentManifest": {
       "additionalProperties": false,
       "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
         "agent_id": {
           "pattern": "^A(0[1-9]|1[0-8])$",
           "title": "Agent Id",
@@ -14,34 +20,32 @@
           "title": "Agent Version",
           "type": "string"
         },
-        "allowed_tools": {
-          "items": {
-            "type": "string"
-          },
-          "maxItems": 32,
-          "title": "Allowed Tools",
-          "type": "array"
+        "name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
         },
-        "implementation_status": {
-          "default": "PLANNED",
+        "squad": {
           "enum": [
-            "PLANNED",
-            "PARTIAL",
-            "IMPLEMENTED"
+            "Control",
+            "Market",
+            "Data",
+            "Research",
+            "Validation",
+            "Portfolio",
+            "Learning",
+            "Reliability",
+            "Evolution",
+            "Safety"
           ],
-          "title": "Implementation Status",
+          "title": "Squad",
           "type": "string"
         },
         "mission": {
           "maxLength": 1000,
           "minLength": 1,
           "title": "Mission",
-          "type": "string"
-        },
-        "name": {
-          "maxLength": 128,
-          "minLength": 1,
-          "title": "Name",
           "type": "string"
         },
         "output_type": {
@@ -59,26 +63,22 @@
           "title": "Required Inputs",
           "type": "array"
         },
-        "schema_version": {
-          "const": "1.0",
-          "default": "1.0",
-          "title": "Schema Version",
-          "type": "string"
+        "allowed_tools": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Allowed Tools",
+          "type": "array"
         },
-        "squad": {
+        "implementation_status": {
+          "default": "PLANNED",
           "enum": [
-            "Control",
-            "Market",
-            "Data",
-            "Research",
-            "Validation",
-            "Portfolio",
-            "Learning",
-            "Reliability",
-            "Evolution",
-            "Safety"
+            "PLANNED",
+            "PARTIAL",
+            "IMPLEMENTED"
           ],
-          "title": "Squad",
+          "title": "Implementation Status",
           "type": "string"
         },
         "timeout_seconds": {
@@ -105,12 +105,10 @@
     "EvaluationObjective": {
       "additionalProperties": false,
       "properties": {
-        "direction": {
-          "enum": [
-            "MAXIMIZE",
-            "MINIMIZE"
-          ],
-          "title": "Direction",
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
           "type": "string"
         },
         "metric": {
@@ -122,9 +120,18 @@
             "LATENCY_MS",
             "TOOL_ERROR_RATE",
             "COST_USD",
-            "REGIME_CORRECTNESS"
+            "REGIME_CORRECTNESS",
+            "INTEGRITY_CORRECTNESS"
           ],
           "title": "Metric",
+          "type": "string"
+        },
+        "direction": {
+          "enum": [
+            "MAXIMIZE",
+            "MINIMIZE"
+          ],
+          "title": "Direction",
           "type": "string"
         },
         "minimum_improvement": {
@@ -145,12 +152,6 @@
           "pattern": "^[a-f0-9]{64}$",
           "title": "Protocol Sha256",
           "type": "string"
-        },
-        "schema_version": {
-          "const": "1.0",
-          "default": "1.0",
-          "title": "Schema Version",
-          "type": "string"
         }
       },
       "required": [
@@ -165,14 +166,14 @@
     "GenomeSource": {
       "additionalProperties": false,
       "properties": {
-        "content": {
-          "maxLength": 65536,
-          "title": "Content",
-          "type": "string"
-        },
         "path": {
           "maxLength": 128,
           "title": "Path",
+          "type": "string"
+        },
+        "content": {
+          "maxLength": 65536,
+          "title": "Content",
           "type": "string"
         }
       },
@@ -184,52 +185,25 @@
       "type": "object"
     }
   },
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "execution_verified": {
-      "const": false,
-      "default": false,
-      "title": "Execution Verified",
-      "type": "boolean"
-    },
-    "feature_refs": {
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 32,
-      "minItems": 1,
-      "title": "Feature Refs",
-      "type": "array"
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
     },
     "manifest": {
       "$ref": "#/$defs/AgentManifest"
     },
-    "model_ref": {
-      "anyOf": [
-        {
-          "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Model Ref"
-    },
-    "model_route": {
-      "default": "QUANTITATIVE",
-      "enum": [
-        "QUANTITATIVE",
-        "JEV",
-        "OPENAI"
-      ],
-      "title": "Model Route",
-      "type": "string"
-    },
-    "objective": {
-      "$ref": "#/$defs/EvaluationObjective"
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/GenomeSource"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "title": "Sources",
+      "type": "array"
     },
     "parent_ref": {
       "anyOf": [
@@ -244,11 +218,31 @@
       "default": null,
       "title": "Parent Ref"
     },
-    "promotion_allowed": {
-      "const": false,
-      "default": false,
-      "title": "Promotion Allowed",
-      "type": "boolean"
+    "objective": {
+      "$ref": "#/$defs/EvaluationObjective"
+    },
+    "model_route": {
+      "default": "QUANTITATIVE",
+      "enum": [
+        "QUANTITATIVE",
+        "JEV",
+        "OPENAI"
+      ],
+      "title": "Model Route",
+      "type": "string"
+    },
+    "model_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Ref"
     },
     "prompt_template": {
       "anyOf": [
@@ -264,20 +258,26 @@
       "default": null,
       "title": "Prompt Template"
     },
-    "schema_version": {
-      "const": "1.0",
-      "default": "1.0",
-      "title": "Schema Version",
-      "type": "string"
-    },
-    "sources": {
+    "feature_refs": {
       "items": {
-        "$ref": "#/$defs/GenomeSource"
+        "type": "string"
       },
-      "maxItems": 3,
+      "maxItems": 32,
       "minItems": 1,
-      "title": "Sources",
+      "title": "Feature Refs",
       "type": "array"
+    },
+    "execution_verified": {
+      "const": false,
+      "default": false,
+      "title": "Execution Verified",
+      "type": "boolean"
+    },
+    "promotion_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Allowed",
+      "type": "boolean"
     }
   },
   "required": [
