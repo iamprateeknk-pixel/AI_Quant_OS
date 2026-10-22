@@ -119,9 +119,7 @@ def fetch_validated_csv(instrument: str, tries: int = 10) -> bytes:
     expected = EXPECTED_SHA256[instrument]
     for _ in range(tries):
         try:
-            response = requests.get(
-                url, headers={"User-Agent": "Mozilla/5.0"}, timeout=60
-            )
+            response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=60)
             if response.status_code == 200 and response.content:
                 if hashlib.sha256(response.content).hexdigest() == expected:
                     return response.content
@@ -157,13 +155,9 @@ def parse_hourly_csv(instrument: str, content: bytes) -> tuple[BarsView, dict]:
         highs.append(h)
         lows.append(low)
         closes.append(c)
-    non_monotonic = sum(
-        1 for a, b in zip(timestamps, timestamps[1:]) if b <= a
-    )
+    non_monotonic = sum(1 for a, b in zip(timestamps, timestamps[1:]) if b <= a)
     gaps_over_72h = sum(
-        1
-        for a, b in zip(timestamps, timestamps[1:])
-        if (b - a).total_seconds() > 72 * 3600
+        1 for a, b in zip(timestamps, timestamps[1:]) if (b - a).total_seconds() > 72 * 3600
     )
     lo_r, hi_r = PRICE_RANGE[instrument]
     out_of_range = sum(1 for c in closes if not (lo_r <= c <= hi_r))
@@ -217,9 +211,7 @@ def fred_cross_check(bars_by_pair: dict[str, BarsView]) -> dict[str, dict[str, f
     """Daily/weekly return correlation of each pair's closes vs FRED."""
     fred = {pair: fetch_fred_series(sid) for pair, sid in FRED_SERIES.items()}
     fred["EURJPY"] = {
-        d: fred["EURUSD"][d] * fred["USDJPY"][d]
-        for d in fred["EURUSD"]
-        if d in fred["USDJPY"]
+        d: fred["EURUSD"][d] * fred["USDJPY"][d] for d in fred["EURUSD"] if d in fred["USDJPY"]
     }
     results: dict[str, dict[str, float]] = {}
     for pair, bars in bars_by_pair.items():
@@ -246,8 +238,7 @@ def sprint1_trial_sharpes(data_dir: Path) -> tuple[float, ...] | None:
     try:
         series, _provenance = sprint1.load_fx_series(data_dir)
         bars_by_pair = {
-            instrument: sprint1.build_bars(instrument, rows)
-            for instrument, rows in series.items()
+            instrument: sprint1.build_bars(instrument, rows) for instrument, rows in series.items()
         }
         carry = sprint1.load_carry(series)
         sharpes: list[float] = []
@@ -295,9 +286,7 @@ def evaluate_all(
                 if dict(params) == dict(hypothesis.base_params):
                     base_index = i
                 positions = hypothesis.signal(bars, params, None)
-                simulations[f"v{i}"] = simulate(
-                    bars, positions, ONE_WAY_COST[instrument], None
-                )
+                simulations[f"v{i}"] = simulate(bars, positions, ONE_WAY_COST[instrument], None)
             base = simulations[f"v{base_index}"]
             base_runs[(hypothesis.id, instrument)] = (base, simulations)
             trial_sharpes.append(per_period_sharpe(base.net))
@@ -402,9 +391,7 @@ def render_report(
         "derived product."
     )
     lines.append("")
-    lines.append(
-        "| Instrument | Bars used | Dropped (incomplete) | First | Last | SHA-256 |"
-    )
+    lines.append("| Instrument | Bars used | Dropped (incomplete) | First | Last | SHA-256 |")
     lines.append("|---|---:|---:|---|---|---|")
     for instrument in ("EURUSD", "GBPUSD", "USDJPY", "EURJPY"):
         v = validations[instrument]
@@ -478,8 +465,7 @@ def render_report(
         f"trials**, and the trial-Sharpe population pools both sprints' base "
         f"runs. Sprint 1 trial Sharpes "
         + (
-            "were reconstructed exactly by re-running its base simulations "
-            "in-process on FRED data."
+            "were reconstructed exactly by re-running its base simulations in-process on FRED data."
             if sprint1_sharpes_recovered
             else "could NOT be reconstructed in this run (FRED unreachable); "
             "the count 24 is still charged in n_trials, and the dispersion "
@@ -592,14 +578,10 @@ def main() -> int:
     sprint1_recovered = prior is not None
     if prior is None:
         prior = ()
-    n_session_evals = sum(
-        len(h.instruments) for h in HYPOTHESES if h.timeframe == "1h"
-    )
+    n_session_evals = sum(len(h.instruments) for h in HYPOTHESES if h.timeframe == "1h")
     n_trials_total = SPRINT1_N_TRIALS + n_session_evals
     evaluations = evaluate_all(bars_by_pair, prior, n_trials_total)
-    report = render_report(
-        validations, cross_check, evaluations, n_trials_total, sprint1_recovered
-    )
+    report = render_report(validations, cross_check, evaluations, n_trials_total, sprint1_recovered)
     summary = {
         "data": validations,
         "fred_cross_check": cross_check,
