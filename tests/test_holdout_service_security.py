@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from ai_quant_os.holdout_service_security import (
     HoldoutDirectoryAcl,
     build_holdout_acl,
@@ -147,7 +149,11 @@ def test_secure_directory_adopts_only_the_staged_tree(tmp_path, monkeypatch):
 
     security.SetNamedSecurityInfo = set_security
     monkeypatch.setitem(sys.modules, "win32security", security)
-    monkeypatch.setattr(holdout_service_security.os, "name", "nt")
+    monkeypatch.setattr(
+        holdout_service_security,
+        "os",
+        SimpleNamespace(**{**vars(holdout_service_security.os), "name": "nt"}),
+    )
     monkeypatch.setattr(
         holdout_service_security,
         "service_sid_for_name",

@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 import os
 import threading
 import uuid
@@ -229,7 +230,11 @@ def test_holdout_ingestion_request_binds_bytes_and_training_inventory():
 def test_installed_client_fails_closed_off_windows(monkeypatch):
     from ai_quant_os import holdout_validator_rpc as rpc
 
-    monkeypatch.setattr(rpc.os, "name", "posix")
+    monkeypatch.setattr(
+        rpc,
+        "os",
+        SimpleNamespace(**{**vars(rpc.os), "name": "posix"}),
+    )
     client = rpc.installed_windows_holdout_client()
     with pytest.raises(ConnectionError, match="service is unavailable"):
         client.call(HoldoutRequest.model_validate(request()))
@@ -238,7 +243,11 @@ def test_installed_client_fails_closed_off_windows(monkeypatch):
 def test_installed_client_fails_closed_when_service_identity_is_unregistered(monkeypatch):
     from ai_quant_os import holdout_service_security, holdout_validator_rpc as rpc
 
-    monkeypatch.setattr(rpc.os, "name", "nt")
+    monkeypatch.setattr(
+        rpc,
+        "os",
+        SimpleNamespace(**{**vars(rpc.os), "name": "nt"}),
+    )
     monkeypatch.setattr(
         holdout_service_security,
         "service_sid_for_name",
