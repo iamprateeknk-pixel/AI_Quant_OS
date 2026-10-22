@@ -29,7 +29,7 @@ INR validation battery (fixed before the fetch):
 - no calendar gap longer than 21 days (holiday clusters are <= ~5);
 - no single-day move larger than 5% (USDINR is a managed float; its
   largest genuine daily moves are ~2%);
-- cross-check: derived EURINR = DEXINUS / DEXUSEU on common dates must
+- cross-check: derived EURINR = DEXINUS * DEXUSEU on common dates must
   have >= 2,500 points, stay inside [55, 125] and show no daily move
   larger than 5%.
 
@@ -1014,7 +1014,7 @@ def render_report(
             f"{fmt_num(v.get('max_daily_move'), 4)} "
             f"({v.get('moves_over_2pct')} moves > 2%) |"
         )
-        lines.append(f"| EURINR = DEXINUS/DEXUSEU rows | >= {INR_MIN_ROWS} | {er.get('rows')} |")
+        lines.append(f"| EURINR = DEXINUS*DEXUSEU rows | >= {INR_MIN_ROWS} | {er.get('rows')} |")
         lines.append(
             f"| EURINR range | within [{EURINR_RANGE[0]:g}, {EURINR_RANGE[1]:g}] | "
             f"{fmt_num(er.get('min'), 2)} to {fmt_num(er.get('max'), 2)} |"
@@ -1236,7 +1236,15 @@ def main() -> int:
             eur = dict(eur_rows)
             inr_dict = dict(inr_rows)
             common = sorted(set(inr_dict) & set(eur))
-            eurinr_rows = [(d, inr_dict[d] / eur[d]) for d in common]
+            # CORRECTION (2026-10-22, disclosed in the results doc): the
+            # original code divided (DEXINUS / DEXUSEU), which is
+            # dimensionally wrong -- DEXINUS is INR per USD and DEXUSEU is
+            # USD per EUR, so EURINR = DEXINUS * DEXUSEU (the same
+            # multiplicative cross Sprint 1 used for EURJPY). The divided
+            # series dipped to 50.86 and failed the pre-registered
+            # [55, 125] band; the band, thresholds and every hypothesis
+            # spec are unchanged -- only the arithmetic is corrected.
+            eurinr_rows = [(d, inr_dict[d] * eur[d]) for d in common]
         except RuntimeError:
             eurinr_rows = None
         ok, info = validate_usdinr(inr_rows, eurinr_rows)
