@@ -411,7 +411,7 @@ def test_operator_cleanup_uses_original_archive_and_independent_plan_pins(
     argv = [
         "strategy-container",
         "--validation-archive",
-        str(job.path.parent.parent / "paper.validation-packages.sqlite3"),
+        str(job.path.parent.parent / "service.validation-packages.sqlite3"),
         "--package-ref",
         package.package_ref,
         "--index",

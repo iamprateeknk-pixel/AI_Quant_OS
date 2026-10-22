@@ -148,6 +148,7 @@ def validation_sources_from_summary(
     if (
         holdout_receipt.resource_class != "HOLDOUT"
         or holdout_receipt.dataset_ref != summary.holdout_ref
+        or holdout_receipt.received_at > captured_at
     ):
         raise PermissionError("Validation summary HOLDOUT receipt binding mismatch")
     catalog = DatasetResourceCatalog.from_receipts((holdout_receipt,))

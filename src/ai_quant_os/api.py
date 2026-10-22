@@ -160,7 +160,6 @@ from ai_quant_os.strategy_builder_agent import builder_implementation
 from ai_quant_os.strategy_builder_api import install_builder_routes
 from ai_quant_os.validation_package_api import install_validation_package_routes
 from ai_quant_os.validation_package_service import ValidationPreparation
-from ai_quant_os.validation_package_store import ValidationPackageStore
 from ai_quant_os.strategy_builder_sources import builder_sources
 from ai_quant_os.strategy_builder_service import CandidateCreate
 from ai_quant_os.candidate_validation_store import CandidateValidationStore
@@ -645,11 +644,6 @@ def create_app(
     )
     strategy_build_store = StrategyBuildStore(
         configured_path.with_name(configured_path.stem + ".strategy-builds.sqlite3")
-        if configured_path
-        else None
-    )
-    validation_package_store = ValidationPackageStore(
-        configured_path.with_name(configured_path.stem + ".validation-packages.sqlite3")
         if configured_path
         else None
     )
@@ -3127,10 +3121,8 @@ def create_app(
     install_validation_package_routes(
         app,
         require_operator,
-        preparation=ValidationPreparation(
-            strategy_build_store, research_data_catalog, validation_package_store
-        ),
-        archive=validation_package_store,
+        preparation=ValidationPreparation(strategy_build_store, research_data_catalog),
+        validator_client=validator_client,
         graph_record=checked_validation_graph,
         clock=current_time,
     )

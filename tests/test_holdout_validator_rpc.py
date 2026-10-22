@@ -3,6 +3,7 @@ import os
 import threading
 import uuid
 from decimal import Decimal
+from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -80,6 +81,36 @@ def test_context_request_omits_unresolved_archive_refs_and_requires_snapshot_rep
         )
     with pytest.raises(ValueError, match="snapshot"):
         verify_response(context_request, response.model_copy(update={"context_snapshot": None}))
+
+
+def test_validation_package_preparation_request_can_transfer_only_checked_inputs_to_service():
+    import base64
+
+    raw_training = b"training snapshot" * 5000
+    payload = {
+        "graph_json": "{}",
+        "candidate_json": "{}",
+        "training_receipt_json": "{}",
+        "training_raw_base64": base64.b64encode(raw_training).decode(),
+        "plan_json": "{}",
+        "captured_at": datetime(2026, 10, 4, 12, tzinfo=timezone.utc),
+    }
+    prepared = HoldoutRequest.model_validate(
+        request(
+            operation="VALIDATION_PREPARE",
+            evidence_ref="build-001",
+            preparation=payload,
+        )
+    )
+
+    encoded = encode_frame(prepared)
+    assert len(encoded) > 65536
+    assert decode_frame(encoded, HoldoutRequest) == prepared
+
+    with pytest.raises(ValidationError):
+        HoldoutRequest.model_validate(
+            request(operation="VALIDATION_RUN", preparation=payload)
+        )
 
 
 def test_installed_client_fails_closed_off_windows(monkeypatch):

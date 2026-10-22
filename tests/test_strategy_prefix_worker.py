@@ -11,9 +11,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from ai_quant_os.api import create_app
-from ai_quant_os.validation_package_store import ValidationPackageStore
-from test_research_hypothesis_api import NOW, HEADERS
-from test_validation_package_api import prepare
+from test_research_hypothesis_api import HEADERS
+from test_validation_package_api import prepare, validation_service_environment
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,18 +21,14 @@ WORKER = ROOT / "infra/strategy-worker/worker.py"
 
 @pytest.fixture
 def package(tmp_path):
-    with TestClient(
-        create_app(
-            operator_token="fixture-hypothesis",
-            clock=lambda: NOW,
-            paper_db_path=tmp_path / "paper.sqlite3",
-        )
-    ) as client:
-        payload, _, _ = prepare(client)
-        response = client.post("/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload)
-        assert response.status_code == 200, response.text
-    with ValidationPackageStore(tmp_path / "paper.validation-packages.sqlite3") as archive:
-        return archive.get(response.json()["package_ref"])
+    with validation_service_environment(tmp_path) as (settings, holdout, packages):
+        with TestClient(create_app(**settings)) as client:
+            payload, _, _ = prepare(client, holdout.dataset_ref)
+            response = client.post(
+                "/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload
+            )
+            assert response.status_code == 200, response.text
+        return packages.get(response.json()["package_ref"])
 
 
 @pytest.fixture

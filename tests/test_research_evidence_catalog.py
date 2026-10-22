@@ -63,6 +63,19 @@ def test_operator_preparation_reads_exact_classified_pair_without_training_leak(
         assert len(store.training(load_agent_catalog(), "A08", "0.2.0", scope="SANDBOX")) == 1
 
 
+def test_training_only_catalog_returns_raw_training_snapshot_but_never_holdout(tmp_path):
+    path = tmp_path / "research-data.sqlite3"
+    with catalog(path, training_only=True) as store:
+        training = publish(store, raw_bars())
+        with pytest.raises(PermissionError, match="isolated validator service"):
+            publish(store, raw_bars(minute=10), "HOLDOUT", "sealed")
+
+        assert store.training_dataset(training.dataset_ref) == (training, raw_bars())
+
+        with pytest.raises(KeyError):
+            store.training_dataset("research-data:" + "0" * 64)
+
+
 def test_training_and_holdout_bytes_are_persisted_in_separate_sqlite_files(tmp_path):
     path = tmp_path / "research-data.sqlite3"
     holdout_path = tmp_path / "research-data.holdout.sqlite3"

@@ -365,6 +365,7 @@ def adversarial_sources_from_snapshot(
         or candidate.report_sha256 != validation.report_sha256
         or candidate.report_sha256 != stress.report_sha256
         or stress.training_ref is None
+        or not re.fullmatch(r"research-data-scope:[a-f0-9]{64}", stress.training_ref)
         or stress.holdout_ref != "research-data-scope:" + holdout_dataset_fingerprint
         or next((row[:2] for row in validation.gates if row[0] == "ADVERSARIAL"), None)
         != ("ADVERSARIAL", stress.state)

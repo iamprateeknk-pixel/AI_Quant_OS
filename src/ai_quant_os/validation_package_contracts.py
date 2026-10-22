@@ -258,7 +258,9 @@ class ValidationPackage(BaseModel):
             "captured_at": self.captured_at.isoformat(),
             "training": self.training.receipt.model_dump(mode="json"),
             "holdout": self.holdout.receipt.model_dump(mode="json"),
-            "sdk_source_pins": [{"path": row.path, "sha256": row.sha256} for row in self.sdk_files],
+            "sdk_source_pins": [
+                {"path": row.path, "sha256": row.sha256} for row in self.sdk_files
+            ],
             "plan": self.plan.model_dump(mode="json"),
             "status": self.status,
             "validation_status": self.validation_status,
@@ -270,3 +272,53 @@ class ValidationPackage(BaseModel):
             "runtime_dependency_closure": self.runtime_dependency_closure,
             "execution_adapter": self.execution_adapter,
         }
+
+
+class ValidationPackageSourcePin(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    path: Literal[
+        "ai_quant_os/__init__.py",
+        "ai_quant_os/contracts.py",
+        "ai_quant_os/market_data.py",
+        "ai_quant_os/strategy_contracts.py",
+    ]
+    sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+class ValidationPackageMetadata(BaseModel):
+    """Operator-visible package metadata; never includes retained source or dataset bytes."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    mode: Literal["PAPER"]
+    scope: Literal["SANDBOX"]
+    package_ref: str = Field(pattern=r"^validation-package:[a-f0-9]{64}$")
+    request_ref: str = Field(pattern=r"^validation-request:[a-f0-9]{64}$")
+    candidate_ref: str = Field(pattern=r"^strategy-candidate:[a-f0-9]{64}$")
+    graph_run_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,128}$")
+    captured_at: AwareDatetime
+    training: ResearchDataReceipt
+    holdout: ResearchDataReceipt
+    sdk_source_pins: tuple[ValidationPackageSourcePin, ...] = Field(min_length=4, max_length=4)
+    plan: ValidationPlan
+    status: Literal["WAIT_FOR_ISOLATED_VALIDATOR"]
+    validation_status: Literal["NOT_RUN"]
+    tests_status: Literal["NOT_RUN"]
+    isolation_verified: Literal[False]
+    execution_authorized: Literal[False]
+    promotion_authorized: Literal[False]
+    independent_holdout_storage: Literal[False]
+    runtime_dependency_closure: Literal["NOT_CAPTURED"]
+    execution_adapter: Literal["UNAVAILABLE"]
+
+    @model_validator(mode="after")
+    def package_scope_is_consistent(self):
+        if (
+            self.training.resource_class != "TRAINING"
+            or self.holdout.resource_class != "HOLDOUT"
+            or self.captured_at < max(self.training.received_at, self.holdout.received_at)
+            or tuple(row.path for row in self.sdk_source_pins) != SDK_PATHS
+        ):
+            raise ValueError("Validation package metadata scope mismatch")
+        return self
