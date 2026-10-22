@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import socket
 import threading
@@ -13,6 +14,9 @@ from ai_quant_os.paper_telemetry import PaperTelemetry
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 
+@pytest.mark.skipif(
+    os.name != "nt", reason="The pinned native observability launcher is Windows-only"
+)
 def test_prepare_runtime_binds_only_loopback_and_keeps_credentials_out_of_child_environment(
     tmp_path: Path,
     monkeypatch,

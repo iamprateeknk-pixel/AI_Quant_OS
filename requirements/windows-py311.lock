@@ -1,5 +1,5 @@
 # Application dependency lock: windows, CPython 3.11, all extras
-# declaration-sha256: 040b0f91445b2d3b59690f60c0958d16826aba28d38229c5a3a7ab5fcdf9a109
+# declaration-sha256: b7e7ad773c8be1957302640b432cdd1558a56b9bde6b85dc6cdcf6cf44dff4d5
 # Compiler: uv 0.11.29; binary distributions only
 aiosqlite==0.22.1 \
     --hash=sha256:043e0bd78d32888c0a9ca90fc788b38796843360c855a7262a532813133a0650 \
