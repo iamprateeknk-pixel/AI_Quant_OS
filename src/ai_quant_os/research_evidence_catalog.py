@@ -425,6 +425,18 @@ class ResearchEvidenceCatalog:
         with self._lock, self._transaction():
             return tuple(record for record, _ in self._verified())
 
+    def training_dataset(self, reference: str) -> tuple[ResearchDataReceipt, bytes]:
+        """Return one checked TRAINING snapshot from a training-only catalog."""
+        if not self._training_only:
+            raise PermissionError("Training snapshots require a TRAINING-only catalog")
+        with self._lock, self._transaction():
+            row = next(
+                (record for record in self._verified() if record[0].dataset_ref == reference), None
+            )
+            if row is None:
+                raise KeyError("TRAINING dataset not found")
+            return row
+
     def validation_pair(
         self, training_ref: str, holdout_ref: str
     ) -> tuple[tuple[ResearchDataReceipt, bytes], tuple[ResearchDataReceipt, bytes]]:

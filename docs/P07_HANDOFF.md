@@ -1,24 +1,35 @@
 # P07: LangGraph runtime and agent missions
 
-## Current HOLDOUT service state (2026-10-21)
+## Current HOLDOUT service state (2026-10-22)
 
 The Windows service now verifies A10 validation artifacts and A11 archived
-stress reports from service-owned stores. First install stages verified copies
-of the existing HOLDOUT, validation-package, candidate-validation, and research
-SQLite archives, then applies the service-only ACL to the service data tree.
-Stop the PAPER API and research writers before installation so SQLite snapshots
-have stable sources.
+stress reports, prepares immutable A10 validation packages, and serves their
+checked metadata from service-owned stores. Package preparation sends the
+checked graph, candidate, plan, TRAINING receipt and bounded TRAINING snapshot
+to the service; HOLDOUT bytes are fetched only by the service and never returned
+to the API. Package routes no longer open a local validation-package archive.
+The service returns summary metadata and a digest, and refuses conflicting
+immutable package identities through the bounded RPC error contract. API tests
+exercise the framed RPC client and service handler together.
+
+First install stages verified copies of the existing HOLDOUT,
+validation-package, candidate-validation, and research SQLite archives, then
+applies the service-only ACL to the service data tree. Stop the PAPER API and
+research writers before installation so SQLite snapshots have stable sources.
 Installation requires `--data-dir`, `--paper-db`, and `--research-workspace`;
 the HOLDOUT and two validation archives are derived from the PAPER database
 path, and the research archive is read from the workspace. Sources remain
 untouched. Staging requires an empty service data directory and refuses
 unrelated files. Existing complete service archives are preserved on
-re-install, and partial archive sets are refused. The focused
-service/RPC/API/security set passes 77 tests with Ruff and format checks clean.
-Installation has not been run under
-Windows service credentials or checked against actual file ACLs. The PAPER API
-still prepares package/report contexts from local archives, so service-owned
-copies alone do not prove the isolation boundary.
+re-install, and partial archive sets are refused.
+
+The service has not been installed or exercised under its Windows service
+identity, and real file ACL/process-access acceptance remains open. Candidate
+validation result storage, initial HOLDOUT ingestion/refresh, and end-to-end
+archive migration still need production-path review and acceptance. The broader
+validation-source and strategy-worker suites are being rerun after moving the
+fixtures to service-owned package storage. No OS isolation or full P07
+acceptance claim is made.
 
 The A10 context source builder now also accepts only a validated summary, its
 HOLDOUT receipt, and the package capture time, without requiring a local package

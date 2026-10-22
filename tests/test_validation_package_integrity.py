@@ -16,22 +16,20 @@ from ai_quant_os.validation_package_contracts import SDKFile, ValidationPackage
 from ai_quant_os.validation_package_service import ValidationPreparation
 from ai_quant_os.validation_package_store import ValidationPackageStore
 from test_research_hypothesis_api import NOW, HEADERS
-from test_validation_package_api import prepare
+from test_validation_package_api import prepare, validation_service_environment
 
 
 @pytest.fixture
 def retained(tmp_path):
-    path = tmp_path / "paper.sqlite3"
-    with TestClient(
-        create_app(operator_token="fixture-hypothesis", clock=lambda: NOW, paper_db_path=path)
-    ) as client:
-        payload, _, _ = prepare(client)
-        response = client.post("/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload)
-        assert response.status_code == 200, response.text
-    archive_path = path.with_name("paper.validation-packages.sqlite3")
-    with ValidationPackageStore(archive_path) as archive:
-        package = archive.get(response.json()["package_ref"])
-    return archive_path, package
+    with validation_service_environment(tmp_path) as (settings, holdout, packages):
+        with TestClient(create_app(**settings)) as client:
+            payload, _, _ = prepare(client, holdout.dataset_ref)
+            response = client.post(
+                "/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload
+            )
+            assert response.status_code == 200, response.text
+        package = packages.get(response.json()["package_ref"])
+    return tmp_path / "service.validation-packages.sqlite3", package
 
 
 def test_invalid_trusted_sdk_syntax_is_a_typed_rejection_without_execution():
@@ -51,14 +49,70 @@ def test_preparation_refuses_naive_capture_time_instead_of_assuming_host_timezon
         def get_candidate(self, *_):
             pytest.fail("Naive clock must be rejected before archive reads")
 
-    service = ValidationPreparation(NoReads(), None, None)
+    service = ValidationPreparation(NoReads(), None)
     with pytest.raises(ValueError, match="timezone"):
-        service.prepare(
-            package.graph,
-            package.holdout.receipt.dataset_ref,
-            package.plan,
+        service.prepare_request(
+            None,
+            "research-data:" + "0" * 64,
+            None,
             now=NOW.replace(tzinfo=None),
         )
+
+
+def test_preparation_request_reads_training_only_and_sends_no_holdout_bytes(tmp_path):
+    import base64
+    import json
+
+    from fastapi.testclient import TestClient
+
+    from ai_quant_os.api import create_app
+    from ai_quant_os.graph_ledger import GraphLedger
+    from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog
+    from ai_quant_os.strategy_build_store import StrategyBuildStore
+    from ai_quant_os.validation_package_contracts import ValidationPlan
+    from test_research_hypothesis_api import training_csv
+    from test_strategy_builder_api import build, review
+
+    paper_db = tmp_path / "paper.sqlite3"
+    with TestClient(
+        create_app(operator_token="fixture-hypothesis", clock=lambda: NOW, paper_db_path=paper_db)
+    ) as client:
+        reviewed = review(client)
+        _, _, output, _ = build(client, reviewed, task="validation-build")
+    with GraphLedger.archive(paper_db.with_name("paper.agents.sqlite3")) as archive:
+        graph = archive.get("validation-build")
+    with (
+        StrategyBuildStore(paper_db.with_name("paper.strategy-builds.sqlite3")) as builds,
+        ResearchEvidenceCatalog(
+            paper_db.with_name("paper.research-data.sqlite3"), training_only=True
+        ) as catalog,
+    ):
+        request = ValidationPreparation(builds, catalog).prepare_request(
+            graph,
+            "research-data:" + "a" * 64,
+            ValidationPlan(
+                plan_id="direction-validation",
+                rationale="Synthetic development check.",
+                spread_bps=2,
+                slippage_bps=1,
+                commission_bps="0.5",
+                cost_stress_multiplier=2,
+                walk_forward_train_bars=8,
+                walk_forward_test_bars=2,
+                monte_carlo_trials=1000,
+                random_seed=27,
+            ),
+            now=NOW,
+        )
+
+    assert request.operation == "VALIDATION_PREPARE"
+    assert request.evidence_ref == "validation-build"
+    assert request.candidate_ref == output["candidate_ref"]
+    candidate = json.loads(request.preparation.candidate_json)
+    assert request.training_ref == candidate["review"]["hypothesis"]["dataset_ref"]
+    assert request.preparation is not None
+    assert base64.b64decode(request.preparation.training_raw_base64) == training_csv().encode()
+    assert "holdout_raw" not in request.preparation.model_dump_json()
 
 
 @pytest.mark.parametrize(

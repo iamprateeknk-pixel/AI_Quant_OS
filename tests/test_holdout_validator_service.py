@@ -310,7 +310,10 @@ def test_stress_context_reply_contains_checked_observations_without_report_bars(
     assert response.summary_sha256 == stress_summary_sha256(
         snapshot.stress.state, snapshot.stress.reason, snapshot.stress.scenarios
     )
-    assert "source_bars" not in response.context_snapshot.payload_json
+    assert not any(
+        field in response.context_snapshot.payload_json
+        for field in ("source_bars", "fills", "raw_base64")
+    )
 
 
 def test_stress_report_requires_a_matching_service_owned_holdout_receipt():
@@ -337,6 +340,106 @@ def test_stress_report_requires_a_matching_service_owned_holdout_receipt():
 
     with __import__("pytest").raises(PermissionError, match="receipt unavailable"):
         _require_service_holdout(report, Holdouts())
+
+
+def test_service_prepares_and_retains_validation_package_without_returning_holdout_bytes(tmp_path):
+    import base64
+    import json
+    from uuid import uuid4
+
+    from fastapi.testclient import TestClient
+
+    from ai_quant_os.api import create_app
+    from ai_quant_os.candidate_validation_store import CandidateValidationStore
+    from ai_quant_os.graph_ledger import GraphLedger
+    from ai_quant_os.research_evidence_catalog import HoldoutEvidenceStore, ResearchEvidenceCatalog
+    from ai_quant_os.research_store import ResearchStore
+    from ai_quant_os.strategy_candidate_contracts import CandidateBundle
+    from ai_quant_os.validation_package_contracts import ValidationPlan
+    from ai_quant_os.validation_package_store import ValidationPackageStore
+    from test_research_hypothesis_api import NOW, training_csv
+    from test_strategy_builder_api import build, review
+
+    paper_db = tmp_path / "paper.sqlite3"
+    with TestClient(
+        create_app(operator_token="fixture-hypothesis", clock=lambda: NOW, paper_db_path=paper_db)
+    ) as client:
+        reviewed = review(client)
+        _, _, output, candidate_payload = build(client, reviewed, task="validation-build")
+        with GraphLedger.archive(paper_db.with_name("paper.agents.sqlite3")) as graph_archive:
+            graph = graph_archive.get("validation-build")
+    candidate = CandidateBundle.model_validate(candidate_payload)
+
+    service_research = tmp_path / "service.research-data.sqlite3"
+    holdout_csv = training_csv().replace("2026-10-01", "2026-10-02").encode()
+    training_bytes = training_csv().encode()
+    with ResearchEvidenceCatalog(service_research) as catalog:
+        training_receipt = catalog.publish(
+            training_bytes,
+            source_id="synthetic-development",
+            resource_class="TRAINING",
+            received_at=NOW,
+        )
+        holdout_receipt = catalog.publish(
+            holdout_csv,
+            source_id="later-holdout",
+            resource_class="HOLDOUT",
+            received_at=NOW,
+        )
+    assert candidate.review.hypothesis.dataset_ref == training_receipt.dataset_ref
+
+    research = ResearchStore(tmp_path / "service.research.sqlite3")
+    with (
+        HoldoutEvidenceStore(service_research.with_name("service.research-data.holdout.sqlite3"))
+        as holdouts,
+        ValidationPackageStore(tmp_path / "service.validation-packages.sqlite3") as packages,
+        CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3") as validations,
+    ):
+        handler = HoldoutRequestHandler(holdouts, packages, validations, research)
+        request = HoldoutRequest.model_validate(
+            {
+                "request_id": uuid4().hex,
+                "operation": "VALIDATION_PREPARE",
+                "agent_id": "A10",
+                "agent_version": "0.2.0",
+                "task_id": graph.receipt.task_id,
+                "context_ref": graph.receipt.context_ref,
+                "candidate_ref": output["candidate_ref"],
+                "training_ref": training_receipt.dataset_ref,
+                "holdout_ref": holdout_receipt.dataset_ref,
+                "evidence_ref": graph.receipt.run_id,
+                "preparation": {
+                    "graph_json": graph.model_dump_json(),
+                    "candidate_json": candidate.model_dump_json(),
+                    "training_receipt_json": training_receipt.model_dump_json(),
+                    "training_raw_base64": base64.b64encode(training_bytes).decode(),
+                    "plan_json": ValidationPlan.model_validate(
+                        {
+                            "plan_id": "direction-validation",
+                            "rationale": "Synthetic development check.",
+                            "spread_bps": "2",
+                            "slippage_bps": "1",
+                            "commission_bps": "0.5",
+                            "cost_stress_multiplier": "2",
+                            "walk_forward_train_bars": 8,
+                            "walk_forward_test_bars": 2,
+                            "monte_carlo_trials": 1000,
+                            "random_seed": 27,
+                        }
+                    ).model_dump_json(),
+                    "captured_at": NOW,
+                },
+            }
+        )
+        response = handler(request)
+
+        assert response.status == "CHECKED_VALIDATION_PACKAGE_PREPARED"
+        assert response.evidence_ref == graph.receipt.run_id
+        assert "raw_base64" not in response.model_dump_json()
+        package_ref = json.loads(response.package_metadata_json)["package_ref"]
+        package = packages.get(package_ref)
+        assert package is not None
+        assert base64.b64decode(package.holdout.raw_base64) == holdout_csv
 
 
 def test_stage_service_archives_verifies_copies_and_preserves_sources(tmp_path):

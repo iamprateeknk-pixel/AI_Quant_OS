@@ -162,6 +162,13 @@ def test_service_summary_and_receipt_build_the_same_validation_context():
         validation_sources_from_summary(
             summary, receipt, captured_at=NOW + timedelta(seconds=1), now=NOW
         )
+    with pytest.raises(PermissionError, match="receipt binding"):
+        validation_sources_from_summary(
+            summary,
+            receipt,
+            captured_at=receipt.received_at - timedelta(seconds=1),
+            now=NOW,
+        )
 
 
 @pytest.mark.parametrize(

@@ -6,18 +6,46 @@ import json
 import os
 import re
 import time
+import base64
 from hashlib import sha256
 from decimal import Decimal
 from typing import Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
-MAX_FRAME_BYTES = 65536
+MAX_FRAME_BYTES = 2097152
 _RESPONSE_RECEIVED_ACK = b"ACK1"
 HOLDOUT_PIPE_NAME = r"\\.\pipe\AIQuantHoldout.v3"
 _MAX_ID_LENGTH = 512
 _SERVICE_SID_PATTERN = re.compile(r"^S-1-5-80-(?:\d+-){4}\d+$")
 FrameModel = TypeVar("FrameModel", bound=BaseModel)
+
+
+class HoldoutValidationPreparation(BaseModel):
+    """Checked, non-HOLDOUT inputs the operator API sends for service-side packaging."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    graph_json: str = Field(min_length=2, max_length=262144)
+    candidate_json: str = Field(min_length=2, max_length=65536)
+    training_receipt_json: str = Field(min_length=2, max_length=4096)
+    training_raw_base64: str = Field(min_length=4, max_length=1398104)
+    plan_json: str = Field(min_length=2, max_length=8192)
+    captured_at: AwareDatetime
+
+    @field_validator("training_raw_base64")
+    @classmethod
+    def validate_training_bytes(cls, value: str) -> str:
+        try:
+            raw = base64.b64decode(value, validate=True)
+        except (ValueError, UnicodeError) as error:
+            raise ValueError("Invalid validation training snapshot") from error
+        if (
+            not 0 < len(raw) <= 1048576
+            or base64.b64encode(raw).decode("ascii") != value
+        ):
+            raise ValueError("Invalid validation training snapshot")
+        return value
 
 
 def _identifier(value: str) -> str:
@@ -41,6 +69,8 @@ class HoldoutRequest(BaseModel):
         "STRESS_RUN",
         "VALIDATION_CONTEXT",
         "STRESS_CONTEXT",
+        "VALIDATION_PREPARE",
+        "VALIDATION_PACKAGE_METADATA",
     ]
     agent_id: Literal["A10", "A11"]
     agent_version: Literal["0.2.0"]
@@ -50,6 +80,7 @@ class HoldoutRequest(BaseModel):
     training_ref: str | None = Field(default=None, min_length=1, max_length=512)
     holdout_ref: str | None = Field(default=None, min_length=1, max_length=512)
     evidence_ref: str = Field(min_length=1, max_length=512)
+    preparation: HoldoutValidationPreparation | None = None
 
     @field_validator(
         "request_id",
@@ -72,14 +103,18 @@ class HoldoutRequest(BaseModel):
             ("A11", "STRESS_RUN"),
             ("A10", "VALIDATION_CONTEXT"),
             ("A11", "STRESS_CONTEXT"),
+            ("A10", "VALIDATION_PREPARE"),
+            ("A10", "VALIDATION_PACKAGE_METADATA"),
         }:
             raise ValueError("RPC operation is not authorized for this agent")
         refs = (self.candidate_ref, self.training_ref, self.holdout_ref)
-        if self.operation.endswith("_CONTEXT"):
+        if self.operation.endswith("_CONTEXT") or self.operation == "VALIDATION_PACKAGE_METADATA":
             if any(value is not None for value in refs):
                 raise ValueError("Context request cannot supply archive scope refs")
         elif any(value is None for value in refs):
             raise ValueError("Validation requests require complete archive scope refs")
+        if (self.operation == "VALIDATION_PREPARE") != (self.preparation is not None):
+            raise ValueError("Validation preparation payload does not match operation")
 
 
 class HoldoutScenarioAggregate(BaseModel):
@@ -149,11 +184,14 @@ class HoldoutResponse(BaseModel):
         "CHECKED_ARCHIVED_STRESS",
         "CHECKED_ARCHIVED_VALIDATION_CONTEXT",
         "CHECKED_ARCHIVED_STRESS_CONTEXT",
+        "CHECKED_VALIDATION_PACKAGE_PREPARED",
+        "CHECKED_VALIDATION_PACKAGE_METADATA",
     ]
     evidence_ref: str = Field(min_length=1, max_length=512)
     summary_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     aggregate: HoldoutAggregate
     context_snapshot: HoldoutContextSnapshot | None = None
+    package_metadata_json: str | None = Field(default=None, max_length=16384)
 
     @field_validator("request_id", "task_id", "context_ref", "evidence_ref")
     @classmethod
@@ -277,6 +315,8 @@ def verify_response(request: HoldoutRequest, response: HoldoutResponse) -> Holdo
         "STRESS_RUN": "CHECKED_ARCHIVED_STRESS",
         "VALIDATION_CONTEXT": "CHECKED_ARCHIVED_VALIDATION_CONTEXT",
         "STRESS_CONTEXT": "CHECKED_ARCHIVED_STRESS_CONTEXT",
+        "VALIDATION_PREPARE": "CHECKED_VALIDATION_PACKAGE_PREPARED",
+        "VALIDATION_PACKAGE_METADATA": "CHECKED_VALIDATION_PACKAGE_METADATA",
     }[request.operation]
     if response.status != expected_status:
         raise ValueError("Validator response operation mismatch")
@@ -286,11 +326,23 @@ def verify_response(request: HoldoutRequest, response: HoldoutResponse) -> Holdo
     if request.operation in {"VALIDATION_RUN", "VALIDATION_CONTEXT"}:
         if aggregate.outcome is None or aggregate.gate_count is None or aggregate.state is not None:
             raise ValueError("Validator response aggregate operation mismatch")
-    elif aggregate.state is None:
+    elif request.operation == "STRESS_RUN" or request.operation == "STRESS_CONTEXT":
+        if aggregate.state is None:
+            raise ValueError("Validator response aggregate operation mismatch")
+    elif (
+        aggregate.state is not None
+        or aggregate.outcome is not None
+        or aggregate.gate_count is not None
+        or aggregate.scenarios
+    ):
         raise ValueError("Validator response aggregate operation mismatch")
     needs_snapshot = request.operation in {"VALIDATION_CONTEXT", "STRESS_CONTEXT"}
     if needs_snapshot != (response.context_snapshot is not None):
         raise ValueError("Validator context snapshot operation mismatch")
+    if (
+        request.operation in {"VALIDATION_PREPARE", "VALIDATION_PACKAGE_METADATA"}
+    ) != (response.package_metadata_json is not None):
+        raise ValueError("Validator package metadata operation mismatch")
     if (
         response.context_snapshot is not None
         and response.context_snapshot.agent_id != request.agent_id

@@ -7,6 +7,9 @@ import re
 import sqlite3
 import tempfile
 import time
+import base64
+import json
+from hashlib import sha256
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
@@ -84,11 +87,130 @@ class HoldoutRequestHandler:
             return self._validation(request)
         if request.operation == "VALIDATION_CONTEXT":
             return self._validation_context(request)
+        if request.operation == "VALIDATION_PREPARE":
+            return self._prepare_validation(request)
+        if request.operation == "VALIDATION_PACKAGE_METADATA":
+            return self._validation_package_metadata(request)
         if request.operation == "STRESS_RUN":
             return self._stress(request)
         if request.operation == "STRESS_CONTEXT":
             return self._stress_context(request)
         raise PermissionError("Unsupported HOLDOUT operation")
+
+    def _prepare_validation(self, request: HoldoutRequest) -> HoldoutResponse:
+        from ai_quant_os.graph_ledger import GraphRecord
+        from ai_quant_os.research_data_contracts import ResearchDataReceipt
+        from ai_quant_os.strategy_builder_agent import StrategyCandidate
+        from ai_quant_os.strategy_builder_sources import candidate_for_context
+        from ai_quant_os.strategy_candidate_contracts import CandidateBundle
+        from ai_quant_os.validation_package_contracts import (
+            DatasetSnapshot,
+            ValidationPackage,
+            ValidationPlan,
+            checked_bytes,
+        )
+        from ai_quant_os.validation_package_service import capture_sdk_files
+
+        payload = request.preparation
+        if payload is None:
+            raise PermissionError("Validation package inputs are missing")
+        graph = GraphRecord.model_validate_json(payload.graph_json, strict=True)
+        candidate = CandidateBundle.model_validate_json(payload.candidate_json, strict=True)
+        training_receipt = ResearchDataReceipt.model_validate_json(
+            payload.training_receipt_json, strict=True
+        )
+        plan = ValidationPlan.model_validate_json(payload.plan_json, strict=True)
+        if any(
+            value != model.model_dump_json()
+            for value, model in (
+                (payload.graph_json, graph),
+                (payload.candidate_json, candidate),
+                (payload.training_receipt_json, training_receipt),
+                (payload.plan_json, plan),
+            )
+        ):
+            raise PermissionError("Canonical validation package inputs are required")
+        if (
+            graph.receipt.agent_id,
+            graph.receipt.agent_version,
+            graph.receipt.status,
+            graph.receipt.run_id,
+            graph.receipt.task_id,
+            graph.receipt.context_ref,
+        ) != (
+            "A09",
+            "0.2.0",
+            "COMPLETED",
+            request.evidence_ref,
+            request.task_id,
+            request.context_ref,
+        ):
+            raise PermissionError("Validation package graph binding mismatch")
+        output = StrategyCandidate.model_validate_json(graph.receipt.output_json, strict=True)
+        output.require_context(graph.checkpoint.context)
+        if (
+            output.candidate_ref != request.candidate_ref
+            or candidate.candidate_ref != request.candidate_ref
+            or candidate != candidate_for_context(graph.checkpoint.context)
+            or candidate.review.hypothesis.dataset_ref != request.training_ref
+            or training_receipt.resource_class != "TRAINING"
+            or training_receipt.dataset_ref != request.training_ref
+        ):
+            raise PermissionError("Validation package candidate or TRAINING binding mismatch")
+        checked_bytes(
+            payload.training_raw_base64, training_receipt.raw_sha256, 1048576
+        )
+        holdout = self._holdouts.get(request.holdout_ref)
+        if holdout is None or holdout[0].resource_class != "HOLDOUT":
+            raise PermissionError("Service-owned HOLDOUT dataset unavailable")
+        holdout_receipt, holdout_raw = holdout
+        package = ValidationPackage(
+            graph=graph,
+            candidate=candidate,
+            training=DatasetSnapshot(
+                receipt=training_receipt,
+                raw_base64=payload.training_raw_base64,
+            ),
+            holdout=DatasetSnapshot(
+                receipt=holdout_receipt,
+                raw_base64=base64.b64encode(holdout_raw).decode("ascii"),
+            ),
+            sdk_files=capture_sdk_files(),
+            plan=plan,
+            captured_at=payload.captured_at,
+        )
+        try:
+            saved = self._packages.put(package)
+        except ValueError as error:
+            raise PermissionError("Validation package identity was refused") from error
+        metadata = json.dumps(saved.metadata(), sort_keys=True, separators=(",", ":"))
+        return HoldoutResponse(
+            request_id=request.request_id,
+            task_id=request.task_id,
+            context_ref=request.context_ref,
+            status="CHECKED_VALIDATION_PACKAGE_PREPARED",
+            evidence_ref=request.evidence_ref,
+            summary_sha256=sha256(saved.model_dump_json().encode()).hexdigest(),
+            aggregate=HoldoutAggregate(),
+            package_metadata_json=metadata,
+        )
+
+    def _validation_package_metadata(self, request: HoldoutRequest) -> HoldoutResponse:
+        package = self._packages.get(request.evidence_ref)
+        if package is None:
+            raise PermissionError("Archived validation package unavailable")
+        return HoldoutResponse(
+            request_id=request.request_id,
+            task_id=request.task_id,
+            context_ref=request.context_ref,
+            status="CHECKED_VALIDATION_PACKAGE_METADATA",
+            evidence_ref=request.evidence_ref,
+            summary_sha256=sha256(package.model_dump_json().encode()).hexdigest(),
+            aggregate=HoldoutAggregate(),
+            package_metadata_json=json.dumps(
+                package.metadata(), sort_keys=True, separators=(",", ":")
+            ),
+        )
 
     def _checked_validation(self, request: HoldoutRequest):
         from ai_quant_os.validation_scientist_sources import validation_summary

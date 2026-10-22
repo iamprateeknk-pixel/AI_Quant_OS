@@ -12,14 +12,17 @@ candidate-validation, and research archives into an empty data directory before
 applying the service ACL. Existing archives are preserved on re-install and
 partial archive sets fail closed. A stage and handler test set passes, but
 staging refuses a nonempty destination and source validation uses read-only
-connections before the temporary snapshots are verified. The focused service
-and RPC test set passes 77 tests, but installation has not been run under the
-actual Windows service identity.
+connections before the temporary snapshots are verified. The focused combined
+service, RPC, API, and context test set passes 83 tests, but installation has
+not been run under the actual Windows service identity.
 The PAPER API now requests A10/A11 context snapshots from the service over the
 versioned v3 pipe. It does not receive raw HOLDOUT bars or per-fill details when
-compiling those contexts. Package preparation and validation result storage
-still use the local validation stores, and source archives remain in place, so
-the full isolation boundary is not yet established.
+compiling those contexts. A10 package preparation and metadata reads now also
+use the service-owned package store over bounded RPC; only the checked TRAINING
+snapshot is sent to the service, which fetches HOLDOUT bytes directly from its
+own store. Candidate validation result storage and source-archive migration
+remain incomplete, and the service has not been installed or accepted under its
+actual Windows identity, so the full isolation boundary is not established.
 
 ## Context
 
@@ -82,12 +85,12 @@ service before any result is exposed to the graph runtime.
    missing v3 service remains unavailable until the coordinated upgrade is
    complete.
 3. Move HOLDOUT database and validation-package ownership into the service;
-   remove direct main-API constructors/readers and legacy fallback paths. The
-   installer stages protected service-owned copies and A10/A11 contexts use
-   summary-only service snapshots, but package preparation and validation result
-   storage still use their original local archives. Stop PAPER and research
-   writers before first-install SQLite staging to obtain stable snapshots;
-   source databases remain in place for recovery.
+   remove direct main-API constructors/readers and legacy fallback paths.
+   Package preparation/metadata and A10/A11 evidence operations now use the
+   service; candidate-validation result ownership, HOLDOUT ingestion/refresh,
+   and source-archive migration still need production-path completion. Stop
+   PAPER and research writers before first-install SQLite staging to obtain
+   stable snapshots; source databases remain in place for recovery.
 4. Route A10 validation and A11 stress operations through the service, binding
    exact parent context and task identities to the response receipt.
 5. Verify on Windows under the actual service SID that the service can read the

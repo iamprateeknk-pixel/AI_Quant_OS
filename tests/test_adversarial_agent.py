@@ -136,6 +136,19 @@ def test_adversarial_sources_accept_checked_snapshot_without_research_report():
     assert tuple(rebuilt) == tuple(original)
     for name in original:
         assert asyncio.run(rebuilt[name].fetch()) == asyncio.run(original[name].fetch())
+    with pytest.raises(ValueError, match="snapshot and HOLDOUT scope"):
+        adversarial_sources_from_snapshot(
+            CandidateObservation.model_validate(payloads["strategy_candidate"]),
+            ValidationObservation.model_validate(payloads["validation_results"]),
+            StressObservation.model_validate(
+                {**payloads["stress_library"], "training_ref": "unbound-training"}
+            ),
+            holdout_instrument_id=report.plan.holdout_scope.instrument_id,
+            holdout_first_observed_at=report.plan.holdout_scope.first_observed_at,
+            holdout_last_observed_at=report.plan.holdout_scope.last_observed_at,
+            holdout_dataset_fingerprint=report.plan.holdout_scope.dataset_fingerprint,
+            now=now,
+        )
 
 
 def test_stress_tool_rechecks_original_archive_and_current_context():
