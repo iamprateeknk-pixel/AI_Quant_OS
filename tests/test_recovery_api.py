@@ -63,4 +63,7 @@ def test_manual_normal_recovery_waits_for_durable_triage_review(tmp_path):
             "/api/v1/control/recover-paper", json={"reason": "manual review"}, headers=headers
         )
         assert response.status_code == 200
-        assert response.json()["safety_state"] == "NORMAL"
+        # Staged recovery: the accepted recovery lands at REDUCED_RISK
+        # (canary stage); NORMAL requires the promotion step.
+        assert response.json()["safety_state"] == "REDUCED_RISK"
+        assert response.json()["stage"] == "CANARY"

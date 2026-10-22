@@ -418,6 +418,21 @@ class PaperExecutionGateway:
                 raise ValueError("Paper fill ledger mismatch blocks safety recovery")
             self._risk.recover_paper_safety(before_change=before_change)
 
+    def recover_paper_safety_canary(self, *, before_change: Callable[[], None]) -> None:
+        """Staged variant of :meth:`recover_paper_safety`: identical
+        preconditions (no unresolved orders, positions reconciled), but
+        the kernel lands at REDUCED_RISK as a canary stage instead of
+        NORMAL (V3.2 section 13)."""
+        with self._lock:
+            if any(
+                _decode_order(raw).status in {"PENDING", "DISPATCHING", "UNKNOWN"}
+                for raw in self._store.all_orders()
+            ):
+                raise ValueError("Unresolved paper orders block safety recovery")
+            if not self.compare_paper_positions().matches:
+                raise ValueError("Paper fill ledger mismatch blocks safety recovery")
+            self._risk.stage_paper_recovery_canary(before_change=before_change)
+
     def replay(
         self, intent: TradeIntent, *, idempotency_key: str, candidate_assignment_id=None
     ) -> PaperOrder | None:

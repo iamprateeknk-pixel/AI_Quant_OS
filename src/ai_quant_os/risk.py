@@ -87,6 +87,14 @@ class RiskKernel:
     #: their own operator workflows, never this shortcut.
     RECOVERABLE_STATES = (SafetyState.CAUTION, SafetyState.REDUCED, SafetyState.NO_NEW_RISK)
 
+    def _clear_recovery_custody(self) -> None:
+        """Drop every pre-freeze authorization record (caller holds the lock)."""
+        self._issued.clear()
+        self._decision_safety_states.clear()
+        self._consumed.clear()
+        self._currency_reservations.clear()
+        self._decision_markets.clear()
+
     def recover_paper_safety(self, *, before_change: Callable[[], None]) -> None:
         with self._lock:
             if self._safety_state not in self.RECOVERABLE_STATES:
@@ -94,11 +102,40 @@ class RiskKernel:
                     "Only CAUTION, REDUCED or NO_NEW_RISK paper state can be recovered"
                 )
             before_change()
-            self._issued.clear()
-            self._decision_safety_states.clear()
-            self._consumed.clear()
-            self._currency_reservations.clear()
-            self._decision_markets.clear()
+            self._clear_recovery_custody()
+            self._safety_state = SafetyState.NORMAL
+
+    def stage_paper_recovery_canary(self, *, before_change: Callable[[], None]) -> None:
+        """Staged recovery landing (V3.2 section 13): land at REDUCED_RISK.
+
+        Same gated preconditions and custody clearing as
+        :meth:`recover_paper_safety`, but the kernel stops at the REDUCED
+        rung as a canary stage instead of returning straight to NORMAL.
+        NORMAL is reachable from the canary only through
+        :meth:`promote_paper_canary`, whose caller must first obtain a
+        fresh Recovery Verifier quorum over the landed canary.
+        """
+        with self._lock:
+            if self._safety_state not in self.RECOVERABLE_STATES:
+                raise ValueError(
+                    "Only CAUTION, REDUCED or NO_NEW_RISK paper state can enter recovery canary"
+                )
+            before_change()
+            self._clear_recovery_custody()
+            self._safety_state = SafetyState.REDUCED
+
+    def promote_paper_canary(self, *, before_change: Callable[[], None]) -> None:
+        """Promote a canary-staged kernel (REDUCED) back to NORMAL.
+
+        Only the REDUCED canary rung may be promoted here; every other
+        state is refused, so this can never become a general recovery
+        shortcut. ``before_change`` persists the promotion (re-validating
+        the canary record) before the state flips.
+        """
+        with self._lock:
+            if self._safety_state is not SafetyState.REDUCED:
+                raise ValueError("Only a REDUCED recovery canary can be promoted to NORMAL")
+            before_change()
             self._safety_state = SafetyState.NORMAL
 
     @contextmanager

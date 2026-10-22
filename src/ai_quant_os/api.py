@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Collection, Mapping
 import hmac
 import json
 import os
@@ -421,6 +422,7 @@ def create_app(
     monitoring_alert_source: MonitoringAlertSource | None = None,
     holdout_rpc_client=None,
     risk_policy: PaperRiskPolicy | None = None,
+    mcp_agent_tools: Mapping[str, Collection[str]] | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -3073,6 +3075,80 @@ def create_app(
     def halt(command: ControlInput, idempotency_key: str = Header(min_length=1)) -> dict[str, str]:
         return transition(SafetyState.HALT, command, idempotency_key)
 
+    def recovery_verifier_report(*, receipt_id: str):
+        """Recovery Verifier report computed from live paper evidence.
+
+        Gate evidence is produced by
+        ``recovery_evidence.produce_recovery_evidence`` from the live
+        paper components in this call (see that module for the per-gate
+        honesty rules), including the staged-canary record when one is
+        active. If evidence production itself fails, an all-gates-failed
+        evidence set is used instead, so callers always fail closed.
+
+        ``security_verified=True`` is passed to the producer only because
+        this closure is invoked solely from routes that sit behind BOTH
+        ``require_control_operator`` and ``require_recovery`` -- distinct
+        tokens, enforced at app construction -- so the handler body runs
+        only after both credential checks have passed.
+        """
+        from ai_quant_os.recovery_evidence import (
+            produce_recovery_evidence,
+            unavailable_evidence,
+        )
+        from ai_quant_os.recovery_verifier import verify_recovery
+
+        try:
+            active_canary = state_store.canary_stage()
+        except Exception:
+            active_canary = None
+        try:
+            evidence = produce_recovery_evidence(
+                state_store=state_store,
+                execution=execution,
+                risk=risk,
+                health_store=health_worker.store if health_worker is not None else None,
+                paper_db_path=configured_path,
+                receipt_id=receipt_id,
+                security_verified=True,
+                risk_policy=configured_risk_policy,
+                canary_stage=active_canary,
+                canary_now=current_time(),
+                canary_min_soak_seconds=configured_risk_policy.recovery_canary_min_soak_seconds,
+            )
+        except Exception:
+            evidence = unavailable_evidence(receipt_id)
+        return verify_recovery(
+            gate_results=evidence.gate_results,
+            evidence_refs=evidence.evidence_refs,
+            independent_replay_passed=evidence.independent_replay_passed,
+        )
+
+    def recovery_verifier_shadow(*, receipt_id: str) -> str:
+        """Shadow-mode Recovery Verifier verdict for one paper recovery.
+
+        The verdict is computed alongside the operator paper-recovery path
+        and recorded on the recovery receipt for comparison only: it never
+        changes whether recovery is accepted or refused. The mode stays
+        SHADOW; at recovery time the verdict is computed before the staged
+        canary landing, so the ``canary`` gate cannot pass there (no landed
+        stage, no soak elapsed) -- a VERIFIED verdict first becomes
+        possible at the promotion step, which re-checks the quorum against
+        the landed canary and enforces it. The receipt field is a compact
+        JSON string so the receipt stays a ``dict[str, str]`` and
+        idempotent replays return it unchanged.
+        """
+        report = recovery_verifier_report(receipt_id=receipt_id)
+        return json.dumps(
+            {
+                "mode": "SHADOW",
+                "verdict": report.verdict,
+                "failed_gates": list(report.failed_gates),
+                "evidence_refs": list(report.evidence_refs),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
     @app.post(
         "/api/v1/control/recover-paper",
         dependencies=[Depends(require_control_operator), Depends(require_recovery)],
@@ -3089,10 +3165,20 @@ def create_app(
                 if previous[0] != reason:
                     raise HTTPException(status_code=409, detail="Idempotency key reused")
                 return previous[1]
+            # SAFETY-SEMANTICS CHANGE (staged recovery, V3.2 section 13):
+            # an accepted recovery no longer lands directly at NORMAL. It
+            # lands at REDUCED_RISK as a recorded canary stage, and NORMAL
+            # is reachable only through the promotion endpoint below,
+            # which re-checks the full Recovery Verifier quorum (canary
+            # soak included) against the landed stage. The accept/refuse
+            # preconditions here are unchanged.
             receipt = {
                 "receipt_id": str(uuid4()),
                 "status": "COMPLETED",
-                "safety_state": SafetyState.NORMAL.value,
+                "safety_state": SafetyState.REDUCED.value,
+                "stage": "CANARY",
+                "canary_state": SafetyState.REDUCED.value,
+                "canary_entered_at": current_time().isoformat(),
                 "reason": reason,
             }
             try:
@@ -3101,8 +3187,90 @@ def create_app(
                 require_completed_triage(state_store.audit_events())
                 if health_worker is not None and health_worker.store.open_incidents():
                     raise ValueError("Open health incidents require independently gated repair")
-                execution.recover_paper_safety(
-                    before_change=lambda: state_store.record_recovery(
+                receipt["recovery_verifier_shadow"] = recovery_verifier_shadow(
+                    receipt_id=receipt["receipt_id"],
+                )
+                execution.recover_paper_safety_canary(
+                    before_change=lambda: state_store.record_recovery_canary(
+                        idempotency_key, reason, receipt
+                    )
+                )
+            except ValueError as error:
+                raise HTTPException(status_code=409, detail=str(error)) from error
+            return receipt
+
+    @app.post(
+        "/api/v1/control/recover-paper/promote",
+        dependencies=[Depends(require_control_operator), Depends(require_recovery)],
+    )
+    def promote_recovery_canary(
+        command: ControlInput, idempotency_key: str = Header(min_length=1)
+    ) -> dict[str, str]:
+        """Promote a staged recovery canary (REDUCED_RISK) back to NORMAL.
+
+        This is the explicit, opt-in enforcement step for the Recovery
+        Verifier: unlike the recovery endpoint (whose verdict stays a
+        SHADOW record and never gates the landing), promotion re-runs the
+        full section 13 quorum against the landed canary -- canary soak
+        included -- and refuses unless the verdict is VERIFIED. A refusal
+        is a 409 with the failed gates named; it records no receipt and
+        leaves the state at REDUCED_RISK, so the same idempotency key may
+        be retried once the soak or evidence improves.
+        """
+        reason = command.reason.strip()
+        if not reason:
+            raise HTTPException(status_code=422, detail="Reason is required")
+        with control_lock:
+            previous = state_store.recovery_receipt(idempotency_key)
+            if previous is not None:
+                if previous[0] != reason:
+                    raise HTTPException(status_code=409, detail="Idempotency key reused")
+                if previous[1].get("stage") == "PROMOTED":
+                    return previous[1]
+                raise HTTPException(
+                    status_code=409, detail="Idempotency key already used for a recovery"
+                )
+            stage = state_store.canary_stage()
+            if stage is None:
+                raise HTTPException(status_code=409, detail="No active recovery canary stage")
+            if (
+                risk.safety_state is not SafetyState.REDUCED
+                or state_store.safety_state() is not SafetyState.REDUCED
+            ):
+                raise HTTPException(
+                    status_code=409, detail="Recovery canary stage is not at REDUCED_RISK"
+                )
+            report = recovery_verifier_report(receipt_id=stage["receipt_id"])
+            if report.verdict != "VERIFIED":
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        "Recovery canary promotion blocked by Recovery Verifier; "
+                        f"failed gates: {', '.join(report.failed_gates)}"
+                    ),
+                )
+            receipt = {
+                "receipt_id": str(uuid4()),
+                "status": "COMPLETED",
+                "safety_state": SafetyState.NORMAL.value,
+                "stage": "PROMOTED",
+                "canary_receipt_id": stage["receipt_id"],
+                "promoted_at": current_time().isoformat(),
+                "reason": reason,
+                "recovery_verifier_promotion": json.dumps(
+                    {
+                        "mode": "ENFORCED",
+                        "verdict": report.verdict,
+                        "failed_gates": list(report.failed_gates),
+                        "evidence_refs": list(report.evidence_refs),
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            }
+            try:
+                risk.promote_paper_canary(
+                    before_change=lambda: state_store.record_canary_promotion(
                         idempotency_key, reason, receipt
                     )
                 )
@@ -3240,6 +3408,34 @@ def create_app(
         candidate_admission_guard,
     )
     install_agent_call_routes(app, call_budget, require_operator)
+    from ai_quant_os.mcp_api import install_mcp_routes, paper_mcp_service
+    from ai_quant_os.mcp_handlers import McpToolBindings
+
+    # MCP tool fabric (V3.2 section 11) on the paper path. The registry in
+    # mcp_tools.py owns allow-lists and approval gating; the cost governor
+    # admits calls that declare a token cost before dispatch. Handlers are
+    # registered for exactly the tools whose real sources the bindings
+    # below carry (see mcp_handlers.py); every other catalog tool fails
+    # closed with 409. No shadow-deployment callable is bound here -- the
+    # default app has no shadow deployment service -- so deploy_shadow,
+    # pause_shadow and compare_challenger stay refused.
+    install_mcp_routes(
+        app,
+        require_operator,
+        paper_mcp_service(
+            risk=risk,
+            agent_tools=mcp_agent_tools,
+            bindings=McpToolBindings(
+                research_catalog=research_data_catalog,
+                execution=execution,
+                broker_router=router,
+                health_store=health_worker.store if health_worker is not None else None,
+                risk_policy=configured_risk_policy,
+                risk_kernel=risk,
+                paper_state_store=state_store,
+            ),
+        ),
+    )
     install_spending_routes(
         app,
         configured_reviewer if isinstance(configured_reviewer, OpenAIReviewer) else None,
