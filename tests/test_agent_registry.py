@@ -251,7 +251,7 @@ def test_timeout_cancels_handler_and_exception_details_are_sanitized():
             await AgentToolBoundary(registry, {"WORLD_STATE_READ": slow}).call(
                 "A02", "9.0.0", "WORLD_STATE_READ", scope="PAPER", payload={}
             )
-        with pytest.raises(ValueError, match="Agent tool failed") as error:
+        with pytest.raises(RuntimeError, match="Agent tool failed") as error:
             await AgentToolBoundary(registry, {"WORLD_STATE_READ": fail}).call(
                 "A02", "9.0.0", "WORLD_STATE_READ", scope="PAPER", payload={}
             )

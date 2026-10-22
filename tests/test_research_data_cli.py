@@ -33,6 +33,6 @@ def test_actual_cli_registers_and_reopens_catalog_and_refuses_label_conflict(tmp
     assert result.returncode == 0 and json.loads(result.stdout) == [receipt]
     result = subprocess.run(register[:-1] + ["HOLDOUT"], capture_output=True, text=True, timeout=10)
     assert result.returncode != 0
-    assert "overlap" in result.stderr and not result.stdout
+    assert "invalid choice" in result.stderr and not result.stdout
     result = subprocess.run(command + ["list"], capture_output=True, text=True, timeout=10)
     assert json.loads(result.stdout) == [receipt]

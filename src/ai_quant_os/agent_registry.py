@@ -242,8 +242,12 @@ class AgentToolBoundary:
             result = await asyncio.wait_for(handler(invocation), timeout=timeout)
         except TimeoutError:
             raise TimeoutError("Agent tool timed out") from None
-        except Exception:
+        except PermissionError:
+            raise PermissionError("Agent tool denied") from None
+        except ValueError:
             raise ValueError("Agent tool failed") from None
+        except Exception:
+            raise RuntimeError("Agent tool failed") from None
         self._registry.require_tool(agent_id, version, tool, scope=scope)
         if (
             not isinstance(result, dict)

@@ -1,12 +1,9 @@
-"""Promotion lifecycle consumer: the hook that consumes the promotion gate.
+"""Promotion evidence consumer: records the gate without granting authority.
 
-This module is the lifecycle owner for strategy promotion. It is the
-only path that turns a strategy paper-active, and it does so strictly
-by consuming :func:`ai_quant_os.strategy_promotion.evaluate_promotion`:
-the gate is never reimplemented here, and no code path in this module
-marks a strategy ``PAPER_ACTIVE`` -- or builds a ``PromotionDecision``
-with ``approved_by_policy`` true -- unless ``evaluate_promotion``
-returned ``promoted=True`` for that same call.
+This module consumes :func:`ai_quant_os.strategy_promotion.evaluate_promotion`
+and records its evidence. The versioned promotion contract is deliberately
+fail-closed, so a passing gate is informational and cannot make a strategy
+``PAPER_ACTIVE`` or set ``approved_by_policy`` to true.
 
 Candidate binding: a promotion request names a strategy, while the
 evidence contract names a candidate. This lifecycle binds them
@@ -29,8 +26,8 @@ council outcome (council name, verdict and proposal id, together with
 the hypothesis binding) are already recorded for the strategy returns
 the recorded outcome -- the same evidence reference, no duplicate
 attempt record, no duplicate status flip. A genuinely new attempt
-(different evidence) records a new attempt. A strategy that is already
-``PAPER_ACTIVE`` stays ``PAPER_ACTIVE``.
+(different evidence) records a new attempt. Promotion status remains
+``NOT_PROMOTED`` while the contract is fail-closed.
 """
 
 import json
@@ -69,6 +66,7 @@ _MAX_TOTAL_BYTES = 32 * 1024 * 1024
 _MAX_RECORD_BYTES = 1024 * 1024
 
 _NOT_GATE_EVALUATION_REASON = "not part of the fortress+council promotion gate"
+_PROMOTION_DISABLED_REASON = "promotion authority is disabled by the fail-closed contract"
 
 
 def _canonical_number(value: object) -> object:
@@ -170,18 +168,16 @@ class PromotionAttempt:
             type(reason) is str for reason in self.gate_reasons
         ):
             raise ValueError("Promotion attempt gate reasons must be a tuple of strings")
-        if self.decision not in ("PROMOTED", "REJECTED"):
-            raise ValueError("Promotion attempt decision must be PROMOTED or REJECTED")
-        if self.gate_promoted != (self.decision == "PROMOTED"):
-            raise ValueError("Promotion attempt gate outcome must match its decision")
-        if self.approved_by_policy != self.gate_promoted:
-            raise ValueError("Promotion attempt approval must match its gate outcome")
+        if self.decision != "WAIT_FOR_EVIDENCE":
+            raise ValueError("Promotion attempts must remain WAIT_FOR_EVIDENCE")
+        if self.approved_by_policy:
+            raise ValueError("Promotion attempts cannot grant policy approval")
         if type(self.evidence_ref) is not str or not _EVIDENCE_REF.fullmatch(self.evidence_ref):
             raise ValueError("Promotion attempt evidence ref is malformed")
         if self.status_after not in _STATUSES:
             raise ValueError(f"Promotion attempt status must be one of {_STATUSES}")
-        if self.gate_promoted and self.status_after != PAPER_ACTIVE:
-            raise ValueError("A promoted attempt must leave the strategy paper-active")
+        if self.status_after != NOT_PROMOTED:
+            raise ValueError("The fail-closed promotion contract cannot change strategy status")
         if type(self.attempted_at) is not str or not self.attempted_at:
             raise ValueError("Promotion attempt timestamp is required")
         try:
@@ -279,8 +275,8 @@ class PromotionRegistry:
     store's patterns: canonical JSON bodies, content-hash references,
     capacity bounds, and full integrity re-verification on open. A
     strategy's current status is derived from its recorded attempts --
-    ``PAPER_ACTIVE`` exactly when a promoted attempt exists -- so the
-    status can never drift from the audited evidence.
+    ``NOT_PROMOTED`` while the versioned contract grants no promotion
+    authority. Gate outcomes are retained separately as evidence.
     """
 
     def __init__(self, path: Path) -> None:
@@ -394,8 +390,7 @@ class PromotionRegistry:
         return tuple(attempt for _, attempt in ordered if attempt.strategy_id == strategy_id)
 
     def status_for(self, strategy_id: str) -> str:
-        if any(attempt.gate_promoted for attempt in self.attempts_for(strategy_id)):
-            return PAPER_ACTIVE
+        # A positive analytical gate is not an authorization decision.
         return NOT_PROMOTED
 
     def find_attempt(
@@ -451,14 +446,14 @@ def request_promotion(
     *,
     now: datetime,
 ) -> PromotionOutcome:
-    """Run the promotion gate for ``request`` and record the outcome.
+    """Run the promotion gate for ``request`` and record fail-closed evidence.
 
     The gate itself is :func:`evaluate_promotion`; this consumer only
     derives the fortress verdict reference, records the gate's decision
     as a :class:`PromotionDecision` in the evidence store, and records
-    the attempt in the registry. The registry status flips to
-    ``PAPER_ACTIVE`` only when the gate promoted in this call (or the
-    strategy was already paper-active).
+    the attempt in the registry. The current evidence contract cannot
+    authorize promotion, so this function keeps the registry at
+    ``NOT_PROMOTED`` even when the analytical gate passes.
     """
     if type(request) is not PromotionRequest:
         raise ValueError("Typed promotion request required")
@@ -487,11 +482,11 @@ def request_promotion(
     )
     if existing is not None:
         return PromotionOutcome(
-            promoted=existing.gate_promoted,
-            status=registry.status_for(request.strategy_id),
+            promoted=False,
+            status=NOT_PROMOTED,
             decision_ref=existing.evidence_ref,
             gate_decision=gate,
-            reasons=gate.reasons,
+            reasons=gate.reasons + (_PROMOTION_DISABLED_REASON,),
         )
 
     if gate.fortress_passed:
@@ -514,22 +509,13 @@ def request_promotion(
         adversarial_eval=not_gate_eval,
         shadow_eval=not_gate_eval,
         canary_eval=not_gate_eval,
-        decision="PROMOTED" if gate.promoted else "REJECTED",
-        approved_by_policy=gate.promoted,
-        fortress_hypothesis_id=request.fortress_hypothesis_id,
-        fortress_verdict_ref=verdict_ref,
-        council_name=council_name,
-        council_verdict=council_verdict,
-        decided_at=now,
+        decision="WAIT_FOR_EVIDENCE",
+        approved_by_policy=False,
         created_at=now,
     )
     evidence_ref = evidence_store.register(decision)
 
-    status_after = (
-        PAPER_ACTIVE
-        if gate.promoted or registry.status_for(request.strategy_id) == PAPER_ACTIVE
-        else NOT_PROMOTED
-    )
+    status_after = NOT_PROMOTED
     registry.record_attempt(
         PromotionAttempt(
             strategy_id=request.strategy_id,
@@ -551,11 +537,11 @@ def request_promotion(
         )
     )
     return PromotionOutcome(
-        promoted=gate.promoted,
+        promoted=False,
         status=status_after,
         decision_ref=evidence_ref,
         gate_decision=gate,
-        reasons=gate.reasons,
+        reasons=gate.reasons + (_PROMOTION_DISABLED_REASON,),
     )
 
 

@@ -91,6 +91,10 @@ class HoldoutRequestHandler:
             return self._prepare_validation(request)
         if request.operation == "VALIDATION_PACKAGE_METADATA":
             return self._validation_package_metadata(request)
+        if request.operation == "VALIDATION_PUBLISH":
+            return self._publish_validation(request)
+        if request.operation == "HOLDOUT_PUBLISH":
+            return self._publish_holdout(request)
         if request.operation == "STRESS_RUN":
             return self._stress(request)
         if request.operation == "STRESS_CONTEXT":
@@ -157,9 +161,7 @@ class HoldoutRequestHandler:
             or training_receipt.dataset_ref != request.training_ref
         ):
             raise PermissionError("Validation package candidate or TRAINING binding mismatch")
-        checked_bytes(
-            payload.training_raw_base64, training_receipt.raw_sha256, 1048576
-        )
+        checked_bytes(payload.training_raw_base64, training_receipt.raw_sha256, 1048576)
         holdout = self._holdouts.get(request.holdout_ref)
         if holdout is None or holdout[0].resource_class != "HOLDOUT":
             raise PermissionError("Service-owned HOLDOUT dataset unavailable")
@@ -212,6 +214,148 @@ class HoldoutRequestHandler:
             ),
         )
 
+    def _publish_validation(self, request: HoldoutRequest) -> HoldoutResponse:
+        from ai_quant_os.candidate_prerequisite_failure import record_prerequisite_failure
+        from ai_quant_os.candidate_test_contracts import CandidateTestResult
+        from ai_quant_os.candidate_validation_contracts import CandidateValidationPolicy
+        from ai_quant_os.strategy_prefix_run_contracts import StrategyPrefixRunReport
+        from ai_quant_os.candidate_dataset_run_contracts import CandidateDatasetRunReport
+        from ai_quant_os.validation_scientist_sources import validation_summary
+
+        publication = request.publication
+        if publication is None or publication.package_ref != request.evidence_ref:
+            raise PermissionError("Validation publication binding missing")
+        package = self._packages.get(publication.package_ref)
+        if package is None:
+            raise PermissionError("Service-owned validation package unavailable")
+        self._require_service_package_holdout(package)
+
+        try:
+            tested = CandidateTestResult.model_validate_json(
+                publication.test_result_json, strict=True
+            )
+            if tested.model_dump_json() != publication.test_result_json:
+                raise ValueError("Canonical proposed-test observation required")
+        except (ValueError, TypeError) as error:
+            raise PermissionError("Validation publication evidence refused") from error
+
+        if publication.kind == "PREREQUISITE_FAILURE":
+            try:
+                artifact = record_prerequisite_failure(package, tested)
+            except (ValueError, TypeError) as error:
+                raise PermissionError("Validation publication evidence refused") from error
+            saved = self._validations.put_failure(package, tested)
+        else:
+            try:
+                holdout = StrategyPrefixRunReport.model_validate_json(
+                    publication.holdout_report_json, strict=True
+                )
+                windows = tuple(
+                    CandidateDatasetRunReport.model_validate_json(value, strict=True)
+                    for value in publication.development_reports_json
+                )
+                if holdout.model_dump_json() != publication.holdout_report_json or any(
+                    report.model_dump_json() != raw
+                    for report, raw in zip(
+                        windows, publication.development_reports_json, strict=True
+                    )
+                ):
+                    raise ValueError("Canonical validation reports required")
+                policy = (
+                    None
+                    if publication.policy_json is None
+                    else CandidateValidationPolicy.model_validate_json(
+                        publication.policy_json, strict=True
+                    )
+                )
+                if policy is not None and policy.model_dump_json() != publication.policy_json:
+                    raise ValueError("Canonical validation policy required")
+                from ai_quant_os.candidate_validation import evaluate_candidate
+
+                artifact = evaluate_candidate(package, tested, holdout, windows, policy=policy)
+            except (ValueError, TypeError) as error:
+                raise PermissionError("Validation publication evidence refused") from error
+            saved = self._validations.put_evaluation(
+                package, tested, holdout, windows, policy=policy
+            )
+        if saved != artifact:
+            raise RuntimeError("Validation publication changed during service retention")
+        summary = validation_summary(package, artifact)
+        return HoldoutResponse(
+            request_id=request.request_id,
+            task_id=request.task_id,
+            context_ref=request.context_ref,
+            status="CHECKED_VALIDATION_PUBLISHED",
+            evidence_ref=request.evidence_ref,
+            summary_sha256=summary.summary_sha256,
+            aggregate=HoldoutAggregate(outcome=summary.outcome, gate_count=len(summary.gates)),
+            published_ref=(
+                artifact.failure_ref if hasattr(artifact, "failure_ref") else artifact.scorecard_ref
+            ),
+        )
+
+    def _require_service_package_holdout(self, package) -> None:
+        from ai_quant_os.validation_package_contracts import checked_bytes
+
+        holdout_ref = package.holdout.receipt.dataset_ref
+        held = self._holdouts.get(holdout_ref)
+        if held is None or held[0] != package.holdout.receipt:
+            raise PermissionError("Archived HOLDOUT receipt mismatch")
+        package_bytes = checked_bytes(
+            package.holdout.raw_base64, package.holdout.receipt.raw_sha256, 1048576
+        )
+        if held[1] != package_bytes:
+            raise PermissionError("Archived HOLDOUT bytes mismatch")
+
+    def _publish_holdout(self, request: HoldoutRequest) -> HoldoutResponse:
+        from ai_quant_os.research_data_contracts import ResearchDataReceipt
+
+        publication = request.holdout_publication
+        if publication is None:
+            raise PermissionError("HOLDOUT publication payload missing")
+        try:
+            raw = base64.b64decode(publication.raw_base64, validate=True)
+            if (
+                sha256(raw).hexdigest() != publication.raw_sha256
+                or base64.b64encode(raw).decode("ascii") != publication.raw_base64
+            ):
+                raise ValueError("HOLDOUT upload digest mismatch")
+            training = tuple(
+                ResearchDataReceipt.model_validate_json(value, strict=True)
+                for value in publication.training_receipts_json
+            )
+            if any(
+                receipt.model_dump_json() != encoded
+                for receipt, encoded in zip(
+                    training, publication.training_receipts_json, strict=True
+                )
+            ):
+                raise ValueError("Canonical TRAINING receipts required")
+        except (ValueError, TypeError) as error:
+            raise PermissionError("HOLDOUT publication evidence refused") from error
+
+        try:
+            receipt = self._holdouts.publish(
+                raw,
+                source_id=publication.source_id,
+                received_at=datetime.now(timezone.utc),
+                training_receipts=training,
+            )
+        except (ValueError, TypeError) as error:
+            raise PermissionError("HOLDOUT publication evidence refused") from error
+        receipt_json = receipt.model_dump_json()
+        return HoldoutResponse(
+            request_id=request.request_id,
+            task_id=request.task_id,
+            context_ref=request.context_ref,
+            status="CHECKED_HOLDOUT_PUBLISHED",
+            evidence_ref=request.evidence_ref,
+            summary_sha256=sha256(receipt_json.encode("utf-8")).hexdigest(),
+            aggregate=HoldoutAggregate(),
+            published_ref=receipt.dataset_ref,
+            receipt_json=receipt_json,
+        )
+
     def _checked_validation(self, request: HoldoutRequest):
         from ai_quant_os.validation_scientist_sources import validation_summary
 
@@ -229,29 +373,21 @@ class HoldoutRequestHandler:
                 package.holdout.receipt.dataset_ref,
             )
         )
-        request_scope = (
-            (None, None, None, None)
-            if request.operation == "VALIDATION_CONTEXT"
-            else (
+        if request.operation == "VALIDATION_CONTEXT":
+            scope_matches = (
+                package is not None and artifact.candidate_ref == package.candidate.candidate_ref
+            )
+        else:
+            request_scope = (
                 request.candidate_ref,
                 request.candidate_ref,
                 request.training_ref,
                 request.holdout_ref,
             )
-        )
-        if package is None or package_scope != request_scope:
+            scope_matches = package_scope == request_scope
+        if package is None or not scope_matches:
             raise PermissionError("Validation evidence scope mismatch")
-        holdout_ref = package.holdout.receipt.dataset_ref
-        held = self._holdouts.get(holdout_ref)
-        if held is None or held[0] != package.holdout.receipt:
-            raise PermissionError("Archived HOLDOUT receipt mismatch")
-        from ai_quant_os.validation_package_contracts import checked_bytes
-
-        package_bytes = checked_bytes(
-            package.holdout.raw_base64, package.holdout.receipt.raw_sha256, 1048576
-        )
-        if held[1] != package_bytes:
-            raise PermissionError("Archived HOLDOUT bytes mismatch")
+        self._require_service_package_holdout(package)
         return package, artifact, validation_summary(package, artifact)
 
     def _validation(self, request: HoldoutRequest) -> HoldoutResponse:

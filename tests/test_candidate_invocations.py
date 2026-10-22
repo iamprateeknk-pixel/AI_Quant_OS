@@ -238,7 +238,7 @@ def test_real_cli_prepares_one_prefix_json_and_assembles_exact_unattested_tape(p
         "-m",
         "ai_quant_os.candidate_invocation_cli",
         "--archive",
-        str(tmp_path / "paper.validation-packages.sqlite3"),
+        str(tmp_path / "service.validation-packages.sqlite3"),
         "--package-ref",
         package.package_ref,
     ]
@@ -282,7 +282,7 @@ def test_real_cli_prepares_one_prefix_json_and_assembles_exact_unattested_tape(p
     ["missing_archive", "corrupt_archive", "warmup", "oversized_response", "incomplete_response"],
 )
 def test_cli_refuses_invalid_archive_or_response_without_new_output(package, tmp_path, change):
-    archive = tmp_path / "paper.validation-packages.sqlite3"
+    archive = tmp_path / "service.validation-packages.sqlite3"
     destination = tmp_path / "denied.json"
     command = [
         sys.executable,

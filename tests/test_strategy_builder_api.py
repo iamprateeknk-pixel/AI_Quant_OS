@@ -154,7 +154,7 @@ def test_withdrawal_after_context_capture_prevents_candidate_publication(tmp_pat
             headers=HEADERS,
             json={"run_id": "withdrawn", "context_ref": compiled["context_ref"]},
         )
-        assert response.status_code == 200 and response.json()["receipt"]["status"] == "INVALID"
+        assert response.status_code == 200 and response.json()["receipt"]["status"] == "DENIED"
         assert response.json()["receipt"]["output_json"] is None
 
 

@@ -20,9 +20,21 @@ versioned v3 pipe. It does not receive raw HOLDOUT bars or per-fill details when
 compiling those contexts. A10 package preparation and metadata reads now also
 use the service-owned package store over bounded RPC; only the checked TRAINING
 snapshot is sent to the service, which fetches HOLDOUT bytes directly from its
-own store. Candidate validation result storage and source-archive migration
-remain incomplete, and the service has not been installed or accepted under its
-actual Windows identity, so the full isolation boundary is not established.
+own store. The API reads retained result summaries from the service and no
+longer constructs a local candidate-validation store. The operator CLI still
+supports its local archive mode and now also supports explicit service
+publication. That mode submits canonical proposed-test and run reports over one
+bounded RPC; the service loads its own package, verifies HOLDOUT identity/bytes,
+recomputes the checked artifact, and writes only the recomputed artifact to its
+audited archive. It returns a compact summary digest and artifact reference.
+Oversized requests fail closed at the 2 MiB frame limit. Operator HOLDOUT
+ingestion and append-only refresh now use the `ai-quant-holdout-data` CLI, which
+pins the CSV and sends it directly to the service with checked TRAINING
+metadata. The ordinary research-data CLI only registers TRAINING. Service
+installation, actual Windows identity and ACL acceptance, and end-to-end
+source-archive migration remain open. The service has not been installed or
+accepted under its actual Windows identity, so the full isolation boundary is
+not established.
 
 ## Context
 
@@ -79,18 +91,23 @@ service before any result is exposed to the graph runtime.
   response before the service disconnects, preventing unread bytes from being
   discarded during named-pipe teardown.
    Context snapshot reads add two strict operations and a bounded summary-only
-   snapshot response, so the pipe is now protocol v3 (`AIQuantHoldout.v3`).
+   snapshot response, so the pipe became protocol v3 (`AIQuantHoldout.v3`).
+   Service-side validation publication adds the recomputation and bounded
+   summary response contract, so the current pipe is protocol v4
+   (`AIQuantHoldout.v4`).
    Clients must not send v3 frames to a v2 endpoint or retry against an older
    pipe. Service and client upgrades must use the same protocol version, and a
    missing v3 service remains unavailable until the coordinated upgrade is
    complete.
 3. Move HOLDOUT database and validation-package ownership into the service;
    remove direct main-API constructors/readers and legacy fallback paths.
-   Package preparation/metadata and A10/A11 evidence operations now use the
-   service; candidate-validation result ownership, HOLDOUT ingestion/refresh,
-   and source-archive migration still need production-path completion. Stop
-   PAPER and research writers before first-install SQLite staging to obtain
-   stable snapshots; source databases remain in place for recovery.
+   Package preparation/metadata, A10/A11 evidence operations, retained result
+   summaries, validation-result publication, and HOLDOUT ingestion/refresh now
+   use service RPC through operator workflows. Service installation,
+   source-archive migration acceptance, and process/ACL verification remain.
+   Stop PAPER
+   and research writers before first-install SQLite staging to obtain stable
+   snapshots; source databases remain in place for recovery.
 4. Route A10 validation and A11 stress operations through the service, binding
    exact parent context and task identities to the response receipt.
 5. Verify on Windows under the actual service SID that the service can read the

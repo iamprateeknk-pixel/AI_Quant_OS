@@ -1,6 +1,6 @@
 # P07: LangGraph runtime and agent missions
 
-## Current HOLDOUT service state (2026-10-22)
+## Current HOLDOUT service state (2026-10-23)
 
 The Windows service now verifies A10 validation artifacts and A11 archived
 stress reports, prepares immutable A10 validation packages, and serves their
@@ -10,12 +10,17 @@ to the service; HOLDOUT bytes are fetched only by the service and never returned
 to the API. Package routes no longer open a local validation-package archive.
 The service returns summary metadata and a digest, and refuses conflicting
 immutable package identities through the bounded RPC error contract. API tests
-exercise the framed RPC client and service handler together.
+exercise the framed RPC client and service handler together. The retained A10
+result endpoint now also reads a checked summary through service RPC; the PAPER
+API no longer constructs or reads a local candidate-validation archive.
 
-First install stages verified copies of the existing HOLDOUT,
-validation-package, candidate-validation, and research SQLite archives, then
-applies the service-only ACL to the service data tree. Stop the PAPER API and
-research writers before installation so SQLite snapshots have stable sources.
+First install now stages verified copies of the existing HOLDOUT,
+validation-package, candidate-validation, and research SQLite archives before
+applying the service-only ACL to the service data tree. A Windows-only installer
+orchestration regression uses real synthetic SQLite archives and mocked Windows
+service/ACL calls to verify the ordering, source preservation, and fail-closed
+startup behavior. Stop the PAPER API and research writers before installation
+so SQLite snapshots have stable sources.
 Installation requires `--data-dir`, `--paper-db`, and `--research-workspace`;
 the HOLDOUT and two validation archives are derived from the PAPER database
 path, and the research archive is read from the workspace. Sources remain
@@ -24,31 +29,52 @@ unrelated files. Existing complete service archives are preserved on
 re-install, and partial archive sets are refused.
 
 The service has not been installed or exercised under its Windows service
-identity, and real file ACL/process-access acceptance remains open. Candidate
-validation result storage, initial HOLDOUT ingestion/refresh, and end-to-end
-archive migration still need production-path review and acceptance. The broader
-validation-source and strategy-worker suites are being rerun after moving the
-fixtures to service-owned package storage. No OS isolation or full P07
-acceptance claim is made.
+identity, and real file ACL/process-access acceptance remains open. The
+installer regression forces ACL failure and confirms that the service is not
+started and source archives remain byte-identical; Windows service and ACL calls
+are mocked, so it does not establish LocalService token, pipe, process, or file
+ACL isolation. The service stores and reads candidate-validation records. The
+operator CLI has an explicit `--service` archive mode that sends canonical
+proposed-test and run reports over one bounded RPC; the service loads its own
+package, checks its HOLDOUT receipt and bytes, recomputes the artifact, and writes the
+audited result
+to its own archive. Only the checked result reference and compact summary digest
+return to the CLI. Requests larger than the 2 MiB frame limit fail closed. The
+legacy local archive mode remains available for offline work. HOLDOUT ingestion
+and append-only refresh now use `ai-quant-holdout-data publish` directly over
+the bounded service RPC. The command pins the CSV, reads only checked TRAINING
+receipt metadata, and sends raw HOLDOUT bytes to the service without routing
+them through the PAPER API. The ordinary `ai-quant-research-data` command is
+TRAINING-only. The focused P07 regression group passes **85 tests** after the
+installer-path test was added; the complete locked Windows backend suite now
+passes **3,314 tests with 47 skipped in 1,745.35 seconds** on Pydantic 2.13.5
+and Core 2.46.5, including that regression. The opt-in Docker worker integration
+is among the skipped tests; an attempt to run it confirmed the Docker Desktop Linux
+engine is not available in this environment. Service installation under
+LocalService, actual ACL/process-access acceptance, and end-to-end migration of
+real source archives remain open. These tests verify application behavior and
+mocked installer orchestration only; no OS isolation or full P07 acceptance
+claim is made.
 
 The A10 context source builder now also accepts only a validated summary, its
 HOLDOUT receipt, and the package capture time, without requiring a local package
-or artifact object. This is a transport-ready boundary refactor; the API still
-uses its local stores, so no access or isolation claim changes. Its focused
-contract test passes. The broader validation-source module retains setup errors
-because its shared package fixture publishes HOLDOUT through the TRAINING-only
-route; service-owned package preparation is still required.
+or artifact object. The API compiles A10 context from that service snapshot and
+the retained-result route returns only a checked summary. The package fixture
+now exercises service-owned package, validation, and HOLDOUT stores over framed
+RPC. The complete suite includes those updated routes and fixtures.
 
 The PAPER API's A10 validation-context, A11 stress-context, and A01 0.8.0
 archive-existence checks now use service RPC snapshots. A10 receives only the
 validated summary, HOLDOUT receipt, and package capture time. A11 receives typed
 candidate, validation, stress, and HOLDOUT-scope metadata without bars or fills.
-These new operations use the versioned `AIQuantHoldout.v3` pipe; clients and
+These operations use the versioned `AIQuantHoldout.v4` pipe; clients and
 service must be upgraded together. The API no longer opens the local research
-report archive to compile A11 context. Package creation and validation execution
-still use local validation stores, so HOLDOUT isolation is incomplete. Focused
-context, service, RPC, and A11 API tests pass; Windows service-token and file
-ACL acceptance remains untested.
+report archive to compile A11 context. Package preparation and validation/stress
+execution also use service RPC. The operator-side validation CLI publication
+path now sends reports for service-side recomputation and audited storage.
+HOLDOUT ingestion and refresh are implemented; source-archive migration,
+service installation, and Windows service-token and file-ACL acceptance remain
+open.
 
 ## Pack acceptance status
 
@@ -64,15 +90,13 @@ locked Windows run recorded in `BUILD_STATUS.md`.
 | Agent outputs are schema validated | Verified | `tests/test_graph_runtime.py::test_runtime_rejects_output_schemas_that_ignore_unknown_fields` and the typed handler/runtime tests. |
 | Agent failure does not crash trading core | Verified at the local API boundary | `tests/test_regime_agent.py::test_agent_failure_is_contained_while_paper_core_remains_available` forces an A02 handler exception, then verifies a sanitized FAILED receipt, responsive system/orders routes, and NORMAL risk safety. `tests/test_graph_runtime.py` and `tests/test_graph_api.py` cover runtime failure statuses and persistence. This is application-level failure containment; it does not certify process isolation. |
 
-Current verification: the latest full locked Windows suite completed with
-**3,274 passed, 47 skipped, and one setup error**. The error was the research
-context fixture receiving `DEGRADED` during
-`test_exact_request_is_persisted_then_created_and_admitted_once`; the same test
-passes when run alone twice, so the cause remains undiagnosed and the full suite
-is not currently a clean pass. The focused A02/graph/broker-boundary suite
-including the API failure-containment regression passes **43 tests**. Scoped
-Ruff check, format check, and `git diff --check` pass. The runs used Pydantic
-2.13.5 and Pydantic Core 2.46.5.
+Current verification: the full locked Windows backend suite completed with
+**3,314 passed and 47 skipped in 1,745.35 seconds**. The run used Pydantic
+2.13.5 and Pydantic Core 2.46.5. The opt-in Docker engine test was skipped in
+this run because the Docker Desktop Linux engine was unavailable. Ruff lint and
+format checks plus `git diff --check` pass for the current changes. The focused
+A02/graph/broker-boundary suite including API failure containment previously
+passed **43 tests**.
 
 ## Implemented runtime
 
@@ -101,6 +125,13 @@ The following work remains open:
   HOLDOUT bytes; this is not an OS access-control boundary.
 - Obtain independent review and acceptance evidence for the runtime, datasets,
   each mission, and any model-quality claim.
+
+## Earlier implementation notes (historical)
+
+The notes below record intermediate states from the implementation timeline.
+Statements about unimplemented handlers, local API archives, or old test
+failures are historical; the current service state and verification above
+supersede them.
 
 No promotion or live capital authority follows from this handoff. ADR 0222
 specifies a Windows `LocalService` process with a unique service SID,
