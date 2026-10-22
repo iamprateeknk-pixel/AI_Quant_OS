@@ -643,7 +643,10 @@ def test_paper_recovery_requires_separate_token_and_survives_restart(tmp_path) -
     headers["X-Recovery-Token"] = "recovery-secret"
     first = client.post(url, json=payload, headers=headers)
     assert first.status_code == 200
-    assert first.json()["safety_state"] == "NORMAL"
+    # Staged recovery: an accepted recovery lands at REDUCED_RISK as a
+    # canary stage; NORMAL now requires the separate promotion step.
+    assert first.json()["safety_state"] == "REDUCED_RISK"
+    assert first.json()["stage"] == "CANARY"
     assert client.post(url, json=payload, headers=headers).json() == first.json()
     assert client.post(url, json={"reason": "changed"}, headers=headers).status_code == 409
     restarted = TestClient(
@@ -653,7 +656,7 @@ def test_paper_recovery_requires_separate_token_and_survives_restart(tmp_path) -
             paper_db_path=path,
         )
     )
-    assert restarted.get("/api/v1/risk").json()["safety_state"] == "NORMAL"
+    assert restarted.get("/api/v1/risk").json()["safety_state"] == "REDUCED_RISK"
     assert restarted.post(url, json=payload, headers=headers).json() == first.json()
     assert [event["action"] for event in restarted.get("/api/v1/audit").json()["events"]] == [
         "NO_NEW_RISK",

@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from hashlib import sha256
 import sqlite3
 from pathlib import Path
@@ -535,6 +536,131 @@ class PaperStateStore:
                 f"recovery:{key}",
                 {
                     "action": "PAPER_RECOVERY",
+                    "intent_id": "",
+                    "reason": reason,
+                    "trace_id": receipt["receipt_id"],
+                },
+            )
+            self._connection.execute(
+                "UPDATE safety_current SET safety_state = ? WHERE singleton = 1",
+                (SafetyState.NORMAL.value,),
+            )
+
+    def _canary_stage_locked(self) -> dict[str, str] | None:
+        """Active recovery canary record, or None. Caller holds the lock.
+
+        A canary is active exactly when the persisted safety state is
+        REDUCED_RISK, the newest canary landing receipt
+        (``stage == "CANARY"``) exists, and no promotion receipt
+        references it. A bare REDUCED_RISK with no canary receipt behind
+        it is not a canary and fails closed to None.
+        """
+        row = self._connection.execute(
+            "SELECT safety_state FROM safety_current WHERE singleton = 1"
+        ).fetchone()
+        if row is None or row[0] != SafetyState.REDUCED.value:
+            return None
+        rows = self._connection.execute(
+            "SELECT idempotency_key, receipt_json FROM recovery_receipts ORDER BY rowid"
+        ).fetchall()
+        canary: dict | None = None
+        canary_key = ""
+        promoted: set[str] = set()
+        for key, raw in rows:
+            try:
+                receipt = json.loads(raw)
+            except ValueError:
+                continue
+            if not isinstance(receipt, dict):
+                continue
+            if receipt.get("stage") == "CANARY":
+                canary, canary_key = receipt, key
+            elif receipt.get("stage") == "PROMOTED" and receipt.get("canary_receipt_id"):
+                promoted.add(receipt["canary_receipt_id"])
+        if canary is None or canary.get("receipt_id") in promoted:
+            return None
+        return {
+            "receipt_id": canary.get("receipt_id", ""),
+            "idempotency_key": canary_key,
+            "canary_entered_at": canary.get("canary_entered_at", ""),
+            "canary_state": canary.get("canary_state", ""),
+            "reason": canary.get("reason", ""),
+        }
+
+    def canary_stage(self) -> dict[str, str] | None:
+        """The active staged-recovery canary record, if one exists."""
+        with self._lock:
+            return self._canary_stage_locked()
+
+    def record_recovery_canary(self, key: str, reason: str, receipt: dict[str, str]) -> None:
+        """Persist a staged recovery landing at REDUCED_RISK (canary).
+
+        Mirrors :meth:`record_recovery`'s precondition (the persisted
+        state must be NO_NEW_RISK) but lands at REDUCED_RISK, and requires
+        the receipt to carry the canary stage binding (stage, state and
+        an aware entry timestamp), so a canary stage can never exist
+        without its entry record.
+        """
+        try:
+            entered = datetime.fromisoformat(receipt.get("canary_entered_at", ""))
+        except ValueError:
+            entered = None
+        if (
+            receipt.get("stage") != "CANARY"
+            or receipt.get("canary_state") != SafetyState.REDUCED.value
+            or receipt.get("safety_state") != SafetyState.REDUCED.value
+            or entered is None
+            or entered.utcoffset() is None
+        ):
+            raise ValueError("Recovery canary receipt requires a staged REDUCED_RISK landing")
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            row = self._connection.execute(
+                "SELECT safety_state FROM safety_current WHERE singleton = 1"
+            ).fetchone()
+            if row[0] != SafetyState.NO_NEW_RISK.value:
+                raise ValueError("Only NO_NEW_RISK paper state can be recovered")
+            self._connection.execute(
+                "INSERT INTO recovery_receipts VALUES (?, ?, ?)",
+                (key, reason, json.dumps(receipt, sort_keys=True)),
+            )
+            self._audit_chain.append(
+                f"recovery:{key}",
+                {
+                    "action": "PAPER_RECOVERY",
+                    "intent_id": "",
+                    "reason": reason,
+                    "trace_id": receipt["receipt_id"],
+                },
+            )
+            self._connection.execute(
+                "UPDATE safety_current SET safety_state = ? WHERE singleton = 1",
+                (SafetyState.REDUCED.value,),
+            )
+
+    def record_canary_promotion(self, key: str, reason: str, receipt: dict[str, str]) -> None:
+        """Persist a canary promotion to NORMAL, bound to the canary record.
+
+        Fails closed unless an active canary stage exists and the
+        promotion receipt names exactly that stage's recovery receipt.
+        """
+        if receipt.get("stage") != "PROMOTED" or not receipt.get("canary_receipt_id"):
+            raise ValueError("Canary promotion receipt requires the canary binding")
+        with self._lock, self._connection:
+            self._connection.execute("BEGIN IMMEDIATE")
+            stage = self._canary_stage_locked()
+            if stage is None:
+                raise ValueError("No active recovery canary stage can be promoted")
+            if receipt["canary_receipt_id"] != stage["receipt_id"]:
+                raise ValueError("Canary promotion does not match the active canary stage")
+            self._connection.execute(
+                "INSERT INTO recovery_receipts VALUES (?, ?, ?)",
+                (key, reason, json.dumps(receipt, sort_keys=True)),
+            )
+            self._audit_chain.append(
+                f"recovery-promotion:{key}",
+                {
+                    "action": "PAPER_RECOVERY_CANARY_PROMOTED",
                     "intent_id": "",
                     "reason": reason,
                     "trace_id": receipt["receipt_id"],
