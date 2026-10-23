@@ -27,6 +27,7 @@ def test_catalog_covers_exact_pack_agents_and_reports_planned_implementations():
     assert registry.get("A02", "0.2.0").implementation_status == "PARTIAL"
     assert registry.get("A11", "0.2.0").implementation_status == "PARTIAL"
     assert registry.get("A11", "0.2.0").output_type == "AdversarialScorecard"
+    assert registry.get("A09", "0.2.0").timeout_seconds == 5
 
 
 @pytest.mark.parametrize("agent_id", [f"A{index:02}" for index in range(1, 19)])

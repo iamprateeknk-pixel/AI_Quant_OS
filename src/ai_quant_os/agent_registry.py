@@ -299,7 +299,7 @@ def load_agent_catalog() -> AgentRegistry:
                     **original.model_dump(),
                     "agent_version": "0.2.0",
                     "implementation_status": "PARTIAL",
-                    **({"timeout_seconds": 5} if identifier in {"A01", "A11"} else {}),
+                    **({"timeout_seconds": 5} if identifier in {"A01", "A09", "A11"} else {}),
                 }
             )
         )
