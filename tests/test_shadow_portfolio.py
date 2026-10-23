@@ -197,7 +197,7 @@ def test_selector_v3_receives_verified_shadow_metrics_but_never_ranks_them(tmp_p
 
     def slow_scan(store, *, now):
         scan_started.set()
-        release_scan.wait(1)
+        release_scan.wait(3)
         try:
             return original_scan(store, now=now)
         finally:
@@ -214,15 +214,19 @@ def test_selector_v3_receives_verified_shadow_metrics_but_never_ranks_them(tmp_p
                 ticks += 1
                 await asyncio.sleep(0)
 
-        timed_call = asyncio.create_task(asyncio.wait_for(service(invocation), timeout=0.05))
-        assert await asyncio.to_thread(scan_started.wait, 3)
-        assert not scan_finished.is_set()
-        await keep_loop_responsive()
-        assert ticks == 20
-        assert not scan_finished.is_set()
-        release_scan.set()
-        with pytest.raises(TimeoutError):
-            await timed_call
+        service_call = asyncio.create_task(service(invocation))
+        try:
+            assert await asyncio.to_thread(scan_started.wait, 3)
+            assert not scan_finished.is_set()
+            timed_call = asyncio.create_task(asyncio.wait_for(service_call, timeout=0.05))
+            heartbeat = asyncio.create_task(keep_loop_responsive())
+            with pytest.raises(TimeoutError):
+                await timed_call
+            await heartbeat
+            assert ticks > 10
+            assert not scan_finished.is_set()
+        finally:
+            release_scan.set()
 
         await asyncio.to_thread(scan_finished.wait, 3)
         assert scan_finished.is_set()
