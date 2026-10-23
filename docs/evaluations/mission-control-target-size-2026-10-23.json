@@ -1,0 +1,2961 @@
+{
+  "schema_version": "1.0",
+  "observed_at_utc": "2026-10-23T13:16:19Z",
+  "environment": {
+    "build_mode": "production Next.js build",
+    "next_version": "16.4.2",
+    "browser_driver": "Playwright CLI 0.1.22",
+    "browser": "Chrome",
+    "api_origin": "http://127.0.0.1:8137",
+    "web_origin": "http://127.0.0.1:3137",
+    "state_directory": "data-local/p12-target-spacing-2026-10-23",
+    "viewport": {
+      "height": 800,
+      "width": 360
+    },
+    "device_pixel_ratio": 3,
+    "touch_points": 1,
+    "authentication": "synthetic local operator session",
+    "real_credentials_used": false
+  },
+  "probe": {
+    "target_floor_css_px": 44,
+    "hit_test": "5x5 grid centered on the activation surface; for checkbox/radio controls, associated label is measured as activation surface",
+    "routes_tested": 18,
+    "visible_control_instances": 165.0,
+    "failed_targets": 0,
+    "before_fix_routes": 16,
+    "before_fix_failed_targets": 64.0,
+    "before_fix_evidence": "ignored local full report: data-local/p12-target-spacing-2026-10-23/target-size-before.json",
+    "after_fix_evidence": "ignored local full report: data-local/p12-target-spacing-2026-10-23/target-size-final.json",
+    "routes": [
+      {
+        "path": "/",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 12,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2)",
+            "tag": "div",
+            "inputType": null,
+            "role": "region",
+            "text": "Current simulated evidence\nINSTRUMENT\tQUOTE\tHISTORY\tBARS\tREGIME\nEURUSD\tMISSING\tI",
+            "box": {
+              "width": 326,
+              "height": 222
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(2)",
+            "tag": "div",
+            "inputType": null,
+            "role": "region",
+            "text": "Paper broker health observations and measurement coverage\nBROKER\tCONNECTION\tQUOT",
+            "box": {
+              "width": 326,
+              "height": 242.5
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(3) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh broker health",
+            "box": {
+              "width": 132.3,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > div:nth-of-type(2) > section:nth-of-type(1) > div:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "View portfolio",
+            "box": {
+              "width": 81.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > div:nth-of-type(2) > section:nth-of-type(2) > div:nth-of-type(2) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Open Risk Center",
+            "box": {
+              "width": 97.3,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > div:nth-of-type(2) > section:nth-of-type(3) > div:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "View all",
+            "box": {
+              "width": 44.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > div:nth-of-type(2) > section:nth-of-type(4) > div:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "View all",
+            "box": {
+              "width": 44.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > div:nth-of-type(2) > section:nth-of-type(5) > div:nth-of-type(3) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "World State",
+            "box": {
+              "width": 66.7,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > div:nth-of-type(2) > section:nth-of-type(5) > div:nth-of-type(3) > a:nth-of-type(2)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Market detail",
+            "box": {
+              "width": 75.6,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/world-state",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 5,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2)",
+            "tag": "div",
+            "inputType": null,
+            "role": "region",
+            "text": "Current simulated evidence\nINSTRUMENT\tQUOTE\tHISTORY\tBARS\tMID PRICE\tSPREAD, BPS\tR",
+            "box": {
+              "width": 326,
+              "height": 222
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(2) > div:nth-of-type(2)",
+            "tag": "div",
+            "inputType": null,
+            "role": "region",
+            "text": "Current recorded currency coverage\nCURRENCY\tRELATED PAIRS\tFRESH QUOTES AT OBSERV",
+            "box": {
+              "width": 326,
+              "height": 222
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/markets/EURUSD",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 3,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/brokers",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 18,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2)",
+            "tag": "div",
+            "inputType": null,
+            "role": "region",
+            "text": "Declared local broker interfaces, eligibility and execution release\nBROKER\tIMPLE",
+            "box": {
+              "width": 326,
+              "height": 448
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(1) > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "4 interfaces",
+            "box": {
+              "width": 176.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(2) > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "7 interfaces",
+            "box": {
+              "width": 176.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(3) > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "No supported native interfaces",
+            "box": {
+              "width": 176.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(4) > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "No supported native interfaces",
+            "box": {
+              "width": 176.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(5) > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "No supported native interfaces",
+            "box": {
+              "width": 176.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(3) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh broker capabilities",
+            "box": {
+              "width": 162.6,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#paper-route-reason",
+            "tag": "textarea",
+            "inputType": null,
+            "role": null,
+            "text": "",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#paper-route-confirm",
+            "tag": "input",
+            "inputType": "text",
+            "role": null,
+            "text": "",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#paper-route-reauth",
+            "tag": "input",
+            "inputType": "password",
+            "role": null,
+            "text": "",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(2) > form:nth-of-type(1) > div:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Disable new PAPER orders",
+            "box": {
+              "width": 176.7,
+              "height": 48
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(2)",
+            "tag": "div",
+            "inputType": null,
+            "role": "region",
+            "text": "Paper broker health observations and measurement coverage\nBROKER\tCONNECTION\tQUOT",
+            "box": {
+              "width": 326,
+              "height": 242.5
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(3) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh broker health",
+            "box": {
+              "width": 132.3,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(4) > div:nth-of-type(3) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh broker observations",
+            "box": {
+              "width": 172.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(5) > div:nth-of-type(2)",
+            "tag": "div",
+            "inputType": null,
+            "role": "region",
+            "text": "BROKER\tCONNECTION\tADAPTER ENABLED\tINSTRUMENTS\nPAPER\tCONNECTED\tEnabled\tEURJPY, EU",
+            "box": {
+              "width": 326,
+              "height": 78
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/strategies",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 4,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh first page",
+            "box": {
+              "width": 107.6,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/agents",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 51,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A01-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A01 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A01-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A01 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A01-0\\.3\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A01 v0.3.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A01-0\\.4\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A01 v0.4.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A01-0\\.5\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A01 v0.5.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A01-0\\.6\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A01 v0.6.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A01-0\\.7\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A01 v0.7.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A01-0\\.8\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A01 v0.8.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A01-0\\.9\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A01 v0.9.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A02-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A02 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A02-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A02 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A03-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A03 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A03-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A03 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A04-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A04 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A04-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A04 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A05-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A05 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A05-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A05 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A06-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A06 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A06-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A06 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A07-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A07 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A07-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A07 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A08-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A08 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A08-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A08 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A08-0\\.3\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A08 v0.3.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A09-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A09 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A09-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A09 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A10-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A10 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A10-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A10 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A11-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A11 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A11-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A11 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A12-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A12 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A12-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A12 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A12-0\\.3\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A12 v0.3.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A13-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A13 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A13-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A13 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A13-0\\.3\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A13 v0.3.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A14-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A14 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A14-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A14 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A15-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A15 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A15-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A15 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A16-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A16 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A16-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A16 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A16-0\\.3\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A16 v0.3.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A16-0\\.4\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A16 v0.4.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A17-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A17 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A17-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A17 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A18-0\\.1\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A18 v0.1.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#A18-0\\.2\\.0 > td:nth-of-type(4) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "View contract for A18 v0.2.0",
+            "box": {
+              "width": 288,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/risk",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 10,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Sign out",
+            "box": {
+              "width": 77.7,
+              "height": 48
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#operator-action",
+            "tag": "select",
+            "inputType": null,
+            "role": null,
+            "text": "No new risk\nFlatten only\nHalt",
+            "box": {
+              "width": 292,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#operator-reason",
+            "tag": "textarea",
+            "inputType": null,
+            "role": null,
+            "text": "",
+            "box": {
+              "width": 292,
+              "height": 66
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#operator-reauth",
+            "tag": "input",
+            "inputType": "password",
+            "role": null,
+            "text": "",
+            "box": {
+              "width": 292,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > form:nth-of-type(1) > div:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Apply paper safety action",
+            "box": {
+              "width": 183.1,
+              "height": 48
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#risk-instrument",
+            "tag": "select",
+            "inputType": null,
+            "role": null,
+            "text": "EURUSD\nGBPUSD\nUSDJPY\nEURJPY",
+            "box": {
+              "width": 79,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(2) > form:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "View risk",
+            "box": {
+              "width": 70.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/portfolio",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 5,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2)",
+            "tag": "div",
+            "inputType": null,
+            "role": "region",
+            "text": "INSTRUMENT\tNET POSITION\tCASH FLOW\tMARK\tTRADING P&L\nEURUSD\t0 EUR\t0 USD\tUnavailabl",
+            "box": {
+              "width": 326,
+              "height": 201
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(3) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Reload portfolio observations",
+            "box": {
+              "width": 182.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/orders",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 5,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > form:nth-of-type(1) > label:nth-of-type(1) > input:nth-of-type(1)",
+            "tag": "input",
+            "inputType": "checkbox",
+            "role": null,
+            "text": "",
+            "box": {
+              "width": 24,
+              "height": 24
+            },
+            "activationSurface": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > form:nth-of-type(1) > label:nth-of-type(1)",
+            "activationBox": {
+              "width": 292,
+              "height": 66.5
+            },
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > form:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Compare paper ledgers",
+            "box": {
+              "width": 183.2,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/research",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 4,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh first page",
+            "box": {
+              "width": 107.6,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/evolution",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 4,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh first page",
+            "box": {
+              "width": 107.6,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/incidents",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 9,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh health records",
+            "box": {
+              "width": 137.7,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > a:nth-of-type(2)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "View authoritative risk state",
+            "box": {
+              "width": 170.3,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(2) > div:nth-of-type(3) > form:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh monitoring observations",
+            "box": {
+              "width": 200.9,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(3) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh history",
+            "box": {
+              "width": 91.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(3) > button:nth-of-type(2)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Previous page",
+            "box": {
+              "width": 87,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(3) > button:nth-of-type(3)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Next page",
+            "box": {
+              "width": 63.7,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/traces",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 9,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(3) > form:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh trace diagnostics",
+            "box": {
+              "width": 153.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#advisory-run-id",
+            "tag": "input",
+            "inputType": "text",
+            "role": null,
+            "text": "",
+            "box": {
+              "width": 292,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(2) > form:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Look up saved trace",
+            "box": {
+              "width": 123.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#sdk-trace-id",
+            "tag": "input",
+            "inputType": "text",
+            "role": null,
+            "text": "",
+            "box": {
+              "width": 292,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > form:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Look up saved spans",
+            "box": {
+              "width": 128.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(4) > div:nth-of-type(2) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Reload execution list",
+            "box": {
+              "width": 127.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/costs",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 7,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(3) > form:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh shared spending snapshot",
+            "box": {
+              "width": 211.9,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(2) > div:nth-of-type(3) > form:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh spending snapshot",
+            "box": {
+              "width": 166.6,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(3) > form:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh call capacity",
+            "box": {
+              "width": 124.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(3) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "View agent versions",
+            "box": {
+              "width": 122.8,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/audit",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 3,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/settings",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 6,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Refresh sessions",
+            "box": {
+              "width": 126.2,
+              "height": 48
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(3) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(1) > td:nth-of-type(5) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Select",
+            "box": {
+              "width": 57.5,
+              "height": 48
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(3) > table:nth-of-type(1) > tbody:nth-of-type(1) > tr:nth-of-type(2) > td:nth-of-type(5) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Select",
+            "box": {
+              "width": 57.5,
+              "height": 48
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/incidents/runbook",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 5,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(2) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Return to incident observations",
+            "box": {
+              "width": 193.2,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": false,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(3) > div:nth-of-type(2) > a:nth-of-type(2)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Open Risk Center",
+            "box": {
+              "width": 107.2,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      },
+      {
+        "path": "/traces/00000000000000000000000000000001",
+        "viewport": {
+          "width": 360,
+          "height": 800,
+          "devicePixelRatio": 3,
+          "touchPoints": 1
+        },
+        "visibleInteractiveCount": 5,
+        "failedTargets": 0,
+        "elements": [
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "AQ\nAI Quant OS\nMISSION CONTROL",
+            "box": {
+              "width": 154.5,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > header:nth-of-type(1) > button:nth-of-type(1)",
+            "tag": "button",
+            "inputType": null,
+            "role": null,
+            "text": "Search destinations\nCtrl K",
+            "box": {
+              "width": 58.4,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "html:nth-of-type(1) > body:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > details:nth-of-type(1) > summary:nth-of-type(1)",
+            "tag": "summary",
+            "inputType": null,
+            "role": null,
+            "text": "Menu",
+            "box": {
+              "width": 326,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Back to saved executions",
+            "box": {
+              "width": 154,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": false,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          },
+          {
+            "selector": "#main-content > div:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2) > a:nth-of-type(1)",
+            "tag": "a",
+            "inputType": null,
+            "role": null,
+            "text": "Reload execution list",
+            "box": {
+              "width": 127.1,
+              "height": 44
+            },
+            "activationSurface": null,
+            "activationBox": null,
+            "effective44": true,
+            "inlineProseLink": false,
+            "nearestInteractiveAncestor": null
+          }
+        ]
+      }
+    ],
+    "additional_ui_states": [
+      {
+        "failedTargets": 0,
+        "visibleControlInstances": 26,
+        "route": "/settings",
+        "state": "mobile navigation open on Settings with selected-session form visible"
+      },
+      {
+        "failedTargets": 0,
+        "visibleControlInstances": 18,
+        "route": "/settings",
+        "state": "destination search modal open"
+      },
+      {
+        "failedTargets": 0,
+        "visibleControlInstances": 10,
+        "route": "/settings",
+        "state": "selected-session revocation form open"
+      }
+    ]
+  },
+  "paper_state": {
+    "safety_state": "NORMAL",
+    "paper_route_enabled": true,
+    "paper_orders": 0,
+    "paper_fills": 0,
+    "simulated_broker_orders": 0,
+    "simulated_broker_fills": 0,
+    "audit_events": 0,
+    "external_broker_connected": false,
+    "safety_action_submitted": false,
+    "route_action_submitted": false,
+    "reconciliation_submitted": false,
+    "session_revocation_submitted": false
+  },
+  "browser_observations": {
+    "console_errors": 0,
+    "console_warnings": 0
+  },
+  "limits": [
+    "Effective hit area uses sampled points and is an estimate; it is not a proof of every pixel or an actual touch on every control.",
+    "The screen-reader/manual speech review remains open.",
+    "The probe covers the recorded routes and interaction states, not every dynamic data state."
+  ],
+  "cleanup": {
+    "playwright_browser_closed": true,
+    "local_supervisor_stopped": true,
+    "owned_ports_released": true,
+    "synthetic_state_directory_retained": true
+  },
+  "screenshot": "Ignored local viewport capture: .playwright-cli/page-2026-10-23T13-14-35-758Z.png"
+}
