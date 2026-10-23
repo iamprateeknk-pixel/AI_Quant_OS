@@ -101,6 +101,75 @@ def api_state_stopped():
     return FakeServiceApi.SERVICE_STOPPED
 
 
+def test_service_runtime_paths_reject_an_operator_profile_runtime(tmp_path):
+    import pytest
+    import ai_quant_os.holdout_validator_service as service
+
+    validate = getattr(service, "_validate_service_runtime_paths", None)
+    assert callable(validate), "service install must validate its runtime before registration"
+
+    profile = tmp_path / "Users" / "operator"
+    prefix = tmp_path / "workspace" / ".venv"
+    purelib = prefix / "Lib" / "site-packages"
+    with pytest.raises(RuntimeError, match="machine-wide"):
+        validate(
+            operator_profile=profile,
+            python_prefix=prefix,
+            base_prefix=profile / "AppData" / "Python311",
+            python_executable=prefix / "Scripts" / "python.exe",
+            service_executable=prefix / "pythonservice.exe",
+            package_directory=purelib,
+            module_file=purelib / "ai_quant_os" / "holdout_validator_service.py",
+            import_paths=(profile / "AppData" / "Python311" / "Lib", purelib),
+        )
+
+
+def test_service_runtime_paths_reject_editable_checkout_source(tmp_path):
+    import pytest
+    import ai_quant_os.holdout_validator_service as service
+
+    validate = getattr(service, "_validate_service_runtime_paths", None)
+    assert callable(validate), "service install must require an installed package"
+
+    prefix = tmp_path / "Program Files" / "Python311"
+    purelib = prefix / "Lib" / "site-packages"
+    with pytest.raises(RuntimeError, match="non-editable"):
+        validate(
+            operator_profile=tmp_path / "Users" / "operator",
+            python_prefix=prefix,
+            base_prefix=prefix,
+            python_executable=prefix / "python.exe",
+            service_executable=prefix / "pythonservice.exe",
+            package_directory=purelib,
+            module_file=tmp_path
+            / "workspace"
+            / "src"
+            / "ai_quant_os"
+            / "holdout_validator_service.py",
+            import_paths=(prefix / "Lib", purelib),
+        )
+
+
+def test_service_runtime_paths_accept_machine_installed_package(tmp_path):
+    import ai_quant_os.holdout_validator_service as service
+
+    validate = getattr(service, "_validate_service_runtime_paths", None)
+    assert callable(validate), "service install must validate its runtime before registration"
+
+    prefix = tmp_path / "Program Files" / "AIQuantOS" / "Python311"
+    purelib = prefix / "Lib" / "site-packages"
+    validate(
+        operator_profile=tmp_path / "Users" / "operator",
+        python_prefix=prefix,
+        base_prefix=prefix,
+        python_executable=prefix / "python.exe",
+        service_executable=prefix / "pythonservice.exe",
+        package_directory=purelib,
+        module_file=purelib / "ai_quant_os" / "holdout_validator_service.py",
+        import_paths=(prefix / "Lib", purelib),
+    )
+
+
 def test_pipe_server_rejects_unsafe_configuration():
     try:
         WindowsNamedPipeServer("S-1-5-80-bad", "S-1-5-21-1-2-3-4")
@@ -642,6 +711,7 @@ def test_service_install_secures_staging_directory_before_copy_and_never_starts_
     fake_service_util.StartService = lambda name: events.append(("start", name))
     monkeypatch.setitem(sys.modules, "win32service", fake_service)
     monkeypatch.setitem(sys.modules, "win32serviceutil", fake_service_util)
+    monkeypatch.setattr(service, "_require_service_runtime", lambda: events.append("runtime"))
     monkeypatch.setattr(service, "_ensure_service_registered", lambda *_: events.append("register"))
     monkeypatch.setattr(
         service, "configure_holdout_service_sid", lambda **_: events.append("service-sid")
@@ -685,6 +755,24 @@ def test_service_install_secures_staging_directory_before_copy_and_never_starts_
 
     monkeypatch.setattr(service, "secure_holdout_directory", verify_acl)
 
+    def refuse_runtime():
+        events.append("runtime")
+        raise service._ServiceRuntimeUnavailable("synthetic runtime refusal")
+
+    monkeypatch.setattr(service, "_require_service_runtime", refuse_runtime)
+    refused_data_dir = (tmp_path / "service-runtime-refused").resolve()
+    with pytest.raises(RuntimeError, match="synthetic runtime refusal"):
+        service._install_service(
+            refused_data_dir,
+            paper_db=paper_db,
+            research_workspace=research_workspace,
+        )
+    assert events == ["runtime"]
+    assert not refused_data_dir.exists()
+
+    events.clear()
+    monkeypatch.setattr(service, "_require_service_runtime", lambda: events.append("runtime"))
+
     good_data_dir = (tmp_path / "service-good").resolve()
     service._install_service(
         good_data_dir,
@@ -692,6 +780,7 @@ def test_service_install_secures_staging_directory_before_copy_and_never_starts_
         research_workspace=research_workspace,
     )
     assert events == [
+        "runtime",
         "register",
         "service-sid",
         ("acl", False, "S-1-5-21-1-2-3-1001"),
@@ -720,6 +809,7 @@ def test_service_install_secures_staging_directory_before_copy_and_never_starts_
         research_workspace=research_workspace,
     )
     assert events == [
+        "runtime",
         "register",
         "service-sid",
         "settings",

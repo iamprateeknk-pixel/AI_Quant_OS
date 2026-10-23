@@ -911,6 +911,94 @@ class WindowsNamedPipeServer:
 _SERVICE_REGISTRY_KEY = r"SOFTWARE\AIQuantOS\HoldoutValidator"
 
 
+class _ServiceRuntimeUnavailable(RuntimeError):
+    """The active Python installation cannot be used safely by LocalService."""
+
+
+def _path_is_within(path: Path, directory: Path) -> bool:
+    candidate = Path(path).resolve(strict=False)
+    parent = Path(directory).resolve(strict=False)
+    return candidate == parent or parent in candidate.parents
+
+
+def _validate_service_runtime_paths(
+    *,
+    operator_profile: Path,
+    python_prefix: Path,
+    base_prefix: Path,
+    python_executable: Path,
+    service_executable: Path,
+    package_directory: Path,
+    module_file: Path,
+    import_paths: tuple[Path, ...],
+) -> None:
+    """Reject profile-scoped and editable runtimes before the service is registered.
+
+    This path check catches the known PythonService startup failure mode. It does
+    not replace ACL verification or a real LocalService process test.
+    """
+    profile = Path(operator_profile).resolve(strict=False)
+    paths = (
+        Path(python_prefix),
+        Path(base_prefix),
+        Path(python_executable),
+        Path(service_executable),
+        Path(package_directory),
+        Path(module_file),
+        *(Path(path) for path in import_paths if str(path)),
+    )
+    if any(_path_is_within(path, profile) for path in paths):
+        raise _ServiceRuntimeUnavailable(
+            "HOLDOUT validator requires a machine-wide Python runtime and package "
+            "outside the operator profile. No service or archive data was changed."
+        )
+    if not (
+        _path_is_within(python_executable, python_prefix)
+        or _path_is_within(python_executable, base_prefix)
+    ) or not (
+        _path_is_within(service_executable, python_prefix)
+        or _path_is_within(service_executable, base_prefix)
+    ):
+        raise _ServiceRuntimeUnavailable(
+            "HOLDOUT validator PythonService executable does not belong to the active "
+            "Python installation. No service or archive data was changed."
+        )
+    if not _path_is_within(module_file, package_directory):
+        raise _ServiceRuntimeUnavailable(
+            "HOLDOUT validator requires an installed, non-editable ai-quant-os package; "
+            "a source checkout cannot be used by LocalService. No service or archive "
+            "data was changed."
+        )
+
+
+def _require_service_runtime() -> None:
+    """Check PythonService and package paths before changing SCM or archive state."""
+    import sys
+    import sysconfig
+
+    import win32serviceutil
+
+    profile = Path(os.environ.get("USERPROFILE") or Path.home())
+    import_paths = tuple(Path(path) for path in sys.path if path and Path(path).is_absolute())
+    try:
+        service_executable = Path(win32serviceutil.LocatePythonServiceExe())
+    except Exception:
+        raise _ServiceRuntimeUnavailable(
+            "HOLDOUT validator could not locate the active PythonService executable. "
+            "No service or archive data was changed."
+        ) from None
+    _validate_service_runtime_paths(
+        operator_profile=profile,
+        python_prefix=Path(sys.prefix),
+        base_prefix=Path(sys.base_prefix),
+        python_executable=Path(sys.executable),
+        service_executable=service_executable,
+        package_directory=Path(sysconfig.get_path("purelib")),
+        module_file=Path(__file__),
+        import_paths=import_paths,
+    )
+
+
 def _read_service_settings() -> tuple[Path, str]:
     import winreg
 
@@ -1092,6 +1180,7 @@ def _install_service(data_dir: Path, *, paper_db: Path, research_workspace: Path
     research_workspace = Path(research_workspace)
     if not paper_db.is_absolute() or not research_workspace.is_absolute():
         raise ValueError("PAPER and research source paths must be absolute")
+    _require_service_runtime()
     operator_sid = current_process_user_sid()
     _ensure_service_registered(win32service, win32serviceutil)
     try:
@@ -1204,6 +1293,8 @@ def main(argv: list[str] | None = None) -> int:
         else:
             _remove_service()
             result = {"service": "AIQuantHoldout", "state": "REMOVED_DATA_PRESERVED"}
+    except _ServiceRuntimeUnavailable as error:
+        parser.exit(2, f"{error}\n")
     except Exception:
         parser.exit(2, "HOLDOUT validator service operation failed; data was preserved.\n")
     print(json.dumps(result))

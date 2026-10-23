@@ -41,6 +41,20 @@ temporary test service was removed and its synthetic data was preserved. Real
 source archives are absent, so migration was not attempted. The installer
 regression forces ACL failure and confirms that service startup is withheld and
 source archives remain byte-identical; its Windows service calls are mocked.
+The installer now runs a fail-fast runtime preflight before service registration
+or archive staging. It rejects a Python base/prefix, Python executable,
+PythonService executable, import path, or package under the operator profile;
+it also requires PythonService to belong to the active Python installation and
+the module to load from the installed package directory rather than an editable
+checkout. The focused runtime/service suite passes **18 tests**, and the actual
+workstation preflight refuses the current per-user Python and editable package
+without changing service or archive state. This guard avoids repeating the
+known inaccessible-runtime installation; it does not establish ACLs or prove
+that LocalService can start the service. Reopen in an elevated session with a
+machine-wide Python 3.11 runtime and non-editable package installation before
+retrying. The four real source archives are still required for migration.
+The expanded service, RPC, service-store, data CLI, package API, and scientist
+API/source regression group passes **72 tests in 123 seconds**.
 The service stores and reads candidate-validation records. The
 operator CLI has an explicit `--service` archive mode that sends canonical
 proposed-test and run reports over one bounded RPC; the service loads its own
