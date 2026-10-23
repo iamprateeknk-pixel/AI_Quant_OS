@@ -65,6 +65,8 @@ def test_context_fetch_and_graph_dispatch_share_one_original_role_quota(tmp_path
             registry,
             {"world_state": SourceBinding("WORLD_STATE_READ", "GENERAL", fetch)},
             clock=lambda: NOW,
+            timeout_seconds=10,
+            overall_timeout_seconds=30,
             call_budget=guard,
         )
         result = await compiler.compile("A02", "0.1.0", task_id="context", scope="PAPER")
