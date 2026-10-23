@@ -66,8 +66,52 @@ def build_execution_request(
     contexts: tuple[CompiledContext, ...] | None = None,
 ) -> EvolutionExecutionRequest:
     """Bind only full, historical TRAINING contexts to the exact genome and protocol."""
-    if type(dataset) is not EvolutionDataset or dataset.resource_class != "TRAINING":
-        raise ValueError("Evolution execution accepts a training dataset only")
+    return _build_execution_request(
+        genome=genome,
+        dataset=dataset,
+        protocol=protocol,
+        contexts=contexts,
+        resource_class="TRAINING",
+    )
+
+
+def build_holdout_execution_request(
+    *,
+    genome: AgentGenome,
+    dataset: EvolutionDataset,
+    protocol: EvaluationProtocol,
+    contexts: tuple[CompiledContext, ...] | None = None,
+) -> EvolutionExecutionRequest:
+    """Bind only full, historical HOLDOUT contexts to the exact genome and protocol.
+
+    The independent-evaluation counterpart of :func:`build_execution_request`:
+    identical binding discipline, but the dataset and every context input must
+    carry the HOLDOUT resource class, so a genome can be executed on data its
+    training and selection never saw.
+    """
+    return _build_execution_request(
+        genome=genome,
+        dataset=dataset,
+        protocol=protocol,
+        contexts=contexts,
+        resource_class="HOLDOUT",
+    )
+
+
+def _build_execution_request(
+    *,
+    genome: AgentGenome,
+    dataset: EvolutionDataset,
+    protocol: EvaluationProtocol,
+    contexts: tuple[CompiledContext, ...] | None = None,
+    resource_class: Literal["TRAINING", "HOLDOUT"],
+) -> EvolutionExecutionRequest:
+    if type(dataset) is not EvolutionDataset or dataset.resource_class != resource_class:
+        raise ValueError(
+            "Evolution execution accepts a training dataset only"
+            if resource_class == "TRAINING"
+            else "Independent holdout execution accepts a holdout dataset only"
+        )
     if type(genome) is not AgentGenome or type(protocol) is not EvaluationProtocol:
         raise ValueError("Typed genome and retained protocol are required")
     require_protocol_genome(protocol, genome)
@@ -96,9 +140,13 @@ def build_execution_request(
             or context.scope != "SANDBOX"
             or context.status != "READY"
             or not context.inputs
-            or any(row.resource_class != "TRAINING" for row in context.inputs)
+            or any(row.resource_class != resource_class for row in context.inputs)
         ):
-            raise ValueError("Every execution context must be ready and training-only")
+            raise ValueError(
+                "Every execution context must be ready and training-only"
+                if resource_class == "TRAINING"
+                else "Every holdout execution context must be ready and holdout-only"
+            )
         # Context identity is rebound to the immutable genome; evidence payloads remain byte-for-byte.
         rebound = context.model_copy(
             update={
@@ -216,6 +264,27 @@ print(json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False
 """
 
 
+def _require_runnable_lineage(genome: AgentGenome, baseline: AgentGenome | None) -> None:
+    """Only the captured server-owned baseline, or its direct challenger, may run."""
+    if genome.parent_ref is None:
+        expected = capture_baseline_genome(
+            load_agent_catalog(), genome.manifest.agent_id, genome.objective
+        )
+        if genome != expected or baseline is not None:
+            raise ValueError("Only the captured server-owned baseline can run as a root")
+    elif baseline is None:
+        raise ValueError("Challenger execution requires its exact parent baseline")
+    else:
+        require_genome_child(baseline, genome)
+        if baseline.parent_ref is not None or baseline.manifest.agent_id != genome.manifest.agent_id:
+            raise ValueError("Challenger parent must be the captured root genome")
+        expected = capture_baseline_genome(
+            load_agent_catalog(), baseline.manifest.agent_id, baseline.objective
+        )
+        if baseline != expected:
+            raise ValueError("Challenger parent is not the captured server-owned baseline")
+
+
 @dataclass(frozen=True)
 class EvolutionRunner:
     """Execute one genome per ephemeral container; output never carries authority."""
@@ -234,27 +303,37 @@ class EvolutionRunner:
         *,
         baseline: AgentGenome | None = None,
     ) -> GenomeExecutionResult:
-        if genome.parent_ref is None:
-            expected = capture_baseline_genome(
-                load_agent_catalog(), genome.manifest.agent_id, genome.objective
-            )
-            if genome != expected or baseline is not None:
-                raise ValueError("Only the captured server-owned baseline can run as a root")
-        elif baseline is None:
-            raise ValueError("Challenger execution requires its exact parent baseline")
-        else:
-            require_genome_child(baseline, genome)
-            if (
-                baseline.parent_ref is not None
-                or baseline.manifest.agent_id != genome.manifest.agent_id
-            ):
-                raise ValueError("Challenger parent must be the captured root genome")
-            expected = capture_baseline_genome(
-                load_agent_catalog(), baseline.manifest.agent_id, baseline.objective
-            )
-            if baseline != expected:
-                raise ValueError("Challenger parent is not the captured server-owned baseline")
+        _require_runnable_lineage(genome, baseline)
         request = build_execution_request(genome=genome, dataset=dataset, protocol=protocol)
+        return self._execute(request, genome, dataset)
+
+    def run_holdout(
+        self,
+        genome: AgentGenome,
+        dataset: EvolutionDataset,
+        protocol: EvaluationProtocol,
+        *,
+        baseline: AgentGenome | None = None,
+    ) -> GenomeExecutionResult:
+        """Execute one genome on a HOLDOUT dataset under the same lineage rules.
+
+        This is the execution half of independent quality evaluation: the
+        genome runs in the same sealed worker, but every case and context
+        input must carry the HOLDOUT resource class, so the measured outputs
+        cannot come from data the genome was trained or selected on.
+        """
+        _require_runnable_lineage(genome, baseline)
+        request = build_holdout_execution_request(
+            genome=genome, dataset=dataset, protocol=protocol
+        )
+        return self._execute(request, genome, dataset)
+
+    def _execute(
+        self,
+        request: EvolutionExecutionRequest,
+        genome: AgentGenome,
+        dataset: EvolutionDataset,
+    ) -> GenomeExecutionResult:
         package_root = Path(__file__).resolve().parent
         with tempfile.TemporaryDirectory(prefix="ai-quant-evolution-") as temporary:
             job = Path(temporary)

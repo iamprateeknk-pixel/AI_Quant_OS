@@ -295,6 +295,16 @@ def load_agent_catalog() -> AgentRegistry:
                     **original.model_dump(),
                     "agent_version": "0.2.0",
                     "implementation_status": "PARTIAL",
+                    # A02/A07 are the two server-owned implemented shadow
+                    # agents (see agent_sources.py): their missions execute
+                    # end-to-end on real local evidence with test coverage,
+                    # so their registry status says so. Lifecycle stays
+                    # SHADOW — implemented is not promoted.
+                    **(
+                        {"implementation_status": "IMPLEMENTED"}
+                        if identifier in {"A02", "A07"}
+                        else {}
+                    ),
                     **({"timeout_seconds": 5} if identifier in {"A01", "A11"} else {}),
                 }
             )

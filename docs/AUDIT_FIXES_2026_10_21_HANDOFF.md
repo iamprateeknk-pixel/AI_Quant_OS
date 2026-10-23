@@ -602,3 +602,422 @@ and the locked-application job's hash-locked cp311 install +
 `npm run build` steps were not reproduced locally (the lock check
 was reproduced green on both trees; the separate web job runs the
 same npm steps and is green upstream per the PR checks).
+
+## Phase 5 — P11 evolution (holdout evaluation, signed promotion gate, coverage audit) and P10 repair trials (shadow → canary → authorized activation, incident closure) (2026-10-23)
+
+Closes the code side of the user's pending items 5 (P10 automatic
+repair/recovery) and 6 (P11 evolution system), as far as code honestly
+allows. Four new modules, one runner refactor, four new test files;
+architecture registration updated in `.clean/architecture.json` and
+mirrored in `.clean/architecture.md` (application layer:
+`evolution_coverage.py`, `evolution_holdout.py`,
+`evolution_promotion_policy.py`; persistence layer: `repair_trials.py`;
+all supporting criticality). Nothing was pushed; the parent reviews
+and pushes.
+
+### P11.2 — independent quality evaluation on held-out data (`evolution_holdout.py`, runner holdout path)
+
+Training evaluation was self-referential: `evaluate_protocol_outputs`
+scores a challenger on the same TRAINING datasets its mutations were
+selected against, and its result is explicitly an unverified
+diagnostic with no promotion authority. Phase 5 adds the independent
+leg:
+
+- `evolution_runner.py`: `build_execution_request` was refactored into
+  a shared core with two public builders. `build_execution_request`
+  keeps its exact training-only contract (error messages unchanged;
+  the existing runner suite is untouched and green).
+  `build_holdout_execution_request` admits only HOLDOUT datasets whose
+  every execution context is READY and HOLDOUT-classed.
+  `EvolutionRunner.run_holdout(genome, dataset, protocol, *,
+  baseline=None)` runs the same sealed-container execution and the
+  same lineage rules (`_require_runnable_lineage`) as training — a
+  challenger cannot execute without its exact parent baseline.
+- `evaluate_holdout_outputs(training_protocol, holdout_protocol,
+  training_dataset, holdout_dataset, baseline, challenger,
+  baseline_outputs, challenger_outputs)` scores both genomes on the
+  holdout with the *same deterministic ruler* as training (the
+  `evolution_evaluation._metric_matches` adapters and
+  `MetricComparison`), under fail-closed binding rules: the challenger
+  must be a direct child of the baseline; the holdout protocol must
+  carry the identical criteria fingerprint (metrics, direction,
+  minimum improvement, method, regression guardrails) as the training
+  protocol — a different ruler refuses; the holdout dataset must be
+  HOLDOUT-classed with `RECORDED_REFERENCE`/`REVIEWED_REFERENCE`
+  provenance (`SYNTHETIC_DEVELOPMENT_NOT_HOLDOUT` is refused as
+  evidence by name); and holdout case input hashes *and* case ids must
+  be disjoint from every training case, so re-labelled training data
+  cannot pose as held-out. Verdict is `HOLDOUT_PASS` only when the
+  primary metric clears the pre-registered minimum improvement with a
+  strictly positive delta and no metric breaches its regression
+  guardrail. The resulting `HoldoutEvaluation` still carries
+  `execution_verified: False` and `promotion_allowed: False` — it is
+  evidence for the promotion gate, never authority by itself.
+
+### P11.1 — evolution coverage beyond A02/A07 (`evolution_coverage.py`)
+
+Tournaments today bind exactly A02/A07. Widening that inside this
+phase was not honestly possible: coverage requires four surfaces per
+agent (registry manifest, a declared genome source baseline in
+`agent_sources.AGENT_SOURCE_PATHS`, a sealed-worker dispatch entry
+plus a bespoke output-contract validator in `evolution_runner`, and
+dataset/protocol artifacts whose `agent_id` literals admit the agent),
+and the genome baselines and mission/registry surfaces are owned by
+the agent coordinator, not this one. Instead of fake coverage, the
+phase ships the audit that states the gap from verifiable facts:
+
+- `build_evolution_coverage()` classifies all 18 catalog agents from
+  the live registry, `AGENT_SOURCE_PATHS`, and the runner binding.
+  Today: A02/A07 are `EVOLUTION_ACTIVE`; the other 16 are
+  `MISSION_SURFACE_NOT_EVOLUTION_BOUND` with blockers
+  `NO_DECLARED_GENOME_SOURCE_BASELINE`,
+  `NO_WORKER_DISPATCH_OR_OUTPUT_CONTRACT`, and
+  `DATASET_PROTOCOL_AGENT_LITERAL_EXCLUDES_AGENT`. Every agent does
+  have a mission entrypoint (`MISSION_SURFACES`, A01–A18), and the
+  coverage test imports each one and asserts it is a coroutine
+  function, so the inventory fails loudly if a mission moves. A test
+  also pins `RUNNER_SUPPORTED_AGENTS` to the actual `agent_id`
+  literals of `EvolutionExecutionRequest`, `EvolutionDataset`, and
+  `EvaluationProtocol`, so the audit cannot drift from the binding.
+- **What the owning coordinator must add to bind one more agent**
+  (recorded here because those files are outside this phase's
+  ownership): (1) a source baseline entry in
+  `agent_sources.AGENT_SOURCE_PATHS` for the agent/version; (2) a
+  dispatch entry in the runner's sealed-worker map plus a bespoke
+  output-contract validator in `_validate_output_contract`; (3) the
+  agent added to the `agent_id` literals in
+  `evolution_protocols.py` (`EvolutionDataset`, `EvaluationProtocol`)
+  and `evolution_runner.py` (`EvolutionExecutionRequest`); (4) a
+  deterministic metric adapter in `evolution_evaluation` if the
+  agent's outputs need one beyond `CORRECTNESS`. The moment all four
+  exist, `build_evolution_coverage` reports the agent active with no
+  code change here.
+
+### P11.3 — signed promotion policy (`evolution_promotion_policy.py`)
+
+There was no signed-promotion-policy concept in the code; every
+artifact hardcoded `promotion_allowed: False`. The phase implements
+the policy object and its verification path; **automatic promotion
+stays disabled** (see "Honestly not done").
+
+- A `PromotionPolicy` is a frozen, exact-schema artifact
+  (`promotion_mode` is literally `AUTOMATIC`; scoped `scope_agent_ids`;
+  `authorized_signer_ids`; `required_signatures` quorum bounded by
+  the authorized set; `minimum_holdout_cases`; an issued/expires
+  validity window). It travels in a canonical-JSON envelope
+  `{policy, signatures}` where each signature is an Ed25519 signature
+  over the canonical policy bytes by a distinct authorized signer.
+- Signers are provisioned through a `PromotionTrustStore`: a
+  canonical `{schema_version, signers}` document whose root Ed25519
+  signature must verify against an out-of-band root public key
+  (`load_promotion_trust_store`). `load_signed_promotion_policy`
+  fail-closes on a malformed envelope, an untrusted or unauthorized
+  signer, a bad signature, or an unmet quorum.
+- `EvolutionPromotionGate.decide(policy_raw, *, holdout,
+  challenger_genome_ref, agent_id, now)` returns `AUTHORIZED` only
+  when the policy verifies, the decision time is inside its window,
+  the agent is in scope, and a `HOLDOUT_PASS` evaluation for that
+  exact challenger meets the policy's holdout case floor. Every other
+  outcome is `REFUSED` with a precise reason
+  (`SIGNED_POLICY_MISSING`, `SIGNED_POLICY_INVALID`,
+  `SIGNED_POLICY_OUTSIDE_VALIDITY_WINDOW`,
+  `SIGNED_POLICY_SCOPE_EXCLUDES_AGENT`, `HOLDOUT_EVALUATION_MISSING`,
+  `HOLDOUT_VERDICT_NOT_PASS`, `HOLDOUT_CHALLENGER_MISMATCH`,
+  `HOLDOUT_AGENT_MISMATCH`, `HOLDOUT_CASES_BELOW_POLICY_MINIMUM`).
+  `PromotionGateDecision.promotion_applied` is validator-fixed False:
+  the gate authorizes; applying a genome as the served catalog version
+  remains a release action outside this module. Tests prove the full
+  matrix with generated test keys: no policy → refused; tampered
+  policy, forged root signature, missing quorum, untrusted signer →
+  invalid; expired → refused; out-of-scope agent → refused; failing
+  or foreign holdout → refused; valid policy + passing holdout →
+  authorized, still not applied.
+- Follow-up for the A17 owner: `evolution_director_agent` still
+  hardcodes `INDEPENDENT_PROMOTION_GATE_UNAVAILABLE` in its blocker
+  list. The gate now exists; consuming it (and dropping that blocker)
+  is the mission owner's change, deliberately not made here.
+
+### P10.4 — repair trial pipeline (`repair_trials.py`)
+
+Independent verification already existed (`repair_certificates.py`: a
+verifier's Ed25519 certificate attests a candidate's replay/test
+evidence and explicitly authorizes nothing). What was missing was the
+trial path between that verdict and any activation. `RepairTrialStore`
+(SQLite, hash-checked records, `AuditChain`-logged transitions)
+implements it, mirroring the paper recovery-canary semantics:
+
+    SHADOW_PENDING → SHADOW_PASSED → CANARY_ACTIVE → CANARY_PASSED
+        → ACTIVATION_AUTHORIZED
+    SHADOW_PENDING → SHADOW_FAILED (terminal)
+    CANARY_ACTIVE / CANARY_PASSED → ROLLED_BACK
+
+- A trial opens only for a typed snapshot whose verification state is
+  `INDEPENDENT_VERIFICATION_PASSED` and binds that exact snapshot
+  hash; a failed verification or a certificate for another snapshot is
+  refused. Trial identity is the SHA-256 of
+  `{candidate_id, snapshot_sha256, certificate_sha256}`; opening is
+  idempotent.
+- Shadow: `evaluate_shadow` refuses outright when no evaluator is
+  injected — an unwired deployment creates no shadow evidence and the
+  trial stays pending (fail closed). The injected evaluator's
+  `ShadowVerdict` must bind the trial's exact incident
+  `replay_sha256`; a failing verdict is terminal `SHADOW_FAILED` and
+  can never reach canary.
+- Canary: `start_canary` records scope, entry time, and soak
+  (default 300 s, the recovery-canary value). `evaluate_canary` is a
+  fresh gate evaluation: any health incident for the same agent
+  detected at or after canary entry (excluding the incident under
+  repair) transitions the trial to `ROLLED_BACK` with reason
+  `INCIDENT_DURING_CANARY` and the snapshot's pre-repair rollback
+  commit; before the soak elapses the trial stays `CANARY_ACTIVE`;
+  after a clean soak it becomes `CANARY_PASSED`. `rollback()` is the
+  explicit operator path from either canary state.
+- Activation: `authorize_activation` is the enforced-promotion step —
+  reachable only from `CANARY_PASSED`, requires a named
+  `operator_ref`, and produces an `ActivationRecord` with
+  `applied: False` / `REQUIRES_CATALOG_RELEASE`. The served-version
+  flip is a catalog release action, exactly as with evolution
+  promotion: authorized here, applied elsewhere, off by default.
+
+### P10.5 — critical incident closure (`RepairIncidentClosure`)
+
+`close_incident` is reachable only from an activation-authorized trial
+with shadow and completed-canary records, and writes a durable,
+hash-checked closure linking the full chain: incident id → candidate
+id → trial id → certificate SHA-256 → verifier id and PASS verdict →
+shadow evidence refs → canary entry time and actual soak seconds →
+`incidents_during_canary: 0` → activation operator ref → closure
+time. `closure_ref` is `repair-closure:<sha256>` over the canonical
+record. `journal_writeback` is fixed False: the health journal is the
+incident system of record, and writing the closure into it is the
+health-store owner's step (their write API is outside this phase's
+ownership).
+
+### Honestly not done / disabled by design
+
+- **Automatic evolution promotion is DISABLED.** No production
+  promotion policy or trust store has been provisioned, and this phase
+  deliberately created no signature and no root key. Exactly what
+  enables it: (1) the release owner generates an Ed25519 root key
+  offline and signs a trust store naming the authorized promotion
+  signers; (2) the policy document (scope, quorum, holdout floor,
+  validity window) is signed by the quorum of those signers; (3) the
+  deployment is given the root public key + signed policy bytes, and
+  `EvolutionPromotionGate.decide` is consulted before any catalog
+  release applies a challenger. Until then every real decision is
+  `REFUSED / SIGNED_POLICY_MISSING` — proven by test.
+- **Repair activation is authorization-only.** No trial, however
+  green, flips a served agent version; that remains a catalog release
+  by its owner using the `ACTIVATION_AUTHORIZED` record as its input.
+- **Repair shadow evaluation has no production evaluator wired.** The
+  pipeline requires an injected independent evaluator (e.g. backed by
+  the repair sandbox/replay machinery); wiring that adapter is an
+  integration step for the repair-workspace owner. Without it, trials
+  correctly sit at `SHADOW_PENDING` and nothing activates.
+- **Incident-closure journal writeback is not implemented**
+  (`journal_writeback: False`); the health-store owner must mirror
+  the closure into the health journal for the incident record to show
+  as closed there.
+- **Evolution coverage remains A02/A07** for the reasons in P11.1;
+  the coverage audit, not a claim, is the deliverable for the other
+  16 agents.
+- A17's hardcoded `INDEPENDENT_PROMOTION_GATE_UNAVAILABLE` blocker is
+  unchanged (mission owner's file); the gate it names now exists.
+
+### Verification
+
+All runs sequential in the sandbox venv (Python 3.12, pydantic
+2.14.1; TMPDIR under `~/workspace/work/`):
+
+- New suites: `tests/test_evolution_holdout.py`,
+  `tests/test_evolution_promotion_policy.py`,
+  `tests/test_evolution_coverage.py`, `tests/test_repair_trials.py`,
+  plus `tests/test_evolution_runner.py`:
+  **39 passed, 4 skipped** (skips are the pre-existing
+  container-dependent runner tests).
+- Full affected set (all `tests/test_evolution_*.py`,
+  `tests/test_repair_certificates.py`, `tests/test_repair_cli.py`,
+  `tests/test_repair_workspace.py`, `tests/test_repair_jobs.py`,
+  `tests/test_repair_trials.py`,
+  `tests/test_architecture_broker_boundary.py`):
+  **187 passed, 4 skipped, 3 failed**. The 3 failures are exactly the
+  pre-existing baseline failures recorded before this phase began
+  (two portable-schema parity tests that fail under the sandbox's
+  pydantic 2.14.1 but pass under the repo-pinned 2.13.5, and
+  `test_excessively_nested_case_input_refuses_as_validation_error`);
+  no regressions, and the architecture suite passes with the four new
+  modules registered.
+- `ruff check --no-cache` clean on all new/changed files
+  (line-length 100); no in-place formatters were run.
+
+## Phase 6 — P06/P07 agents: calibration harness, cost-governor model routing, registry truth (2026-10-23)
+
+Scope: the "agents fully operational" work item. Survey first, because the
+registry understated reality in both directions:
+
+- All 18 agents (A01–A18) already have real deterministic implementations
+  registered in the API graph runtime at 0.2.0 (plus extra versions for
+  A01, A08, A12, A13, A16). They are not stubs. A01–A07 and A12–A18
+  execute through the paper graph endpoint against server-compiled real
+  local evidence (paper state store, on-disk market bars, integrity and
+  incident records, validation/promotion state). A02 compiles its
+  context from real paper bars.
+- A08–A11 execute **only in the SANDBOX research pipeline**: their
+  context contract requires READY inputs over TRAINING datasets, which
+  the paper world cannot supply. That is the anti-leakage design working
+  as intended, not a gap to "fix" by loosening it.
+- The genuine gaps were three: (1) **no agent-level calibration existed
+  anywhere** — `calibration.py` evaluates only the fast-classifier
+  decision-gateway provider, and every agent envelope honestly pins
+  confidence 0 / calibration UNAVAILABLE; (2) **no cost-governor binding
+  existed on the agent execution path** — `route_model`/`BudgetHierarchy`
+  were consumed only by the MCP tools, so agent LLM reasoning (where
+  defined) had no governed route; (3) the registry called A02/A07
+  PARTIAL while `agent_sources.py` already treats them as the two
+  server-owned implemented shadow agents.
+
+### New module: `src/ai_quant_os/agent_calibration.py`
+
+Generic confidence/outcome calibration harness in house style (pydantic,
+Decimal, content-addressed `agent-calibration:` report id, status
+EVIDENCE_ONLY, 10 reliability buckets, Brier score, ECE, per-subject
+rows, `verify_agent_calibration_report`). Mixing outcome kinds in one
+report is refused — a Fortress pass is not a profitable holdout.
+
+Adapters:
+- `fortress_confidence_records(text, source_ref, outcome_kind)` — parses
+  sprint-runner JSON (bare or `===JSON===`-wrapped). Confidence is the
+  trial's `walk_forward_positive_fraction` (the pre-holdout signal the
+  pipeline itself surfaces); outcome is FORTRESS_PASS or
+  HOLDOUT_PROFITABLE.
+- `regime_confidence_records(output, expected, source_ref)` — scores
+  A02's per-horizon top-label feature scores against known regime
+  labels; skips UNAVAILABLE / UNKNOWN-top / unlabeled horizons.
+
+Real artifacts produced (in `~/workspace/edge_data/`, regenerated
+2026-10-23; the original Sprint 1 JSON was absent and the Sprint 2 file
+was 0 bytes, so both runners were re-executed on refreshed FRED data
+through 2026-10-16 with unchanged frozen specs — verdicts unchanged,
+0 survivors; regen logs saved alongside):
+
+- `agent_calibration_fortress_pass.json`
+  (id `agent-calibration:14e32345f7397176980dee5106fbc2a79e694225b43da9b70201b09eae899e33`):
+  82 trials, 0 positives, Brier 0.20, ECE 0.351. The walk-forward
+  fraction carries **no signal for Fortress passage** — trials fail at
+  every confidence level, including the single 1.0-confidence trial.
+- `agent_calibration_holdout_profitable.json`
+  (id `agent-calibration:fd2a00687e80f363e7780f5a8e662bde181a2899ba1fd026782d454f4b6a2991`):
+  82 trials, 24 positives (base rate 29.3%), Brier 0.1366, ECE 0.0878,
+  reliability monotone across buckets (0.05 → 0.00 → 0.33 → 0.62 →
+  0.73 → 1.00). The pre-holdout signal **is** reasonably calibrated for
+  holdout profitability; the Fortress gates reject on PBO / deflated-
+  Sharpe grounds regardless. Both findings are now measured, not
+  asserted.
+
+### New module: `src/ai_quant_os/agent_model_router.py`
+
+`AgentModelRouter` binds agents to the cost governor. Squad criticality
+map: Safety = incident, Reliability/Data = critical, Validation/
+Portfolio/Control = material, Market/Research/Learning/Evolution = low.
+Providers are **disabled by default**; registration is explicit only
+(DETERMINISTIC tier and duplicate registrations are rejected).
+`route()` returns a RoutingDecision (governor decision, routed tier,
+executed_via, provider id, fallback reasons BUDGET_DEFER / BUDGET_DENY /
+TOKEN_STORM / PROVIDER_UNAVAILABLE). `execute()` runs a registered
+provider when the governor allows it, records actual token usage with
+the governor, and degrades to the deterministic path on provider
+exception (PROVIDER_FAILED) or a token-storm signal. With no providers
+registered — the only state possible without API keys — every route
+degrades honestly to deterministic execution. Proven by tests, below.
+
+Both modules are registered in `.clean/architecture.json`
+(agent_calibration → application layer, agent_model_router → agents
+layer; package inventory now 378 modules) and the machine-readable
+block of `.clean/architecture.md` was regenerated from the JSON.
+
+### Registry truth change
+
+In `load_agent_catalog()` (agent_registry.py), A02 and A07 at 0.2.0 now
+carry `implementation_status="IMPLEMENTED"` (conditional override after
+the PARTIAL default, with an explanatory comment). Justification: both
+missions execute end-to-end on real local evidence with test coverage,
+and `agent_sources.py` already designates exactly these two as the
+implemented shadow agents. **Lifecycle stays SHADOW for both** —
+implemented is not promoted. All other statuses are untouched. One
+stale spot-check assertion in `tests/test_agent_registry.py` was
+updated to match (A11 remains PARTIAL).
+
+### Per-agent state after Phase 6
+
+Routing column is uniform by design: every agent routes through
+`AgentModelRouter` at its squad criticality; providers are off, so every
+route currently executes deterministically. Calibration column states
+whether a confidence signal exists that the harness can score today.
+
+| Agent | Mission / output | Executes | Evidence source | Calibrated | Remaining blocker |
+|---|---|---|---|---|---|
+| A01 Master Supervisor | TaskPlan | paper graph | server-compiled supervision/task state | n/a — deterministic plans, no local outcome stream | none for paper; promotion is a governance decision |
+| A02 Market Regime | RegimeDistribution | paper graph | real paper bars (`paper_context_sources`) | **harness-scored** vs labeled fixture (synthetic labels, NOT_HOLDOUT provenance); envelope still declares UNAVAILABLE — see blockers | no live labeled regime outcomes exist locally; wiring harness output into the live envelope changes a published claim (maintainer decision) |
+| A03 Macro & Central Bank | CurrencyMacroBias | paper graph | local macro/FRED-derived compiled context | no — confidence UNAVAILABLE, no labeled outcomes | no live macro feed |
+| A04 Currency Strength | CurrencyScoreVector | paper graph | real bars | no — deterministic scores, no labeled outcomes | outcome labels do not exist locally |
+| A05 Volatility & Liquidity | LiquidityState | paper graph | real bars | no — as A04 | as A04 |
+| A06 Event Risk | EventRiskState | paper graph | local event/calendar records | no | no live event feed |
+| A07 Data Integrity | DataHealth | paper graph | paper store + bars integrity checks | n/a — pass/fail checks, not probabilistic | none for paper scope; status now IMPLEMENTED |
+| A08 Quant Research Scientist | HypothesisSpec | SANDBOX research pipeline only | TRAINING datasets (READY context) | its pipeline signal (walk-forward fraction) is what the harness scored over 82 trials | paper-endpoint execution impossible by anti-leakage design |
+| A09 Strategy Builder | StrategyCandidate | SANDBOX research only | TRAINING datasets | no | as A08 |
+| A10 Validation Scientist | ValidationScorecard | SANDBOX research only | TRAINING datasets | produces the Fortress verdicts used as harness ground truth | as A08 |
+| A11 Adversarial Validator | AdversarialScorecard | SANDBOX research only | TRAINING datasets | no | as A08 |
+| A12 Strategy Selector | EligibleStrategySet | paper graph | validation/promotion state | n/a | zero Fortress survivors → eligible set honestly empty |
+| A13 Meta Allocator | AllocationProposal | paper graph | selector output + portfolio state | n/a | gated on A12's empty set |
+| A14 Drift & Attribution | DriftAttribution | paper graph | paper run/drift records | no | no labeled drift outcomes locally |
+| A15 Counterfactual Scientist | CounterfactualComparison | paper graph | paper outcomes vs currency twin | n/a — deterministic comparison | none for paper scope |
+| A16 Health & Repair | RepairCandidate | paper graph | health/incident records | n/a | repair trial pipeline owned by Phase 5 track; untouched here |
+| A17 Learning & Evolution Director | EvolutionPlan | paper graph | evolution state | n/a | evolution modules owned by Phase 5 track; untouched here |
+| A18 Incident & Safety Supervisor | IncidentRecommendation | paper graph | incident/audit records | n/a — rule-based safety logic | none for paper scope |
+
+### Verification
+
+- Baselines before changes (ci-venv, sequential): unit/agent batch
+  279 passed + 1 pre-existing pydantic schema-parity failure
+  (`test_published_drift_output_schema_matches_runtime`); API/execute/
+  research batch 372 passed, 0 failed.
+- New tests: `tests/test_agent_model_router.py` (10) +
+  `tests/test_agent_calibration.py` (7, including a genuine A02 graph
+  run over `tests/fixtures/regime_baseline.json` and an exact-math
+  Brier 0.375 / ECE 0.5 case) — 17/17 pass.
+- Architecture boundary + registry suites after registration: 112 pass.
+- Post-flip regression batches: 148 passed (plus the one stale A02
+  assertion, fixed), 187 passed + 1 pre-existing HOLDOUT-fixture error,
+  62 passed, 59 passed + 4 schema-parity failures + 1 HOLDOUT-fixture
+  error. The 4 parity failures were proven pre-existing by re-running
+  them against the registry with the flip temporarily reverted — they
+  fail identically (sandbox pydantic 2.14.1 vs locked 2.13.5, the
+  Phase 4 finding). Final spot check (registry + both new suites):
+  119 passed. **Net new failures attributable to Phase 6: zero.**
+- `ruff check --no-cache` clean on all new/changed files
+  (line-length 100); no in-place formatters were run.
+
+### Still blocked — honestly, and why
+
+- **LLM providers remain OFF.** No API keys exist in this deployment.
+  The router is built, budgeted and tested, but until a provider is
+  registered with real credentials every agent executes
+  deterministically. That is a deployment/keys decision, not a code gap.
+- **A02's envelope still declares calibration UNAVAILABLE.** The
+  harness can score A02 now, but the only labeled regimes available
+  locally are a synthetic fixture; promoting harness output into the
+  live envelope would be a claim change and needs live labeled outcomes
+  plus a maintainer decision.
+- **A08–A11 will never execute via the paper endpoint** — SANDBOX /
+  TRAINING inputs do not exist in the paper world, by anti-leakage
+  design. They are operational where their inputs legitimately exist:
+  the research pipeline.
+- **No agent was promoted.** Every lifecycle remains SHADOW; registry
+  `implementation_status` describes code truth only.
+- **A16/A17 internals untouched** (repair/evolution ownership, Phase 5
+  section above). No changes are needed there from this track: the
+  calibration harness and router are additive and impose no edits on
+  `evolution_*` / `repair_*` modules.
+- Pre-existing failure classes (HOLDOUT-fixture 422s, pydantic
+  schema-parity) are unchanged by this phase and still await the
+  maintainer decisions recorded in Phase 4.
