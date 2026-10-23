@@ -252,6 +252,8 @@ def test_secure_directory_requires_restore_privilege_before_mutating_tree(tmp_pa
         "win32api",
         SimpleNamespace(GetCurrentProcess=lambda: "process", CloseHandle=lambda _h: None),
     )
+    monkeypatch.setitem(sys.modules, "win32con", SimpleNamespace())
+    monkeypatch.setitem(sys.modules, "win32file", SimpleNamespace())
     monkeypatch.setattr(
         holdout_service_security,
         "os",
