@@ -56,9 +56,12 @@ them through the PAPER API. The ordinary `ai-quant-research-data` command is
 TRAINING-only. The focused P07 regression group passes **85 tests** after the
 installer-path test was added; the complete locked Windows backend suite now
 passes **3,314 tests with 47 skipped in 1,745.35 seconds** on Pydantic 2.13.5
-and Core 2.46.5, including that regression. The opt-in Docker worker integration
-is among the skipped tests; an attempt to run it confirmed the Docker Desktop Linux
-engine is not available in this environment. Service installation under
+and Core 2.46.5, including that regression. That run skipped the opt-in Docker
+worker integration because the Linux engine was unavailable at the time. On
+2026-10-23, the pinned local Linux engine group passed **89 tests in 762.31
+seconds**, including the evolution worker, candidate windows and validation,
+repair containers, strategy prefixes, and worker-enforcement probes. Docker
+Desktop was stopped after the run and no test containers remained. Service installation under
 LocalService, actual ACL/process-access acceptance, and end-to-end migration of
 real source archives remain open. These tests verify application behavior and
 mocked installer orchestration only; no OS isolation or full P07 acceptance
@@ -100,9 +103,10 @@ locked Windows run recorded in `BUILD_STATUS.md`.
 
 Current verification: the full locked Windows backend suite completed with
 **3,314 passed and 47 skipped in 1,745.35 seconds**. The run used Pydantic
-2.13.5 and Pydantic Core 2.46.5. The opt-in Docker engine test was skipped in
-this run because the Docker Desktop Linux engine was unavailable. Ruff lint and
-format checks plus `git diff --check` pass for the current changes. The focused
+2.13.5 and Pydantic Core 2.46.5. Separately, the opt-in Docker engine set passed
+**89 tests in 762.31 seconds** on the pinned Linux worker image; the Docker
+engine was stopped after verification. Ruff lint and format checks plus
+`git diff --check` pass for the current changes. The focused
 A02/graph/broker-boundary suite including API failure containment previously
 passed **43 tests**.
 
