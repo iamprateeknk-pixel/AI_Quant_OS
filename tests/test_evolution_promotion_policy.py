@@ -136,7 +136,9 @@ def test_signed_policy_verifies_with_full_quorum():
 
 def test_policy_with_a_missing_quorum_signature_is_invalid():
     with pytest.raises(ValueError, match="quorum"):
-        load_signed_promotion_policy(_signed_policy(signers=(SIGNER_1,)), trust_store=_trust_store())
+        load_signed_promotion_policy(
+            _signed_policy(signers=(SIGNER_1,)), trust_store=_trust_store()
+        )
 
 
 def test_policy_signed_by_an_untrusted_key_is_invalid():

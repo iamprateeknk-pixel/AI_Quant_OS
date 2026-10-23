@@ -131,9 +131,15 @@ def evaluate_holdout_outputs(
     non-synthetic HOLDOUT set for the same agent; and no holdout case input
     or case id appears in the training dataset (no leakage).
     """
-    if type(training_protocol) is not EvaluationProtocol or type(holdout_dataset) is not EvolutionDataset:
+    if (
+        type(training_protocol) is not EvaluationProtocol
+        or type(holdout_dataset) is not EvolutionDataset
+    ):
         raise ValueError("Retained typed holdout protocol and dataset are required")
-    if type(holdout_protocol) is not EvaluationProtocol or type(training_dataset) is not EvolutionDataset:
+    if (
+        type(holdout_protocol) is not EvaluationProtocol
+        or type(training_dataset) is not EvolutionDataset
+    ):
         raise ValueError("Retained typed training protocol and dataset are required")
     if type(baseline) is not AgentGenome or type(challenger) is not AgentGenome:
         raise ValueError("Typed baseline and challenger genomes are required")
@@ -198,7 +204,9 @@ def evaluate_holdout_outputs(
         )
     comparisons = tuple(comparisons)
     primary = next(
-        row for row in holdout_protocol.criteria if row.criterion.metric == holdout_protocol.primary_metric
+        row
+        for row in holdout_protocol.criteria
+        if row.criterion.metric == holdout_protocol.primary_metric
     )
     primary_comparison = next(
         row for row in comparisons if row.metric == holdout_protocol.primary_metric
@@ -207,7 +215,9 @@ def evaluate_holdout_outputs(
         primary_comparison.challenger_exact_matches - primary_comparison.baseline_exact_matches,
         case_count,
     )
-    improvement_met = exact_delta >= Fraction(primary.criterion.minimum_improvement) and exact_delta > 0
+    improvement_met = (
+        exact_delta >= Fraction(primary.criterion.minimum_improvement) and exact_delta > 0
+    )
     passed = improvement_met and all(row.within_guardrail for row in comparisons)
     return HoldoutEvaluation(
         agent_id=holdout_protocol.agent_id,

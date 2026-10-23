@@ -276,7 +276,10 @@ def _require_runnable_lineage(genome: AgentGenome, baseline: AgentGenome | None)
         raise ValueError("Challenger execution requires its exact parent baseline")
     else:
         require_genome_child(baseline, genome)
-        if baseline.parent_ref is not None or baseline.manifest.agent_id != genome.manifest.agent_id:
+        if (
+            baseline.parent_ref is not None
+            or baseline.manifest.agent_id != genome.manifest.agent_id
+        ):
             raise ValueError("Challenger parent must be the captured root genome")
         expected = capture_baseline_genome(
             load_agent_catalog(), baseline.manifest.agent_id, baseline.objective
@@ -323,9 +326,7 @@ class EvolutionRunner:
         cannot come from data the genome was trained or selected on.
         """
         _require_runnable_lineage(genome, baseline)
-        request = build_holdout_execution_request(
-            genome=genome, dataset=dataset, protocol=protocol
-        )
+        request = build_holdout_execution_request(genome=genome, dataset=dataset, protocol=protocol)
         return self._execute(request, genome, dataset)
 
     def _execute(
