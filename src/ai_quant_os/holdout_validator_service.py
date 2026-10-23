@@ -1006,8 +1006,10 @@ if os.name == "nt":
             self.SvcStop()
 
         def SvcDoRun(self):
+            startup_stage = "configuration"
             try:
                 data_dir, operator_sid = _read_service_settings()
+                startup_stage = "service_identity"
                 service_sid = service_sid_for_name(self._svc_name_, security=win32security)
                 token = win32security.OpenProcessToken(
                     win32api.GetCurrentProcess(), win32security.TOKEN_QUERY
@@ -1022,11 +1024,13 @@ if os.name == "nt":
                         raise PermissionError("HOLDOUT service SID missing from process token")
                 finally:
                     win32api.CloseHandle(token)
+                startup_stage = "holdout_acl"
                 verify_holdout_directory_tree(
                     data_dir,
                     HoldoutDirectoryAcl(service_sid),
                     security=win32security,
                 )
+                startup_stage = "open_archives"
                 holdout_store = _open_service_holdout_store(data_dir)
                 archive_paths = {
                     "packages": data_dir / "validation-packages.sqlite3",
@@ -1043,6 +1047,7 @@ if os.name == "nt":
                 packages = ValidationPackageStore(archive_paths["packages"])
                 validations = CandidateValidationStore(archive_paths["validations"])
                 research = ResearchStore(archive_paths["research"])
+                startup_stage = "start_listener"
                 self.ReportServiceStatus(win32service.SERVICE_RUNNING)
                 server = WindowsNamedPipeServer(service_sid, operator_sid)
                 try:
@@ -1054,8 +1059,12 @@ if os.name == "nt":
                     validations.close()
                     packages.close()
                     holdout_store.close()
-            except Exception:
-                servicemanager.LogErrorMsg("HOLDOUT validator startup or runtime failure")
+            except Exception as error:
+                code = getattr(error, "winerror", 0) or 0
+                servicemanager.LogErrorMsg(
+                    "HOLDOUT validator failure "
+                    f"(stage={startup_stage}, type={type(error).__name__}, code={code})"
+                )
                 self.ReportServiceStatus(
                     win32service.SERVICE_STOPPED,
                     win32ExitCode=winerror.ERROR_SERVICE_SPECIFIC_ERROR,
@@ -1095,10 +1104,18 @@ def _install_service(data_dir: Path, *, paper_db: Path, research_workspace: Path
         )
         present = tuple((data_dir / name).is_file() for name in archive_names)
         if all(present):
-            adopt_existing = False
+            # A complete archive set may be left behind by a failed ACL transition.
+            # Reapply the exact service/SYSTEM policy so installation can resume.
+            adopt_existing = True
         elif any(present):
             raise FileExistsError("HOLDOUT service archive set is incomplete")
         else:
+            # Limit the short staging window to this operator, service, and SYSTEM.
+            secure_holdout_directory(
+                data_dir,
+                adopt_existing=False,
+                staging_operator_sid=operator_sid,
+            )
             stage_service_archives(
                 data_dir,
                 holdout_source=paper_db.with_name(paper_db.stem + ".research-data.holdout.sqlite3"),

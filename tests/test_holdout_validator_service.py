@@ -599,7 +599,7 @@ def test_stage_service_archives_verifies_copies_and_preserves_sources(tmp_path):
     assert list(failed_stage.iterdir()) == []
 
 
-def test_service_install_stages_verified_archives_before_acl_and_never_starts_on_acl_failure(
+def test_service_install_secures_staging_directory_before_copy_and_never_starts_on_acl_failure(
     tmp_path, monkeypatch
 ):
     import sys
@@ -659,12 +659,16 @@ def test_service_install_stages_verified_archives_before_acl_and_never_starts_on
         "_write_service_settings",
         lambda *_: events.append("settings"),
     )
-    acl_failure = False
+    acl_fail_on_call = None
+    acl_call_count = 0
 
-    def verify_acl(data_dir, *, adopt_existing):
-        events.append(("acl", adopt_existing))
-        assert all(
-            (data_dir / name).is_file()
+    def verify_acl(data_dir, *, adopt_existing, staging_operator_sid=None):
+        nonlocal acl_call_count
+        acl_call_count += 1
+        data_dir.mkdir(parents=True, exist_ok=True)
+        events.append(("acl", adopt_existing, staging_operator_sid))
+        archives = tuple(
+            data_dir / name
             for name in (
                 "research-data.holdout.sqlite3",
                 "validation-packages.sqlite3",
@@ -672,7 +676,11 @@ def test_service_install_stages_verified_archives_before_acl_and_never_starts_on
                 "research.sqlite3",
             )
         )
-        if acl_failure:
+        if any(path.exists() for path in archives):
+            assert all(path.is_file() for path in archives)
+        else:
+            assert all(not path.exists() for path in archives)
+        if acl_call_count == acl_fail_on_call:
             raise PermissionError("synthetic ACL acceptance failure")
 
     monkeypatch.setattr(service, "secure_holdout_directory", verify_acl)
@@ -686,15 +694,42 @@ def test_service_install_stages_verified_archives_before_acl_and_never_starts_on
     assert events == [
         "register",
         "service-sid",
+        ("acl", False, "S-1-5-21-1-2-3-1001"),
         "stage",
         "settings",
-        ("acl", True),
+        ("acl", True, None),
         ("start", "AIQuantHoldout"),
     ]
     assert all(path.read_bytes() == content for path, content in source_bytes.items())
 
     events.clear()
-    acl_failure = True
+    acl_call_count = 0
+    existing_data_dir = (tmp_path / "service-existing").resolve()
+    existing_data_dir.mkdir()
+    archive_names = (
+        "research-data.holdout.sqlite3",
+        "validation-packages.sqlite3",
+        "candidate-validations.sqlite3",
+        "research.sqlite3",
+    )
+    for name, source in zip(archive_names, sources, strict=True):
+        (existing_data_dir / name).write_bytes(source.read_bytes())
+    service._install_service(
+        existing_data_dir,
+        paper_db=paper_db,
+        research_workspace=research_workspace,
+    )
+    assert events == [
+        "register",
+        "service-sid",
+        "settings",
+        ("acl", True, None),
+        ("start", "AIQuantHoldout"),
+    ]
+
+    events.clear()
+    acl_call_count = 0
+    acl_fail_on_call = 1
     failed_data_dir = (tmp_path / "service-failed").resolve()
     with pytest.raises(PermissionError, match="synthetic ACL"):
         service._install_service(
@@ -702,7 +737,32 @@ def test_service_install_stages_verified_archives_before_acl_and_never_starts_on
             paper_db=paper_db,
             research_workspace=research_workspace,
         )
-    assert events[-1] == ("acl", True)
+    assert events[-1] == ("acl", False, "S-1-5-21-1-2-3-1001")
+    assert not any(event == "stage" for event in events)
+    assert list(failed_data_dir.iterdir()) == []
+    assert not any(isinstance(event, tuple) and event[0] == "start" for event in events)
+    assert all(path.read_bytes() == content for path, content in source_bytes.items())
+
+    events.clear()
+    acl_call_count = 0
+    acl_fail_on_call = 2
+    final_acl_failure_dir = (tmp_path / "service-final-acl-failed").resolve()
+    with pytest.raises(PermissionError, match="synthetic ACL"):
+        service._install_service(
+            final_acl_failure_dir,
+            paper_db=paper_db,
+            research_workspace=research_workspace,
+        )
+    assert "stage" in events
+    assert all(
+        (final_acl_failure_dir / name).is_file()
+        for name in (
+            "research-data.holdout.sqlite3",
+            "validation-packages.sqlite3",
+            "candidate-validations.sqlite3",
+            "research.sqlite3",
+        )
+    )
     assert not any(isinstance(event, tuple) and event[0] == "start" for event in events)
     assert all(path.read_bytes() == content for path, content in source_bytes.items())
 

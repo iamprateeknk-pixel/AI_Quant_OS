@@ -14,13 +14,13 @@ exercise the framed RPC client and service handler together. The retained A10
 result endpoint now also reads a checked summary through service RPC; the PAPER
 API no longer constructs or reads a local candidate-validation archive.
 
-First install now stages verified copies of the existing HOLDOUT,
-validation-package, candidate-validation, and research SQLite archives before
-applying the service-only ACL to the service data tree. A Windows-only installer
-orchestration regression uses real synthetic SQLite archives and mocked Windows
-service/ACL calls to verify the ordering, source preservation, and fail-closed
-startup behavior. Stop the PAPER API and research writers before installation
-so SQLite snapshots have stable sources.
+First install now gives the empty staging directory a protected ACL for the
+validator service, SYSTEM, and the confirmed operator SID. Verified copies of
+the HOLDOUT, validation-package, candidate-validation, and research SQLite
+archives inherit that ACL. The installer then removes the temporary operator
+entry and verifies the final service/SYSTEM-only ACL through read-control
+handles opened before the owner change. Stop the PAPER API and research writers
+before installation so SQLite snapshots have stable sources.
 Installation requires `--data-dir`, `--paper-db`, and `--research-workspace`;
 the HOLDOUT and two validation archives are derived from the PAPER database
 path, and the research archive is read from the workspace. Sources remain
@@ -28,12 +28,20 @@ untouched. Staging requires an empty service data directory and refuses
 unrelated files. Existing complete service archives are preserved on
 re-install, and partial archive sets are refused.
 
-The service has not been installed or exercised under its Windows service
-identity, and real file ACL/process-access acceptance remains open. The
-installer regression forces ACL failure and confirms that the service is not
-started and source archives remain byte-identical; Windows service and ACL calls
-are mocked, so it does not establish LocalService token, pipe, process, or file
-ACL isolation. The service stores and reads candidate-validation records. The
+The 2026-10-23 workstation probe used only four explicitly synthetic empty
+SQLite archives. It verified the owner and final DACL on the staged files and
+directory using Windows security handles, and a normal operator-process read of
+the raw HOLDOUT file returned access denied. The service registered as
+`NT AUTHORITY\LocalService` but failed to start with SCM error 1053, so service
+token, named-pipe RPC, and service-process access acceptance remain open. The
+installed Python 3.11 runtime is under the operator's profile and its ACL does
+not grant LocalService read access; this is a confirmed deployment blocker and
+likely startup cause, though the exact launch failure was not captured. The
+temporary test service was removed and its synthetic data was preserved. Real
+source archives are absent, so migration was not attempted. The installer
+regression forces ACL failure and confirms that service startup is withheld and
+source archives remain byte-identical; its Windows service calls are mocked.
+The service stores and reads candidate-validation records. The
 operator CLI has an explicit `--service` archive mode that sends canonical
 proposed-test and run reports over one bounded RPC; the service loads its own
 package, checks its HOLDOUT receipt and bytes, recomputes the artifact, and writes the
