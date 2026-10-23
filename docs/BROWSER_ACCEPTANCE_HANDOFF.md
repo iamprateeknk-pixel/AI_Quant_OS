@@ -34,7 +34,7 @@ The broker contract only exposes `CONNECTED`, `DISCONNECTED`, and `UNKNOWN`; it 
 
 These checks do not establish release readiness. The following remain open:
 
-- keyboard paths for authenticated interactive workflows outside the Risk Center and destination dialog, manual target-spacing review and screen-reader review;
+- authenticated keyboard reachability for Broker route controls, paper-ledger reconciliation, and owner-session revocation was checked on 2026-10-23; incident-review acknowledgment remains untested because the isolated journal had no incidents. Manual target-spacing and screen-reader review remain open. See `docs/evaluations/mission-control-authenticated-keyboard-2026-10-23.json`;
 - the exact broker `DEGRADED` design state, if that state is added to the backend contract;
 - independent security and risk review, production identity/secret/compliance decisions, and all applicable P00-P13 release gates;
 - shadow and live acceptance; live execution remains unreleased.
@@ -90,6 +90,25 @@ npm run visual:compare-suite -- --reference-dir output/playwright/visual-states 
 The retained-state self-comparison only verifies that the six local references are present and the comparison runner can read them; it is not a fresh-build regression result. The screenshot command and state-seeding procedure remain manual. Stable cross-machine regression still needs reproducible fixture setup, fixed time/session values, and a pinned browser/viewport.
 
 The retained six screenshots are local inspection captures, not deterministic CI baselines. They contain session-specific IDs and timestamps and were produced with varying viewport heights. Compare a fresh capture against a matching local reference at the same viewport; mask only known dynamic regions. CI-quality pixel regression still needs reproducible seed data, fixed time/session values, and a browser/viewport pin. The illustrative execution-pack dashboard is not a valid baseline because its trading values are fabricated.
+
+## Authenticated keyboard reachability (2026-10-23)
+
+On an isolated fresh PAPER state and production-built UI, keyboard navigation
+reached the broker route reason/confirmation/re-authentication fields and the
+enabled route action, the reconciliation acknowledgment and enabled comparison
+action, and the owner-session refresh/select/revocation controls. Space toggled
+the reconciliation and session-revocation checkboxes. No route change,
+reconciliation, safety action, or session revocation was submitted. The isolated
+database readback retained `NORMAL`, an enabled PAPER route, and zero paper
+orders, fills, simulator orders/fills, or audit events. Settings at 320x800 had
+no horizontal document overflow. The browser console had no errors or warnings
+after reload and route navigation. The incident acknowledgment control was
+unavailable because this fresh state had no incidents. This does not replace
+manual screen-reader or target-spacing review.
+
+The browser and local supervisor were closed after the check. The isolated local
+state directory is retained under the ignored `data-local/` tree; it contains
+only synthetic operator sessions and the empty PAPER test database.
 
 On 2026-10-19, an additional production-build capture was taken at
 `apps/web/output/playwright/visual-states/agent-shadow-registry.png`. The Agents
