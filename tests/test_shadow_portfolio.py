@@ -188,16 +188,16 @@ def test_selector_v3_receives_verified_shadow_metrics_but_never_ranks_them(tmp_p
     assert receipt["status"] == "CHECKED_REGISTRY_AND_SHADOW_SNAPSHOT"
 
     import threading
-    import time
     import ai_quant_os.strategy_selector_sources as selector_sources_module
 
     scan_started = threading.Event()
     scan_finished = threading.Event()
+    release_scan = threading.Event()
     original_scan = selector_sources_module.shadow_performance_observation
 
     def slow_scan(store, *, now):
         scan_started.set()
-        time.sleep(0.2)
+        release_scan.wait(1)
         try:
             return original_scan(store, now=now)
         finally:
@@ -206,25 +206,24 @@ def test_selector_v3_receives_verified_shadow_metrics_but_never_ranks_them(tmp_p
     monkeypatch.setattr(selector_sources_module, "shadow_performance_observation", slow_scan)
 
     async def check_deadline_and_responsiveness():
-        loop = asyncio.get_running_loop()
-        started_at = loop.time()
         ticks = 0
 
         async def keep_loop_responsive():
             nonlocal ticks
-            deadline = loop.time() + 0.08
-            while loop.time() < deadline:
+            for _ in range(20):
                 ticks += 1
                 await asyncio.sleep(0)
 
-        async def timed_call():
-            with pytest.raises(TimeoutError):
-                await asyncio.wait_for(service(invocation), timeout=0.05)
-
-        await asyncio.gather(timed_call(), keep_loop_responsive())
+        timed_call = asyncio.create_task(asyncio.wait_for(service(invocation), timeout=0.05))
         assert await asyncio.to_thread(scan_started.wait, 3)
-        assert ticks > 10
-        assert loop.time() - started_at < 0.15
+        assert not scan_finished.is_set()
+        await keep_loop_responsive()
+        assert ticks == 20
+        assert not scan_finished.is_set()
+        release_scan.set()
+        with pytest.raises(TimeoutError):
+            await timed_call
+
         await asyncio.to_thread(scan_finished.wait, 3)
         assert scan_finished.is_set()
 
