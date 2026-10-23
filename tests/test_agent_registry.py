@@ -24,7 +24,10 @@ def test_catalog_covers_exact_pack_agents_and_reports_planned_implementations():
     assert registry.get("A01", "0.1.0").name == "Master Supervisor"
     assert registry.get("A18", "0.1.0").squad == "Safety"
     assert registry.get("A10", "0.1.0").output_type == "ValidationScorecard"
-    assert registry.get("A02", "0.2.0").implementation_status == "PARTIAL"
+    # A02/A07 0.2.0 are the two server-owned implemented shadow agents
+    # (agent_sources.py); every other 0.2.0 stays PARTIAL.
+    assert registry.get("A02", "0.2.0").implementation_status == "IMPLEMENTED"
+    assert registry.get("A07", "0.2.0").implementation_status == "IMPLEMENTED"
     assert registry.get("A11", "0.2.0").implementation_status == "PARTIAL"
     assert registry.get("A11", "0.2.0").output_type == "AdversarialScorecard"
     assert registry.get("A09", "0.2.0").timeout_seconds == 5
