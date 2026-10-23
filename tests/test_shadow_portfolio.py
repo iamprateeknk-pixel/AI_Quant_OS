@@ -222,7 +222,7 @@ def test_selector_v3_receives_verified_shadow_metrics_but_never_ranks_them(tmp_p
                 await asyncio.wait_for(service(invocation), timeout=0.05)
 
         await asyncio.gather(timed_call(), keep_loop_responsive())
-        assert scan_started.is_set()
+        assert await asyncio.to_thread(scan_started.wait, 3)
         assert ticks > 10
         assert loop.time() - started_at < 0.15
         await asyncio.to_thread(scan_finished.wait, 3)
