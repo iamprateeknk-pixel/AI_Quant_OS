@@ -16,6 +16,13 @@ test('realtime projection retains original authority/time and strips secrets',as
  const parsed=m.parseRealtimeFrame(raw,Date.parse(now));assert(parsed);assert.equal(parsed.safety_state,'HALT');assert.equal(parsed.order_count,4);assert(!JSON.stringify(parsed).includes('fixture-secret'));
  assert.equal(m.frameCurrent(parsed,Date.parse(now)+3000),false);
 });
+test('realtime projection retains version, source time, and client receive time',async()=>{
+ const m=await module(),raw=frame(),parsed=m.parseRealtimeFrame(raw,Date.parse(now));assert(parsed);
+ assert.equal(parsed.schema_version,'1.0');
+ assert.equal(parsed.sequence,raw.sequence);
+ assert.equal(parsed.source_timestamp,raw.world.as_of);
+ assert.equal(parsed.received_at,new Date(now).toISOString());
+});
 test('realtime parser rejects expired/future/invalid leases and unsafe numbers',async()=>{
  const m=await module();for(const patch of [{sequence:true},{sequence:2**53},{order_count:-1},{safety_state:'APPROVED'},{mode:'LIVE'},{captured_at:'2026-10-10T00:00:01Z'},{valid_until:'2026-10-10T00:00:04Z'}]) assert.equal(m.parseRealtimeFrame({...frame(),...patch},Date.parse(now)),null);
  assert.equal(m.parseRealtimeFrame(frame(),Date.parse(now)+3000),null);

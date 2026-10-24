@@ -7,7 +7,7 @@ on:
 jobs:
   locked-application:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       matrix:
         include:
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - run: python -m pip install -e ".[dev,data]"
+      - run: python -m pip install -e ".[dev,data,trading,recovery,observability]"
       - run: python -m ruff check src tests scripts
       - run: python -m ruff format --check src tests scripts
       - run: python -m pytest -q

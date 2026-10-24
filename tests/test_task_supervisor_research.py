@@ -274,71 +274,72 @@ def test_research_supervisor_plan_is_bound_to_exact_sandbox_child(tmp_path):
 
 def test_validation_review_supervisor_dispatches_only_a10_for_selected_archive(package, tmp_path):
     from test_candidate_validation_store import failed_tests
-    from ai_quant_os.candidate_validation_store import CandidateValidationStore
+    from test_validation_package_api import existing_validation_service
 
-    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
+    with existing_validation_service(tmp_path) as (validator_client, archive):
         failure = archive.put_failure(package, failed_tests(package))
-    args = dict(
-        operator_token="fixture-hypothesis",
-        clock=lambda: NOW,
-        paper_db_path=tmp_path / "paper.sqlite3",
-    )
-    with TestClient(create_app(**args)) as client:
-        before_orders = client.get("/api/v1/orders").json()
-        before_state = client.get("/api/v1/system/status").json()
-        compiled = client.post(
-            "/api/v1/sandbox/research/supervise/v4/context",
-            headers=HEADERS,
-            json={"task_id": "review-archive", "artifact_ref": failure.failure_ref},
+        args = dict(
+            operator_token="fixture-hypothesis",
+            clock=lambda: NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+            holdout_rpc_client=validator_client,
         )
-        assert compiled.status_code == 200, compiled.text
-        context = compiled.json()
-        assert (context["agent_id"], context["agent_version"], context["scope"]) == (
-            "A01",
-            "0.8.0",
-            "SANDBOX",
-        )
-        assert {row["input_name"] for row in context["inputs"]} == {
-            "agent_registry",
-            "world_state",
-            "health",
-            "permissions",
-            "task_spec",
-        }
-        task_spec = next(row for row in context["inputs"] if row["input_name"] == "task_spec")
-        assert json.loads(task_spec["payload_json"])["artifact_ref"] == failure.failure_ref
-        assert all(
-            package.holdout.receipt.dataset_ref not in row["payload_json"]
-            and "holdout_ref" not in row["payload_json"]
-            for row in context["inputs"]
-        )
-        executed = client.post(
-            "/api/v1/sandbox/research/supervise/v4/execute",
-            headers=HEADERS,
-            json={"run_id": "review-archive", "context_ref": context["context_ref"]},
-        )
-        assert executed.status_code == 200, executed.text
-        parent = executed.json()["receipt"]
-        plan = json.loads(parent["output_json"])
-        assert plan["agent_version"] == "0.8.0"
-        assert plan["task_kind"] == "VALIDATION_REVIEW"
-        assert [(row["agent_id"], row["agent_version"]) for row in plan["calls"]] == [
-            ("A10", "0.2.0")
-        ]
-        assert plan["calls"][0]["status"] == "COMPLETED"
-        child = client.get(
-            "/api/v1/agents/graph-runs/" + plan["calls"][0]["run_id"], headers=HEADERS
-        ).json()["receipt"]
-        summary = json.loads(child["output_json"])["summary"]
-        assert summary["artifact_ref"] == failure.failure_ref
-        assert summary["outcome"] == "PREREQUISITE_FAILED"
-        assert client.get("/api/v1/orders").json() == before_orders
-        assert client.get("/api/v1/system/status").json() == before_state
+        with TestClient(create_app(**args)) as client:
+            before_orders = client.get("/api/v1/orders").json()
+            before_state = client.get("/api/v1/system/status").json()
+            compiled = client.post(
+                "/api/v1/sandbox/research/supervise/v4/context",
+                headers=HEADERS,
+                json={"task_id": "review-archive", "artifact_ref": failure.failure_ref},
+            )
+            assert compiled.status_code == 200, compiled.text
+            context = compiled.json()
+            assert (context["agent_id"], context["agent_version"], context["scope"]) == (
+                "A01",
+                "0.8.0",
+                "SANDBOX",
+            )
+            assert {row["input_name"] for row in context["inputs"]} == {
+                "agent_registry",
+                "world_state",
+                "health",
+                "permissions",
+                "task_spec",
+            }
+            task_spec = next(row for row in context["inputs"] if row["input_name"] == "task_spec")
+            assert json.loads(task_spec["payload_json"])["artifact_ref"] == failure.failure_ref
+            assert all(
+                package.holdout.receipt.dataset_ref not in row["payload_json"]
+                and "holdout_ref" not in row["payload_json"]
+                for row in context["inputs"]
+            )
+            executed = client.post(
+                "/api/v1/sandbox/research/supervise/v4/execute",
+                headers=HEADERS,
+                json={"run_id": "review-archive", "context_ref": context["context_ref"]},
+            )
+            assert executed.status_code == 200, executed.text
+            parent = executed.json()["receipt"]
+            plan = json.loads(parent["output_json"])
+            assert plan["agent_version"] == "0.8.0"
+            assert plan["task_kind"] == "VALIDATION_REVIEW"
+            assert [(row["agent_id"], row["agent_version"]) for row in plan["calls"]] == [
+                ("A10", "0.2.0")
+            ]
+            assert plan["calls"][0]["status"] == "COMPLETED"
+            child = client.get(
+                "/api/v1/agents/graph-runs/" + plan["calls"][0]["run_id"], headers=HEADERS
+            ).json()["receipt"]
+            summary = json.loads(child["output_json"])["summary"]
+            assert summary["artifact_ref"] == failure.failure_ref
+            assert summary["outcome"] == "PREREQUISITE_FAILED"
+            assert client.get("/api/v1/orders").json() == before_orders
+            assert client.get("/api/v1/system/status").json() == before_state
 
-    with TestClient(create_app(**args)) as client:
-        restored = client.get("/api/v1/agents/graph-runs/review-archive", headers=HEADERS)
-        assert restored.status_code == 200
-        assert restored.json()["receipt"] == parent
+        with TestClient(create_app(**args)) as client:
+            restored = client.get("/api/v1/agents/graph-runs/review-archive", headers=HEADERS)
+            assert restored.status_code == 200
+            assert restored.json()["receipt"] == parent
 
 
 def test_research_supervisor_defers_a08_on_health_error():

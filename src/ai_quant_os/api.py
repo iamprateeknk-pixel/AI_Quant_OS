@@ -164,7 +164,6 @@ from ai_quant_os.validation_package_api import install_validation_package_routes
 from ai_quant_os.validation_package_service import ValidationPreparation
 from ai_quant_os.strategy_builder_sources import builder_sources
 from ai_quant_os.strategy_builder_service import CandidateCreate
-from ai_quant_os.candidate_validation_store import CandidateValidationStore
 from ai_quant_os.validation_scientist_agent import validation_implementation
 from ai_quant_os.validation_scientist_sources import (
     summary_for_context,
@@ -650,11 +649,6 @@ def create_app(
         else None
     )
     ingress_health = IngressHealth()
-    candidate_validation_store = CandidateValidationStore(
-        configured_path.with_name(configured_path.stem + ".candidate-validations.sqlite3")
-        if configured_path
-        else None
-    )
     validator_client = holdout_rpc_client or installed_windows_holdout_client()
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
@@ -3297,7 +3291,7 @@ def create_app(
     install_validation_scientist_routes(
         app,
         require_operator,
-        store=candidate_validation_store,
+        validator_client=validator_client,
         compile_context=compile_validation_context,
         archived_context=archived_agent_context,
         runtime=require_graph_runtime,

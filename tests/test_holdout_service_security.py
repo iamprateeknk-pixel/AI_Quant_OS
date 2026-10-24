@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from ai_quant_os.holdout_service_security import (
     HoldoutDirectoryAcl,
     build_holdout_acl,
@@ -140,14 +142,69 @@ def test_secure_directory_adopts_only_the_staged_tree(tmp_path, monkeypatch):
     security.SE_FILE_OBJECT = 1
     security.set_paths = []
 
+    class FakeSid(str):
+        pass
+
+    security.ConvertStringSidToSid = FakeSid
+    security.ConvertSidToStringSid = str
+
     def set_security(path, _object_type, _flags, owner, _group, dacl, _sacl):
+        assert type(owner) is FakeSid
         security.set_paths.append(path)
         security.owner = owner
         security.acl = dacl
 
     security.SetNamedSecurityInfo = set_security
+    security.TOKEN_ADJUST_PRIVILEGES = 32
+    security.TOKEN_QUERY = 8
+    security.TokenPrivileges = 3
+    security.PROTECTED_DACL_SECURITY_INFORMATION = 0x20000000
+    security.SE_PRIVILEGE_ENABLED = 2
+    security.SE_RESTORE_NAME = "SeRestorePrivilege"
+    security.LookupPrivilegeValue = lambda _system, name: 42
+    privilege_attributes = [0]
+    security.OpenProcessToken = lambda _process, _access: "token"
+    security.GetTokenInformation = lambda _token, _kind: [(42, privilege_attributes[0])]
+    privilege_calls = []
+
+    def adjust_privileges(token, disable, state):
+        privilege_calls.append((token, disable, state))
+        privilege_attributes[0] = state[0][1]
+
+    security.AdjustTokenPrivileges = adjust_privileges
+    security.GetSecurityInfo = lambda _handle, _object_type, _flags: FakeDescriptor(
+        security.acl, security.owner
+    )
+    opened_handles = []
+
+    def create_handle(path, *_args):
+        opened_handles.append(path)
+        return path
+
+    file_api = SimpleNamespace(
+        CreateFile=create_handle,
+    )
+    constants = SimpleNamespace(
+        READ_CONTROL=0x20000,
+        FILE_SHARE_READ=1,
+        FILE_SHARE_WRITE=2,
+        FILE_SHARE_DELETE=4,
+        OPEN_EXISTING=3,
+        FILE_FLAG_BACKUP_SEMANTICS=0x02000000,
+    )
+    process_api = SimpleNamespace(
+        GetCurrentProcess=lambda: "process",
+        CloseHandle=lambda handle: privilege_calls.append(("close", handle)),
+    )
+    monkeypatch.setitem(sys.modules, "win32api", process_api)
+    monkeypatch.setitem(sys.modules, "win32con", constants)
+    monkeypatch.setitem(sys.modules, "win32file", file_api)
     monkeypatch.setitem(sys.modules, "win32security", security)
-    monkeypatch.setattr(holdout_service_security.os, "name", "nt")
+    monkeypatch.setattr(
+        holdout_service_security,
+        "os",
+        SimpleNamespace(**{**vars(holdout_service_security.os), "name": "nt"}),
+    )
     monkeypatch.setattr(
         holdout_service_security,
         "service_sid_for_name",
@@ -157,6 +214,118 @@ def test_secure_directory_adopts_only_the_staged_tree(tmp_path, monkeypatch):
     holdout_service_security.secure_holdout_directory(root, adopt_existing=True)
 
     assert set(security.set_paths) == {str(root), *(str(path) for path in archives)}
+    assert type(security.owner) is FakeSid
+    assert privilege_calls == [
+        ("token", False, ((42, 2),)),
+        ("close", str(root)),
+        *(("close", str(path)) for path in archives),
+        ("token", False, ((42, 0),)),
+        ("close", "token"),
+    ]
+    assert set(opened_handles) == {str(root), *(str(path) for path in archives)}
+
+
+def test_secure_directory_requires_restore_privilege_before_mutating_tree(tmp_path, monkeypatch):
+    import sys
+
+    from ai_quant_os import holdout_service_security
+
+    root = tmp_path / "service-data"
+    service_sid = "S-1-5-80-1-2-3-4-5"
+    security = FakeSecurity()
+    security.TOKEN_ADJUST_PRIVILEGES = 32
+    security.TOKEN_QUERY = 8
+    security.TokenPrivileges = 3
+    security.PROTECTED_DACL_SECURITY_INFORMATION = 0x20000000
+    security.SE_PRIVILEGE_ENABLED = 2
+    security.SE_RESTORE_NAME = "SeRestorePrivilege"
+    security.LookupPrivilegeValue = lambda _system, _name: 42
+    security.OpenProcessToken = lambda _process, _access: "token"
+    security.GetTokenInformation = lambda _token, _kind: [(7, 0)]
+    security.owner = service_sid
+    security.acl = build_holdout_acl(HoldoutDirectoryAcl(service_sid), security=security)
+    security.set_paths = []
+    security.SetNamedSecurityInfo = lambda *args: security.set_paths.append(args[0])
+    monkeypatch.setitem(sys.modules, "win32security", security)
+    monkeypatch.setitem(
+        sys.modules,
+        "win32api",
+        SimpleNamespace(GetCurrentProcess=lambda: "process", CloseHandle=lambda _h: None),
+    )
+    monkeypatch.setitem(sys.modules, "win32con", SimpleNamespace())
+    monkeypatch.setitem(sys.modules, "win32file", SimpleNamespace())
+    monkeypatch.setattr(
+        holdout_service_security,
+        "os",
+        SimpleNamespace(**{**vars(holdout_service_security.os), "name": "nt"}),
+    )
+    monkeypatch.setattr(
+        holdout_service_security,
+        "service_sid_for_name",
+        lambda _name, security: service_sid,
+    )
+
+    try:
+        holdout_service_security.secure_holdout_directory(root, adopt_existing=True)
+    except PermissionError as exc:
+        assert "SeRestorePrivilege" in str(exc)
+    else:
+        raise AssertionError("Missing restore privilege was accepted")
+
+    assert security.set_paths == []
+    assert not root.exists()
+
+
+def test_restore_privilege_state_is_restored_when_acl_setup_raises():
+    from ai_quant_os.holdout_service_security import _enabled_restore_privilege
+
+    attributes = [0]
+    calls = []
+
+    class Security:
+        TOKEN_ADJUST_PRIVILEGES = 32
+        TOKEN_QUERY = 8
+        TokenPrivileges = 3
+        SE_RESTORE_NAME = "SeRestorePrivilege"
+        SE_PRIVILEGE_ENABLED = 2
+
+        @staticmethod
+        def OpenProcessToken(process, access):
+            assert process == "process" and access == 40
+            return "token"
+
+        @staticmethod
+        def LookupPrivilegeValue(_system, name):
+            assert name == "SeRestorePrivilege"
+            return 18
+
+        @staticmethod
+        def GetTokenInformation(token, kind):
+            assert token == "token" and kind == 3
+            return [(18, attributes[0])]
+
+        @staticmethod
+        def AdjustTokenPrivileges(token, disable, state):
+            assert token == "token" and disable is False
+            attributes[0] = state[0][1]
+            calls.append(attributes[0])
+
+    process_api = SimpleNamespace(
+        GetCurrentProcess=lambda: "process",
+        CloseHandle=lambda handle: calls.append(("closed", handle)),
+    )
+
+    try:
+        with _enabled_restore_privilege(security=Security, process_api=process_api):
+            assert attributes == [Security.SE_PRIVILEGE_ENABLED]
+            raise RuntimeError("synthetic ACL write failure")
+    except RuntimeError as exc:
+        assert str(exc) == "synthetic ACL write failure"
+    else:
+        raise AssertionError("The ACL write failure was swallowed")
+
+    assert attributes == [0]
+    assert calls == [2, 0, ("closed", "token")]
 
 
 def test_holdout_acl_refuses_unexpected_or_duplicate_principals():
@@ -171,6 +340,22 @@ def test_holdout_acl_refuses_unexpected_or_duplicate_principals():
         except ValueError:
             continue
         raise AssertionError("Invalid HOLDOUT ACL principals were accepted")
+
+
+def test_staging_acl_adds_only_the_explicit_operator_sid():
+    security = FakeSecurity()
+    rules = HoldoutDirectoryAcl(
+        "S-1-5-80-1-2-3-4-5",
+        staging_sid="S-1-5-21-1-2-3-1001",
+    )
+
+    acl = build_holdout_acl(rules, security=security)
+
+    assert [entry[3] for entry in acl.entries] == [
+        "S-1-5-80-1-2-3-4-5",
+        "S-1-5-18",
+        "S-1-5-21-1-2-3-1001",
+    ]
 
 
 def test_rpc_pipe_acl_allows_only_operator_service_and_system():

@@ -65,9 +65,7 @@ class EvolutionCoverageEntry(BaseModel):
     agent_id: str = Field(pattern=r"^A(0[1-9]|1[0-8])$")
     name: str = Field(min_length=1, max_length=128)
     output_type: str = Field(min_length=1, max_length=128)
-    status: Literal[
-        "EVOLUTION_ACTIVE", "MISSION_SURFACE_NOT_EVOLUTION_BOUND", "NO_MISSION_SURFACE"
-    ]
+    status: Literal["EVOLUTION_ACTIVE", "MISSION_SURFACE_NOT_EVOLUTION_BOUND", "NO_MISSION_SURFACE"]
     mission_module: str | None = None
     mission_function: str | None = None
     genome_baseline_declared: bool

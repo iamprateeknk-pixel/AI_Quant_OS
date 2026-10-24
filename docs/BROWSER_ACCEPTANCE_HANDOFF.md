@@ -34,7 +34,7 @@ The broker contract only exposes `CONNECTED`, `DISCONNECTED`, and `UNKNOWN`; it 
 
 These checks do not establish release readiness. The following remain open:
 
-- keyboard paths for authenticated interactive workflows outside the Risk Center and destination dialog, manual target-spacing review and screen-reader review;
+- authenticated keyboard reachability for Broker route controls, paper-ledger reconciliation, and owner-session revocation was checked on 2026-10-23; incident-review acknowledgment remains untested because the isolated journal had no incidents. The 44px target-size probe now passes the recorded mobile routes and interaction states. Broader manual spacing and screen-reader review remain open. See `docs/evaluations/mission-control-authenticated-keyboard-2026-10-23.json` and `docs/evaluations/mission-control-target-size-2026-10-23.json`;
 - the exact broker `DEGRADED` design state, if that state is added to the backend contract;
 - independent security and risk review, production identity/secret/compliance decisions, and all applicable P00-P13 release gates;
 - shadow and live acceptance; live execution remains unreleased.
@@ -91,6 +91,25 @@ The retained-state self-comparison only verifies that the six local references a
 
 The retained six screenshots are local inspection captures, not deterministic CI baselines. They contain session-specific IDs and timestamps and were produced with varying viewport heights. Compare a fresh capture against a matching local reference at the same viewport; mask only known dynamic regions. CI-quality pixel regression still needs reproducible seed data, fixed time/session values, and a browser/viewport pin. The illustrative execution-pack dashboard is not a valid baseline because its trading values are fabricated.
 
+## Authenticated keyboard reachability (2026-10-23)
+
+On an isolated fresh PAPER state and production-built UI, keyboard navigation
+reached the broker route reason/confirmation/re-authentication fields and the
+enabled route action, the reconciliation acknowledgment and enabled comparison
+action, and the owner-session refresh/select/revocation controls. Space toggled
+the reconciliation and session-revocation checkboxes. No route change,
+reconciliation, safety action, or session revocation was submitted. The isolated
+database readback retained `NORMAL`, an enabled PAPER route, and zero paper
+orders, fills, simulator orders/fills, or audit events. Settings at 320x800 had
+no horizontal document overflow. The browser console had no errors or warnings
+after reload and route navigation. The incident acknowledgment control was
+unavailable because this fresh state had no incidents. This does not replace
+manual screen-reader or target-spacing review.
+
+The browser and local supervisor were closed after the check. The isolated local
+state directory is retained under the ignored `data-local/` tree; it contains
+only synthetic operator sessions and the empty PAPER test database.
+
 On 2026-10-19, an additional production-build capture was taken at
 `apps/web/output/playwright/visual-states/agent-shadow-registry.png`. The Agents
 view showed 18 roles and 42 registered versions, each carrying the backend-owned
@@ -98,3 +117,31 @@ view showed 18 roles and 42 registered versions, each carrying the backend-owned
 This adds a retained shadow-state fixture; it is a visual snapshot, not an
 automated pixel-diff regression result. See
 `docs/evaluations/mission-control-agent-shadow-visual-2026-10-19.json`.
+
+## Touch target-size verification (2026-10-23)
+
+The production Next.js build was checked in Chrome mobile emulation at 360×800
+CSS pixels with touch input enabled and device pixel ratio 3. A synthetic local
+operator session was used; no real credentials were used. The probe recorded
+all visible interactive elements on the 16 navigation routes, the incident
+runbook, and an unknown trace-detail route: 165 route/control instances, with
+zero targets below the 44×44 sampled hit-area floor. The mobile navigation,
+destination search dialog, and selected-session form were also checked; each
+state had zero sampled target failures. Before the CSS fix, the initial 16-route
+sweep found 64 failures.
+
+The fix raises mobile hit areas for the shared header, navigation links, form
+fields, dashboard actions, and the affected broker, risk, reconciliation,
+settings, and trace controls. The probe samples a 5×5 grid around each target;
+checkboxes and radio buttons use their associated labels as activation surfaces.
+This is measured browser evidence, not proof of every pixel or a screen-reader
+review. The representative Risk Center screenshot showed the updated controls
+at the recorded viewport.
+
+The isolated read-only database check found `NORMAL` safety, the PAPER route
+enabled, and zero paper orders, fills, simulated orders/fills, and audit events.
+No safety action, route change, reconciliation, or session revocation was
+submitted. The browser console had zero errors and warnings. Full element
+measurements are in `docs/evaluations/mission-control-target-size-2026-10-23.json`;
+the viewport capture and raw before/after probe outputs remain in ignored local
+state under `.playwright-cli/` and `data-local/`.
