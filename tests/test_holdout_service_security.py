@@ -215,10 +215,12 @@ def test_secure_directory_adopts_only_the_staged_tree(tmp_path, monkeypatch):
 
     assert set(security.set_paths) == {str(root), *(str(path) for path in archives)}
     assert type(security.owner) is FakeSid
-    assert privilege_calls == [
-        ("token", False, ((42, 2),)),
+    assert privilege_calls[0] == ("token", False, ((42, 2),))
+    assert set(privilege_calls[1:-2]) == {
         ("close", str(root)),
         *(("close", str(path)) for path in archives),
+    }
+    assert privilege_calls[-2:] == [
         ("token", False, ((42, 0),)),
         ("close", "token"),
     ]
