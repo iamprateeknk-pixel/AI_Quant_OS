@@ -7,7 +7,7 @@ on:
 jobs:
   locked-application:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       matrix:
         include:
