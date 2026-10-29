@@ -22,12 +22,12 @@ records implementation evidence; it is not a signed phase acceptance.
 
 ## Hosted verification
 
-PR run [40836433785](https://github.com/iamprateeknk-pixel/AI_Quant_OS/actions/runs/40836433785)
-passed all 17 jobs on code revision `0dfd881`: full Python 3,631 passed/71
+PR run [40858744164](https://github.com/iamprateeknk-pixel/AI_Quant_OS/actions/runs/40858744164)
+passed all 17 jobs on code revision `4ee3695`: full Python 3,631 passed/71
 skipped; locked Linux 3,633 passed/69 skipped; locked Windows 3,638 passed/64
-skipped. The identical push run [40836428561](https://github.com/iamprateeknk-pixel/AI_Quant_OS/actions/runs/40836428561)
-also passed all 17 jobs. The current branch has documentation-only descendants;
-their CI runs are tracked on PR #8.
+skipped. The identical push run [40858753374](https://github.com/iamprateeknk-pixel/AI_Quant_OS/actions/runs/40858753374)
+also passed all 17 jobs. These results do not clear the open staging-owner,
+independent-review, or signed phase-acceptance items above.
 
 ## Risks and maintenance
 
