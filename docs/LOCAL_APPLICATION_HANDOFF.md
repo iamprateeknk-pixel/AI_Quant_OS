@@ -135,10 +135,14 @@ same-state competing API refusal. Existing repair lock tests verify its unchange
 namespace, restart/owner death and file-integrity constraints.
 
 The Windows/Linux CI job builds the actual frontend and requires these integrations
-with `AI_QUANT_REQUIRE_LOCAL_WEB=1`. Hosted CI and Linux process behavior remain
-unverified here. Production services, locked Python dependency deployment, global
-writer coordination, staging, durable process/startup diagnostics, complete system
-health checks, operator sessions and independent review remain open. Docker/data
+with `AI_QUANT_REQUIRE_LOCAL_WEB=1`. Hosted run
+[40836433785](https://github.com/iamprateeknk-pixel/AI_Quant_OS/actions/runs/40836433785)
+passed all 17 jobs on code revision `0dfd881`, including the Linux and Windows
+locked suites and local-application integration jobs. This verifies the checked-in
+paper startup paths under CI; it does not certify production services, locked
+Python deployment outside the tested profiles, global writer coordination,
+staging, durable process/startup diagnostics, complete system health checks,
+operator sessions or independent review. Docker/data
 services and optional workers are separate explicit workflows. This command does
 not complete the full execution pack or permit live capital.
 
