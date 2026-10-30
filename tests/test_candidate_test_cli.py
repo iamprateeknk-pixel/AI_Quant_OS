@@ -14,7 +14,7 @@ def test_cli_prepares_original_package_and_requires_independent_manifest_pin(pac
     )
     root = tmp_path / "cli-tests"
     root.mkdir()
-    archive = tmp_path / "paper.validation-packages.sqlite3"
+    archive = tmp_path / "service.validation-packages.sqlite3"
     assert archive.is_file()
     result = subprocess.run(
         [

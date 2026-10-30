@@ -214,7 +214,7 @@ def cli(package, root, command, *extra, archive=None):
             "-m",
             "ai_quant_os.strategy_prefix_cli",
             "--archive",
-            str(archive or root.parent / "paper.validation-packages.sqlite3"),
+            str(archive or root.parent / "service.validation-packages.sqlite3"),
             "--package-ref",
             package.package_ref,
             "--index",

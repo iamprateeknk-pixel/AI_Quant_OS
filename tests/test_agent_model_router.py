@@ -31,9 +31,7 @@ def test_every_manifest_routes_to_deterministic_with_providers_off():
     router = AgentModelRouter()
     assert router.enabled_providers == ()
     for manifest in REGISTRY.manifests():
-        decision = router.route(
-            REGISTRY, manifest.agent_id, manifest.agent_version, task_id="t"
-        )
+        decision = router.route(REGISTRY, manifest.agent_id, manifest.agent_version, task_id="t")
         assert decision.executed_via == "DETERMINISTIC"
         assert decision.provider_id is None
         if manifest.squad in ("Market", "Research", "Learning", "Evolution"):
@@ -54,8 +52,12 @@ def test_deterministic_kind_bypasses_budgets_and_providers():
     assert decision.fallback_reasons == ()
     result = asyncio.run(
         router.execute(
-            REGISTRY, "A08", "0.2.0", task_id="t",
-            deterministic=deterministic, kind="deterministic",
+            REGISTRY,
+            "A08",
+            "0.2.0",
+            task_id="t",
+            deterministic=deterministic,
+            kind="deterministic",
         )
     )
     assert result[1] == "deterministic-output"
@@ -64,16 +66,18 @@ def test_deterministic_kind_bypasses_budgets_and_providers():
 def test_low_priority_task_defers_when_agent_budget_exhausted():
     budget = small_budget()
     budget.record_usage(
-        TaskRequest(
-            task_id="seed", agent_id="A02", squad="Market", criticality="low"
-        ),
+        TaskRequest(task_id="seed", agent_id="A02", squad="Market", criticality="low"),
         1_000,
         0,
     )
     router = AgentModelRouter(budget=budget)
     decision = router.route(
-        REGISTRY, "A02", "0.2.0", task_id="t",
-        estimated_input_tokens=10, estimated_output_tokens=0,
+        REGISTRY,
+        "A02",
+        "0.2.0",
+        task_id="t",
+        estimated_input_tokens=10,
+        estimated_output_tokens=0,
     )
     assert decision.governor_decision == "DEFER"
     assert decision.fallback_reasons == ("BUDGET_DEFER",)
@@ -83,16 +87,18 @@ def test_low_priority_task_defers_when_agent_budget_exhausted():
 def test_material_task_at_routine_is_denied_when_budget_exhausted():
     budget = small_budget()
     budget.record_usage(
-        TaskRequest(
-            task_id="seed", agent_id="A12", squad="Portfolio", criticality="material"
-        ),
+        TaskRequest(task_id="seed", agent_id="A12", squad="Portfolio", criticality="material"),
         1_000,
         0,
     )
     router = AgentModelRouter(budget=budget)
     decision = router.route(
-        REGISTRY, "A12", "0.2.0", task_id="t",
-        estimated_input_tokens=10, estimated_output_tokens=0,
+        REGISTRY,
+        "A12",
+        "0.2.0",
+        task_id="t",
+        estimated_input_tokens=10,
+        estimated_output_tokens=0,
     )
     assert decision.governor_decision == "DENY"
     assert decision.fallback_reasons == ("BUDGET_DENY",)
@@ -101,8 +107,12 @@ def test_material_task_at_routine_is_denied_when_budget_exhausted():
 def test_per_task_cap_downgrades_and_safety_is_never_denied():
     router = AgentModelRouter(budget=small_budget())
     decision = router.route(
-        REGISTRY, "A18", "0.2.0", task_id="t",
-        estimated_input_tokens=300_000, estimated_output_tokens=0,
+        REGISTRY,
+        "A18",
+        "0.2.0",
+        task_id="t",
+        estimated_input_tokens=300_000,
+        estimated_output_tokens=0,
     )
     # Incident work over the cap: downgraded FRONTIER path -> DEEP -> ROUTINE,
     # admitted at ROUTINE by the governor's safety guarantee; with no provider
@@ -164,7 +174,10 @@ def test_token_storm_forces_deterministic_fallback():
     for _ in range(3):
         decision, output = asyncio.run(
             router.execute(
-                REGISTRY, "A04", "0.2.0", task_id="looping-task",
+                REGISTRY,
+                "A04",
+                "0.2.0",
+                task_id="looping-task",
                 deterministic=deterministic,
             )
         )
@@ -182,9 +195,7 @@ def test_provider_registration_is_explicit_and_validated():
         return LlmResult(output=None, input_tokens=0, output_tokens=0)
 
     with pytest.raises(ValueError):
-        router.register_provider(
-            "bad", tiers={ModelTier.DETERMINISTIC}, invoke=invoke
-        )
+        router.register_provider("bad", tiers={ModelTier.DETERMINISTIC}, invoke=invoke)
     router.register_provider("ok", tiers={ModelTier.DEEP}, invoke=invoke)
     assert router.enabled_providers == ("ok",)
     with pytest.raises(ValueError):

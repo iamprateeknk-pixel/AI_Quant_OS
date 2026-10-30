@@ -17,6 +17,13 @@ def test_prepare_runtime_binds_only_loopback_and_keeps_credentials_out_of_child_
     tmp_path: Path,
     monkeypatch,
 ):
+    prometheus = tmp_path / "native" / "prometheus.exe"
+    grafana_home = tmp_path / "native" / "grafana"
+    grafana = grafana_home / "bin" / "grafana.exe"
+    monkeypatch.setattr(
+        "ai_quant_os.observability_cli._verify_native",
+        lambda _checkout: (prometheus, grafana, grafana_home),
+    )
     token = "synthetic-paper-token"
     password = "synthetic-grafana-password-A9!"
     monkeypatch.setenv("AI_QUANT_OPERATOR_TOKEN", token)

@@ -146,7 +146,7 @@ The named-pipe client acknowledges a fully received bounded response before disc
 
 The strict RPC schema now represents A11's per-scenario aggregate totals using exact decimal PnL and bounded names, fingerprints, currencies, and order counts. It rejects mismatched scenario counts and checks operation-specific response shapes. The focused HOLDOUT service/RPC/ACL suite passes (27); Ruff, formatting, and diff checks pass. The service domain handler, isolated store migration, API RPC routing, and process/file ACL acceptance remain open.
 
-The package architecture inventory and criticality map now include the three HOLDOUT transport/security modules. The architecture boundary suite passes (10); its broader descriptor-format checker is unavailable because the repository's `architecture.md` is descriptive rather than in that script's required block format. The complete pytest run was already in progress during this inventory change, so rerun its result against the current tree before using it as final evidence.
+The package architecture inventory and criticality map now include the three HOLDOUT transport/security modules. The architecture boundary suite passes (10). At the time of this entry, the clean-code descriptor checker was unavailable because `architecture.md` lacked its required block; resolved on 2026-10-23 by declaring the same seven-module domain boundary used in `architecture.json`. The checker now matches 7 domain and 352 application files and reports 1,547 cross-layer imports with zero violations. This remains a scoped domain check, not complete package-wide layering. The complete pytest run was already in progress during the inventory change; later full-suite evidence is recorded in `docs/BUILD_STATUS.md`.
 
 ### P07 service-owned HOLDOUT read-only store
 
@@ -163,4 +163,24 @@ The subsequent exact-evidence response binding is protocol v2 on `AIQuantHoldout
 
 ### P07 A10 RPC adapter
 
-Added `IsolatedValidationRun`, which binds an A10 request to the compiled summary's candidate, TRAINING, HOLDOUT, and evidence refs, sends it through RPC off the event loop, and checks the service result against that exact summary. Its synthetic-context test passes. The API is not wired to this adapter yet; current package preparation still depends on HOLDOUT publication through the now TRAINING-only PAPER endpoint, and the service has no A10 handler.
+Historical implementation note: this entry captured an intermediate state. It was superseded by the P07 service-owned package, result, and HOLDOUT publication/refresh paths documented in `docs/P07_HANDOFF.md` and the 2026-10-23 entries below. The installer orchestration regression now confirms archive staging and ACL-gated startup ordering with mocked Windows calls; real service installation and identity/ACL/process-access acceptance remain open.
+
+### P12 saved demo portfolio browser keyboard check (2026-10-23)
+
+The saved positions and pending-orders tables now reuse the shared named, focusable `TableScrollRegion`. A regression test failed before the change and passes after it. In the production build with the isolated synthetic PAPER fixture, 320px and 390px viewports had no page-width overflow and the three portfolio tables scrolled within their own regions; 1280px had no table overflow. A real keyboard Tab walk reached both demo regions, ArrowRight moved the focused positions table, and ArrowLeft returned it to the left edge. Full web suite: 202 passed; ESLint and production build passed (the build displayed Next.js's known-vulnerability upgrade reminder). No orders or safety actions were submitted. This evidence covers this portfolio panel; remaining P12 browser acceptance and P00-P13 gates stay open.
+
+### Web Next.js security upgrade (2026-10-23)
+
+Upgrade `next` and `eslint-config-next` from 16.4.0 to 16.4.2, preserving React 19.2.8 and enabling the built-in `security` reminder policy in `next.config.ts`. The active app installs from `package-lock.json`, reports Next 16.4.2, passes all 202 web tests, ESLint and production build, and has no `npm audit --omit=dev` findings. Synthetic production browser checks at 320/390/1280px verify no page overflow, keyboard reachability, and arrow scrolling of demo tables. Raw npm audit retains five high dependency rows for one high `braces <=3.0.3` advisory through dev-only ESLint tooling; upstream lists no patched release. The offered force repair downgrades the Next ESLint config to 14.x and was not used. See the GHSA advisories [Next.js](https://github.com/vercel/next.js/security/advisories/GHSA-673q-mjm6-r5xr) and [braces](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+
+### P07 installer orchestration regression (2026-10-23)
+
+Add a Windows-only installer-path test using four synthetic SQLite archives. It verifies the archives are staged before ACL application, service startup occurs only after ACL success, and an ACL failure leaves the service stopped while preserving source archives byte-for-byte. The complete `test_holdout_validator_service.py` file passes (15 tests); the combined P07 RPC/service/catalog/CLI/API regression group passes (85 tests). A fresh full backend run including this regression passes **3,314 tests with 47 skipped in 1,745.35 seconds** on Pydantic 2.13.5/Core 2.46.5. Scoped Ruff lint/format and `git diff --check` pass. Windows service and ACL operations are mocked, so this does not prove LocalService token behavior, real file/pipe ACL enforcement, or process isolation. P07 and P13 remain open.
+
+### Enforce the declared domain boundary with the clean-code checker (2026-10-23)
+
+Add a `clean-architecture` block to `.clean/architecture.md` matching the seven deterministic domain modules already listed in `.clean/architecture.json`. The check parses the declaration, matches 7 domain and 352 application files, inspects 1,547 cross-layer imports, and reports zero violations. Its scope is the deterministic domain boundary; selected control, agent/strategy, persistence, and integration rules remain covered by the architecture inventory tests. Current full-suite and release-gate status is summarized at the top of `docs/BUILD_STATUS.md`; P07 service identity/ACL acceptance and P13 sign-offs remain open.
+
+### P12 realtime frame metadata contract (2026-10-23)
+
+The browser projection now retains the schema version, instance sequence, source timestamp (`world.as_of`), client receive timestamp, and server validity lease. The new test failed before the implementation because `schema_version` was dropped by the projection, then passes with the rest of the realtime parser suite (10 tests). The complete web suite passes (203), ESLint and production Next.js build pass. This closes the client projection fields for the current full-snapshot contract; deterministic six-state visual baselines/CI, all-view/load acceptance, and independent review remain open.

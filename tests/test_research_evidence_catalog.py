@@ -98,6 +98,54 @@ def test_training_and_holdout_bytes_are_persisted_in_separate_sqlite_files(tmp_p
     assert holdout_rows[0][1] == raw_bars(minute=10)
 
 
+def test_service_holdout_store_publishes_checked_bytes_idempotently_and_refuses_training_overlap(
+    tmp_path,
+):
+    from ai_quant_os.research_evidence_catalog import HoldoutEvidenceStore
+
+    training_db = tmp_path / "source.research-data.sqlite3"
+    holdout_db = tmp_path / "service.holdout.sqlite3"
+    with catalog(training_db) as source:
+        training = publish(source, raw_bars(), "TRAINING", "training")
+    # Prepare the same audited empty HOLDOUT store layout used during service staging.
+    with catalog(tmp_path / "service-source.sqlite3"):
+        pass
+    staged = tmp_path / "service-source.holdout.sqlite3"
+    staged.replace(holdout_db)
+
+    with HoldoutEvidenceStore(holdout_db) as service:
+        holdout = service.publish(
+            raw_bars(minute=10),
+            source_id="sealed",
+            received_at=NOW,
+            training_receipts=(training,),
+        )
+        assert service.get(holdout.dataset_ref) == (holdout, raw_bars(minute=10))
+        retry = service.publish(
+            raw_bars(minute=10),
+            source_id="sealed",
+            received_at=NOW.replace(hour=13),
+            training_receipts=(training,),
+        )
+        assert retry == holdout
+        with pytest.raises(ValueError, match="classification overlap"):
+            service.publish(
+                raw_bars(),
+                source_id="overlap",
+                received_at=NOW,
+                training_receipts=(training,),
+            )
+        with pytest.raises(ValueError, match="classification overlap"):
+            service.publish(
+                raw_bars(),
+                source_id="overlap-receipt",
+                received_at=NOW,
+                training_receipts=(training,),
+            )
+    with HoldoutEvidenceStore(holdout_db) as restarted:
+        assert restarted.list() == (holdout,)
+
+
 def test_verified_legacy_mixed_catalog_moves_holdout_bytes_without_losing_receipts(tmp_path):
     from ai_quant_os.audit_chain import AuditChain
     from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog, _receipt
@@ -223,9 +271,9 @@ def test_offline_legacy_migration_prepares_catalog_for_training_only_api(tmp_pat
     with catalog(path, training_only=True) as store:
         assert store.list() == (training,)
     with closing(sqlite3.connect(path.with_name("legacy.holdout.sqlite3"))) as db:
-        assert db.execute(
-            "SELECT dataset_ref,raw_csv FROM research_datasets"
-        ).fetchall() == [(holdout.dataset_ref, holdout_raw)]
+        assert db.execute("SELECT dataset_ref,raw_csv FROM research_datasets").fetchall() == [
+            (holdout.dataset_ref, holdout_raw)
+        ]
 
 
 def test_training_only_startup_rejects_legacy_holdout_by_metadata_first(tmp_path):

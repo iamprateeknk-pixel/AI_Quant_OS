@@ -1,10 +1,10 @@
 # P07 LangGraph Runtime and 18 Agent Missions — Status
 
-Date: 2026-10-19
+Date: 2026-10-23
 
 ## Phase verdict
 
-P07 implementation is **integrated in local advisory/shadow mode, but not complete for promotion or release**. The repository contains the durable LangGraph runtime, typed contexts and receipts, immutable manifests, fixed tool ceilings, call admission, and server-installed 0.2.0 handlers for A01–A18. The phase remains open because every 0.2.0 mission is PARTIAL, all original 0.1.0 missions are PLANNED, and several required data sources, evaluation gates, and independent acceptance are not available.
+P07 implementation is **integrated in local advisory/shadow mode, but not complete for promotion or release**. The repository contains the durable LangGraph runtime, typed contexts and receipts, immutable manifests, fixed tool ceilings, call admission, and registered 0.2.0 handlers for A01–A18, with later 0.3.0/0.4.0 increments for selected missions. In the current registry, A02 and A07 are `IMPLEMENTED`; the other 0.2.0 missions remain `PARTIAL`. All remain in shadow lifecycle. P07 stays open because required source adapters, evaluation evidence, Windows HOLDOUT service isolation, and independent acceptance remain incomplete.
 
 No agent has broker submission, risk-policy mutation, credential access, production deployment, or safety-recovery authority. A completed graph receipt is advisory evidence only. Missing or stale inputs must remain WAIT_FOR_DATA/UNAVAILABLE; do not fill them with generated market facts.
 

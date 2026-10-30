@@ -7,7 +7,7 @@ name = "ai-quant-os"
 version = "0.1.0"
 description = "Paper-only deterministic trading foundation"
 requires-python = ">=3.11"
-dependencies = ["fastapi>=0.115,<1", "pydantic>=2,<3", "uvicorn>=0.30,<1", "httpx>=0.27,<1", "langgraph==1.2.12", "langgraph-checkpoint-sqlite==3.1.1", "cryptography==50.0.2", "pywin32>=306; sys_platform == 'win32'"]
+dependencies = ["fastapi>=0.115,<1", "pydantic>=2.13.5,<2.14", "uvicorn>=0.30,<1", "httpx>=0.27,<1", "langgraph==1.2.12", "langgraph-checkpoint-sqlite==3.1.1", "cryptography==50.0.2", "pywin32>=306; sys_platform == 'win32'"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9", "hypothesis>=6,<7", "ruff==0.15.15", "moto[s3]>=5.1,<6", "installer==0.7.0", "jsonschema[format]>=4,<5"]
@@ -24,6 +24,7 @@ ai-quant-portfolio-backtest = "ai_quant_os.portfolio_backtest_cli:main"
 ai-quant-tick-portfolio-backtest = "ai_quant_os.tick_portfolio_cli:main"
 ai-quant-research = "ai_quant_os.research_cli:main"
 ai-quant-research-data = "ai_quant_os.research_data_cli:main"
+ai-quant-holdout-data = "ai_quant_os.holdout_data_cli:main"
 ai-quant-candidates = "ai_quant_os.candidate_cli:main"
 ai-quant-counterfactual = "ai_quant_os.counterfactual_cli:main"
 ai-quant-shadow = "ai_quant_os.shadow_cli:main"
@@ -41,6 +42,25 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 ai_quant_os = ["strategy_manifests.json"]
+
+[tool.setuptools.data-files]
+"infra/repair-worker" = [
+    "infra/repair-worker/.dockerignore",
+    "infra/repair-worker/Dockerfile",
+    "infra/repair-worker/README.md",
+    "infra/repair-worker/archive_manifest.json",
+    "infra/repair-worker/base_config.json",
+    "infra/repair-worker/base_image.json",
+    "infra/repair-worker/base_index.json",
+    "infra/repair-worker/base_manifest.json",
+    "infra/repair-worker/build-tools.lock",
+    "infra/repair-worker/candidate_test_worker.py",
+    "infra/repair-worker/dependency_probe.py",
+    "infra/repair-worker/enforcement_probe.py",
+    "infra/repair-worker/requirements.in",
+    "infra/repair-worker/requirements.lock",
+    "infra/repair-worker/wheel_manifest.json",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

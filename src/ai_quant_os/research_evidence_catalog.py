@@ -501,6 +501,7 @@ class HoldoutEvidenceStore:
         path = Path(path)
         if not path.is_absolute() or not path.is_file():
             raise FileNotFoundError("HOLDOUT evidence store is unavailable")
+        self._path = path
         self._lock = Lock()
         self._db = sqlite3.connect(
             path.as_uri() + "?mode=ro",
@@ -530,9 +531,13 @@ class HoldoutEvidenceStore:
                     self._db.execute("ROLLBACK")
                 raise
 
-    def _verified(self) -> tuple[tuple[ResearchDataReceipt, bytes], ...]:
+    def _verified(
+        self, db: sqlite3.Connection | None = None
+    ) -> tuple[tuple[ResearchDataReceipt, bytes], ...]:
+        database = self._db if db is None else db
+        audit = self._audit if database is self._db else AuditChain(database)
         tables = {
-            row[0] for row in self._db.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            row[0] for row in database.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
         required = {
             "research_datasets",
@@ -543,20 +548,20 @@ class HoldoutEvidenceStore:
         }
         if not required <= tables:
             raise ValueError("HOLDOUT evidence metadata is incomplete")
-        if self._db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+        if database.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
             raise ValueError("HOLDOUT evidence database integrity failed")
-        count, total, maximum, metadata = self._db.execute(
+        count, total, maximum, metadata = database.execute(
             "SELECT COUNT(*),COALESCE(SUM(LENGTH(raw_csv)),0),COALESCE(MAX(LENGTH(raw_csv)),0),COALESCE(MAX(LENGTH(receipt_json)),0) FROM research_datasets"
         ).fetchone()
-        tombstone_count, tombstone_bytes = self._db.execute(
+        tombstone_count, tombstone_bytes = database.execute(
             "SELECT COUNT(*),COALESCE(MAX(LENGTH(receipt_json)),0) FROM research_dataset_tombstones"
         ).fetchone()
-        events, event_bytes = self._db.execute(
+        events, event_bytes = database.execute(
             "SELECT COUNT(*),COALESCE(MAX(LENGTH(event_json)),0) FROM audit_events"
         ).fetchone()
-        page_count = self._db.execute("PRAGMA page_count").fetchone()[0]
-        page_size = self._db.execute("PRAGMA page_size").fetchone()[0]
-        integrity = self._audit.require_valid()
+        page_count = database.execute("PRAGMA page_count").fetchone()[0]
+        page_size = database.execute("PRAGMA page_size").fetchone()[0]
+        integrity = audit.require_valid()
         if (
             count > 64
             or total > 8388608
@@ -572,7 +577,7 @@ class HoldoutEvidenceStore:
         ):
             raise ValueError("HOLDOUT evidence capacity or audit mismatch")
         results = []
-        for reference, raw, encoded in self._db.execute(
+        for reference, raw, encoded in database.execute(
             "SELECT dataset_ref,raw_csv,receipt_json FROM research_datasets ORDER BY rowid"
         ):
             if type(raw) is not bytes:
@@ -585,7 +590,7 @@ class HoldoutEvidenceStore:
                 or receipt.model_dump_json() != encoded
             ):
                 raise ValueError("HOLDOUT evidence identity mismatch")
-            event = self._db.execute(
+            event = database.execute(
                 "SELECT event_json FROM audit_events WHERE event_key=?", (reference,)
             ).fetchone()
             if event is None or json.loads(event[0]) != ResearchEvidenceCatalog._event(receipt):
@@ -600,6 +605,70 @@ class HoldoutEvidenceStore:
     def get(self, reference: str) -> tuple[ResearchDataReceipt, bytes] | None:
         with self._snapshot():
             return next((row for row in self._verified() if row[0].dataset_ref == reference), None)
+
+    def publish(
+        self,
+        raw: bytes,
+        *,
+        source_id: str,
+        received_at: datetime,
+        training_receipts: tuple[ResearchDataReceipt, ...],
+    ) -> ResearchDataReceipt:
+        """Append operator-supplied HOLDOUT bytes to the service-owned audit chain."""
+        if type(raw) is not bytes or not 0 < len(raw) <= 1048576:
+            raise ValueError("HOLDOUT data exceeds the publication bound")
+        if type(training_receipts) is not tuple or len(training_receipts) > 64:
+            raise ValueError("TRAINING receipt inventory exceeds the publication bound")
+        if any(
+            type(receipt) is not ResearchDataReceipt or receipt.resource_class != "TRAINING"
+            for receipt in training_receipts
+        ) or len({receipt.dataset_ref for receipt in training_receipts}) != len(training_receipts):
+            raise ValueError("Checked TRAINING receipts are required")
+        receipt = _receipt(raw, source_id, "HOLDOUT", received_at)
+        if any(_overlap(receipt, training) for training in training_receipts):
+            raise ValueError("Research classification overlap")
+
+        with self._lock:
+            metadata = os.lstat(self._path)
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or getattr(metadata, "st_file_attributes", 0) & 0x400
+            ):
+                raise ValueError("HOLDOUT evidence destination must be a regular file")
+            database = sqlite3.connect(str(self._path), isolation_level=None, timeout=5)
+            try:
+                database.execute("PRAGMA synchronous=FULL")
+                database.execute("BEGIN IMMEDIATE")
+                rows = self._verified(database)
+                prior = next(
+                    (
+                        existing
+                        for existing, _ in rows
+                        if existing.dataset_ref == receipt.dataset_ref
+                    ),
+                    None,
+                )
+                if prior is not None:
+                    database.execute("COMMIT")
+                    return prior
+                if len(rows) >= 64 or sum(len(body) for _, body in rows) + len(raw) > 8388608:
+                    raise ValueError("HOLDOUT evidence capacity exhausted")
+                database.execute(
+                    "INSERT INTO research_datasets VALUES (?,?,?)",
+                    (receipt.dataset_ref, raw, receipt.model_dump_json()),
+                )
+                AuditChain(database).append(
+                    receipt.dataset_ref, ResearchEvidenceCatalog._event(receipt)
+                )
+                self._verified(database)
+                database.execute("COMMIT")
+                return receipt
+            except BaseException:
+                if database.in_transaction:
+                    database.execute("ROLLBACK")
+                raise
+            finally:
+                database.close()
 
     def close(self) -> None:
         with self._lock:

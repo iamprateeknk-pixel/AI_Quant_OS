@@ -88,7 +88,7 @@ def test_failure_cli_requires_original_pinned_test_bytes_and_never_overwrites(pa
         "-m",
         "ai_quant_os.candidate_validation_cli",
         "--validation-archive",
-        str(tmp_path / "paper.validation-packages.sqlite3"),
+        str(tmp_path / "service.validation-packages.sqlite3"),
         "--package-ref",
         package.package_ref,
         "--test-result",

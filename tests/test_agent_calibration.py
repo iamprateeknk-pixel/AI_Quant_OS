@@ -267,8 +267,12 @@ def test_regime_adapter_against_genuine_a02_graph_output():
         snapshot = engine.snapshot(
             (
                 MarketSnapshot(
-                    "EURUSD", closes[-1], closes[-1] + Decimal("0.0001"), now,
-                    "synthetic-eval", True,
+                    "EURUSD",
+                    closes[-1],
+                    closes[-1] + Decimal("0.0001"),
+                    now,
+                    "synthetic-eval",
+                    True,
                 ),
             ),
             now=now,
@@ -297,9 +301,7 @@ def test_regime_adapter_against_genuine_a02_graph_output():
                         ("SHORT", "MEDIUM", "LONG"), case.expected, strict=True
                     )
                 }
-                records.extend(
-                    regime_confidence_records(output, expected, source_ref=case.id)
-                )
+                records.extend(regime_confidence_records(output, expected, source_ref=case.id))
             return tuple(records)
 
     import tempfile

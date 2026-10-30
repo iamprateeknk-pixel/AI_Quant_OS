@@ -351,7 +351,7 @@ def test_workflow_cli_returns_retained_result_with_real_local_temporal_server(
                 "-m",
                 "ai_quant_os.candidate_validation_job_cli",
                 "--validation-archive",
-                str(tmp_path / "paper.validation-packages.sqlite3"),
+                str(tmp_path / "service.validation-packages.sqlite3"),
                 "--package-ref",
                 package.package_ref,
                 "--root",
