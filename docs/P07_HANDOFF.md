@@ -301,3 +301,20 @@ operator data is not yet available to the service. Package preparation and
 report context compilation still read local archives; the service has not been
 installed or exercised under its Windows service identity and ACL. Isolation,
 P07 completion, and P00–P13 release acceptance therefore remain open.
+
+## Non-editable Windows package verification (2026-10-29)
+
+The built wheel now includes the complete `infra/repair-worker` asset set under
+the Python installation data prefix. Candidate-test custody resolves those
+assets from the checkout for source runs and from the installation prefix for
+installed packages. A wheel-content regression verifies the complete asset
+set. On a scratch CPython 3.11.18 Windows runtime with the hash-locked Windows
+dependencies and a non-editable package install, the P07 service, RPC, store,
+data CLI, candidate-validation, research, scientist, and package regression
+group passes **169 tests with 1 opt-in Linux test skipped**; the service runtime
+path preflight also passes and locates `PythonService.exe` inside the same
+runtime. The full Windows backend suite passes **3,656 tests with 47 skipped**.
+This closes the wheel asset omission found during non-editable installation;
+the scratch runtime is not a machine-wide installation, and SCM startup under
+LocalService, service/process ACL acceptance, and migration of the four real
+operator archives remain open.

@@ -43,6 +43,25 @@ where = ["src"]
 [tool.setuptools.package-data]
 ai_quant_os = ["strategy_manifests.json"]
 
+[tool.setuptools.data-files]
+"infra/repair-worker" = [
+    "infra/repair-worker/.dockerignore",
+    "infra/repair-worker/Dockerfile",
+    "infra/repair-worker/README.md",
+    "infra/repair-worker/archive_manifest.json",
+    "infra/repair-worker/base_config.json",
+    "infra/repair-worker/base_image.json",
+    "infra/repair-worker/base_index.json",
+    "infra/repair-worker/base_manifest.json",
+    "infra/repair-worker/build-tools.lock",
+    "infra/repair-worker/candidate_test_worker.py",
+    "infra/repair-worker/dependency_probe.py",
+    "infra/repair-worker/enforcement_probe.py",
+    "infra/repair-worker/requirements.in",
+    "infra/repair-worker/requirements.lock",
+    "infra/repair-worker/wheel_manifest.json",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "tests"]
