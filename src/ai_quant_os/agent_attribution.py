@@ -427,7 +427,7 @@ def build_marked_agent_contributions(
                 )
 
         associations = []
-        for run_id, base_row in ((row.run_id, row) for row in base.associations):
+        for run_id in (row.run_id for row in base.associations):
             covered_instruments = sorted({owner.instrument_id for owner in run_orders[run_id]})
             for instrument_id in covered_instruments:
                 associations.append(rows_by_run[run_id, instrument_id])

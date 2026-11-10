@@ -128,6 +128,9 @@ def supervisor_sources(
     ):
         raise ValueError("Task declaration requires a declared-task supervisor version")
     if version == "0.4.0":
+        # Deferred: breaks the supervisor_agent <-> supervisor_drift <->
+        # supervisor_sources <-> task_supervisor <-> task_supervisor_incident
+        # <-> task_supervisor_research import cycle; do not hoist to top level.
         from ai_quant_os.task_supervisor import (
             TaskRegistryEvidence,
             TaskSupervisorEvidence,

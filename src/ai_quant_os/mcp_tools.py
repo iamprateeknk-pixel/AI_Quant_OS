@@ -357,8 +357,6 @@ def _validate_catalog(catalog: tuple[ToolSpec, ...]) -> None:
 
 _validate_catalog(TOOL_CATALOG)
 
-_CATALOG_BY_NAME = {spec.name: spec for spec in TOOL_CATALOG}
-
 
 class ToolRegistry:
     """Allow-list enforcement and dispatch for catalog tools.

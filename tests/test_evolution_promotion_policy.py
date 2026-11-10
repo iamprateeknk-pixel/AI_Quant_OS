@@ -12,6 +12,8 @@ from ai_quant_os.evolution_evaluation import MetricComparison
 from ai_quant_os.evolution_holdout import HoldoutEvaluation
 from ai_quant_os.evolution_promotion_policy import (
     EvolutionPromotionGate,
+    PromotionGateDecision,
+    PromotionPolicy,
     load_promotion_trust_store,
     load_signed_promotion_policy,
 )
@@ -136,7 +138,9 @@ def test_signed_policy_verifies_with_full_quorum():
 
 def test_policy_with_a_missing_quorum_signature_is_invalid():
     with pytest.raises(ValueError, match="quorum"):
-        load_signed_promotion_policy(_signed_policy(signers=(SIGNER_1,)), trust_store=_trust_store())
+        load_signed_promotion_policy(
+            _signed_policy(signers=(SIGNER_1,)), trust_store=_trust_store()
+        )
 
 
 def test_policy_signed_by_an_untrusted_key_is_invalid():
@@ -247,3 +251,49 @@ def test_gate_authorizes_only_with_valid_policy_and_passing_holdout():
     assert decision.holdout_evaluation_ref is not None
     # Authorization is not application: the served version never flips here.
     assert decision.promotion_applied is False
+
+
+# --- Signed-policy surface: exact schema / mode / inventory -------------------
+
+
+def test_policy_exact_schema_rejects_other_versions():
+    with pytest.raises(ValueError, match="schema version is unsupported"):
+        PromotionPolicy.model_validate(_policy_payload(schema_version="2.0"))
+    assert PromotionPolicy.model_validate(_policy_payload()).schema_version == "1.0"
+
+
+def test_policy_exact_mode_rejects_non_automatic_modes():
+    with pytest.raises(ValueError, match="mode is unsupported"):
+        PromotionPolicy.model_validate(_policy_payload(promotion_mode="MANUAL"))
+    assert PromotionPolicy.model_validate(_policy_payload()).promotion_mode == "AUTOMATIC"
+
+
+def test_policy_inventory_rejects_unsorted_scope_and_excess_quorum():
+    with pytest.raises(ValueError, match="unique sorted agent ids"):
+        PromotionPolicy.model_validate(_policy_payload(scope_agent_ids=["A07", "A02"]))
+    with pytest.raises(ValueError, match="quorum exceeds"):
+        PromotionPolicy.model_validate(_policy_payload(required_signatures=3))
+    with pytest.raises(ValueError, match="unique sorted signer ids"):
+        PromotionPolicy.model_validate(
+            _policy_payload(authorized_signer_ids=["release-signer-2", "release-signer-1"])
+        )
+
+
+def test_gate_decision_never_applied_here():
+    decision = PromotionGateDecision(
+        decision="AUTHORIZED",
+        reasons=(),
+        challenger_genome_ref="agent-genome:" + "a" * 64,
+        agent_id="A02",
+        decided_at=NOW,
+    )
+    assert decision.promotion_applied is False
+    with pytest.raises(ValueError, match="never applies a promotion"):
+        PromotionGateDecision(
+            decision="AUTHORIZED",
+            reasons=(),
+            challenger_genome_ref="agent-genome:" + "a" * 64,
+            agent_id="A02",
+            promotion_applied=True,
+            decided_at=NOW,
+        )

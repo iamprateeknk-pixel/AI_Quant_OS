@@ -12,7 +12,28 @@ from ai_quant_os.agent_registry import load_agent_catalog
 
 
 MAX_DATASET_BYTES = 1048576
+MAX_CASE_JSON_DEPTH = 32
 VERSION = r"^(?:0|[1-9][0-9]{0,5})(?:\.(?:0|[1-9][0-9]{0,5})){2}$"
+
+
+def _case_json_depth(value: object) -> int:
+    """Deepest container nesting of a parsed case value, counted iteratively.
+
+    The parser's own RecursionError cannot be relied on: the C JSON decoder
+    accepts far deeper nesting on some interpreters, so the bound is enforced
+    explicitly instead of depending on parser recursion behaviour.
+    """
+    deepest = 0
+    pending = [(value, 0)]
+    while pending:
+        current, depth = pending.pop()
+        if isinstance(current, (dict, list)):
+            deepest = max(deepest, depth + 1)
+            children = current.values() if isinstance(current, dict) else current
+            pending.extend((child, depth + 1) for child in children)
+    return deepest
+
+
 METHODS = {
     "CORRECTNESS": "EXACT_OBJECT_MATCH",
     "CALIBRATION_ERROR": "BINARY_BRIER",
@@ -62,6 +83,8 @@ class EvaluationCase(BaseModel):
                 )
             except RecursionError:
                 raise ValueError("Case JSON nesting exceeds parser capacity") from None
+            if _case_json_depth(value) > MAX_CASE_JSON_DEPTH:
+                raise ValueError("Case JSON nesting exceeds parser capacity")
             if not isinstance(value, dict) or len(raw.encode()) > 16384 or canonical != raw:
                 raise ValueError("Case input/expected values must be bounded canonical objects")
         return self

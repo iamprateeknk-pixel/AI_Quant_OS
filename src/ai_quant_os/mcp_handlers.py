@@ -162,15 +162,6 @@ def _fill_rows(execution: Any) -> list[dict]:
     return [grouped[name] for name in sorted(grouped)]
 
 
-def _public_fill_row(row: dict) -> dict:
-    return {
-        "instrument_id": row["instrument_id"],
-        "fill_count": row["fill_count"],
-        "net_quantity": _str_decimal(row["net_quantity"]),
-        "cash_flow_quote": _str_decimal(row["cash_flow_quote"]),
-    }
-
-
 def _exposure_view(exposure: Any) -> dict:
     return {
         "snapshot_id": exposure.snapshot_id,

@@ -335,3 +335,21 @@ def test_build_twin_out_of_range_value_raises():
     raw["macro"]["value"] = "1.5"
     with pytest.raises(ValueError):
         build_twin("EUR", raw)
+
+
+# --- TwinComponent staleness / effective confidence ----------------------------
+
+
+def test_component_is_stale_boundary_is_strictly_over_one_hour():
+    assert component("policy", freshness=3600).is_stale is False
+    assert component("policy", freshness=3601).is_stale is True
+    assert component("policy", freshness=0).is_stale is False
+
+
+def test_component_effective_confidence_halves_only_when_stale():
+    assert component("policy", confidence="0.8", freshness=60).effective_confidence == (
+        Decimal("0.8")
+    )
+    assert component("policy", confidence="0.8", freshness=3601).effective_confidence == Decimal(
+        "0.4"
+    )

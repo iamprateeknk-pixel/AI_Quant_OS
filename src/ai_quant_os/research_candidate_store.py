@@ -424,6 +424,8 @@ class CandidateStore:
             return views[identifier]
 
     def demote_for_reality_gap(self, report, assessment, *, expected_revision):
+        # Deferred: breaks the research_candidate_store <-> shadow_portfolio
+        # <-> shadow_reality_gap import cycle; do not hoist to top level.
         from ai_quant_os.shadow_reality_gap import (
             RealityGapAssessment,
             ShadowReport,

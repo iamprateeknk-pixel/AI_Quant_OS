@@ -238,7 +238,12 @@ def test_actual_http_stream_observes_safety_change_then_stops_after_session_revo
             while not server.started and thread.is_alive() and time.monotonic() < deadline:
                 time.sleep(0.01)
             assert server.started
-            with httpx.Client(base_url=f"http://127.0.0.1:{port}", timeout=4) as client:
+            # Loopback only: never inherit proxy environment. httpx parses
+            # NO_PROXY at construction, and bracketed IPv6 entries there make
+            # it raise InvalidURL before any request is made.
+            with httpx.Client(
+                base_url=f"http://127.0.0.1:{port}", timeout=4, trust_env=False
+            ) as client:
                 grant = client.post(
                     "/api/v1/operator/sessions", headers={"X-Operator-Token": "fixture-token"}
                 )

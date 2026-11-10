@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from ai_quant_os.health_contracts import HealthIncident
 from ai_quant_os.repair_certificates import verify_repair_certificate
-from ai_quant_os.repair_trials import RepairTrialStore, ShadowVerdict
+from ai_quant_os.repair_trials import RepairTrialRecord, RepairTrialStore, ShadowVerdict
 from test_repair_certificates import _signed_certificate, _snapshot
 
 NOW = datetime(2026, 10, 22, tzinfo=timezone.utc)
@@ -58,12 +58,8 @@ def _passing_evaluator(record):
 def _through_canary_passed(tmp_path):
     store, snapshot, trial = _open_trial(tmp_path)
     store.evaluate_shadow(trial.trial_id, _passing_evaluator, evaluated_at=NOW)
-    store.start_canary(
-        trial.trial_id, scope="agent:A02", entered_at=NOW, min_soak_seconds=300
-    )
-    passed = store.evaluate_canary(
-        trial.trial_id, now=NOW + timedelta(seconds=301), incidents=()
-    )
+    store.start_canary(trial.trial_id, scope="agent:A02", entered_at=NOW, min_soak_seconds=300)
+    passed = store.evaluate_canary(trial.trial_id, now=NOW + timedelta(seconds=301), incidents=())
     assert passed.state == "CANARY_PASSED"
     return store, snapshot, passed
 
@@ -76,16 +72,12 @@ def test_trial_opens_only_after_independent_verification_passes(tmp_path):
     with pytest.raises(ValueError, match="independent verification"):
         store.create_trial(snapshot, failed, replay_sha256=REPLAY_SHA256, created_at=NOW)
     verification = _verification(snapshot)
-    trial = store.create_trial(
-        snapshot, verification, replay_sha256=REPLAY_SHA256, created_at=NOW
-    )
+    trial = store.create_trial(snapshot, verification, replay_sha256=REPLAY_SHA256, created_at=NOW)
     assert trial.state == "SHADOW_PENDING"
     assert trial.agent_id == "A02"
     assert trial.incident_id == snapshot.incident["incident_id"]
     assert trial.promotion_allowed is False
-    again = store.create_trial(
-        snapshot, verification, replay_sha256=REPLAY_SHA256, created_at=NOW
-    )
+    again = store.create_trial(snapshot, verification, replay_sha256=REPLAY_SHA256, created_at=NOW)
     assert again.trial_id == trial.trial_id
 
 
@@ -136,7 +128,9 @@ def test_canary_soak_then_activation_authorization_and_closure(tmp_path):
     with pytest.raises(ValueError, match="activation-authorized"):
         store.close_incident(trial.trial_id, closed_at=NOW + timedelta(seconds=400))
     authorized = store.authorize_activation(
-        trial.trial_id, operator_ref="operator:maintainer-1", authorized_at=NOW + timedelta(seconds=400)
+        trial.trial_id,
+        operator_ref="operator:maintainer-1",
+        authorized_at=NOW + timedelta(seconds=400),
     )
     assert authorized.state == "ACTIVATION_AUTHORIZED"
     assert authorized.activation is not None
@@ -236,3 +230,15 @@ def test_trial_records_survive_reopen_and_tampering_is_refused(tmp_path):
     db.close()
     with pytest.raises(ValueError, match="integrity"):
         RepairTrialStore(tmp_path / "trials.sqlite3")
+
+
+# --- RepairTrialRecord.deny_authority ------------------------------------------
+
+
+def test_repair_trial_record_deny_authority(tmp_path):
+    _store, _snapshot, trial = _open_trial(tmp_path)
+    assert trial.promotion_allowed is False
+    record = trial.model_dump()
+    record["promotion_allowed"] = True
+    with pytest.raises(ValueError, match="never carry promotion authority"):
+        RepairTrialRecord.model_validate(record)

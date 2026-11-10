@@ -13,6 +13,7 @@ import pytest
 from ai_quant_os.promotion_lifecycle import (
     NOT_PROMOTED,
     PAPER_ACTIVE,
+    PromotionAttempt,
     PromotionRegistry,
     fortress_verdict_ref,
     request_promotion,
@@ -281,3 +282,82 @@ def test_naive_timestamp_is_refused(stores):
     with pytest.raises(ValueError):
         request_promotion(registry, evidence_store, _request(), now=datetime(2026, 1, 1))
     assert registry.attempts_for("strategy-1") == ()
+
+
+# --- PromotionAttempt store round-trip ---------------------------------------
+
+
+def _attempt(**overrides):
+    kwargs = {
+        "strategy_id": "strategy-1",
+        "candidate_id": "strategy-1",
+        "hypothesis_id": "hypothesis-1",
+        "fortress_hypothesis_id": None,
+        "fortress_verdict_ref": None,
+        "fortress_passed": False,
+        "council_name": "research",
+        "council_verdict": "REJECTED",
+        "council_proposal_id": "proposal-1",
+        "gate_promoted": False,
+        "gate_reasons": ("fortress failed",),
+        "decision": "REJECTED",
+        "approved_by_policy": False,
+        "evidence_ref": "promotion-decision:" + "a" * 64,
+        "status_after": NOT_PROMOTED,
+        "attempted_at": "2026-01-01T00:00:00+00:00",
+    }
+    kwargs.update(overrides)
+    return PromotionAttempt(**kwargs)
+
+
+def test_attempt_to_dict_from_dict_round_trip():
+    attempt = _attempt()
+    record = attempt.to_dict()
+    assert isinstance(record["gate_reasons"], list)
+    assert record["gate_reasons"] == ["fortress failed"]
+    assert PromotionAttempt.from_dict(record) == attempt
+    assert PromotionAttempt.from_dict(attempt.to_dict()).to_dict() == record
+
+
+def test_attempt_from_dict_rejects_shape_mismatch():
+    record = _attempt().to_dict()
+    del record["decision"]
+    with pytest.raises(ValueError, match="shape mismatch"):
+        PromotionAttempt.from_dict(record)
+    with pytest.raises(ValueError, match="JSON object"):
+        PromotionAttempt.from_dict([_attempt().to_dict()])
+
+
+def test_registry_attempt_store_round_trip(stores):
+    registry, _evidence_store = stores
+    attempt = _attempt()
+    ref = registry.record_attempt(attempt)
+    assert ref.startswith("promotion-attempt:")
+    assert registry.get_attempt(ref) == attempt
+    # Recording the same attempt again is idempotent: same ref, one row.
+    assert registry.record_attempt(attempt) == ref
+    assert registry.list_refs() == (ref,)
+    found = registry.find_attempt(
+        strategy_id="strategy-1",
+        hypothesis_id="hypothesis-1",
+        fortress_hypothesis_id=None,
+        fortress_verdict_ref=None,
+        council_name="research",
+        council_verdict="REJECTED",
+        council_proposal_id="proposal-1",
+    )
+    assert found == attempt
+    assert (
+        registry.find_attempt(
+            strategy_id="strategy-1",
+            hypothesis_id="hypothesis-1",
+            fortress_hypothesis_id=None,
+            fortress_verdict_ref=None,
+            council_name="research",
+            council_verdict="REJECTED",
+            council_proposal_id="proposal-2",
+        )
+        is None
+    )
+    with pytest.raises(ValueError, match="Unknown promotion attempt reference"):
+        registry.get_attempt("promotion-attempt:" + "b" * 64)

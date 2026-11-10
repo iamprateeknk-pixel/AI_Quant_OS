@@ -114,6 +114,8 @@ class CandidateInvocation(BaseModel):
         return "candidate-invocation:" + sha256(self.model_dump_json().encode()).hexdigest()
 
     def require_package(self, package: CandidateDatasetInput) -> None:
+        # Deferred: breaks the candidate_invocation_contracts <->
+        # candidate_invocations import cycle; do not hoist to top level.
         from ai_quant_os.candidate_invocations import prepare_invocation
 
         checked = CandidateInvocation.model_validate_json(self.model_dump_json())

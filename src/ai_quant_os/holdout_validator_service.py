@@ -157,9 +157,7 @@ class HoldoutRequestHandler:
             or training_receipt.dataset_ref != request.training_ref
         ):
             raise PermissionError("Validation package candidate or TRAINING binding mismatch")
-        checked_bytes(
-            payload.training_raw_base64, training_receipt.raw_sha256, 1048576
-        )
+        checked_bytes(payload.training_raw_base64, training_receipt.raw_sha256, 1048576)
         holdout = self._holdouts.get(request.holdout_ref)
         if holdout is None or holdout[0].resource_class != "HOLDOUT":
             raise PermissionError("Service-owned HOLDOUT dataset unavailable")
@@ -239,7 +237,14 @@ class HoldoutRequestHandler:
                 request.holdout_ref,
             )
         )
-        if package is None or package_scope != request_scope:
+        # VALIDATION_CONTEXT requests carry no archive scope refs by protocol
+        # (HoldoutRequest forbids them), so there is no caller-supplied scope
+        # to bind; the artifact-to-package-to-HOLDOUT chain is still verified
+        # below. Comparing against the all-None scope would refuse every
+        # context request, since the retained package scope is never all-None.
+        if package is None or (
+            request.operation != "VALIDATION_CONTEXT" and package_scope != request_scope
+        ):
             raise PermissionError("Validation evidence scope mismatch")
         holdout_ref = package.holdout.receipt.dataset_ref
         held = self._holdouts.get(holdout_ref)

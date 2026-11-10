@@ -1,6 +1,7 @@
 {
   "$defs": {
     "StrategyGenome": {
+      "additionalProperties": false,
       "properties": {
         "strategy_ref": {
           "title": "Strategy Ref",
@@ -93,7 +94,6 @@
           "type": "number"
         },
         {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
           "type": "string"
         }
       ],
@@ -108,7 +108,6 @@
           "type": "number"
         },
         {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
           "type": "string"
         }
       ],

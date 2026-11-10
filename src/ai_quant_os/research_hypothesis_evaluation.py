@@ -76,8 +76,17 @@ async def _replay_case(root: Path, case: HypothesisCase) -> dict:
                     "/api/v1/paper/research/datasets",
                     json={"source_id": case.id, "resource_class": case.resource_class, "csv": csv},
                 )
-                response.raise_for_status()
-                dataset_ref = response.json()["receipt"]["dataset_ref"]
+                if case.resource_class == "HOLDOUT":
+                    # HOLDOUT bytes may enter only through the isolated
+                    # validator service; the training-only paper API must
+                    # refuse them. That refusal is the exclusion under test:
+                    # no holdout dataset enters the catalog, so the agent
+                    # must wait for evidence with no training datasets.
+                    if response.status_code == 200:
+                        raise ValueError("HOLDOUT data was accepted by the paper API")
+                else:
+                    response.raise_for_status()
+                    dataset_ref = response.json()["receipt"]["dataset_ref"]
             if case.archive_spread:
                 response = await client.post(
                     "/api/v1/paper/quotes",
@@ -96,7 +105,8 @@ async def _replay_case(root: Path, case: HypothesisCase) -> dict:
             output = HypothesisSpec.model_validate_json(receipt["output_json"])
             serialized = json.dumps({"context": context, "output": output.model_dump(mode="json")})
             holdout_excluded = case.resource_class != "HOLDOUT" or (
-                dataset_ref not in serialized and output.training_dataset_count == 0
+                (dataset_ref is None or dataset_ref not in serialized)
+                and output.training_dataset_count == 0
             )
             controls_unchanged = before == (await client.get("/api/v1/system/status")).json()
     app = create_app(**settings)
@@ -179,6 +189,11 @@ def _owned_case(root: Path, case: HypothesisCase) -> dict:
     }
     environment = {key: value for key, value in os.environ.items() if key.upper() in names}
     environment["PYTHONIOENCODING"] = "utf-8"
+    # The replay child must import this same package tree. Ambient PYTHONPATH
+    # is not guaranteed, and an editable install elsewhere on sys.path would
+    # otherwise let the child replay different code than the evaluator that
+    # pins its hash in the retained report.
+    environment["PYTHONPATH"] = str(Path(__file__).resolve().parent.parent)
     result = subprocess.run(
         [
             sys.executable,

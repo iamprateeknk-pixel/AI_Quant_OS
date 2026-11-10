@@ -165,6 +165,8 @@ class GraphLedger:
 
     @staticmethod
     def _matches_event(event, record: GraphRecord, digest: str) -> bool:
+        # Deferred: breaks the graph_archive <-> graph_ledger <-> graph_trace
+        # import cycle; do not hoist to top level.
         from ai_quant_os.graph_trace import observation
 
         if not isinstance(event, dict):
@@ -341,6 +343,8 @@ class GraphLedger:
             return tuple(selected)
 
     def page(self, *, after_run_id: str = "", head: str | None = None, limit: int = 25):
+        # Deferred: breaks the graph_archive <-> graph_ledger <-> graph_trace
+        # import cycle; do not hoist to top level.
         from ai_quant_os.graph_archive import GraphArchiveChanged, GraphRunPage, summary
         from ai_quant_os.graph_trace import observation
 
@@ -409,6 +413,8 @@ class GraphLedger:
 
     def trace(self, run_id: str):
         """Read a bounded, audit-checked timeline without execution or source access."""
+        # Deferred: breaks the graph_archive <-> graph_ledger <-> graph_trace
+        # import cycle; do not hoist to top level.
         from ai_quant_os.graph_trace import (
             GraphTrace,
             GraphTraceEvent,

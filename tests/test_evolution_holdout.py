@@ -1,6 +1,7 @@
 """Independent holdout evaluation: unseen data, same ruler, fail-closed."""
 
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 import json
 
 import pytest
@@ -14,7 +15,12 @@ from ai_quant_os.agent_context import (
 from ai_quant_os.agent_genomes import capture_baseline_genome
 from ai_quant_os.agent_registry import load_agent_catalog
 from ai_quant_os.evolution_evaluation import CaseOutput
-from ai_quant_os.evolution_holdout import evaluate_holdout_outputs
+from ai_quant_os.evolution_holdout import (
+    HoldoutEvaluation,
+    encode_holdout_evaluation,
+    evaluate_holdout_outputs,
+    holdout_evaluation_sha256,
+)
 from ai_quant_os.evolution_protocols import EvolutionDataset
 from ai_quant_os.evolution_runner import (
     EvolutionRunner,
@@ -278,3 +284,67 @@ def test_run_holdout_enforces_lineage_before_any_container_work():
         EvolutionRunner().run_holdout(challenger, data, plan)
     with pytest.raises(ValueError, match="server-owned baseline"):
         EvolutionRunner().run_holdout(baseline, data, plan, baseline=baseline)
+
+
+# --- HoldoutEvaluation: deny-authority, encode, hash --------------------------
+
+
+def _evaluation(**overrides):
+    from ai_quant_os.evolution_evaluation import MetricComparison
+
+    comparison = MetricComparison(
+        metric="CORRECTNESS",
+        baseline_score=Decimal(0),
+        challenger_score=Decimal(1),
+        case_count=4,
+        baseline_exact_matches=0,
+        challenger_exact_matches=4,
+        maximum_regression=Decimal(0),
+        within_guardrail=True,
+    )
+    kwargs = {
+        "agent_id": "A02",
+        "training_protocol_sha256": "b" * 64,
+        "holdout_protocol_sha256": "c" * 64,
+        "training_dataset_ref": "evolution-dataset:" + "d" * 64,
+        "holdout_dataset_ref": "evolution-dataset:" + "e" * 64,
+        "holdout_dataset_provenance": "REVIEWED_REFERENCE",
+        "baseline_genome_ref": "agent-genome:" + "f" * 64,
+        "challenger_genome_ref": "agent-genome:" + "a" * 64,
+        "primary_metric": "CORRECTNESS",
+        "baseline_score": Decimal(0),
+        "challenger_score": Decimal(1),
+        "case_count": 4,
+        "baseline_exact_matches": 0,
+        "challenger_exact_matches": 4,
+        "minimum_improvement": Decimal("0.01"),
+        "minimum_improvement_met": True,
+        "metrics": (comparison,),
+        "verdict": "HOLDOUT_PASS",
+        "evaluated_at": NOW,
+    }
+    kwargs.update(overrides)
+    return HoldoutEvaluation(**kwargs)
+
+
+def test_holdout_evaluation_deny_authority():
+    evaluation = _evaluation()
+    assert evaluation.execution_verified is False
+    assert evaluation.promotion_allowed is False
+    with pytest.raises(ValueError, match="cannot claim verification or promotion"):
+        _evaluation(execution_verified=True)
+    with pytest.raises(ValueError, match="cannot claim verification or promotion"):
+        _evaluation(promotion_allowed=True)
+
+
+def test_holdout_evaluation_encode_and_hash_are_stable():
+    import hashlib
+
+    evaluation = _evaluation()
+    assert encode_holdout_evaluation(evaluation) == encode_holdout_evaluation(evaluation)
+    digest = holdout_evaluation_sha256(evaluation)
+    assert digest == hashlib.sha256(encode_holdout_evaluation(evaluation)).hexdigest()
+    assert evaluation.evaluation_ref == "evolution-holdout:" + digest
+    assert holdout_evaluation_sha256(_evaluation()) == digest
+    # A different challenger score is a different evaluation: new hash.
+    assert holdout_evaluation_sha256(_evaluation(challenger_score=Decimal("0.5"))) != digest

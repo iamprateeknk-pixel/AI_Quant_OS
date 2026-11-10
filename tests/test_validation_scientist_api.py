@@ -19,9 +19,53 @@ from test_strategy_image_loading import assembled as assembled, inputs as inputs
 from test_research_hypothesis_api import NOW, HEADERS
 
 
-def settings(tmp_path, clock=lambda: NOW):
+def local_validation_service_client(tmp_path):
+    """In-process HOLDOUT service over the fixture's service-owned archives.
+
+    The paper API compiles A10 contexts only from the isolated validator; on
+    Linux there is no Windows service to call, so tests use the real request
+    handler over the same archive files the package fixture staged (service
+    packages/holdout/research plus the paper candidate-validation archive
+    this test wrote). Returns None when those archives do not exist, so a
+    caller that injects its own client keeps working unchanged.
+    """
+    from ai_quant_os.holdout_validator_rpc import HoldoutRpcClient, process_rpc_frame
+    from ai_quant_os.holdout_validator_service import HoldoutRequestHandler
+    from ai_quant_os.research_evidence_catalog import HoldoutEvidenceStore
+    from ai_quant_os.research_store import ResearchStore
+    from ai_quant_os.validation_package_store import ValidationPackageStore
+
+    paths = {
+        "holdout": tmp_path / "service.research-data.holdout.sqlite3",
+        "packages": tmp_path / "service.validation-packages.sqlite3",
+        "validations": tmp_path / "paper.candidate-validations.sqlite3",
+        "research": tmp_path / "service.research.sqlite3",
+    }
+    if not all(path.is_file() for path in paths.values()):
+        return None
+    handler = HoldoutRequestHandler(
+        HoldoutEvidenceStore(paths["holdout"]),
+        ValidationPackageStore(paths["packages"]),
+        CandidateValidationStore(paths["validations"]),
+        ResearchStore(paths["research"]),
+    )
+
+    class LocalServiceClient:
+        def exchange(self, frame, *, timeout_ms):
+            assert timeout_ms > 0
+            return process_rpc_frame(frame, handler)
+
+    return HoldoutRpcClient(LocalServiceClient())
+
+
+def settings(tmp_path, clock=lambda: NOW, holdout_rpc_client=None):
+    if holdout_rpc_client is None:
+        holdout_rpc_client = local_validation_service_client(tmp_path)
     return dict(
-        operator_token="fixture-hypothesis", clock=clock, paper_db_path=tmp_path / "paper.sqlite3"
+        operator_token="fixture-hypothesis",
+        clock=clock,
+        paper_db_path=tmp_path / "paper.sqlite3",
+        holdout_rpc_client=holdout_rpc_client,
     )
 
 
@@ -209,7 +253,7 @@ def test_a10_context_is_compiled_from_service_snapshot_without_local_archive_rea
 
     monkeypatch.setattr(CandidateValidationStore, "get", forbidden_archive_read)
     monkeypatch.setattr(ValidationPackageStore, "get", forbidden_archive_read)
-    with TestClient(create_app(**settings(tmp_path), holdout_rpc_client=client)) as api:
+    with TestClient(create_app(**settings(tmp_path, holdout_rpc_client=client))) as api:
         response = api.post(
             "/api/v1/sandbox/validation-scientist/context",
             headers=HEADERS,

@@ -148,6 +148,15 @@ def test_secure_directory_adopts_only_the_staged_tree(tmp_path, monkeypatch):
     security.SetNamedSecurityInfo = set_security
     monkeypatch.setitem(sys.modules, "win32security", security)
     monkeypatch.setattr(holdout_service_security.os, "name", "nt")
+    # Patching os.name alone is not a complete Windows simulation on Linux:
+    # pathlib dispatches fresh Path(...) constructions on os.name, so
+    # secure_holdout_directory would build a WindowsPath for this POSIX
+    # target and reject it as non-absolute. Bind the module to the POSIX
+    # flavour so paths stay constructible while the os.name gate still
+    # takes the Windows branch.
+    from pathlib import PosixPath
+
+    monkeypatch.setattr(holdout_service_security, "Path", PosixPath)
     monkeypatch.setattr(
         holdout_service_security,
         "service_sid_for_name",

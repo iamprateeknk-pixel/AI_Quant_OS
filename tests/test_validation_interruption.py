@@ -239,7 +239,7 @@ raise SystemExit(main())
         "-c",
         no_native,
         "--validation-archive",
-        str(tmp_path / "paper.validation-packages.sqlite3"),
+        str(tmp_path / "service.validation-packages.sqlite3"),
         "--package-ref",
         package.package_ref,
         "--root",

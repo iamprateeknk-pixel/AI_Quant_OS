@@ -108,9 +108,7 @@ def test_validation_package_preparation_request_can_transfer_only_checked_inputs
     assert decode_frame(encoded, HoldoutRequest) == prepared
 
     with pytest.raises(ValidationError):
-        HoldoutRequest.model_validate(
-            request(operation="VALIDATION_RUN", preparation=payload)
-        )
+        HoldoutRequest.model_validate(request(operation="VALIDATION_RUN", preparation=payload))
 
 
 def test_installed_client_fails_closed_off_windows(monkeypatch):

@@ -228,3 +228,47 @@ def test_jsonrpc_tools_call_missing_arguments_is_invalid_params():
         }
     )
     assert response["error"]["code"] == -32602
+
+
+# --- ToolSpec.required_keys / to_dict, ToolRegistry.get_spec -------------------
+
+
+def test_tool_spec_required_keys_come_from_input_schema():
+    spec = ToolSpec(
+        name="query_dataset",
+        family="Research",
+        description="Query a dataset",
+        input_schema={
+            "type": "object",
+            "properties": {"dataset_id": {"type": "string"}},
+            "required": ["dataset_id"],
+        },
+    )
+    assert spec.required_keys == ("dataset_id",)
+    bare = ToolSpec(name="get_policy", family="Governance", description="Read policy")
+    assert bare.required_keys == ()
+
+
+def test_tool_spec_to_dict_carries_mcp_shape():
+    spec = ToolSpec(
+        name="query_dataset",
+        family="Research",
+        description="Query a dataset",
+        input_schema={"type": "object", "required": ["dataset_id"]},
+    )
+    record = spec.to_dict()
+    assert record["name"] == "query_dataset"
+    assert record["family"] == "Research"
+    assert record["inputSchema"] == spec.input_schema
+    assert record["input_schema"] == spec.input_schema
+    assert record["scope"] == "read"
+    assert record["requires_approval"] is False
+
+
+def test_registry_get_spec_returns_catalog_spec_and_rejects_unknown():
+    registry = ToolRegistry()
+    spec = registry.get_spec("query_dataset")
+    assert spec.name == "query_dataset"
+    assert spec is registry.get_spec("query_dataset")
+    with pytest.raises(ValueError, match="Unknown tool"):
+        registry.get_spec("not_a_tool")

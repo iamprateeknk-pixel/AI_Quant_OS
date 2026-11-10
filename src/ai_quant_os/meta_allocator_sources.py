@@ -10,9 +10,11 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from ai_quant_os.agent_context import EvidenceRecord, SourceBinding
+from ai_quant_os.currency_twin import CurrencyTwin, pair_score as currency_pair_score
 from ai_quant_os.graph_ledger import GraphReceipt
 from ai_quant_os.portfolio import PortfolioExposure
 from ai_quant_os.risk import RiskLimits
+from ai_quant_os.risk_policy import PaperRiskPolicy
 from ai_quant_os.strategy_selector_agent import EligibleStrategySetV3
 
 INPUT_NAMES = (
@@ -55,7 +57,9 @@ class PortfolioObservation(BaseModel):
 class RiskObservation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     as_of: AwareDatetime
-    safety_state: Literal["NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"]
+    safety_state: Literal[
+        "NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"
+    ]
     max_order_exposure: Decimal = Field(gt=0, allow_inf_nan=False)
     max_portfolio_exposure: Decimal = Field(gt=0, allow_inf_nan=False)
     risk_budget_status: Literal["UNCALIBRATED"] = "UNCALIBRATED"
@@ -79,6 +83,23 @@ class ExposureObservation(BaseModel):
     pending_buy_quantity: Decimal = Field(ge=0, allow_inf_nan=False)
     pending_sell_quantity: Decimal = Field(ge=0, allow_inf_nan=False)
     coverage: Literal["SINGLE_INSTRUMENT"] = "SINGLE_INSTRUMENT"
+
+
+class TwinPairObservation(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    as_of: AwareDatetime
+    availability: Literal["AVAILABLE"] = "AVAILABLE"
+    instrument_id: str = Field(pattern=r"^[A-Z]{6}$")
+    base_currency: str = Field(pattern=r"^[A-Z]{3}$")
+    quote_currency: str = Field(pattern=r"^[A-Z]{3}$")
+    pair_score: Decimal = Field(ge=-1, le=1, allow_inf_nan=False)
+    combined_confidence: Decimal = Field(ge=0, le=1, allow_inf_nan=False)
+    coverage: Literal["SINGLE_PAIR"] = "SINGLE_PAIR"
+
+
+class WeightedTwinPairObservation(TwinPairObservation):
+    twin_evidence_weight: Decimal = Field(ge=0, le=1, allow_inf_nan=False)
+    weighted_pair_score: Decimal = Field(ge=-1, le=1, allow_inf_nan=False)
 
 
 @dataclass(frozen=True)
@@ -208,4 +229,139 @@ def allocator_sources_v3(
         return record
 
     sources["strategy_set"] = SourceBinding("STRATEGY_REGISTRY_READ", "GENERAL", fetch)
+    return sources
+
+
+def twin_pair_signal(
+    twin_a: CurrencyTwin,
+    twin_b: CurrencyTwin,
+    *,
+    microstructure: Decimal = Decimal("0"),
+) -> Decimal:
+    """Pair signal for two currency twins, clamped to [-1, 1].
+
+    The blueprint pair formula from :mod:`ai_quant_os.currency_twin`
+    (twin difference scaled by the weaker leg's confidence, plus the
+    microstructure adjustment) applies, including its confidence floor:
+    below the floor the score is exactly zero. The result is clamped to
+    [-1, 1] so no microstructure adjustment can push the signal outside
+    the range the allocator treats as a full-strength pair view.
+    """
+    if type(twin_a) is not CurrencyTwin or type(twin_b) is not CurrencyTwin:
+        raise ValueError("Twin pair signal requires two currency twins")
+    if type(microstructure) is not Decimal or not microstructure.is_finite():
+        raise ValueError("Twin pair microstructure must be a finite Decimal")
+    raw = currency_pair_score(
+        twin_a,
+        twin_b,
+        microstructure=microstructure,
+        regime_state=Decimal("0"),
+        event_state=Decimal("0"),
+        costs=Decimal("0"),
+    )
+    return max(Decimal("-1"), min(Decimal("1"), raw))
+
+
+def apply_twin_weight(pair_score: Decimal, weight: Decimal) -> Decimal:
+    """Scale a clamped pair score by the policy weight, never widening it.
+
+    ``weighted = clamp(pair_score * weight, -weight, +weight)``: with
+    ``pair_score`` in [-1, 1] and ``weight`` in [0, 1] the product is
+    already inside the clamp, so the weight can only shrink the signal
+    toward zero, never amplify it. The confidence floor still zeroes
+    ``pair_score`` first (see :func:`twin_pair_signal`).
+    """
+    if (
+        type(pair_score) is not Decimal
+        or not pair_score.is_finite()
+        or not Decimal("-1") <= pair_score <= Decimal("1")
+    ):
+        raise ValueError("Twin pair score must be a finite Decimal in [-1, 1]")
+    if (
+        type(weight) is not Decimal
+        or not weight.is_finite()
+        or not Decimal("0") <= weight <= Decimal("1")
+    ):
+        raise ValueError("Twin evidence weight must be a finite Decimal in [0, 1]")
+    return max(-weight, min(weight, pair_score * weight))
+
+
+def allocator_sources_with_twin(
+    inputs: AllocationInputs,
+    *,
+    now: datetime,
+    twin_a: CurrencyTwin | None = None,
+    twin_b: CurrencyTwin | None = None,
+    risk_policy: PaperRiskPolicy | None = None,
+    microstructure: Decimal = Decimal("0"),
+) -> dict[str, SourceBinding]:
+    """Like :func:`allocator_sources`, plus an optional currency-twin source.
+
+    With both twin legs absent the result is exactly
+    :func:`allocator_sources` (zero contribution, existing behaviour
+    untouched). With both legs present a ``currency_twin`` evidence
+    record is added: a :class:`TwinPairObservation` when no risk policy
+    is supplied, or a :class:`WeightedTwinPairObservation` (pair score
+    scaled by the policy's ``twin_evidence_weight``) when one is. The
+    pair must match the portfolio instrument (base + quote currencies),
+    exactly one leg raises, and a non-policy ``risk_policy`` fails
+    closed. The twin source is published, not consumed: no allocator
+    weighting reads it yet.
+    """
+    if risk_policy is not None and type(risk_policy) is not PaperRiskPolicy:
+        raise ValueError("Twin weighting requires a typed paper risk policy")
+    if (twin_a is None) != (twin_b is None):
+        raise ValueError("Currency twin requires both legs or neither")
+    sources = allocator_sources(inputs, now=now)
+    if twin_a is None:
+        return sources
+    if type(twin_a) is not CurrencyTwin or type(twin_b) is not CurrencyTwin:
+        raise ValueError("Currency twin legs must be typed currency twins")
+    instrument_id = twin_a.currency + twin_b.currency
+    if instrument_id != inputs.portfolio.instrument_id:
+        raise ValueError("Currency twin pair does not match the portfolio instrument")
+    signal = twin_pair_signal(twin_a, twin_b, microstructure=microstructure)
+    combined_confidence = min(twin_a.overall_confidence(), twin_b.overall_confidence())
+    if risk_policy is None:
+        observation: TwinPairObservation = TwinPairObservation(
+            as_of=now,
+            instrument_id=instrument_id,
+            base_currency=twin_a.currency,
+            quote_currency=twin_b.currency,
+            pair_score=signal,
+            combined_confidence=combined_confidence,
+        )
+    else:
+        weight = risk_policy.twin_evidence_weight
+        observation = WeightedTwinPairObservation(
+            as_of=now,
+            instrument_id=instrument_id,
+            base_currency=twin_a.currency,
+            quote_currency=twin_b.currency,
+            pair_score=signal,
+            combined_confidence=combined_confidence,
+            twin_evidence_weight=weight,
+            weighted_pair_score=apply_twin_weight(signal, weight),
+        )
+    encoded = json.dumps(
+        observation.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+    record = EvidenceRecord(
+        source_id=f"meta-allocator:currency_twin:{sha256(encoded.encode()).hexdigest()}",
+        as_of=now,
+        valid_until=now + timedelta(seconds=5),
+        trusted=True,
+        payload_json=encoded,
+    )
+
+    async def fetch(record=record):
+        return record
+
+    # WORLD_STATE_READ is the existing binding currency_strength_sources
+    # already uses for its currency-twins input; CURRENCY_TWIN_READ is
+    # not a registered tool, so no new tool is invented here.
+    sources["currency_twin"] = SourceBinding("WORLD_STATE_READ", "GENERAL", fetch)
     return sources

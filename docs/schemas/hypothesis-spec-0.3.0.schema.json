@@ -3,34 +3,19 @@
     "ResearchExpectedCosts": {
       "additionalProperties": false,
       "properties": {
-        "commission_status": {
-          "const": "UNAVAILABLE",
-          "default": "UNAVAILABLE",
-          "title": "Commission Status",
-          "type": "string"
-        },
-        "financing_status": {
-          "const": "UNAVAILABLE",
-          "default": "UNAVAILABLE",
-          "title": "Financing Status",
-          "type": "string"
-        },
-        "maximum_recorded_spread_bps": {
-          "anyOf": [
-            {
-              "maximum": 20000.0,
-              "minimum": 0.0,
-              "type": "number"
-            },
-            {
-              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
+        "status": {
+          "enum": [
+            "UNAVAILABLE",
+            "HISTORICAL_SPREAD_ONLY"
           ],
-          "title": "Maximum Recorded Spread Bps"
+          "title": "Status",
+          "type": "string"
+        },
+        "spread_observation_count": {
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Spread Observation Count",
+          "type": "integer"
         },
         "minimum_recorded_spread_bps": {
           "anyOf": [
@@ -40,7 +25,6 @@
               "type": "number"
             },
             {
-              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
               "type": "string"
             },
             {
@@ -49,30 +33,44 @@
           ],
           "title": "Minimum Recorded Spread Bps"
         },
+        "maximum_recorded_spread_bps": {
+          "anyOf": [
+            {
+              "maximum": 20000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Maximum Recorded Spread Bps"
+        },
+        "commission_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Commission Status",
+          "type": "string"
+        },
         "slippage_status": {
           "const": "UNAVAILABLE",
           "default": "UNAVAILABLE",
           "title": "Slippage Status",
           "type": "string"
         },
+        "financing_status": {
+          "const": "UNAVAILABLE",
+          "default": "UNAVAILABLE",
+          "title": "Financing Status",
+          "type": "string"
+        },
         "source": {
           "const": "ARCHIVED_PAPER_QUOTES_ONLY",
           "default": "ARCHIVED_PAPER_QUOTES_ONLY",
           "title": "Source",
-          "type": "string"
-        },
-        "spread_observation_count": {
-          "maximum": 64,
-          "minimum": 0,
-          "title": "Spread Observation Count",
-          "type": "integer"
-        },
-        "status": {
-          "enum": [
-            "UNAVAILABLE",
-            "HISTORICAL_SPREAD_ONLY"
-          ],
-          "title": "Status",
           "type": "string"
         }
       },
@@ -88,52 +86,14 @@
     "ResearchHypothesis": {
       "additionalProperties": false,
       "properties": {
-        "alpha_acceptance": {
-          "const": "UNASSESSED",
-          "default": "UNASSESSED",
-          "title": "Alpha Acceptance",
-          "type": "string"
-        },
-        "dataset_fingerprint": {
-          "pattern": "^[a-f0-9]{64}$",
-          "title": "Dataset Fingerprint",
-          "type": "string"
-        },
         "dataset_ref": {
           "pattern": "^research-data:[a-f0-9]{64}$",
           "title": "Dataset Ref",
           "type": "string"
         },
-        "description": {
-          "maxLength": 1024,
-          "minLength": 1,
-          "title": "Description",
-          "type": "string"
-        },
-        "development_end": {
-          "format": "date-time",
-          "title": "Development End",
-          "type": "string"
-        },
-        "eligible_pairs": {
-          "maximum": 4094,
-          "minimum": 8,
-          "title": "Eligible Pairs",
-          "type": "integer"
-        },
-        "execution_timing": {
-          "const": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
-          "default": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
-          "title": "Execution Timing",
-          "type": "string"
-        },
-        "expected_costs": {
-          "$ref": "#/$defs/ResearchExpectedCosts"
-        },
-        "falsification_test": {
-          "const": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
-          "default": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
-          "title": "Falsification Test",
+        "dataset_fingerprint": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Dataset Fingerprint",
           "type": "string"
         },
         "instrument_id": {
@@ -146,6 +106,37 @@
           "title": "Instrument Id",
           "type": "string"
         },
+        "development_end": {
+          "format": "date-time",
+          "title": "Development End",
+          "type": "string"
+        },
+        "rule": {
+          "enum": [
+            "FOLLOW_PREVIOUS_CLOSE_DIRECTION",
+            "FADE_PREVIOUS_CLOSE_DIRECTION"
+          ],
+          "title": "Rule",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "eligible_pairs": {
+          "maximum": 4094,
+          "minimum": 8,
+          "title": "Eligible Pairs",
+          "type": "integer"
+        },
+        "same_direction_pairs": {
+          "maximum": 4094,
+          "minimum": 0,
+          "title": "Same Direction Pairs",
+          "type": "integer"
+        },
         "observed_direction_persistence": {
           "anyOf": [
             {
@@ -154,11 +145,22 @@
               "type": "number"
             },
             {
-              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
               "type": "string"
             }
           ],
           "title": "Observed Direction Persistence"
+        },
+        "execution_timing": {
+          "const": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "default": "NEXT_BAR_OPEN_AFTER_PREVIOUS_CLOSE_SIGNAL",
+          "title": "Execution Timing",
+          "type": "string"
+        },
+        "signal_history_bars": {
+          "const": 2,
+          "default": 2,
+          "title": "Signal History Bars",
+          "type": "integer"
         },
         "required_data": {
           "default": [
@@ -173,30 +175,25 @@
           "title": "Required Data",
           "type": "array"
         },
-        "rule": {
-          "enum": [
-            "FOLLOW_PREVIOUS_CLOSE_DIRECTION",
-            "FADE_PREVIOUS_CLOSE_DIRECTION"
-          ],
-          "title": "Rule",
+        "falsification_test": {
+          "const": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+          "default": "REJECT_IF_NET_OUT_OF_SAMPLE_PNL_NONPOSITIVE_OR_COST_STRESS_FAILS_OR_PATTERN_NOT_REPLICATED",
+          "title": "Falsification Test",
           "type": "string"
         },
-        "same_direction_pairs": {
-          "maximum": 4094,
-          "minimum": 0,
-          "title": "Same Direction Pairs",
-          "type": "integer"
-        },
-        "signal_history_bars": {
-          "const": 2,
-          "default": 2,
-          "title": "Signal History Bars",
-          "type": "integer"
+        "expected_costs": {
+          "$ref": "#/$defs/ResearchExpectedCosts"
         },
         "validation_status": {
           "const": "NOT_RUN",
           "default": "NOT_RUN",
           "title": "Validation Status",
+          "type": "string"
+        },
+        "alpha_acceptance": {
+          "const": "UNASSESSED",
+          "default": "UNASSESSED",
+          "title": "Alpha Acceptance",
           "type": "string"
         }
       },
@@ -218,6 +215,12 @@
   },
   "additionalProperties": false,
   "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
     "agent_id": {
       "const": "A08",
       "default": "A08",
@@ -230,80 +233,11 @@
       "title": "Agent Version",
       "type": "string"
     },
-    "already_proposed_count": {
-      "maximum": 64,
-      "minimum": 0,
-      "title": "Already Proposed Count",
-      "type": "integer"
-    },
-    "confidence": {
-      "anyOf": [
-        {
-          "maximum": 0.0,
-          "minimum": 0.0,
-          "type": "number"
-        },
-        {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-          "type": "string"
-        }
-      ],
-      "default": "0",
-      "title": "Confidence"
-    },
-    "contradictions": {
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 64,
-      "title": "Contradictions",
-      "type": "array"
-    },
-    "created_at": {
-      "format": "date-time",
-      "title": "Created At",
+    "task_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Task Id",
       "type": "string"
-    },
-    "deferred_hypothesis_count": {
-      "maximum": 64,
-      "minimum": 0,
-      "title": "Deferred Hypothesis Count",
-      "type": "integer"
-    },
-    "eligible_anomaly_count": {
-      "maximum": 64,
-      "minimum": 0,
-      "title": "Eligible Anomaly Count",
-      "type": "integer"
-    },
-    "evidence_refs": {
-      "items": {
-        "type": "string"
-      },
-      "maxItems": 128,
-      "minItems": 1,
-      "title": "Evidence Refs",
-      "type": "array"
-    },
-    "execution_authorized": {
-      "const": false,
-      "default": false,
-      "title": "Execution Authorized",
-      "type": "boolean"
-    },
-    "hard_gate_owner": {
-      "const": "ResearchPipeline",
-      "default": "ResearchPipeline",
-      "title": "Hard Gate Owner",
-      "type": "string"
-    },
-    "hypotheses": {
-      "items": {
-        "$ref": "#/$defs/ResearchHypothesis"
-      },
-      "maxItems": 4,
-      "title": "Hypotheses",
-      "type": "array"
     },
     "input_refs": {
       "items": {
@@ -314,28 +248,83 @@
       "title": "Input Refs",
       "type": "array"
     },
-    "isolation_verified": {
-      "const": false,
-      "default": false,
-      "title": "Isolation Verified",
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Confidence"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "type": "number"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "default": "1",
+      "title": "Uncertainty"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    },
+    "contradictions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Contradictions",
+      "type": "array"
+    },
+    "trace_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "requires_escalation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Escalation",
       "type": "boolean"
-    },
-    "model_route": {
-      "const": "DETERMINISTIC_ONLY",
-      "default": "DETERMINISTIC_ONLY",
-      "title": "Model Route",
-      "type": "string"
-    },
-    "novelty_scope": {
-      "const": "COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE",
-      "default": "COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE",
-      "title": "Novelty Scope",
-      "type": "string"
     },
     "output_type": {
       "const": "HypothesisSpecV3",
       "default": "HypothesisSpecV3",
       "title": "Output Type",
+      "type": "string"
+    },
+    "model_route": {
+      "const": "DETERMINISTIC_ONLY",
+      "default": "DETERMINISTIC_ONLY",
+      "title": "Model Route",
       "type": "string"
     },
     "policy_version": {
@@ -344,34 +333,10 @@
       "title": "Policy Version",
       "type": "string"
     },
-    "promotion_authorized": {
-      "const": false,
-      "default": false,
-      "title": "Promotion Authorized",
-      "type": "boolean"
-    },
-    "requires_escalation": {
-      "const": true,
-      "default": true,
-      "title": "Requires Escalation",
-      "type": "boolean"
-    },
-    "reserved_hypothesis_count": {
-      "maximum": 64,
-      "minimum": 0,
-      "title": "Reserved Hypothesis Count",
-      "type": "integer"
-    },
-    "schema_version": {
-      "const": "2.0",
-      "default": "2.0",
-      "title": "Schema Version",
-      "type": "string"
-    },
-    "source_consistency": {
-      "const": "PER_STORE_CHECKED_NOT_ATOMIC_ACROSS_STORES",
-      "default": "PER_STORE_CHECKED_NOT_ATOMIC_ACROSS_STORES",
-      "title": "Source Consistency",
+    "hard_gate_owner": {
+      "const": "ResearchPipeline",
+      "default": "ResearchPipeline",
+      "title": "Hard Gate Owner",
       "type": "string"
     },
     "status": {
@@ -383,17 +348,13 @@
       "title": "Status",
       "type": "string"
     },
-    "task_id": {
-      "maxLength": 128,
-      "minLength": 1,
-      "title": "Task Id",
-      "type": "string"
-    },
-    "trace_id": {
-      "maxLength": 128,
-      "minLength": 1,
-      "title": "Trace Id",
-      "type": "string"
+    "hypotheses": {
+      "items": {
+        "$ref": "#/$defs/ResearchHypothesis"
+      },
+      "maxItems": 4,
+      "title": "Hypotheses",
+      "type": "array"
     },
     "training_dataset_count": {
       "maximum": 64,
@@ -401,25 +362,59 @@
       "title": "Training Dataset Count",
       "type": "integer"
     },
-    "uncertainty": {
-      "anyOf": [
-        {
-          "maximum": 1.0,
-          "minimum": 1.0,
-          "type": "number"
-        },
-        {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-          "type": "string"
-        }
-      ],
-      "default": "1",
-      "title": "Uncertainty"
+    "eligible_anomaly_count": {
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Eligible Anomaly Count",
+      "type": "integer"
     },
-    "valid_until": {
-      "format": "date-time",
-      "title": "Valid Until",
+    "already_proposed_count": {
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Already Proposed Count",
+      "type": "integer"
+    },
+    "deferred_hypothesis_count": {
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Deferred Hypothesis Count",
+      "type": "integer"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "promotion_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Promotion Authorized",
+      "type": "boolean"
+    },
+    "isolation_verified": {
+      "const": false,
+      "default": false,
+      "title": "Isolation Verified",
+      "type": "boolean"
+    },
+    "novelty_scope": {
+      "const": "COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE",
+      "default": "COMPLETED_AND_ACTIVE_RESERVATIONS_AT_CAPTURE",
+      "title": "Novelty Scope",
       "type": "string"
+    },
+    "source_consistency": {
+      "const": "PER_STORE_CHECKED_NOT_ATOMIC_ACROSS_STORES",
+      "default": "PER_STORE_CHECKED_NOT_ATOMIC_ACROSS_STORES",
+      "title": "Source Consistency",
+      "type": "string"
+    },
+    "reserved_hypothesis_count": {
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Reserved Hypothesis Count",
+      "type": "integer"
     }
   },
   "required": [

@@ -287,3 +287,13 @@ def test_cache_key_is_stable_and_component_sensitive():
     assert key != cache_key("other prompt", "evidence-1", "tools-v1")
     assert key != cache_key("system prompt", "evidence-2", "tools-v1")
     assert key != cache_key("system prompt", "evidence-1", "tools-v2")
+
+
+# --- TaskRequest.is_safety ------------------------------------------------------
+
+
+def test_task_request_is_safety_only_for_incidents():
+    assert task("incident").is_safety is True
+    assert task("critical").is_safety is False
+    assert task("material").is_safety is False
+    assert task("low").is_safety is False

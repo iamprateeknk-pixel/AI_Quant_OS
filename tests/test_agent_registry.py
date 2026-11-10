@@ -303,3 +303,32 @@ def test_published_agent_permission_matrix_matches_runtime_policy():
     assert matrix["allowed_scopes"] == ["PAPER", "SANDBOX"]
     assert matrix["live_scope_granted"] is False
     assert matrix["deny_by_default"] is True
+
+
+# --- AgentManifest.bounded_role -------------------------------------------------
+
+
+def test_manifest_bounded_role_rejects_tools_beyond_the_ceiling():
+    registry = load_agent_catalog()
+    original = registry.get("A02", "0.1.0")
+    with pytest.raises(ValueError, match="role ceiling"):
+        AgentManifest.model_validate(
+            {
+                **original.model_dump(),
+                "allowed_tools": original.allowed_tools + ("BROKER_SUBMIT",),
+            }
+        )
+    with pytest.raises(ValueError, match="role ceiling"):
+        AgentManifest.model_validate(
+            {
+                **original.model_dump(),
+                "allowed_tools": original.allowed_tools + (original.allowed_tools[0],),
+            }
+        )
+
+
+def test_manifest_bounded_role_accepts_tools_within_the_ceiling():
+    registry = load_agent_catalog()
+    original = registry.get("A02", "0.1.0")
+    assert AgentManifest.model_validate(original.model_dump()) == original
+    assert set(original.allowed_tools).issubset(ROLE_CEILINGS["A02"])

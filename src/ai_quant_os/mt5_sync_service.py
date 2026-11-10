@@ -32,14 +32,12 @@ from ai_quant_os.mt5_position_comparison import DeclaredOpeningPositions, compar
 from ai_quant_os.mt5_money_comparison import DeclaredOpeningMoney, compare_money
 from ai_quant_os.mt5_portfolio_observation import PortfolioPublication, build_portfolio_publication
 from ai_quant_os.mt5_publication import (
-    PUBLICATION_BYTES,
     read_publication,
     write_publication,
     unique_fields as _unique,
 )
 
 MAX_CONFIG_BYTES = 32768
-MAX_HEALTH_BYTES = PUBLICATION_BYTES
 PASSWORD_ENV = "AI_QUANT_MT5_PASSWORD"
 CHECKPOINT_MARKER = "checkpoint-pending.json"
 

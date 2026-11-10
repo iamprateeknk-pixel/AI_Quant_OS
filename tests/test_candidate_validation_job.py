@@ -179,7 +179,7 @@ def test_status_cli_uses_original_archive_and_refuses_wrong_pin(package, scripte
         "-m",
         "ai_quant_os.candidate_validation_job_cli",
         "--validation-archive",
-        str(tmp_path / "paper.validation-packages.sqlite3"),
+        str(tmp_path / "service.validation-packages.sqlite3"),
         "--package-ref",
         package.package_ref,
         "--root",

@@ -889,10 +889,3 @@ HYPOTHESES: tuple[Hypothesis, ...] = (
         _m06_signal,
     ),
 )
-
-_BY_ID = {hypothesis.id: hypothesis for hypothesis in HYPOTHESES}
-
-
-def get_hypothesis(hypothesis_id: str) -> Hypothesis:
-    """Return the registered hypothesis with this id; raises KeyError if absent."""
-    return _BY_ID[hypothesis_id]

@@ -51,6 +51,14 @@ def test_worker_dispatches_reconciliation_without_dispatching_submission(monkeyp
         )
 
     monkeypatch.setattr(module.os, "name", "nt")
+    # Patching os.name alone is not a complete Windows simulation on Linux:
+    # pathlib dispatches fresh Path(...) constructions on os.name, so the
+    # worker would build WindowsPath objects and fail before dispatch. Bind
+    # the worker to the POSIX flavour so paths stay constructible while the
+    # os.name gate still takes the Windows branch.
+    from pathlib import PosixPath
+
+    monkeypatch.setattr(module, "Path", PosixPath)
     monkeypatch.setattr(module.Path, "is_file", lambda self: True)
     monkeypatch.setattr(module, "reconcile_demo_order", reconcile)
     monkeypatch.setattr(module, "submit_demo_order", lambda *a, **k: pytest.fail("Must not submit"))
