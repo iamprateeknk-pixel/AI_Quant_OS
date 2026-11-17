@@ -141,16 +141,35 @@ The following work remains open:
 
 - Convert partial shadow missions into accepted first production-grade
   versions, with mission-specific evidence and datasets for all 18 agents.
-- Complete general agent model routing and independently evaluated quality,
-  confidence calibration, cost and reliability metrics. Existing Jev/provider
-  routes and operational run counts are not full agent model routing or
-  prediction calibration.
+- Independently evaluate routed model quality, confidence calibration, cost,
+  and reliability across all missions. The durable graph runtime now routes
+  explicitly allow-listed `(agent_id, agent_version)` executions through the
+  existing governor and records integrity-bound provider/fallback/token
+  metadata in versioned traces. Providers and routing remain disabled unless
+  explicitly injected and configured. This wiring does not establish mission
+  quality, confidence calibration, or cost/reliability evidence.
 - Independently separate TRAINING and HOLDOUT access by process identity. The
   data catalog stores the raw classes in separate SQLite files, but the local
   application identity can still open both. A08's reader avoids selecting raw
   HOLDOUT bytes; this is not an OS access-control boundary.
 - Obtain independent review and acceptance evidence for the runtime, datasets,
   each mission, and any model-quality claim.
+
+## Governed model-routing integration (2026-11-17)
+
+ADR 0151 connects allow-listed graph executions to `AgentModelRouter`. The
+provider receives the typed invocation only through an explicit contextual
+adapter. Provider failures and invalid token accounting fall back to the
+deterministic implementation. Route receipts are bound into graph records and
+transition audit events; GraphTrace 1.1 exposes bounded routing metadata while
+legacy unrouted records retain schema 1.0. Mission Control validates and
+renders the route without exposing prompts or context. Regression tests cover
+provider success, restart/readback, fallback, malformed usage, schema binding,
+legacy compatibility, and client rendering. Local focused verification passed
+77 backend/architecture tests, 205 web tests, TypeScript, ESLint, Ruff, and the
+production build. Hosted CI for commit `18ffcc7` is pending. No provider is
+enabled by default; independent mission quality/calibration evidence remains
+open.
 
 ## Earlier implementation notes (historical)
 

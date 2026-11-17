@@ -1,5 +1,24 @@
 # Build status against the execution pack
 
+## Update (2026-11-17)
+
+- Commit `18ffcc7` wires governed model routing into durable graph executions,
+  adds GraphTrace 1.1 route metadata and the Mission Control projection, and
+  fixes provider token usage validation. Local verification passed 77 relevant
+  backend/architecture tests, 205 web tests, TypeScript, ESLint, Ruff, and the
+  production build. GitHub run `44071577348` is queued for this commit; it has
+  not completed yet.
+- P07 real-machine acceptance remains open. The current Windows session is not
+  elevated, and the supplied execution-pack directory contains no SQLite
+  source archives. Do not install or migrate using generated test databases.
+  LocalService start/ACL acceptance and migration of the four real archives
+  still require the machine-wide Python runtime and the actual source paths.
+- P07 mission-specific datasets, independent model-quality/calibration and
+  cost/reliability evaluation, and independent acceptance remain open. P01
+  reviewer/staging ownership, P04 native MT5/demo acceptance, P05 independent
+  acceptance, P12 manual accessibility/sign-off, and P13 legal/broker/risk/live
+  release gates are also unresolved. The P13 NO-GO disposition remains active.
+
 ## Current repository-wide verification (2026-10-29)
 
 - Latest completed hosted PR run for code commit `4ee3695` is **40858744164**; all **17 jobs passed**. The full Python suite reports **3,631 passed, 71 skipped in 739.67 seconds**; the locked Windows suite reports **3,638 passed, 64 skipped in 3,134.58 seconds**; Linux reports **3,633 passed, 69 skipped in 1,035.25 seconds**. The web suite, ESLint, production build, Ruff, formatting, and all other workflow jobs passed.
