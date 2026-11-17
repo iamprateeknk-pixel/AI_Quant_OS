@@ -6,8 +6,12 @@
   adds GraphTrace 1.1 route metadata and the Mission Control projection, and
   fixes provider token usage validation. Local verification passed 77 relevant
   backend/architecture tests, 205 web tests, TypeScript, ESLint, Ruff, and the
-  production build. GitHub run `44071577348` is queued for this commit; it has
-  not completed yet.
+  production build. The follow-up documentation commit `4992a9a` records the
+  remaining P07 and release gates. Hosted PR run `44071816533` passed all 17
+  jobs: the general Python suite passed 3,639 tests (71 skipped), the locked
+  Windows suite passed 3,646 (64 skipped), and the locked Linux suite passed
+  3,641 (69 skipped); web, security, data-integration, and platform-specific
+  jobs also passed.
 - P07 real-machine acceptance remains open. The current Windows session is not
   elevated, and the supplied execution-pack directory contains no SQLite
   source archives. Do not install or migrate using generated test databases.
