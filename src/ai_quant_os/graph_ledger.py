@@ -10,10 +10,11 @@ from pathlib import Path
 from threading import Lock
 from typing import Callable, Literal, get_args
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 from ai_quant_os.audit_chain import AuditChain
 from ai_quant_os.context_checkpoints import ContextCheckpoint
+from ai_quant_os.agent_routing import AgentExecutionRoute
 
 RunStatus = Literal[
     "CREATED",
@@ -70,6 +71,14 @@ class GraphRecord(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     checkpoint: ContextCheckpoint
     receipt: GraphReceipt
+    routing: AgentExecutionRoute | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_record_shape(self, handler):
+        value = handler(self)
+        if self.routing is None:
+            value.pop("routing", None)
+        return value
 
     @model_validator(mode="after")
     def receipt_binding(self) -> "GraphRecord":
@@ -96,6 +105,12 @@ class GraphRecord(BaseModel):
             context.valid_until,
         ):
             raise ValueError("Graph receipt provenance mismatch")
+        if self.routing is not None and (
+            self.routing.agent_id,
+            self.routing.agent_version,
+            self.routing.task_id,
+        ) != (receipt.agent_id, receipt.agent_version, receipt.task_id):
+            raise ValueError("Graph routing provenance mismatch")
         return self
 
 
@@ -172,20 +187,36 @@ class GraphLedger:
         legacy = GraphLedger._event(record, digest)
         if event == legacy:
             return True
-        if set(event) != {*legacy, "observed_at"} or event["observed_at"] is None:
+        if "observed_at" not in event or event["observed_at"] is None:
             return False
         observation(event["observed_at"])
         return {key: value for key, value in event.items() if key != "observed_at"} == legacy
 
     @staticmethod
-    def _event(record: GraphRecord, digest: str) -> dict[str, str]:
-        return {
+    def _event(record: GraphRecord, digest: str) -> dict[str, object]:
+        event: dict[str, object] = {
             "action": "AGENT_GRAPH_TRANSITION",
             "run_id": record.receipt.run_id,
             "status": record.receipt.status,
             "record_hash": digest,
             "context_ref": record.receipt.context_ref,
         }
+        if record.routing is not None:
+            event["routing"] = record.routing.model_dump(mode="json")
+        return event
+
+    @staticmethod
+    def _valid_event_keys(event: object) -> bool:
+        if not isinstance(event, dict):
+            return False
+        base = {"action", "run_id", "status", "record_hash", "context_ref"}
+        keys = set(event)
+        return keys in (
+            base,
+            base | {"observed_at"},
+            base | {"routing"},
+            base | {"routing", "observed_at"},
+        )
 
     def _write(self, record: GraphRecord) -> None:
         record = GraphRecord.model_validate_json(record.model_dump_json())
@@ -262,19 +293,7 @@ class GraphLedger:
                 except (TypeError, ValueError, KeyError) as error:
                     raise ValueError("Agent quality journal is malformed") from error
                 if (
-                    not isinstance(event, dict)
-                    or set(event)
-                    not in (
-                        {"action", "run_id", "status", "record_hash", "context_ref"},
-                        {
-                            "action",
-                            "run_id",
-                            "status",
-                            "record_hash",
-                            "context_ref",
-                            "observed_at",
-                        },
-                    )
+                    not self._valid_event_keys(event)
                     or event["action"] != "AGENT_GRAPH_TRANSITION"
                     or not isinstance(run_id, str)
                     or status not in get_args(RunStatus)
@@ -314,12 +333,7 @@ class GraphLedger:
             for key, raw in self._db.execute("SELECT event_key,event_json FROM audit_events"):
                 event = json.loads(raw)
                 if (
-                    not isinstance(event, dict)
-                    or set(event)
-                    not in (
-                        {"action", "run_id", "status", "record_hash", "context_ref"},
-                        {"action", "run_id", "status", "record_hash", "context_ref", "observed_at"},
-                    )
+                    not self._valid_event_keys(event)
                     or event["action"] != "AGENT_GRAPH_TRANSITION"
                     or not isinstance(event["run_id"], str)
                     or key != f"graph:{event['run_id']}:{event['status']}"
@@ -373,12 +387,7 @@ class GraphLedger:
             for key, raw in self._db.execute("SELECT event_key,event_json FROM audit_events"):
                 event = json.loads(raw)
                 if (
-                    not isinstance(event, dict)
-                    or set(event)
-                    not in (
-                        {"action", "run_id", "status", "record_hash", "context_ref"},
-                        {"action", "run_id", "status", "record_hash", "context_ref", "observed_at"},
-                    )
+                    not self._valid_event_keys(event)
                     or event["action"] != "AGENT_GRAPH_TRANSITION"
                     or event["status"] not in get_args(RunStatus)
                     or not isinstance(event["run_id"], str)
@@ -456,6 +465,11 @@ class GraphLedger:
                             else None,
                         }
                     ),
+                    routing=(
+                        AgentExecutionRoute.model_validate(event["routing"])
+                        if "routing" in event
+                        else None
+                    ),
                 )
                 digest = sha256(prior.model_dump_json().encode()).hexdigest()
                 if not self._matches_event(event, prior, digest):
@@ -473,6 +487,7 @@ class GraphLedger:
             state, elapsed = timing(events)
             output = json.loads(receipt.output_json) if receipt.output_json is not None else {}
             return GraphTrace(
+                schema_version="1.1" if record.routing is not None else "1.0",
                 scope=record.checkpoint.context.scope,
                 trace_id=trace_identity(run_id, receipt.context_ref, receipt.manifest_ref),
                 run_id=run_id,
@@ -492,6 +507,7 @@ class GraphLedger:
                 events=events,
                 timing_state=state,
                 elapsed_seconds=elapsed,
+                routing=record.routing,
             )
 
     def create(self, run_id: str, checkpoint: ContextCheckpoint) -> GraphRecord:
@@ -526,7 +542,13 @@ class GraphLedger:
         return record
 
     def transition(
-        self, run_id: str, expected: RunStatus, status: RunStatus, output_json: str | None = None
+        self,
+        run_id: str,
+        expected: RunStatus,
+        status: RunStatus,
+        output_json: str | None = None,
+        *,
+        routing: AgentExecutionRoute | None = None,
     ) -> GraphRecord:
         with self._lock, self._db:
             self._db.execute("BEGIN IMMEDIATE")
@@ -544,6 +566,10 @@ class GraphLedger:
             receipt = GraphReceipt.model_validate(
                 {**prior.receipt.model_dump(), "status": status, "output_json": output_json}
             )
-            record = GraphRecord(checkpoint=prior.checkpoint, receipt=receipt)
+            record = GraphRecord(
+                checkpoint=prior.checkpoint,
+                receipt=receipt,
+                routing=routing if routing is not None else prior.routing,
+            )
             self._write(record)
             return record

@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
 from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
+from ai_quant_os.agent_model_router import AgentModelRouter
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
 from ai_quant_os.graph_runtime import GraphRuntime
 from ai_quant_os.incident_agent import incident_implementation
@@ -421,6 +422,8 @@ def create_app(
     holdout_rpc_client=None,
     risk_policy: PaperRiskPolicy | None = None,
     mcp_agent_tools: Mapping[str, Collection[str]] | None = None,
+    agent_model_router: AgentModelRouter | None = None,
+    model_routing: Mapping[tuple[str, str], tuple[int, int]] | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -856,6 +859,8 @@ def create_app(
                     call_budget=call_budget,
                 ),
                 clock=current_time,
+                model_router=agent_model_router,
+                model_routing=model_routing,
             ) as runtime,
             AsyncExitStack() as services,
         ):

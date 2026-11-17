@@ -3,13 +3,27 @@ type Status = typeof states[number];
 export type GraphRun = {run_id:string; agent_id:string; agent_version:string; task_id:string; scope:"PAPER"|"SANDBOX"; status:Status; context_ref:string; manifest_ref:string; trace_id:string; context_observed_at:string; context_valid_until:string};
 export type GraphRunPage = {schema_version:"1.0"; mode:"PAPER"; archival_only:true; head_hash:string; total:number; after_run_id:string; remaining:number; next_after:string|null; records:GraphRun[]};
 type TraceEvent = {sequence:number; status:Status; record_hash:string; event_hash:string; observed_at:string|null};
-export type GraphTrace = GraphRun & {schema_version:"1.0"; mode:"PAPER"; archival_only:true; requires_escalation:true; input_refs:string[]; output_trace_id:string|null; output_sha256:string|null; events:TraceEvent[]; timing_state:"AVAILABLE"|"PARTIAL"|"UNAVAILABLE"|"CLOCK_REGRESSION"; elapsed_seconds:string|null};
+export type GraphRoute = {schema_version:"1.0";agent_id:string;agent_version:string;task_id:string;squad:string;criticality:"low"|"material"|"critical"|"incident";kind:"llm"|"deterministic";governor_decision:"ADMIT"|"DOWNGRADE"|"DEFER"|"DENY";routed_tier:"DETERMINISTIC"|"ROUTINE"|"DEEP"|"FRONTIER";execution_path:"DETERMINISTIC"|"PROVIDER";provider_id:string|null;attempted_provider_id:string|null;fallback_reasons:string[];input_tokens:number|null;output_tokens:number|null};
+export type GraphTrace = GraphRun & {schema_version:"1.0"|"1.1"; mode:"PAPER"; archival_only:true; requires_escalation:true; input_refs:string[]; output_trace_id:string|null; output_sha256:string|null; events:TraceEvent[]; timing_state:"AVAILABLE"|"PARTIAL"|"UNAVAILABLE"|"CLOCK_REGRESSION"; elapsed_seconds:string|null; routing?:GraphRoute};
 
 function record(value:unknown): value is Record<string,unknown> {return typeof value === "object" && value !== null && !Array.isArray(value);}
 function text(value:unknown,maximum=128): value is string {return typeof value === "string" && value.length > 0 && value.length <= maximum;}
 function hash(value:unknown): value is string {return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);}
 function status(value:unknown): value is Status {return typeof value === "string" && states.includes(value as Status);}
 function count(value:unknown): value is number {return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 && value <= 10000;}
+function route(value:unknown,base:GraphRun):GraphRoute|null {
+  const keys=["schema_version","agent_id","agent_version","task_id","squad","criticality","kind","governor_decision","routed_tier","execution_path","provider_id","attempted_provider_id","fallback_reasons","input_tokens","output_tokens"];
+  if(!record(value)||Object.keys(value).length!==keys.length||keys.some(key=>!(key in value))||value.schema_version!=="1.0"||value.agent_id!==base.agent_id||value.agent_version!==base.agent_version||value.task_id!==base.task_id||!text(value.squad,64)||!(["low","material","critical","incident"] as unknown[]).includes(value.criticality)||!(["llm","deterministic"] as unknown[]).includes(value.kind)||!(["ADMIT","DOWNGRADE","DEFER","DENY"] as unknown[]).includes(value.governor_decision)||!(["DETERMINISTIC","ROUTINE","DEEP","FRONTIER"] as unknown[]).includes(value.routed_tier)||!(["DETERMINISTIC","PROVIDER"] as unknown[]).includes(value.execution_path)) return null;
+  const provider=value.provider_id,attempted=value.attempted_provider_id;
+  if((provider!==null&&!text(provider,128))||(attempted!==null&&!text(attempted,128))||!Array.isArray(value.fallback_reasons)||value.fallback_reasons.length>4||!value.fallback_reasons.every(reason=>["BUDGET_DEFER","BUDGET_DENY","TOKEN_STORM","PROVIDER_UNAVAILABLE","PROVIDER_FAILED"].includes(reason as string))) return null;
+  const input=value.input_tokens,output=value.output_tokens;
+  const validTokens=(tokens:unknown)=>typeof tokens==="number"&&Number.isSafeInteger(tokens)&&tokens>=0&&tokens<=10000000;
+  if((input!==null&&!validTokens(input))||(output!==null&&!validTokens(output))||((input===null)!==(output===null))) return null;
+  if(value.execution_path==="PROVIDER" ? value.kind!=="llm"||value.routed_tier==="DETERMINISTIC"||provider===null||attempted!==provider||value.fallback_reasons.length!==0 : provider!==null||input!==null) return null;
+  if(attempted===null&&value.fallback_reasons.length>0&&![["BUDGET_DEFER"],["BUDGET_DENY"],["TOKEN_STORM"],["PROVIDER_UNAVAILABLE"]].some(row=>JSON.stringify(row)===JSON.stringify(value.fallback_reasons))) return null;
+  if(attempted!==null&&value.execution_path==="DETERMINISTIC"&&JSON.stringify(value.fallback_reasons)!==JSON.stringify(["PROVIDER_FAILED"])) return null;
+  return value as GraphRoute;
+}
 export function validRunId(value:unknown): value is string {return typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);}
 
 function timeMicros(value:unknown): bigint|null {
@@ -52,7 +66,9 @@ export function parseGraphRunPage(value:unknown,expectedAfter?:string,expectedHe
 
 export function parseGraphTrace(value:unknown,expectedRunId?:string): GraphTrace|null {
   const base = identity(value);
-  if (!base || !record(value) || (expectedRunId !== undefined && base.run_id !== expectedRunId) || value.schema_version !== "1.0" || value.mode !== "PAPER" || value.archival_only !== true || value.requires_escalation !== true || !Array.isArray(value.input_refs) || value.input_refs.length > 128 || !value.input_refs.every(row=>text(row,2048)) || !Array.isArray(value.events) || value.events.length < 1 || value.events.length > 3) return null;
+  if (!base || !record(value) || (expectedRunId !== undefined && base.run_id !== expectedRunId) || (value.schema_version !== "1.0" && value.schema_version !== "1.1") || (value.schema_version === "1.0" ? value.routing !== undefined : value.routing === undefined) || value.mode !== "PAPER" || value.archival_only !== true || value.requires_escalation !== true || !Array.isArray(value.input_refs) || value.input_refs.length > 128 || !value.input_refs.every(row=>text(row,2048)) || !Array.isArray(value.events) || value.events.length < 1 || value.events.length > 3) return null;
+  const routing=value.routing===undefined?undefined:route(value.routing,base);
+  if(value.schema_version==="1.1"&&!routing)return null;
   if ((value.output_trace_id !== null && !text(value.output_trace_id)) || (value.output_sha256 !== null && !hash(value.output_sha256)) || ((base.status === "COMPLETED") !== (value.output_sha256 !== null)) || (base.status !== "COMPLETED" && value.output_trace_id !== null)) return null;
   const events:TraceEvent[]=[];
   for (const raw of value.events) {
@@ -65,5 +81,5 @@ export function parseGraphTrace(value:unknown,expectedRunId?:string): GraphTrace
   if (value.timing_state !== state) return null;
   const expectedElapsed = state === "AVAILABLE" && events.length === 3 ? times[2]! - times[1]! : null;
   if (expectedElapsed === null ? value.elapsed_seconds !== null : elapsedMicros(value.elapsed_seconds) !== expectedElapsed) return null;
-  return {...base,schema_version:"1.0",mode:"PAPER",archival_only:true,requires_escalation:true,input_refs:value.input_refs as string[],output_trace_id:value.output_trace_id as string|null,output_sha256:value.output_sha256 as string|null,events,timing_state:state,elapsed_seconds:value.elapsed_seconds as string|null};
+  return {...base,schema_version:value.schema_version,mode:"PAPER",archival_only:true,requires_escalation:true,input_refs:value.input_refs as string[],output_trace_id:value.output_trace_id as string|null,output_sha256:value.output_sha256 as string|null,events,timing_state:state,elapsed_seconds:value.elapsed_seconds as string|null,...(routing?{routing}:{})};
 }
