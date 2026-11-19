@@ -65,8 +65,17 @@ uses the independent manifest pin. Actual Docker compatibility is unverified.
 Timeout, stream failure, nonzero load, unavailable inspection or mismatched ID
 after sending load reports uncertainty. The archive remains; there is no retry,
 image deletion, shared-store pruning or cleanup inference. Killing the owned CLI
-does not cancel daemon work. Parent death and ambiguous completion need independent
-exact-ID inspection; a durable import journal is not implemented.
+does not cancel daemon work. Before the first load, the importer atomically writes
+and flushes a journal beside the archive, keyed by archive, manifest and config
+pins plus the local containerd Linux/amd64 store. A process lock serializes imports
+for that journal. On restart, `LOAD_STARTED` or `UNCERTAIN` causes an exact pinned
+image inspection only; the importer never sends a second load for that journal.
+An exact match is recorded as `IMAGE_LOAD_INSPECTED`; absent, unavailable or
+mismatched evidence remains uncertain and requires independent operator
+investigation. A completed journal is also re-inspected before reporting success.
+Malformed, mismatched or unsafe journal files fail closed. The journal and lock
+stay beside the archive and should be retained with the archive as ownership
+records; deleting them manually defeats duplicate-load protection.
 
 The stdin writer runs alongside both output readers, closes input for EOF, refuses
 incomplete delivery and joins after owned process termination. Input is immutable

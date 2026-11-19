@@ -174,6 +174,24 @@ def test_inspection_failure_retains_archive_without_reload_or_cleanup(assembled,
     assert assembled[0].exists()
 
 
+def test_ambiguous_import_is_reconciled_from_durable_journal_without_reloading(assembled, daemon):
+    daemon[3]["load"] = TimeoutError("late")
+    with pytest.raises(RuntimeError, match="uncertain"):
+        load(assembled)
+
+    daemon[3].pop("load")
+    result = load(assembled)
+
+    assert result["state"] == "IMAGE_LOAD_INSPECTED"
+    assert result["loaded_image_id"] == assembled[2]["manifest_digest"]
+    image_operations = [call[1][1] for call in daemon[0] if call[1][0] == "image"]
+    assert image_operations == ["load", "inspect"]
+    journal = assembled[0].with_name(
+        f"{assembled[0].name}.{assembled[2]['archive_sha256'][:16]}.import-journal.json"
+    )
+    assert json.loads(journal.read_text())["state"] == "IMAGE_LOAD_INSPECTED"
+
+
 def test_absent_engine_prevents_load(assembled, daemon):
     daemon[3]["info"] = CommandResult(1, b"", b"unavailable")
     with pytest.raises(ValueError):
