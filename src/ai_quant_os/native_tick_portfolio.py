@@ -202,6 +202,20 @@ class _AsyncMaintenanceController:
         )
         if current is None:
             raise ValueError("Native maintenance check has no retained triggering tick")
+        for row in self.prepared:
+            instrument_id, bridge = row[2].instrument_id, row[4]
+            new_fills = bridge.fills[self.fill_counts[instrument_id] :]
+            for fill in new_fills:
+                self.cash_flows[instrument_id] += (
+                    fill.quantity * fill.price * (1 if fill.side == "SELL" else -1)
+                )
+                self.fees_usd += fill.fee
+            self.fill_counts[instrument_id] += len(new_fills)
+        needs_jpy_conversion = any(
+            row[2].quote_currency == "JPY"
+            and (row[4].position or self.cash_flows[row[2].instrument_id])
+            for row in self.prepared
+        )
         legs = []
         quotes = {}
         for row in self.prepared:
@@ -211,28 +225,27 @@ class _AsyncMaintenanceController:
                 row[3],
                 row[4],
             )
-            quote = self.engine.cache.quote_tick(instrument.id)
-            if quote is None:
-                raise ValueError("Native maintenance check is missing a current quote")
-            observed = bridge.phases.get(quote.ts_event)
-            if observed is None:
-                raise ValueError("Native maintenance check quote has no retained source tick")
-            quote_time = observed[1].observed_at
-            age = (current.observed_at - quote_time).total_seconds()
-            if age < 0:
-                raise ValueError("Native maintenance check contains a future quote")
-            if age > self.max_quote_age_seconds:
-                self.checked_result = None
-                return None
-            bid, ask = quote.bid_price.as_decimal(), quote.ask_price.as_decimal()
-            quotes[instrument_id] = (bid, ask)
-            new_fills = bridge.fills[self.fill_counts[instrument_id] :]
-            for fill in new_fills:
-                self.cash_flows[instrument_id] += (
-                    fill.quantity * fill.price * (1 if fill.side == "SELL" else -1)
-                )
-                self.fees_usd += fill.fee
-            self.fill_counts[instrument_id] += len(new_fills)
+            needs_quote = bool(bridge.position) or (
+                instrument_id == "USDJPY" and needs_jpy_conversion
+            )
+            bid = ask = Decimal(0)
+            if needs_quote:
+                quote = self.engine.cache.quote_tick(instrument.id)
+                if quote is None:
+                    self.checked_result = None
+                    return None
+                observed = bridge.phases.get(quote.ts_event)
+                if observed is None:
+                    raise ValueError("Native maintenance check quote has no retained source tick")
+                quote_time = observed[1].observed_at
+                age = (current.observed_at - quote_time).total_seconds()
+                if age < 0:
+                    raise ValueError("Native maintenance check contains a future quote")
+                if age > self.max_quote_age_seconds:
+                    self.checked_result = None
+                    return None
+                bid, ask = quote.bid_price.as_decimal(), quote.ask_price.as_decimal()
+                quotes[instrument_id] = (bid, ask)
             legs.append(
                 (
                     instrument_id,
@@ -264,7 +277,8 @@ class _AsyncMaintenanceController:
                     required_margin += maintenance_quote / usd_jpy_quote[0]
                 else:
                     required_margin += _quote_value_usd(maintenance_quote, currency, usd_jpy_quote)
-            equity += _quote_value_usd(marked_cash, currency, usd_jpy_quote)
+            if marked_cash:
+                equity += _quote_value_usd(marked_cash, currency, usd_jpy_quote)
         instruments = tuple(sorted(open_instruments))
         if required_margin <= 0 or equity >= required_margin:
             self.checked_result = None

@@ -210,6 +210,39 @@ def test_async_tick_liquidation_refuses_export_when_an_affected_leg_has_no_exit_
         )
 
 
+def test_async_maintenance_ignores_unpositioned_leg_before_first_quote(tmp_path):
+    m = module()
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    prices = ("1.1", "1.0", ".9", "1.0", "1.1", "1.2", "1.1", "1.0", "1.1", "1.2", "1.1")
+    legs = tuple(
+        m.TickPortfolioInput(
+            TickDataset(
+                Tick(
+                    instrument,
+                    "fixture",
+                    index,
+                    start + timedelta(seconds=2 * (index + first_index) + offset),
+                    Decimal(price),
+                    Decimal(price) + Decimal(".0001"),
+                    Decimal(1000000),
+                    Decimal(1000000),
+                )
+                for index, price in enumerate(prices[first_index:])
+            ),
+            StrategyGenome("tick-momentum@1.0.0", "TICK"),
+            10,
+        )
+        for instrument, offset, first_index in (("EURUSD", 0, 0), ("GBPUSD", 0, 5))
+    )
+
+    report = m.run_native_tick_portfolio(legs, StrategyRegistry(tmp_path / "delayed-leg"))
+
+    assert report.liquidation is None
+    assert report.legs[0].fills
+    assert all(fill.observed_at >= start + timedelta(seconds=10) for fill in report.legs[1].fills)
+    m.verify_tick_portfolio_report(report)
+
+
 def test_partial_tick_liquidity_limits_each_fill_to_displayed_side_size(tmp_path):
     m = module()
     source = inputs()
