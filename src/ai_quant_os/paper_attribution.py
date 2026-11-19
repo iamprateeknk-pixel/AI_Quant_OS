@@ -91,6 +91,17 @@ class StrategyContribution(AccountingContribution):
 
 
 @dataclass(frozen=True)
+class CandidateContribution(AccountingContribution):
+    candidate_assignment_id: str | None
+    candidate_id: str | None
+    genome_sha256: str | None
+    strategy_id: str
+    strategy_version: str
+    instrument_id: str
+    quote_currency: str
+
+
+@dataclass(frozen=True)
 class InstrumentContribution(AccountingContribution):
     instrument_id: str
     quote_currency: str
@@ -110,6 +121,7 @@ class StrategyContributionReport:
     instruments: tuple[InstrumentContribution, ...]
     reconciled: Literal[True]
     evidence_gaps: tuple[str, ...]
+    candidate_contributions: tuple[CandidateContribution, ...] = ()
 
 
 def _mark(quote, net, now, max_age_seconds):
@@ -195,7 +207,7 @@ def build_strategy_contributions(
             or len({fill.fill_id for fill in fills}) != len(fills)
         ):
             raise ValueError("Duplicate paper attribution identity")
-        quantities, grouped = {}, {}
+        quantities, grouped, candidate_groups = {}, {}, {}
         for fill in fills:
             owner = ownership.get(fill.order_id)
             if (
@@ -212,7 +224,18 @@ def build_strategy_contributions(
             grouped.setdefault(
                 (owner.strategy_id, owner.strategy_version, fill.instrument_id), []
             ).append(fill)
-        strategies, totals = [], []
+            candidate_groups.setdefault(
+                (
+                    owner.candidate_assignment_id,
+                    owner.candidate_id,
+                    owner.genome_sha256,
+                    owner.strategy_id,
+                    owner.strategy_version,
+                    fill.instrument_id,
+                ),
+                [],
+            ).append(fill)
+        strategies, candidate_contributions, totals = [], [], []
         for instrument_id in sorted({fill.instrument_id for fill in fills}):
             instrument_fills = tuple(fill for fill in fills if fill.instrument_id == instrument_id)
             net = summarize_position(instrument_fills, mark=None).net_quantity
@@ -236,6 +259,20 @@ def build_strategy_contributions(
                 for key in sorted(grouped)
                 if key[2] == instrument_id
             ]
+            candidate_rows = [
+                CandidateContribution(
+                    **_account(candidate_groups[key], mark),
+                    candidate_assignment_id=key[0],
+                    candidate_id=key[1],
+                    genome_sha256=key[2],
+                    strategy_id=key[3],
+                    strategy_version=key[4],
+                    instrument_id=instrument_id,
+                    quote_currency=currency,
+                )
+                for key in sorted(candidate_groups, key=lambda item: tuple(v or "" for v in item))
+                if key[5] == instrument_id
+            ]
             for field in (
                 "fill_count",
                 "net_quantity",
@@ -251,25 +288,43 @@ def build_strategy_contributions(
                 != total.marked_pnl_quote
             ):
                 raise ValueError("Paper marked contributions do not reconcile")
+            if (
+                sum(row.fill_count for row in candidate_rows) != total.fill_count
+                or sum((row.net_quantity for row in candidate_rows), Decimal(0))
+                != total.net_quantity
+                or sum((row.cash_flow_before_fees_quote for row in candidate_rows), Decimal(0))
+                != total.cash_flow_before_fees_quote
+                or sum((row.fee_cash_flow_quote for row in candidate_rows), Decimal(0))
+                != total.fee_cash_flow_quote
+                or sum((row.cash_flow_quote for row in candidate_rows), Decimal(0))
+                != total.cash_flow_quote
+                or mark is not None
+                and sum((row.marked_pnl_quote for row in candidate_rows), Decimal(0))
+                != total.marked_pnl_quote
+            ):
+                raise ValueError("Paper candidate contributions do not reconcile")
             strategies.extend(rows)
+            candidate_contributions.extend(candidate_rows)
             totals.append(total)
         gaps = [
             "DECISION_PRICE_BENCHMARK_MISSING",
             "AGENT_CREDIT_EVIDENCE_MISSING",
             "CAUSAL_FACTOR_ATTRIBUTION_MISSING",
-            "CANDIDATE_GENOME_BINDING_MISSING",
         ]
+        if not fills or any(ownership[fill.order_id].genome_sha256 is None for fill in fills):
+            gaps.append("CANDIDATE_GENOME_BINDING_MISSING")
         if any(total.mark_state != "AVAILABLE" for total in totals):
             gaps.append("CURRENT_MARK_EVIDENCE_MISSING")
         return StrategyContributionReport(
-            "1.0",
-            "PAPER",
-            now.astimezone(timezone.utc),
-            _fingerprint(owners, fills),
-            "CUMULATIVE_FROM_EMPTY_INVENTORY",
-            "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
-            tuple(strategies),
-            tuple(totals),
-            True,
-            tuple(gaps),
+            schema_version="1.0",
+            mode="PAPER",
+            as_of=now.astimezone(timezone.utc),
+            ledger_sha256=_fingerprint(owners, fills),
+            accounting_scope="CUMULATIVE_FROM_EMPTY_INVENTORY",
+            marking_method="COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
+            strategies=tuple(strategies),
+            instruments=tuple(totals),
+            reconciled=True,
+            evidence_gaps=tuple(gaps),
+            candidate_contributions=tuple(candidate_contributions),
         )

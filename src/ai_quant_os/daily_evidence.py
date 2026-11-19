@@ -177,11 +177,22 @@ def build_daily_report(day, opening, closing):
         ownership = {row.order_id: row for row in closing.owners}
         for fill in opening_history:
             old, current = earlier_owners[fill.order_id], ownership[fill.order_id]
-            if (old.intent_sha256, old.order_sha256, old.strategy_id, old.strategy_version) != (
+            if (
+                old.intent_sha256,
+                old.order_sha256,
+                old.strategy_id,
+                old.strategy_version,
+                old.candidate_assignment_id,
+                old.candidate_id,
+                old.genome_sha256,
+            ) != (
                 current.intent_sha256,
                 current.order_sha256,
                 current.strategy_id,
                 current.strategy_version,
+                current.candidate_assignment_id,
+                current.candidate_id,
+                current.genome_sha256,
             ):
                 raise ValueError("Recorded opening ledger ownership changed")
         relevant = tuple(fill for fill in closing.fills if fill.observed_at < end)

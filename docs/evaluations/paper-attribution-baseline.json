@@ -89,6 +89,40 @@
   "report": {
     "accounting_scope": "CUMULATIVE_FROM_EMPTY_INVENTORY",
     "as_of": "2026-01-01T00:00:00Z",
+    "candidate_contributions": [
+      {
+        "candidate_assignment_id": null,
+        "candidate_id": null,
+        "cash_flow_before_fees_quote": "-11.0",
+        "cash_flow_quote": "-11.1",
+        "fee_cash_flow_quote": "-0.1",
+        "fill_count": 1,
+        "genome_sha256": null,
+        "instrument_id": "EURUSD",
+        "marked_inventory_quote": "13.0",
+        "marked_pnl_quote": "1.9",
+        "net_quantity": "10",
+        "quote_currency": "USD",
+        "strategy_id": "alpha",
+        "strategy_version": "1"
+      },
+      {
+        "candidate_assignment_id": null,
+        "candidate_id": null,
+        "cash_flow_before_fees_quote": "4.8",
+        "cash_flow_quote": "4.6",
+        "fee_cash_flow_quote": "-0.2",
+        "fill_count": 1,
+        "genome_sha256": null,
+        "instrument_id": "EURUSD",
+        "marked_inventory_quote": "-5.2",
+        "marked_pnl_quote": "-0.6",
+        "net_quantity": "-4",
+        "quote_currency": "USD",
+        "strategy_id": "beta",
+        "strategy_version": "1"
+      }
+    ],
     "evidence_gaps": [
       "DECISION_PRICE_BENCHMARK_MISSING",
       "AGENT_CREDIT_EVIDENCE_MISSING",

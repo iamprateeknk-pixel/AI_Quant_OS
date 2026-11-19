@@ -106,6 +106,22 @@ def test_daily_reconciles_opening_cash_closing_and_strategy_contributions():
     assert [row.daily_pnl_quote for row in report.strategies] == [Decimal(2), Decimal("-0.6")]
 
 
+def test_daily_rejects_changed_candidate_binding_for_opening_inventory():
+    from ai_quant_os.daily_evidence import build_daily_report
+
+    opening, closing = checkpoints()
+    changed = replace(
+        closing.owners[0],
+        candidate_assignment_id="new-assignment",
+        candidate_id="e" * 64,
+        genome_sha256="f" * 64,
+    )
+    closing = replace(closing, owners=(changed, closing.owners[1]))
+
+    with pytest.raises(ValueError, match="ownership changed"):
+        build_daily_report(DAY, opening, closing)
+
+
 @pytest.mark.parametrize(
     "change,state",
     [

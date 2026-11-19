@@ -2,6 +2,17 @@
 
 ## Update (2026-11-19)
 
+- PAPER contribution evidence now emits exact per-assignment candidate/genome
+  accounting rows alongside strategy and instrument totals. Unassigned fills
+  remain visible with null candidate identity, the report retains a binding gap
+  until every fill has its original genome binding, and candidate rows must
+  reconcile to instrument totals. Published response schemas now match exact
+  decimal-string JSON serialization, including exponent notation. Daily
+  checkpoint validation also rejects a changed assignment/genome binding for
+  previously recorded opening fills. The replay fixture and both published
+  schemas are updated; the focused PAPER, daily and execution attribution
+  groups pass (**46 passed**), with Ruff and formatting checks clean. Daily
+  candidate P&L grouping remains open.
 - P10 repair closure now writes a content-addressed `REPAIR_CLOSURE_AUTHORIZED`
   transition to the health journal and records the cross-store writeback in the
   repair audit chain. Repeated writeback is idempotent. The event explicitly
