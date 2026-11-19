@@ -106,6 +106,38 @@ def test_daily_reconciles_opening_cash_closing_and_strategy_contributions():
     assert [row.daily_pnl_quote for row in report.strategies] == [Decimal(2), Decimal("-0.6")]
 
 
+def test_daily_candidate_contributions_reconcile_by_bound_genome():
+    from ai_quant_os.daily_evidence import build_daily_report
+
+    opening, closing = checkpoints()
+    bound_buy = replace(
+        opening.owners[0],
+        candidate_assignment_id="assignment-buy",
+        candidate_id="a" * 64,
+        genome_sha256="b" * 64,
+    )
+    bound_sell = replace(
+        closing.owners[1],
+        candidate_assignment_id="assignment-sell",
+        candidate_id="c" * 64,
+        genome_sha256="d" * 64,
+    )
+    opening = replace(opening, owners=(bound_buy,))
+    closing = replace(closing, owners=(bound_buy, bound_sell))
+
+    report = build_daily_report(DAY, opening, closing)
+
+    assert [row.daily_pnl_quote for row in report.candidate_contributions] == [
+        Decimal(2),
+        Decimal("-0.6"),
+    ]
+    assert (
+        sum(row.daily_pnl_quote for row in report.candidate_contributions)
+        == report.instruments[0].daily_pnl_quote
+    )
+    assert "CANDIDATE_GENOME_BINDING_MISSING" not in report.evidence_gaps
+
+
 def test_daily_rejects_changed_candidate_binding_for_opening_inventory():
     from ai_quant_os.daily_evidence import build_daily_report
 
@@ -472,11 +504,26 @@ def test_daily_publication_needs_persistence_and_matching_stored_sources(tmp_pat
 
 
 def test_saved_daily_evidence_replays():
+    from copy import deepcopy
+    import json
     from pydantic import TypeAdapter
+    from jsonschema import Draft202012Validator, ValidationError
     from ai_quant_os.daily_evidence import DailyEvidence
     from ai_quant_os.evidence_store import encode_evidence
 
-    raw = (Path(__file__).parents[1] / "docs/evaluations/daily-paper-baseline.json").read_bytes()
+    root = Path(__file__).parents[1]
+    raw = (root / "docs/evaluations/daily-paper-baseline.json").read_bytes()
     evidence = TypeAdapter(DailyEvidence).validate_json(raw)
     assert evidence.report.state == "COMPLETE_ACCOUNTING"
     assert encode_evidence(evidence) == raw
+    schema = json.loads((root / "docs/schemas/daily-paper-evidence.schema.json").read_text())
+    validator = Draft202012Validator(schema)
+    saved = json.loads(raw)
+    validator.validate(saved)
+    exponent = deepcopy(saved)
+    exponent["report"]["candidate_contributions"][0]["cash_flow_quote"] = "1E-7"
+    validator.validate(exponent)
+    numeric = deepcopy(saved)
+    numeric["report"]["candidate_contributions"][0]["cash_flow_quote"] = 0.0000001
+    with pytest.raises(ValidationError):
+        validator.validate(numeric)

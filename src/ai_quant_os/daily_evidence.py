@@ -84,6 +84,17 @@ class DailyStrategyContribution(DailyAccounting):
 
 
 @dataclass(frozen=True)
+class DailyCandidateContribution(DailyAccounting):
+    strategy_id: str
+    strategy_version: str
+    instrument_id: str
+    quote_currency: str
+    candidate_assignment_id: str | None = None
+    candidate_id: str | None = None
+    genome_sha256: str | None = None
+
+
+@dataclass(frozen=True)
 class DailyInstrumentContribution(DailyAccounting):
     instrument_id: str
     quote_currency: str
@@ -112,6 +123,7 @@ class PaperDailyReport:
     )
     reconciled: Literal[True] = True
     promotion_allowed: Literal[False] = False
+    candidate_contributions: tuple[DailyCandidateContribution, ...] = ()
 
 
 def _boundary_mark(checkpoint, instrument, quantity, boundary):
@@ -196,22 +208,33 @@ def build_daily_report(day, opening, closing):
             ):
                 raise ValueError("Recorded opening ledger ownership changed")
         relevant = tuple(fill for fill in closing.fills if fill.observed_at < end)
-        groups = {}
+        groups, candidate_groups = {}, {}
         for fill in relevant:
             owner = ownership[fill.order_id]
             groups.setdefault(
                 (owner.strategy_id, owner.strategy_version, fill.instrument_id), []
+            ).append(fill)
+            candidate_groups.setdefault(
+                (
+                    owner.candidate_assignment_id,
+                    owner.candidate_id,
+                    owner.genome_sha256,
+                    owner.strategy_id,
+                    owner.strategy_version,
+                    fill.instrument_id,
+                ),
+                [],
             ).append(fill)
         strategies, totals, gaps = (
             [],
             [],
             [
                 "AGENT_CREDIT_EVIDENCE_MISSING",
-                "CANDIDATE_GENOME_BINDING_MISSING",
                 "LIVE_SHADOW_COMPARISON_MISSING",
                 "CAUSAL_FACTOR_ATTRIBUTION_MISSING",
             ],
         )
+        candidate_contributions = []
         currencies = {row.instrument_id: row.quote_currency for row in closing.catalog}
         for instrument in sorted({fill.instrument_id for fill in relevant}):
             history = tuple(fill for fill in relevant if fill.instrument_id == instrument)
@@ -238,6 +261,25 @@ def build_daily_report(day, opening, closing):
                         quote_currency=currencies[instrument],
                     )
                 )
+            candidate_rows = []
+            for key in sorted(candidate_groups, key=lambda item: tuple(v or "" for v in item)):
+                if key[5] != instrument:
+                    continue
+                candidate_fills = candidate_groups[key]
+                old = tuple(fill for fill in candidate_fills if fill.observed_at < start)
+                new = tuple(fill for fill in candidate_fills if start <= fill.observed_at < end)
+                candidate_rows.append(
+                    DailyCandidateContribution(
+                        **_contribution(old, new, op_mark, cl_mark),
+                        candidate_assignment_id=key[0],
+                        candidate_id=key[1],
+                        genome_sha256=key[2],
+                        strategy_id=key[3],
+                        strategy_version=key[4],
+                        instrument_id=instrument,
+                        quote_currency=currencies[instrument],
+                    )
+                )
             total = _contribution(before, during, op_mark, cl_mark)
             for field in (
                 "fill_count",
@@ -254,11 +296,27 @@ def build_daily_report(day, opening, closing):
                 if summed is not None and summed != total[field]:
                     raise ValueError("Daily marked contributions do not reconcile")
                 total[field] = summed
+            for field in (
+                "fill_count",
+                "opening_quantity",
+                "closing_quantity",
+                "cash_flow_before_fees_quote",
+                "fee_cash_flow_quote",
+                "cash_flow_quote",
+            ):
+                if sum((getattr(row, field) for row in candidate_rows), Decimal(0)) != total[field]:
+                    raise ValueError("Daily candidate contributions do not reconcile")
+            for field in ("opening_inventory_quote", "closing_inventory_quote", "daily_pnl_quote"):
+                summed = _optional_sum([getattr(row, field) for row in candidate_rows])
+                if summed is not None and summed != total[field]:
+                    raise ValueError("Daily candidate contributions do not reconcile")
+                total[field] = summed
             if total["opening_inventory_quote"] is None:
                 gaps.append(f"OPENING_MARK_MISSING:{instrument}:{op_state}")
             if total["closing_inventory_quote"] is None:
                 gaps.append(f"CLOSING_MARK_MISSING:{instrument}:{cl_state}")
             strategies.extend(rows)
+            candidate_contributions.extend(candidate_rows)
             totals.append(
                 DailyInstrumentContribution(
                     **total,
@@ -270,6 +328,8 @@ def build_daily_report(day, opening, closing):
                     closing_mark_state=cl_state,
                 )
             )
+        if not relevant or any(ownership[fill.order_id].genome_sha256 is None for fill in relevant):
+            gaps.append("CANDIDATE_GENOME_BINDING_MISSING")
         return PaperDailyReport(
             day,
             _fingerprint(opening.owners, opening.fills),
@@ -280,6 +340,7 @@ def build_daily_report(day, opening, closing):
             if any(row.daily_pnl_quote is None for row in totals)
             else "COMPLETE_ACCOUNTING",
             tuple(sorted(set(gaps))),
+            candidate_contributions=tuple(candidate_contributions),
         )
 
 

@@ -6,13 +6,14 @@
   accounting rows alongside strategy and instrument totals. Unassigned fills
   remain visible with null candidate identity, the report retains a binding gap
   until every fill has its original genome binding, and candidate rows must
-  reconcile to instrument totals. Published response schemas now match exact
-  decimal-string JSON serialization, including exponent notation. Daily
-  checkpoint validation also rejects a changed assignment/genome binding for
-  previously recorded opening fills. The replay fixture and both published
-  schemas are updated; the focused PAPER, daily and execution attribution
-  groups pass (**46 passed**), with Ruff and formatting checks clean. Daily
-  candidate P&L grouping remains open.
+  reconcile to instrument totals. The daily report now also calculates
+  candidate/genome opening inventory, cash flows, and daily P&L using the same
+  common marks and reconciles to instrument totals. Both workflows keep
+  unassigned fills explicit; daily checkpoints reject changed bindings for
+  previously recorded opening fills. Published schemas match serialized
+  decimal strings, including exponent notation, and replay fixtures are
+  updated. The focused PAPER, daily, execution attribution, and scheduler set
+  passes (**67 passed**), with Ruff, formatting, and `git diff --check` clean.
 - P10 repair closure now writes a content-addressed `REPAIR_CLOSURE_AUTHORIZED`
   transition to the health journal and records the cross-store writeback in the
   repair audit chain. Repeated writeback is idempotent. The event explicitly
