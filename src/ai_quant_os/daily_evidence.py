@@ -1,6 +1,6 @@
 """UTC daily cash/inventory accounting from retained paper ledger checkpoints."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, timezone
 from decimal import Context, Decimal, Inexact, localcontext
 import re
@@ -113,7 +113,7 @@ class PaperDailyReport:
     instruments: tuple[DailyInstrumentContribution, ...]
     state: Literal["COMPLETE_ACCOUNTING", "INCOMPLETE_MARKS"]
     evidence_gaps: tuple[str, ...]
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.0", "1.1"] = "1.0"
     mode: Literal["PAPER"] = "PAPER"
     accounting_method: Literal["UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1"] = (
         "UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1"
@@ -340,6 +340,7 @@ def build_daily_report(day, opening, closing):
             if any(row.daily_pnl_quote is None for row in totals)
             else "COMPLETE_ACCOUNTING",
             tuple(sorted(set(gaps))),
+            schema_version="1.1",
             candidate_contributions=tuple(candidate_contributions),
         )
 
@@ -354,9 +355,16 @@ class DailyEvidence:
     def __post_init__(self):
         _require_aware(self.published_at)
         object.__setattr__(self, "published_at", self.published_at.astimezone(timezone.utc))
+        if type(self.report) is not PaperDailyReport:
+            raise ValueError("Daily evidence must reproduce its retained sources")
+        expected = build_daily_report(self.report.day, self.opening, self.closing)
         if (
-            type(self.report) is not PaperDailyReport
-            or self.published_at < self.closing.captured_at
-            or self.report != build_daily_report(self.report.day, self.opening, self.closing)
+            self.published_at < self.closing.captured_at
+            or self.report != expected
+            and (
+                self.report.schema_version != "1.0"
+                or self.report
+                != replace(expected, schema_version="1.0", candidate_contributions=())
+            )
         ):
             raise ValueError("Daily evidence must reproduce its retained sources")

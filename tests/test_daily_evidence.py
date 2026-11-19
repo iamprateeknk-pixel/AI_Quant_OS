@@ -138,6 +138,25 @@ def test_daily_candidate_contributions_reconcile_by_bound_genome():
     assert "CANDIDATE_GENOME_BINDING_MISSING" not in report.evidence_gaps
 
 
+def test_legacy_daily_report_replays_without_rewriting_immutable_bytes():
+    import json
+    from pydantic import TypeAdapter
+    from ai_quant_os.daily_evidence import DailyEvidence, build_daily_report
+    from ai_quant_os.evidence_store import encode_evidence
+
+    opening, closing = checkpoints()
+    report = replace(
+        build_daily_report(DAY, opening, closing),
+        schema_version="1.0",
+        candidate_contributions=(),
+    )
+    legacy = DailyEvidence(opening, closing, report, END)
+    raw = encode_evidence(legacy)
+
+    assert "candidate_contributions" not in json.loads(raw)["report"]
+    assert TypeAdapter(DailyEvidence).validate_json(raw) == legacy
+
+
 def test_daily_rejects_changed_candidate_binding_for_opening_inventory():
     from ai_quant_os.daily_evidence import build_daily_report
 
