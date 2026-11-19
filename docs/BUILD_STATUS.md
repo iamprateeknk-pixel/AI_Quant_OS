@@ -2,6 +2,14 @@
 
 ## Update (2026-11-19)
 
+- The web build's security gate flagged Next.js 16.4.2 as affected by the
+  November 2026 framework advisories. Upgraded the exact runtime and matching
+  ESLint config versions to 16.4.6, retained the existing
+  `experimental.agentUpgrade: "security"` setting, and applied compatible
+  dependency updates to clear the accompanying moderate development-tool
+  advisories. A clean `npm ci`, full web test suite (**206 passed**), ESLint,
+  TypeScript check, production build, and full npm audit (**0 vulnerabilities**)
+  all pass. The fix applies the Next.js [November 2026 security release](https://nextjs.org/blog/november-2026-security-release).
 - PAPER contribution evidence now emits exact per-assignment candidate/genome
   accounting rows alongside strategy and instrument totals. Unassigned fills
   remain visible with null candidate identity, the report retains a binding gap
