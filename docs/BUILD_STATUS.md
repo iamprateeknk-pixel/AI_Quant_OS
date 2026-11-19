@@ -1,5 +1,16 @@
 # Build status against the execution pack
 
+## Update (2026-11-19)
+
+- Context-source adapter provenance is now version-bound for all server-declared
+  `SourceBinding` inputs. Adapter references are validated module-scoped semantic
+  versions, included in GENERAL source identities and receipt-backed
+  TRAINING/HOLDOUT identities. A11's archived source checks preserve semantic
+  source matching while checking the updated context evidence. The focused
+  context, adversarial, checkpoint, and trace-context set passes **48 tests**;
+  Ruff and formatting checks pass. Independent provider/data-quality acceptance
+  remains open. See `docs/P07_STATUS.md`.
+
 ## Update (2026-11-17)
 
 - Commit `18ffcc7` wires governed model routing into durable graph executions,

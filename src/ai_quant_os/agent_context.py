@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
@@ -15,6 +16,10 @@ from ai_quant_os.contracts import _require_aware
 from ai_quant_os.research_data_contracts import ResearchDataReceipt
 
 ResourceClass = Literal["GENERAL", "TRAINING", "HOLDOUT"]
+_ADAPTER_REF = re.compile(
+    r"[A-Za-z_][A-Za-z0-9_-]*(?:\.[A-Za-z_][A-Za-z0-9_-]*)*@"
+    r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?\Z"
+)
 InputStatus = Literal[
     "AVAILABLE",
     "MISSING",
@@ -153,6 +158,7 @@ class SourceBinding:
     fetch: Callable[[], Awaitable[EvidenceRecord]]
     resource_refs: tuple[str, ...] = ()
     resource_catalog: DatasetResourceCatalog | None = None
+    adapter_ref: str | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -161,20 +167,37 @@ class SourceBinding:
             or not callable(self.fetch)
         ):
             raise ValueError("Invalid read-only context source binding")
+        adapter_ref = self.adapter_ref
+        if adapter_ref is None:
+            module = getattr(self.fetch, "__module__", None) or "unknown"
+            adapter_ref = f"{module}@1.0.0"
+            object.__setattr__(self, "adapter_ref", adapter_ref)
+        if (
+            not isinstance(adapter_ref, str)
+            or len(adapter_ref) > 100
+            or _ADAPTER_REF.fullmatch(adapter_ref) is None
+        ):
+            raise ValueError("Invalid source adapter reference")
 
 
 def bind_resource_provenance(record: EvidenceRecord, binding: SourceBinding) -> EvidenceRecord:
-    if binding.resource_class not in {"TRAINING", "HOLDOUT"}:
-        return record
-    if binding.resource_catalog is None:
-        raise PermissionError("Protected dataset resource binding denied")
-    provenance = _json([record.source_id, binding.resource_class, binding.resource_refs])
+    if binding.resource_class in {"TRAINING", "HOLDOUT"}:
+        if binding.resource_catalog is None:
+            raise PermissionError("Protected dataset resource binding denied")
+        provenance = _json(
+            [record.source_id, binding.adapter_ref, binding.resource_class, binding.resource_refs]
+        )
+        source_id = (
+            binding.resource_catalog.catalog_ref + ":" + sha256(provenance.encode()).hexdigest()
+        )
+    else:
+        source_id = f"{record.source_id}:source-adapter:{binding.adapter_ref}"
+        if len(source_id) > 256:
+            raise ValueError("Bound source adapter identity exceeds source limit")
     return EvidenceRecord.model_validate(
         {
             **record.model_dump(),
-            "source_id": binding.resource_catalog.catalog_ref
-            + ":"
-            + sha256(provenance.encode()).hexdigest(),
+            "source_id": source_id,
         }
     )
 

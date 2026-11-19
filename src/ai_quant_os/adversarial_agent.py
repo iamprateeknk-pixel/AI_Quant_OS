@@ -245,8 +245,12 @@ def _observations(context: CompiledContext):
         or not validation.gates
         or next((row[:2] for row in validation.gates if row[0] == "ADVERSARIAL"), None)
         != ("ADVERSARIAL", stress.state)
-        or context.inputs[0].source_id != report_identity + "strategy_candidate"
-        or context.inputs[1].source_id != report_identity + "validation_results"
+        or not context.inputs[0].source_id.startswith(
+            report_identity + "strategy_candidate:source-adapter:"
+        )
+        or not context.inputs[1].source_id.startswith(
+            report_identity + "validation_results:source-adapter:"
+        )
         or not context.inputs[2].source_id.startswith("dataset-resource-catalog:")
     ):
         raise ValueError("Adversarial source observations disagree")
