@@ -184,3 +184,7 @@ Add a `clean-architecture` block to `.clean/architecture.md` matching the seven 
 ### P12 realtime frame metadata contract (2026-10-23)
 
 The browser projection now retains the schema version, instance sequence, source timestamp (`world.as_of`), client receive timestamp, and server validity lease. The new test failed before the implementation because `schema_version` was dropped by the projection, then passes with the rest of the realtime parser suite (10 tests). The complete web suite passes (203), ESLint and production Next.js build pass. This closes the client projection fields for the current full-snapshot contract; deterministic six-state visual baselines/CI, all-view/load acceptance, and independent review remain open.
+
+### Current continuation: native margin liquidation and remaining project gates
+
+The synchronized native bar portfolio now checks marked USD equity against the instrument's declared 1x maintenance notional at every bar open, closes all open legs on breach, and verifies retained trigger evidence. Report schema 1.1 is backward-compatible with schema 1.0 archives. Focused native portfolio tests pass locally. Run scoped architecture, schema, lint/format and hosted CI checks before claiming this increment complete. Async/tick liquidation, broker-calibrated margin acceptance, P07 LocalService migration with the real source archives, independent PR #8 review, and P00-P13 acceptance remain open.
