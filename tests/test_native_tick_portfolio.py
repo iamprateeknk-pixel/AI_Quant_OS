@@ -95,6 +95,8 @@ def test_asynchronous_quotes_share_one_native_account_and_reproduce(tmp_path, mo
 
 
 def test_async_tick_portfolio_liquidates_all_legs_after_maintenance_breach(tmp_path):
+    import copy
+
     m = module()
     start = datetime(2026, 1, 1, tzinfo=timezone.utc)
     prices = ("1.1", "1.0", ".9", "1.0", "2.0", "2.5")
@@ -133,7 +135,7 @@ def test_async_tick_portfolio_liquidates_all_legs_after_maintenance_breach(tmp_p
     m.verify_tick_portfolio_report(report)
     import json
     from pathlib import Path
-    from jsonschema import Draft202012Validator
+    from jsonschema import Draft202012Validator, ValidationError
     from pydantic import TypeAdapter
 
     schema = json.loads(
@@ -141,9 +143,17 @@ def test_async_tick_portfolio_liquidates_all_legs_after_maintenance_breach(tmp_p
             Path(__file__).parents[1] / "docs/schemas/native-tick-portfolio-report-v1.2.schema.json"
         ).read_text()
     )
-    Draft202012Validator(schema).validate(
-        TypeAdapter(m.TickPortfolioReport).dump_python(report, mode="json")
-    )
+    validator = Draft202012Validator(schema)
+    exported = TypeAdapter(m.TickPortfolioReport).dump_python(report, mode="json")
+    validator.validate(exported)
+    exponent = copy.deepcopy(exported)
+    exponent["native_balance_usd"] = "1E-7"
+    exponent["legs"][0]["fills"][0]["price"] = "1E-7"
+    validator.validate(exponent)
+    numeric = copy.deepcopy(exported)
+    numeric["native_balance_usd"] = 0.0000001
+    with pytest.raises(ValidationError):
+        validator.validate(numeric)
     with pytest.raises(ValueError, match="liquidation"):
         m.verify_tick_portfolio_report(
             replace(

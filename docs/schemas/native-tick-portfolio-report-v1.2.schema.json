@@ -3,7 +3,7 @@
     "NativeFill": {
       "properties": {
         "fee": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Fee",
           "type": "string"
         },
@@ -13,12 +13,12 @@
           "type": "string"
         },
         "price": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Price",
           "type": "string"
         },
         "quantity": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Quantity",
           "type": "string"
         },
@@ -193,22 +193,22 @@
     "Tick": {
       "properties": {
         "ask": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Ask",
           "type": "string"
         },
         "ask_size": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Ask Size",
           "type": "string"
         },
         "bid": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Bid",
           "type": "string"
         },
         "bid_size": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Bid Size",
           "type": "string"
         },
@@ -259,7 +259,7 @@
           "type": "string"
         },
         "fees_usd": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Fees Usd",
           "type": "string"
         },
@@ -271,17 +271,17 @@
           "type": "array"
         },
         "final_position": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Final Position",
           "type": "string"
         },
         "gross_pnl_quote": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Gross Pnl Quote",
           "type": "string"
         },
         "gross_pnl_usd": {
-          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
           "title": "Gross Pnl Usd",
           "type": "string"
         },
@@ -384,12 +384,12 @@
       "type": "string"
     },
     "fee_per_order_usd": {
-      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
       "title": "Fee Per Order Usd",
       "type": "string"
     },
     "initial_balance_usd": {
-      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
       "title": "Initial Balance Usd",
       "type": "string"
     },
@@ -405,7 +405,7 @@
       "type": "integer"
     },
     "native_balance_usd": {
-      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
       "title": "Native Balance Usd",
       "type": "string"
     },
@@ -414,7 +414,7 @@
       "type": "integer"
     },
     "net_pnl_usd": {
-      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
       "title": "Net Pnl Usd",
       "type": "string"
     },
@@ -448,7 +448,7 @@
       "type": "string"
     },
     "total_fees_usd": {
-      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+      "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
       "title": "Total Fees Usd",
       "type": "string"
     },
