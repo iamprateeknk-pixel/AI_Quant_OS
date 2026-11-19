@@ -92,6 +92,14 @@ def test_asynchronous_quotes_share_one_native_account_and_reproduce(tmp_path, mo
     Draft202012Validator(legacy_schema).validate(
         TypeAdapter(m.TickPortfolioReport).dump_python(legacy, mode="json")
     )
+    current_schema = json.loads(
+        (
+            Path(__file__).parents[1] / "docs/schemas/native-tick-portfolio-report-v1.2.schema.json"
+        ).read_text()
+    )
+    Draft202012Validator(current_schema).validate(
+        TypeAdapter(m.TickPortfolioReport).dump_python(legacy, mode="json")
+    )
 
 
 def test_async_tick_portfolio_liquidates_all_legs_after_maintenance_breach(tmp_path):

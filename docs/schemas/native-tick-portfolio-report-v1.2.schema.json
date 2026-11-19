@@ -527,21 +527,13 @@
         "properties": {
           "replay_model": {
             "const": "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"
+          },
+          "maintenance_model": {
+            "type": "null"
+          },
+          "liquidation": {
+            "type": "null"
           }
-        },
-        "not": {
-          "anyOf": [
-            {
-              "required": [
-                "maintenance_model"
-              ]
-            },
-            {
-              "required": [
-                "liquidation"
-              ]
-            }
-          ]
         }
       }
     },
