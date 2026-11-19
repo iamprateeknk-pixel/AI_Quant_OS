@@ -103,10 +103,9 @@ def test_source_adapter_version_is_bound_into_context_evidence():
         }
     )
 
-    assert first.inputs[0].source_id == "same-upstream-source:source-adapter:test.world-state@1.0.0"
-    assert (
-        upgraded.inputs[0].source_id == "same-upstream-source:source-adapter:test.world-state@2.0.0"
-    )
+    assert first.inputs[0].source_id == upgraded.inputs[0].source_id == "same-upstream-source"
+    assert first.inputs[0].source_adapter_ref == "test.world-state@1.0.0"
+    assert upgraded.inputs[0].source_adapter_ref == "test.world-state@2.0.0"
     assert first.inputs[0].content_ref != upgraded.inputs[0].content_ref
     assert first.context_ref != upgraded.context_ref
 

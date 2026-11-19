@@ -42,6 +42,7 @@ def _json(value: object) -> str:
 class EvidenceRecord(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     source_id: str = Field(min_length=1, max_length=256)
+    adapter_ref: str | None = Field(default=None, max_length=100)
     as_of: AwareDatetime
     valid_until: AwareDatetime
     trusted: bool
@@ -49,6 +50,8 @@ class EvidenceRecord(BaseModel):
 
     @model_validator(mode="after")
     def canonical_payload(self) -> "EvidenceRecord":
+        if self.adapter_ref is not None and _ADAPTER_REF.fullmatch(self.adapter_ref) is None:
+            raise ValueError("Invalid source adapter reference")
         if self.valid_until <= self.as_of:
             raise ValueError("Source expiry must follow observation")
         value = json.loads(self.payload_json)
@@ -61,7 +64,10 @@ class EvidenceRecord(BaseModel):
 
     @property
     def content_ref(self) -> str:
-        return "context-evidence:" + sha256(self.model_dump_json().encode()).hexdigest()
+        return (
+            "context-evidence:"
+            + sha256(self.model_dump_json(exclude_none=True).encode()).hexdigest()
+        )
 
 
 @dataclass(frozen=True)
@@ -191,13 +197,12 @@ def bind_resource_provenance(record: EvidenceRecord, binding: SourceBinding) -> 
             binding.resource_catalog.catalog_ref + ":" + sha256(provenance.encode()).hexdigest()
         )
     else:
-        source_id = f"{record.source_id}:source-adapter:{binding.adapter_ref}"
-        if len(source_id) > 256:
-            raise ValueError("Bound source adapter identity exceeds source limit")
+        source_id = record.source_id
     return EvidenceRecord.model_validate(
         {
             **record.model_dump(),
             "source_id": source_id,
+            "adapter_ref": binding.adapter_ref,
         }
     )
 
@@ -209,6 +214,7 @@ class ContextInput(BaseModel):
     resource_class: ResourceClass | None = None
     source_tool: str | None = None
     source_id: str | None = None
+    source_adapter_ref: str | None = None
     as_of: AwareDatetime | None = None
     valid_until: AwareDatetime | None = None
     content_ref: str | None = None
@@ -265,6 +271,7 @@ def verify_context(context: CompiledContext) -> None:
                 raise ValueError("Context integrity source capability mismatch")
             record = EvidenceRecord(
                 source_id=row.source_id,
+                adapter_ref=row.source_adapter_ref,
                 as_of=row.as_of,
                 valid_until=row.valid_until,
                 trusted=True,
@@ -282,6 +289,7 @@ def verify_context(context: CompiledContext) -> None:
             value is not None
             for value in (
                 row.source_id,
+                row.source_adapter_ref,
                 row.as_of,
                 row.valid_until,
                 row.content_ref,
@@ -420,6 +428,7 @@ class ContextCompiler:
                     resource_class=binding.resource_class,
                     source_tool=binding.tool,
                     source_id=record.source_id,
+                    source_adapter_ref=record.adapter_ref,
                     as_of=record.as_of,
                     valid_until=record.valid_until,
                     content_ref=record.content_ref,

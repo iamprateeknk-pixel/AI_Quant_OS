@@ -152,15 +152,14 @@ def _observations(context: CompiledContext):
         tuple(row.as_of for row in (health, traces, tests, incident))
         != tuple(row.as_of for row in context.inputs)
         or any(row.as_of > context.created_at for row in context.inputs)
-        or any(
-            not row.source_id.startswith(
-                "health-repair:"
-                + name
-                + ":"
-                + sha256(row.payload_json.encode()).hexdigest()
-                + ":source-adapter:"
-            )
+        or tuple(row.source_id for row in context.inputs)
+        != tuple(
+            "health-repair:" + name + ":" + sha256(row.payload_json.encode()).hexdigest()
             for name, row in zip(INPUT_NAMES, context.inputs, strict=True)
+        )
+        or any(
+            row.source_adapter_ref != "ai_quant_os.health_repair_sources@1.0.0"
+            for row in context.inputs
         )
         or traces.input_name != "traces"
         or tests.input_name != "code_tests"
@@ -203,15 +202,14 @@ def _observations_v3(context: CompiledContext):
         tuple(row.as_of for row in (health, traces, tests, incident))
         != tuple(row.as_of for row in context.inputs)
         or any(row.as_of > context.created_at for row in context.inputs)
-        or any(
-            not row.source_id.startswith(
-                "health-repair:"
-                + name
-                + ":"
-                + sha256(row.payload_json.encode()).hexdigest()
-                + ":source-adapter:"
-            )
+        or tuple(row.source_id for row in context.inputs)
+        != tuple(
+            "health-repair:" + name + ":" + sha256(row.payload_json.encode()).hexdigest()
             for name, row in zip(INPUT_NAMES, context.inputs, strict=True)
+        )
+        or any(
+            row.source_adapter_ref != "ai_quant_os.health_repair_sources@1.0.0"
+            for row in context.inputs
         )
         or health.open_incidents != incident.total_incidents
         or traces.input_name != "traces"
@@ -250,15 +248,14 @@ def _observations_v4(context: CompiledContext):
         tuple(row.as_of for row in (health, traces, tests, incidents))
         != tuple(row.as_of for row in context.inputs)
         or any(row.as_of > context.created_at for row in context.inputs)
-        or any(
-            not row.source_id.startswith(
-                "health-repair:"
-                + name
-                + ":"
-                + sha256(row.payload_json.encode()).hexdigest()
-                + ":source-adapter:"
-            )
+        or tuple(row.source_id for row in context.inputs)
+        != tuple(
+            "health-repair:" + name + ":" + sha256(row.payload_json.encode()).hexdigest()
             for name, row in zip(INPUT_NAMES, context.inputs, strict=True)
+        )
+        or any(
+            row.source_adapter_ref != "ai_quant_os.health_repair_sources@1.0.0"
+            for row in context.inputs
         )
         or health.open_incidents != incidents.total_incidents
         or tests.input_name != "code_tests"
