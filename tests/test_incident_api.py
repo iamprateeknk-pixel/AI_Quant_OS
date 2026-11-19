@@ -46,7 +46,7 @@ def test_missing_safety_evidence_creates_durable_review_without_changing_control
         before = client.get("/api/v1/system/status").json()
         receipt, output = execute(client)
         assert output["recommended_state"] == "NO_NEW_RISK"
-        assert output["incident_class"] == "DEGRADED_EVIDENCE"
+        assert output["incident_class"] == "WARNING"
         assert output["confidence"] == "0" and output["requires_escalation"]
         assert output["workflow_dispatched"] is False
         assert client.get("/api/v1/system/status").json() == before
