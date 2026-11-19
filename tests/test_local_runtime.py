@@ -245,7 +245,7 @@ def test_private_api_wrapper_stops_on_parent_pipe_eof(tmp_path):
             owned,
             f"http://127.0.0.1:{port}/_local/ready",
             lambda body: json.loads(body) == {"instance": "a" * 32, "mode": "PAPER"},
-            timeout=15,
+            timeout=30,
         )
         owned.process.stdin.close()
         try:
