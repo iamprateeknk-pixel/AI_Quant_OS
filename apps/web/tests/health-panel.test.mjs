@@ -29,7 +29,7 @@ const incident = {
   detected_at: '2026-10-09T00:00:00Z', agent_id: null, agent_version: null,
   manifest_ref: null, safety_state: 'NO_NEW_RISK', quarantine: false, status: 'CLOSED',
   transitions: [{ action: 'CLOSED', at: '2026-10-09T00:01:00Z', command_id: 'close-1',
-    incident_id: id, reason: 'trusted quote restored', transition_id: `${id}:1` }],
+    incident_id: id, reason: 'trusted quote restored', transition_id: `${id}:1`, closure_ref: null }],
   promotion_allowed: false,
 };
 const status = { schema_version: '1.0', mode: 'PAPER', enabled: false, state: 'RESTORED_ONLY',

@@ -51,7 +51,7 @@ export function HealthPanel({ statusResult, timelineResult, observedAt }: { stat
               <div><dt>Agent version</dt><dd>{incident.agent_id ? <Link className="health-link" href={`/agents#${incident.agent_id}-${incident.agent_version}`}>{incident.agent_id}@{incident.agent_version}</Link> : "Not an agent incident"}</dd></div>
               <div><dt>Manifest reference</dt><dd className="mono">{incident.manifest_ref ?? "Not applicable"}</dd></div>
               <div><dt>Quarantine</dt><dd>{incident.quarantine ? "Required" : "Not an agent incident"}</dd></div>
-              {incident.transitions.map((transition) => <div key={transition.transition_id}><dt>{transition.action === "CLOSED" ? "Closed" : "Reopened"}</dt><dd><time dateTime={transition.at}>{transition.at}</time>{transition.reason ? ` · ${transition.reason}` : ""}</dd></div>)}
+              {incident.transitions.map((transition) => <div key={transition.transition_id}><dt>{transition.action === "CLOSED" ? "Closed" : transition.action === "REOPENED" ? "Reopened" : "Repair activation authorized"}</dt><dd><time dateTime={transition.at}>{transition.at}</time>{transition.reason ? ` · ${transition.reason}` : ""}{transition.closure_ref ? ` · ${transition.closure_ref}` : ""}</dd></div>)}
             </dl></details></td>
           </tr>)}</tbody>
         </table></div> : <div className="empty-list">{timeline.total === 0 ? "No incidents recorded in the verified journal." : "No records on this page. Reload the first page."}</div>}

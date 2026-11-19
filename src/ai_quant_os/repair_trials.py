@@ -29,7 +29,7 @@ from contextlib import closing
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator
 
@@ -39,6 +39,13 @@ from ai_quant_os.repair_certificates import RepairCertificateVerification
 from ai_quant_os.repair_snapshots import RepairSourceSnapshot, canonical_json
 
 DEFAULT_CANARY_SOAK_SECONDS = 300
+
+
+class RepairClosureJournal(Protocol):
+    def record_repair_closure_authorized(
+        self, incident_id: str, *, closure_ref: str, authorized_at: datetime
+    ) -> object: ...
+
 
 TrialState = Literal[
     "SHADOW_PENDING",
@@ -147,14 +154,17 @@ class RepairIncidentClosure(BaseModel):
     incident -> candidate -> certificate (verifier verdict) -> shadow
     evidence -> canary evidence -> activation authorization. The health
     journal remains the incident system of record; ``journal_writeback``
-    is False because writing the closure into the journal is the health
-    store owner's step, not this store's.
+    becomes True only after its authorization transition has been written to
+    the health journal. Authorization does not mean the catalog release was
+    applied, so the source health incident remains open and quarantined.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_version: Literal["1.0"] = "1.0"
-    state: Literal["CLOSED_REPAIR_ACTIVATED"] = "CLOSED_REPAIR_ACTIVATED"
+    state: Literal["REPAIR_ACTIVATION_AUTHORIZED", "CLOSED_REPAIR_ACTIVATED"] = (
+        "REPAIR_ACTIVATION_AUTHORIZED"
+    )
     incident_id: str = Field(pattern=r"^[a-f0-9]{64}$")
     candidate_id: str = Field(pattern=r"^[a-f0-9]{64}$")
     trial_id: str = Field(pattern=r"^[a-f0-9]{64}$")
@@ -167,13 +177,13 @@ class RepairIncidentClosure(BaseModel):
     incidents_during_canary: Literal[0] = 0
     activation_operator_ref: str
     closed_at: datetime
-    journal_writeback: Literal[False] = False
+    journal_writeback: StrictBool = False
 
     @property
     def closure_ref(self) -> str:
-        raw = json.dumps(
-            self.model_dump(mode="json"), sort_keys=True, separators=(",", ":"), allow_nan=False
-        ).encode()
+        identity = self.model_dump(mode="json")
+        identity.pop("journal_writeback")
+        raw = json.dumps(identity, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
         return "repair-closure:" + sha256(raw).hexdigest()
 
 
@@ -230,7 +240,41 @@ class RepairTrialStore:
         ):
             if sha256(closure_json.encode()).hexdigest() != closure_sha256:
                 raise ValueError("Repair closure record integrity mismatch")
-            RepairIncidentClosure.model_validate_json(closure_json)
+            closure = RepairIncidentClosure.model_validate_json(closure_json)
+            creation = db.execute(
+                "SELECT event_json FROM audit_events WHERE event_key = ?",
+                (f"repair-closure:{closure.incident_id}",),
+            ).fetchone()
+            if creation is None:
+                raise ValueError("Repair closure audit binding is missing")
+            creation_event = json.loads(creation[0])
+            expected_creation = {
+                "action": "REPAIR_CLOSURE_AUTHORIZATION_RECORDED",
+                "trial_id": closure.trial_id,
+                "candidate_id": closure.candidate_id,
+                "incident_id": closure.incident_id,
+                "closure_ref": closure.closure_ref,
+            }
+            legacy_creation = {
+                "action": "REPAIR_INCIDENT_CLOSED",
+                "trial_id": closure.trial_id,
+                "candidate_id": closure.candidate_id,
+                "incident_id": closure.incident_id,
+            }
+            if creation_event not in (expected_creation, legacy_creation):
+                raise ValueError("Repair closure audit binding failed")
+            writeback = db.execute(
+                "SELECT event_json FROM audit_events WHERE event_key = ?",
+                (f"repair-closure-writeback:{closure.incident_id}",),
+            ).fetchone()
+            if closure.journal_writeback != (writeback is not None):
+                raise ValueError("Repair closure writeback audit binding failed")
+            if writeback is not None and json.loads(writeback[0]) != {
+                "action": "REPAIR_CLOSURE_JOURNAL_WRITEBACK",
+                "incident_id": closure.incident_id,
+                "closure_ref": closure.closure_ref,
+            }:
+                raise ValueError("Repair closure writeback audit binding failed")
 
     def _append_event(self, db: sqlite3.Connection, record: RepairTrialRecord) -> None:
         AuditChain(db).append(
@@ -458,6 +502,20 @@ class RepairTrialStore:
         the outcome is an authorization artifact — the served-version flip
         itself remains a catalog release action outside this store.
         """
+        record = self.get(trial_id)
+        if (
+            not isinstance(authorized_at, datetime)
+            or authorized_at.utcoffset() is None
+            or authorized_at.utcoffset().total_seconds() != 0
+        ):
+            raise ValueError("Activation authorization timestamp must be UTC")
+        if (
+            record.state == "CANARY_PASSED"
+            and record.canary is not None
+            and record.canary.completed_at is not None
+            and authorized_at < record.canary.completed_at
+        ):
+            raise ValueError("Activation authorization cannot predate canary completion")
         activation = ActivationRecord(operator_ref=operator_ref, authorized_at=authorized_at)
         return self._transition(
             trial_id,
@@ -467,7 +525,13 @@ class RepairTrialStore:
             updated_at=authorized_at,
         )
 
-    def close_incident(self, trial_id: str, *, closed_at: datetime) -> RepairIncidentClosure:
+    def close_incident(
+        self,
+        trial_id: str,
+        *,
+        closed_at: datetime,
+        health_store: RepairClosureJournal | None = None,
+    ) -> RepairIncidentClosure:
         record = self.get(trial_id)
         if (
             record.state != "ACTIVATION_AUTHORIZED"
@@ -477,6 +541,16 @@ class RepairTrialStore:
             or record.activation is None
         ):
             raise ValueError("Incident closure requires an activation-authorized trial")
+        if (
+            not isinstance(closed_at, datetime)
+            or closed_at.utcoffset() is None
+            or closed_at.utcoffset().total_seconds() != 0
+        ):
+            raise ValueError("Incident closure authorization timestamp must be UTC")
+        if closed_at < record.canary.completed_at or closed_at < record.activation.authorized_at:
+            raise ValueError(
+                "Incident closure authorization cannot predate canary completion or activation"
+            )
         closure = RepairIncidentClosure(
             incident_id=record.incident_id,
             candidate_id=record.candidate_id,
@@ -491,6 +565,8 @@ class RepairTrialStore:
             activation_operator_ref=record.activation.operator_ref,
             closed_at=closed_at,
         )
+        if health_store is None:
+            raise ValueError("Incident closure authorization requires the health journal")
         raw = closure.model_dump_json()
         with closing(self._connection()) as db, db:
             db.execute("BEGIN IMMEDIATE")
@@ -500,22 +576,76 @@ class RepairTrialStore:
                 (record.incident_id,),
             ).fetchone()
             if existing is not None:
-                return RepairIncidentClosure.model_validate_json(existing[0])
+                closure = RepairIncidentClosure.model_validate_json(existing[0])
+                if closure.state == "CLOSED_REPAIR_ACTIVATED":
+                    closure = closure.model_copy(
+                        update={
+                            "state": "REPAIR_ACTIVATION_AUTHORIZED",
+                            "journal_writeback": False,
+                        }
+                    )
+                    migrated = closure.model_dump_json()
+                    db.execute(
+                        "UPDATE repair_closures SET closure_json = ?, closure_sha256 = ? "
+                        "WHERE incident_id = ?",
+                        (migrated, sha256(migrated.encode()).hexdigest(), record.incident_id),
+                    )
+            else:
+                db.execute(
+                    "INSERT INTO repair_closures (incident_id, closure_json, closure_sha256) "
+                    "VALUES (?, ?, ?)",
+                    (record.incident_id, raw, sha256(raw.encode()).hexdigest()),
+                )
+                AuditChain(db).append(
+                    f"repair-closure:{record.incident_id}",
+                    {
+                        "action": "REPAIR_CLOSURE_AUTHORIZATION_RECORDED",
+                        "trial_id": record.trial_id,
+                        "candidate_id": record.candidate_id,
+                        "incident_id": record.incident_id,
+                        "closure_ref": closure.closure_ref,
+                    },
+                )
+        if closure.journal_writeback:
+            return closure
+        health_store.record_repair_closure_authorized(
+            closure.incident_id,
+            closure_ref=closure.closure_ref,
+            authorized_at=closure.closed_at,
+        )
+        return self._mark_journal_writeback(closure)
+
+    def _mark_journal_writeback(self, closure: RepairIncidentClosure) -> RepairIncidentClosure:
+        updated = closure.model_copy(update={"journal_writeback": True})
+        raw = updated.model_dump_json()
+        with closing(self._connection()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            self._verified(db)
+            row = db.execute(
+                "SELECT closure_json FROM repair_closures WHERE incident_id = ?",
+                (closure.incident_id,),
+            ).fetchone()
+            if row is None:
+                raise ValueError("Repair closure disappeared during journal writeback")
+            stored = RepairIncidentClosure.model_validate_json(row[0])
+            if stored.closure_ref != closure.closure_ref:
+                raise ValueError("Repair closure changed during journal writeback")
+            if stored.journal_writeback:
+                return stored
             db.execute(
-                "INSERT INTO repair_closures (incident_id, closure_json, closure_sha256) "
-                "VALUES (?, ?, ?)",
-                (record.incident_id, raw, sha256(raw.encode()).hexdigest()),
+                "UPDATE repair_closures SET closure_json = ?, closure_sha256 = ? "
+                "WHERE incident_id = ?",
+                (raw, sha256(raw.encode()).hexdigest(), closure.incident_id),
             )
             AuditChain(db).append(
-                f"repair-closure:{record.incident_id}",
+                f"repair-closure-writeback:{closure.incident_id}",
                 {
-                    "action": "REPAIR_INCIDENT_CLOSED",
-                    "trial_id": record.trial_id,
-                    "candidate_id": record.candidate_id,
-                    "incident_id": record.incident_id,
+                    "action": "REPAIR_CLOSURE_JOURNAL_WRITEBACK",
+                    "incident_id": closure.incident_id,
+                    "closure_ref": closure.closure_ref,
                 },
             )
-        return closure
+        return updated
 
     def closure_for(self, incident_id: str) -> RepairIncidentClosure | None:
         with closing(self._connection()) as db:

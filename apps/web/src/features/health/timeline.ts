@@ -16,8 +16,8 @@ export type Incident = {
 };
 
 export type IncidentTransition = {
-  action: "CLOSED" | "REOPENED"; at: string; command_id: string | null;
-  incident_id: string; reason: string | null; transition_id: string;
+  action: "CLOSED" | "REOPENED" | "REPAIR_CLOSURE_AUTHORIZED"; at: string; command_id: string | null;
+  incident_id: string; reason: string | null; transition_id: string; closure_ref: string | null;
 };
 
 export type Timeline = {
@@ -67,16 +67,20 @@ function parseIncident(value: unknown): Incident | null {
   } else if (value.agent_id !== null || value.agent_version !== null || value.manifest_ref !== null) return null;
   const transitions: IncidentTransition[] = [];
   let closed = false;
+  let repairAuthorized = false;
   for (const [index, raw] of value.transitions.entries()) {
-    if (!record(raw) || (raw.action !== "CLOSED" && raw.action !== "REOPENED") || !utc(raw.at) || raw.incident_id !== value.incident_id || raw.transition_id !== `${value.incident_id}:${index + 1}`) return null;
+    if (!record(raw) || !["CLOSED", "REOPENED", "REPAIR_CLOSURE_AUTHORIZED"].includes(String(raw.action)) || !utc(raw.at) || raw.incident_id !== value.incident_id || raw.transition_id !== `${value.incident_id}:${index + 1}`) return null;
     if (raw.action === "CLOSED") {
-      if (closed || quarantine || !["QUOTE_MISSING", "QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"].includes(value.code) || !bounded(raw.command_id, 128) || !bounded(raw.reason, 256)) return null;
+      if (closed || quarantine || !["QUOTE_MISSING", "QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"].includes(value.code) || !bounded(raw.command_id, 128) || !bounded(raw.reason, 256) || raw.closure_ref !== null) return null;
       closed = true;
-    } else {
-      if (!closed || raw.command_id !== null || raw.reason !== null) return null;
+    } else if (raw.action === "REOPENED") {
+      if (!closed || raw.command_id !== null || raw.reason !== null || raw.closure_ref !== null) return null;
       closed = false;
+    } else {
+      if (repairAuthorized || !quarantine || raw.command_id !== raw.closure_ref || raw.reason !== "CATALOG_RELEASE_REQUIRED" || typeof raw.closure_ref !== "string" || !/^repair-closure:[a-f0-9]{64}$/.test(raw.closure_ref)) return null;
+      repairAuthorized = true;
     }
-    transitions.push({ action: raw.action, at: raw.at, command_id: raw.command_id as string | null, incident_id: raw.incident_id as string, reason: raw.reason as string | null, transition_id: raw.transition_id as string });
+    transitions.push({ action: raw.action as IncidentTransition["action"], at: raw.at, command_id: raw.command_id as string | null, incident_id: raw.incident_id as string, reason: raw.reason as string | null, transition_id: raw.transition_id as string, closure_ref: raw.closure_ref as string | null });
   }
   if ((value.status === "CLOSED") !== closed) return null;
   return { schema_version: "1.0", incident_id: value.incident_id, code: value.code, subject: value.subject, detected_at: value.detected_at, agent_id: agentId, agent_version: version, manifest_ref: manifest, safety_state: safety, quarantine, status: value.status, transitions, promotion_allowed: false };

@@ -2,6 +2,19 @@
 
 ## Update (2026-11-19)
 
+- P10 repair closure now writes a content-addressed `REPAIR_CLOSURE_AUTHORIZED`
+  transition to the health journal and records the cross-store writeback in the
+  repair audit chain. Repeated writeback is idempotent. The event explicitly
+  requires a catalog release, leaves the agent incident OPEN, and preserves
+  quarantine; it cannot be presented as an applied repair or a closed incident.
+  The repair timeline API, schema, and UI carry the closure reference. The
+  earlier P10.5 handoff below describes the prior state and is superseded for
+  journal writeback by this update. The affected Python repair/health group
+  passes (**328 passed, 7 skipped**) and the full web suite passes (**206
+  passed**); ESLint, TypeScript, Ruff, formatting, and `git diff --check` pass.
+  Bugbot identified a possible backdated authorization; both activation and
+  closure timestamps now must be UTC and at or after their prerequisites. The
+  review was not rerun after that fix.
 - Context-source adapter provenance is now version-bound for all server-declared
   `SourceBinding` inputs. Adapter references are validated module-scoped semantic
   versions, included in GENERAL source identities and receipt-backed

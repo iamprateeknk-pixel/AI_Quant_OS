@@ -28,11 +28,24 @@ test('unknown monitor states and future policy vocabulary are withheld', () => {
   assert.equal(parseHealth({ schema_version: '1.0', enabled: false, state: 'DISABLED', mode: 'LIVE' }), null);
 });
 test('quote lifecycle history is shown only when its close and reopen sequence is valid', () => {
-  const closed = { action: 'CLOSED', at: '2026-10-09T00:01:00Z', command_id: 'operator-close', incident_id: incident.incident_id, reason: 'trusted quote restored', transition_id: `${incident.incident_id}:1` };
+  const closed = { action: 'CLOSED', at: '2026-10-09T00:01:00Z', command_id: 'operator-close', incident_id: incident.incident_id, reason: 'trusted quote restored', transition_id: `${incident.incident_id}:1`, closure_ref: null };
   const quote = { ...incident, code: 'QUOTE_STALE', agent_id: null, agent_version: null, manifest_ref: null, safety_state: 'NO_NEW_RISK', quarantine: false, status: 'CLOSED', transitions: [closed] };
   assert.equal(parseTimeline({ ...page, incidents: [quote] }).incidents[0].status, 'CLOSED');
   assert.equal(parseTimeline({ ...page, incidents: [{ ...quote, code: 'QUOTE_MISSING' }] }).incidents[0].status, 'CLOSED');
   assert.equal(parseTimeline({ ...page, incidents: [{ ...quote, code: 'AGENT_FAILED' }] }), null);
   assert.equal(parseTimeline({ ...page, incidents: [{ ...quote, status: 'OPEN' }] }), null);
   assert.equal(parseTimeline({ ...page, incidents: [{ ...quote, transitions: [{ ...closed, transition_id: 'wrong' }] }] }), null);
+});
+test('repair authorization is shown as open and retains the catalog-release reference', () => {
+  const closureRef = `repair-closure:${'d'.repeat(64)}`;
+  const authorized = {
+    action: 'REPAIR_CLOSURE_AUTHORIZED', at: '2026-10-09T00:02:00Z',
+    command_id: closureRef, incident_id: incident.incident_id,
+    reason: 'CATALOG_RELEASE_REQUIRED', transition_id: `${incident.incident_id}:1`,
+    closure_ref: closureRef,
+  };
+  const result = parseTimeline({ ...page, incidents: [{ ...incident, transitions: [authorized] }] });
+  assert.equal(result.incidents[0].status, 'OPEN');
+  assert.equal(result.incidents[0].transitions[0].closure_ref, closureRef);
+  assert.equal(parseTimeline({ ...page, incidents: [{ ...incident, status: 'CLOSED', transitions: [authorized] }] }), null);
 });

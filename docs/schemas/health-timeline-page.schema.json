@@ -138,7 +138,8 @@
         "action": {
           "enum": [
             "CLOSED",
-            "REOPENED"
+            "REOPENED",
+            "REPAIR_CLOSURE_AUTHORIZED"
           ],
           "title": "Action",
           "type": "string"
@@ -183,6 +184,20 @@
           "minLength": 1,
           "title": "Transition Id",
           "type": "string"
+        },
+        "closure_ref": {
+          "anyOf": [
+            {
+              "maxLength": 79,
+              "minLength": 79,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Closure Ref"
         }
       },
       "required": [
