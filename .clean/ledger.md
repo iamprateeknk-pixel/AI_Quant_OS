@@ -188,3 +188,7 @@ The browser projection now retains the schema version, instance sequence, source
 ### Current continuation: native margin liquidation and remaining project gates
 
 The synchronized native bar portfolio now checks marked USD equity against the instrument's declared 1x maintenance notional at every bar open, closes all open legs on breach, and verifies retained trigger evidence. Report schema 1.1 is backward-compatible with schema 1.0 archives. Focused native portfolio tests pass locally. Run scoped architecture, schema, lint/format and hosted CI checks before claiming this increment complete. Async/tick liquidation, broker-calibrated margin acceptance, P07 LocalService migration with the real source archives, independent PR #8 review, and P00-P13 acceptance remain open.
+
+### Current continuation: asynchronous tick maintenance liquidation
+
+The asynchronous native tick portfolio now records 1x adverse-quote maintenance breaches in report schema 1.2 / replay V3 and closes each affected strategy using later displayed source liquidity. Stale required quotes defer valuation without admitting new exposure; a run that cannot close every affected leg refuses report export. The original schema 1.1 file remains unchanged. Focused tick/CLI tests pass locally; full hosted verification is pending. Broker-specific margin calibration, native balance attestation, P07 real-data/service acceptance, independent PR #8 review and P00-P13 release acceptance remain open.

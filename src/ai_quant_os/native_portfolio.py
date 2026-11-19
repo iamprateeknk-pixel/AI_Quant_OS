@@ -125,7 +125,7 @@ class _PortfolioReplay(_ReplayStrategy):
         phase, _ = self.phases[tick.ts_event]
         if phase == "PRICE":
             return
-        if phase == "OPEN" and self.maintenance_check is not None:
+        if phase in ("OPEN", "TICK") and self.maintenance_check is not None:
             self.liquidated = self.maintenance_check(tick.ts_event) is not None
         if self.liquidated:
             if self.position:

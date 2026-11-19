@@ -86,10 +86,16 @@ New additive schemas:
 - `schemas/native-tick-portfolio-report.schema.json` (the nested `report` member)
 
 Report schema 1.1 identifies replay model `ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2`
-and liquidity model `SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1`. The independent fill
-reconciler checks that cumulative fills at each source event and side do not
-exceed its displayed size; a portfolio may finish below a strategy's requested
-target when later quotes do not provide enough displayed liquidity.
+and liquidity model `SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1`. New reports use
+schema 1.2 and replay model `ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V3`, adding
+adverse-quote maintenance checks at asynchronous events where all required
+quotes are fresh, plus retained trigger/equity/margin evidence and source-sized
+liquidation orders. The independent fill reconciler checks that cumulative fills
+at each source event and side do not exceed its displayed size; a portfolio may
+finish below a strategy's requested target when later quotes do not provide
+enough displayed liquidity. The original 1.1 schema remains unchanged for
+historical evaluation evidence; the 1.2 contract is
+`schemas/native-tick-portfolio-report-v1.2.schema.json`.
 
 Limits: 64 KiB unique-key JSON plan, 4 MiB per CSV, 2..4 unique instruments,
 10,000 source quotes per leg, target quantity at most 500,000, and four
@@ -105,6 +111,9 @@ replaying the trusted source and further independent acceptance.
 ## Acceptance still pending
 
 Independent critical review, isolated portfolio acceptance, production data
-custody and feed timing, maintenance-margin/liquidation behavior, realistic
-financing and native accounting attestation remain open. All P00–P13 remain
+custody and feed timing, stale-quote liquidation acceptance, realistic financing
+and native accounting attestation remain open. If any quote needed to value a
+held basket becomes stale, maintenance evaluation waits for fresh data; new
+exposure remains denied, and a liquidation report is refused if the source ends
+before every affected leg can close against a later displayed quote. All P00–P13 remain
 incomplete; this increment grants no promotion or live trading authority.
