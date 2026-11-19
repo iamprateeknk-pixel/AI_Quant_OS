@@ -17,7 +17,13 @@ NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
 def worker(
-    tmp_path, *, registry=None, failures=lambda cursor: (), quotes=lambda: (), clock=lambda: NOW
+    tmp_path,
+    *,
+    registry=None,
+    failures=lambda cursor: (),
+    quotes=lambda: (),
+    clock=lambda: NOW,
+    expected_quote_instruments=(),
 ):
     from ai_quant_os.health_store import HealthStore
     from ai_quant_os.health_watchdog import HealthWatchdog
@@ -27,9 +33,45 @@ def worker(
     execution = PaperExecutionGateway(risk, store_path=tmp_path / "paper.sqlite3")
     registry = registry or load_agent_catalog()
     store = HealthStore(tmp_path / "health.sqlite3")
-    value = HealthWatchdog(store, state, risk, execution, registry, failures, quotes, clock)
+    value = HealthWatchdog(
+        store,
+        state,
+        risk,
+        execution,
+        registry,
+        failures,
+        quotes,
+        clock,
+        expected_quote_instruments=expected_quote_instruments,
+    )
     value.restore()
     return value, store, state, risk, registry
+
+
+def test_missing_expected_quote_is_journaled_once_and_requires_fresh_quote_to_close(tmp_path):
+    quotes = []
+    value, store, state, risk, _ = worker(
+        tmp_path,
+        quotes=lambda: tuple(quotes),
+        expected_quote_instruments=("EURUSD",),
+    )
+
+    value.step()
+    incidents = store.incidents()
+    assert [(item.code, item.subject) for item in incidents] == [("QUOTE_MISSING", "EURUSD")]
+    assert incidents[0].evidence_json == '{"instrument_id":"EURUSD","quote_count":0}'
+    assert risk.safety_state == state.safety_state() == SafetyState.NO_NEW_RISK
+
+    value.step()
+    assert store.incidents() == incidents
+
+    quotes.append(MarketSnapshot("EURUSD", Decimal(1), Decimal(1), NOW, "world-1", True))
+    event = value.close_quote_incident(
+        incidents[0].incident_id, command_id="missing-quote-close", reason="feed restored"
+    )
+    assert event["action"] == "CLOSED"
+    assert store.open_incidents() == ()
+    assert risk.safety_state == state.safety_state() == SafetyState.NO_NEW_RISK
 
 
 def test_real_failed_graph_is_quarantined_and_restored_by_exact_version(tmp_path):

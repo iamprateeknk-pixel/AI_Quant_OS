@@ -53,7 +53,7 @@ export function parseHealth(value: unknown): HealthStatus | null {
 }
 
 const halted = ["AUDIT_INVALID", "GRAPH_INTEGRITY_FAILED", "POSITION_MISMATCH", "WATCHDOG_FAILURE", "CLOCK_REGRESSION"];
-const stopped = ["BROKER_UNCONFIRMED", "QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED", "AGENT_FAILED", "AGENT_TIMEOUT", "AGENT_INVALID", "AGENT_UNCERTAIN"];
+const stopped = ["BROKER_UNCONFIRMED", "QUOTE_MISSING", "QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED", "AGENT_FAILED", "AGENT_TIMEOUT", "AGENT_INVALID", "AGENT_UNCERTAIN"];
 
 function parseIncident(value: unknown): Incident | null {
   if (!record(value) || value.schema_version !== "1.0" || !digest(value.incident_id) || !bounded(value.subject, 128) || !utc(value.detected_at) || typeof value.code !== "string" || (!halted.includes(value.code) && !stopped.includes(value.code)) || (value.status !== "OPEN" && value.status !== "CLOSED") || value.promotion_allowed !== false || !Array.isArray(value.transitions) || value.transitions.length > 10000) return null;
@@ -70,7 +70,7 @@ function parseIncident(value: unknown): Incident | null {
   for (const [index, raw] of value.transitions.entries()) {
     if (!record(raw) || (raw.action !== "CLOSED" && raw.action !== "REOPENED") || !utc(raw.at) || raw.incident_id !== value.incident_id || raw.transition_id !== `${value.incident_id}:${index + 1}`) return null;
     if (raw.action === "CLOSED") {
-      if (closed || quarantine || !["QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"].includes(value.code) || !bounded(raw.command_id, 128) || !bounded(raw.reason, 256)) return null;
+      if (closed || quarantine || !["QUOTE_MISSING", "QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"].includes(value.code) || !bounded(raw.command_id, 128) || !bounded(raw.reason, 256)) return null;
       closed = true;
     } else {
       if (!closed || raw.command_id !== null || raw.reason !== null) return null;

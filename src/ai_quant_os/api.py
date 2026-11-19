@@ -415,6 +415,7 @@ def create_app(
     temporal_repair_trust_store: Path | None = None,
     temporal_repair_trust_root_public_key: bytes | None = None,
     health_watchdog_enabled: bool | None = None,
+    expected_quote_instruments: tuple[str, ...] | None = None,
     demo_sync_state_dir: Path | None = None,
     telemetry: PaperTelemetry | None = None,
     collector_trace_file: Path | None = None,
@@ -467,6 +468,23 @@ def create_app(
     )
     world_state = WorldStateEngine(PAPER_INSTRUMENTS, max_quote_age_seconds=5)
     instrument_catalog = {item.instrument_id: item for item in PAPER_INSTRUMENTS}
+    if expected_quote_instruments is None:
+        configured_expected_quotes = tuple(
+            value.strip()
+            for value in os.getenv("AI_QUANT_EXPECTED_PAPER_INSTRUMENTS", "").split(",")
+            if value.strip()
+        )
+    else:
+        configured_expected_quotes = expected_quote_instruments
+    if (
+        not isinstance(configured_expected_quotes, tuple)
+        or any(
+            not isinstance(instrument_id, str) or instrument_id not in instrument_catalog
+            for instrument_id in configured_expected_quotes
+        )
+        or len(set(configured_expected_quotes)) != len(configured_expected_quotes)
+    ):
+        raise ValueError("Expected quote instruments must be unique supported PAPER instruments")
     risk = RiskKernel(limits, currency_policy=currency_policy)
     configured_path = paper_db_path or (
         Path(os.environ["AI_QUANT_PAPER_DB"]) if os.getenv("AI_QUANT_PAPER_DB") else None
@@ -711,6 +729,7 @@ def create_app(
                 ),
                 lambda: tuple(quotes.copy().values()),
                 current_time,
+                expected_quote_instruments=configured_expected_quotes,
                 control_lock=control_lock,
             )
             # Disabling monitoring cannot clear persisted safety/quarantine evidence.

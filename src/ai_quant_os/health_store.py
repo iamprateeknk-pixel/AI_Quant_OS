@@ -106,7 +106,12 @@ class HealthStore:
             if event["action"] == "CLOSED":
                 if (
                     incident_data.get("code")
-                    not in {"QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"}
+                    not in {
+                        "QUOTE_MISSING",
+                        "QUOTE_STALE",
+                        "QUOTE_FUTURE",
+                        "QUOTE_UNTRUSTED",
+                    }
                     or incident_id in closed
                     or not event.get("command_id")
                     or not event.get("reason")
@@ -198,7 +203,12 @@ class HealthStore:
             incident = self._read(incident_id)
             if incident is None:
                 raise ValueError("Unknown health incident")
-            if incident.code not in {"QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"}:
+            if incident.code not in {
+                "QUOTE_MISSING",
+                "QUOTE_STALE",
+                "QUOTE_FUTURE",
+                "QUOTE_UNTRUSTED",
+            }:
                 raise ValueError("Only quote incidents may be closed")
             prior = self._db.execute(
                 "SELECT transition_json FROM health_transitions WHERE incident_id = ? ORDER BY rowid DESC LIMIT 1",

@@ -30,11 +30,23 @@ class HealthWatchdog:
         quotes,
         clock,
         *,
+        expected_quote_instruments=(),
         control_lock=None,
     ):
+        if (
+            not isinstance(expected_quote_instruments, tuple)
+            or len(expected_quote_instruments) > 64
+        ):
+            raise ValueError("Invalid expected quote instruments")
+        if any(
+            not isinstance(instrument_id, str) or not 1 <= len(instrument_id) <= 128
+            for instrument_id in expected_quote_instruments
+        ) or len(set(expected_quote_instruments)) != len(expected_quote_instruments):
+            raise ValueError("Invalid expected quote instruments")
         self.store, self.state, self.risk = store, state, risk
         self.execution, self.registry = execution, registry
         self.graph_receipts, self.quotes, self.clock = graph_receipts, quotes, clock
+        self.expected_quote_instruments = tuple(sorted(expected_quote_instruments))
         self._lock = control_lock if control_lock is not None else Lock()
         self._cursor = ""
         self._last_tick = None
@@ -89,7 +101,12 @@ class HealthWatchdog:
                 )
                 if incident is None:
                     raise ValueError("Unknown health incident")
-                if incident.code not in {"QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"}:
+                if incident.code not in {
+                    "QUOTE_MISSING",
+                    "QUOTE_STALE",
+                    "QUOTE_FUTURE",
+                    "QUOTE_UNTRUSTED",
+                }:
                     raise ValueError("Only quote incidents may be closed")
                 now = self.clock()
                 from ai_quant_os.contracts import _require_aware
@@ -237,7 +254,17 @@ class HealthWatchdog:
                         },
                         now,
                     )
-                for quote in self.quotes():
+                quotes = tuple(self.quotes())
+                present_instruments = {quote.instrument_id for quote in quotes}
+                for instrument_id in self.expected_quote_instruments:
+                    if instrument_id not in present_instruments:
+                        self._observe(
+                            "QUOTE_MISSING",
+                            instrument_id,
+                            {"instrument_id": instrument_id, "quote_count": 0},
+                            now,
+                        )
+                for quote in quotes:
                     age = (now - quote.observed_at).total_seconds()
                     code = (
                         "QUOTE_UNTRUSTED"

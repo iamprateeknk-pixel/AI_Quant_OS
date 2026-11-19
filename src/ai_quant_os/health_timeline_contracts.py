@@ -39,6 +39,7 @@ class HealthIncidentSummary(BaseModel):
         "WATCHDOG_FAILURE",
         "CLOCK_REGRESSION",
         "BROKER_UNCONFIRMED",
+        "QUOTE_MISSING",
         "QUOTE_STALE",
         "QUOTE_FUTURE",
         "QUOTE_UNTRUSTED",

@@ -10,6 +10,14 @@
   context, adversarial, checkpoint, and trace-context set passes **48 tests**;
   Ruff and formatting checks pass. Independent provider/data-quality acceptance
   remains open. See `docs/P07_STATUS.md`.
+- The PAPER health watchdog can now journal `QUOTE_MISSING` for an operator-
+  declared expected instrument set (`AI_QUANT_EXPECTED_PAPER_INSTRUMENTS`). No
+  subscription is inferred when the setting is unset, and the incident does not
+  identify a provider outage. The operator timeline/API and A16 evidence
+  contracts recognize the new code. Missing-quote closure still requires a
+  fresh trusted quote and never clears the safety state. Focused health/store/
+  watchdog/API/A16 tests pass (**47 passed**); the health-timeline UI tests pass
+  (**5 passed**), with Ruff, formatting, and schema parity checks clean.
 
 ## Update (2026-11-17)
 
