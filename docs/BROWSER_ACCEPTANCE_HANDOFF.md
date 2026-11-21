@@ -91,6 +91,25 @@ The retained-state self-comparison only verifies that the six local references a
 
 The retained six screenshots are local inspection captures, not deterministic CI baselines. They contain session-specific IDs and timestamps and were produced with varying viewport heights. Compare a fresh capture against a matching local reference at the same viewport; mask only known dynamic regions. CI-quality pixel regression still needs reproducible seed data, fixed time/session values, and a browser/viewport pin. The illustrative execution-pack dashboard is not a valid baseline because its trading values are fabricated.
 
+## Deterministic visual regression (2026-11-21)
+
+The six named states now use a loopback-only synthetic PAPER API fixture, a fixed
+server and browser clock, an isolated synthetic operator cookie, a 1360x900
+viewport, UTC/en-GB locale, and the Chromium version bundled with the exact
+Playwright package in `apps/web/package-lock.json`. CI captures and compares all
+six states in the Windows locked-application job. The comparison allows at most
+0.2% changed pixels at per-channel threshold 8; missing captures, missing
+baselines, and dimension mismatches fail the job. CI installs Chromium from the
+locked Playwright package before capture. It does not use the retained local
+screenshots described above as references.
+
+Run `npm run visual:regression` from `apps/web` after a production build to
+capture and compare the suite. To intentionally replace references, run
+`npm run visual:update-baselines` locally, inspect the six PNGs under
+`apps/web/tests/fixtures/visual-baselines/`, and commit reviewed image changes.
+Baseline replacement is blocked when `CI=true`. The fixture API only serves
+fixed synthetic reads on loopback and does not submit orders or safety actions.
+
 ## Authenticated keyboard reachability (2026-10-23)
 
 On an isolated fresh PAPER state and production-built UI, keyboard navigation
