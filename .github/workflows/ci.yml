@@ -68,6 +68,24 @@ jobs:
       - if: ${{ matrix.profile == 'windows' }}
         run: npm run visual:regression
         working-directory: apps/web
+      - if: ${{ matrix.profile == 'windows' }}
+        name: Install pinned Alertmanager for webhook configuration acceptance
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $toolDirectory = Join-Path $env:GITHUB_WORKSPACE 'data-local/tools/alertmanager-0.35.0'
+          $archive = Join-Path $env:RUNNER_TEMP 'alertmanager-0.35.0.windows-amd64.zip'
+          Invoke-WebRequest `
+            -Uri 'https://github.com/prometheus/alertmanager/releases/download/v0.35.0/alertmanager-0.35.0.windows-amd64.zip' `
+            -OutFile $archive
+          if ((Get-Item -LiteralPath $archive).Length -ne 43531739) { throw 'Alertmanager archive size differs from the pinned manifest' }
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'cdf8cd664889bf3f27771881e10814f3d5916310aba90717b4424deb358b0fa3') { throw 'Alertmanager archive digest differs from the pinned manifest' }
+          New-Item -ItemType Directory -Path $toolDirectory -Force | Out-Null
+          Expand-Archive -LiteralPath $archive -DestinationPath $env:RUNNER_TEMP
+          $executable = Join-Path $env:RUNNER_TEMP 'alertmanager-0.35.0.windows-amd64/alertmanager.exe'
+          if ((Get-Item -LiteralPath $executable).Length -ne 55130112) { throw 'Alertmanager executable size differs from the pinned manifest' }
+          if ((Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash.ToLowerInvariant() -ne '313a07892a709bd96f8770266bec6ec85c46c21350d582f5cfc8d80b04cf7b69') { throw 'Alertmanager executable digest differs from the pinned manifest' }
+          Copy-Item -LiteralPath $executable -Destination (Join-Path $toolDirectory 'alertmanager.exe')
       - run: python -m pytest -q
   secrets:
     runs-on: ubuntu-latest

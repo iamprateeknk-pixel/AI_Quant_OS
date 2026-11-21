@@ -107,8 +107,33 @@ does not reset a password already stored in that database. A forced shutdown
 can leave an `observability-run-*` directory containing temporary credentials;
 after confirming no launcher is running, remove only that stale directory.
 The launcher does not start the OTel collector or API, install a Windows
-service, configure remote access, or send alert notifications. `--run-seconds
-N` can be used for a bounded 1–60 second smoke run. Override ports with
+service, or configure remote access. Alert delivery is disabled unless you
+explicitly provide a private file containing one HTTPS webhook URL. The URL
+must not include credentials or a fragment. Keep the file readable only by your
+Windows account; do not put the URL itself in a shell command, environment
+variable, issue, or log. For example, store it in a private file and pass only
+its path:
+
+```powershell
+$env:AI_QUANT_ALERT_WEBHOOK_URL_FILE = 'C:\private\paper-alert-url.txt'
+ai-quant-observability
+```
+
+Alternatively pass `--webhook-url-file <path>`; `--alertmanager-port` defaults
+to 9093. When configured, the launcher verifies the pinned Windows Alertmanager
+0.35.0 binary, starts it on loopback, and routes Prometheus alerts to it. It
+posts through HTTPS directly without environment proxies or redirects. The
+webhook body contains only the existing fixed alert labels/annotations and
+timestamps; it does not include API responses, credentials, account data,
+orders, fills or trace contents. The URL is copied into temporary launch
+configuration and removed on normal shutdown. Alertmanager may retry or repeat
+a notification after an ambiguous receiver response. A local TLS receiver
+acceptance test is included in CI; no provider-specific credentials, retention,
+or real endpoint acceptance is claimed. Alert delivery does not control PAPER
+or attest a human acknowledgement. See the upstream [Alertmanager configuration
+reference](https://prometheus.io/docs/alerting/latest/configuration/) for
+`url_file` and HTTP client settings. `--run-seconds N` can be used for a bounded
+1–60 second smoke run. Override ports with
 `--api-port`, `--prometheus-port`, and `--grafana-port`, or state location with
 `--state`.
 
@@ -119,8 +144,8 @@ uncertain custody or retry historical exports to turn an unconfirmed outcome
 into delivery. Failed HTTP requests now emit at most 60 safe summary lines per
 minute carrying the trace ID and route template; these lines stay in the local
 API process log and are not collected or persisted by the Prometheus/Grafana
-supervisor. External alert delivery, broader log retention, independent
-acceptance and all P00–P13 release gates remain open.
+supervisor. Provider-specific delivery/retention acceptance, broader log
+retention, independent acceptance and all P00–P13 release gates remain open.
 
 Sources reviewed 2026-10-11: [release](https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.162.0),
 [pinned file exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.162.0/exporter/fileexporter/README.md),
