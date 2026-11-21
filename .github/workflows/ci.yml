@@ -39,10 +39,10 @@ jobs:
         working-directory: apps/web
       - run: npm run build
         working-directory: apps/web
-      - if: matrix.profile == 'windows'
+      - if: ${{ matrix.profile == 'windows' }}
         run: npx playwright install chromium
         working-directory: apps/web
-      - if: matrix.profile == 'windows'
+      - if: ${{ matrix.profile == 'windows' }}
         run: npm run visual:regression
         working-directory: apps/web
       - run: python -m pytest -q
