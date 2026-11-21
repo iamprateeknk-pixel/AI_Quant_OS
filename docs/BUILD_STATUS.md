@@ -9,7 +9,9 @@
   dependency updates to clear the accompanying moderate development-tool
   advisories. A clean `npm ci`, full web test suite (**206 passed**), ESLint,
   TypeScript check, production build, and full npm audit (**0 vulnerabilities**)
-  all pass. The fix applies the Next.js [November 2026 security release](https://nextjs.org/blog/november-2026-security-release).
+  all pass. The web CI job now runs `npm audit --audit-level=moderate` after
+  install; the workflow parses and the locked dependencies pass the gate. The
+  fix applies the Next.js [November 2026 security release](https://nextjs.org/blog/november-2026-security-release).
 - PAPER contribution evidence now emits exact per-assignment candidate/genome
   accounting rows alongside strategy and instrument totals. Unassigned fills
   remain visible with null candidate identity, the report retains a binding gap
