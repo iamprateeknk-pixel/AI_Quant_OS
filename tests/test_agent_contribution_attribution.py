@@ -470,6 +470,16 @@ def test_agent_contribution_schema_matches_runtime_report():
 
     from ai_quant_os.agent_attribution import AgentContributionReport
 
+    def allow_decimal_exponent_strings(schema):
+        if isinstance(schema, dict):
+            if schema.get("pattern") == r"^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$":
+                schema["pattern"] = r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$"
+            for value in schema.values():
+                allow_decimal_exponent_strings(value)
+        elif isinstance(schema, list):
+            for value in schema:
+                allow_decimal_exponent_strings(value)
+
     path = (
         Path(__file__).resolve().parents[1]
         / "docs"
@@ -478,6 +488,7 @@ def test_agent_contribution_schema_matches_runtime_report():
     )
     actual = json.loads(path.read_text(encoding="utf-8"))
     expected = TypeAdapter(AgentContributionReport).json_schema(mode="validation")
+    allow_decimal_exponent_strings(expected)
     expected.update(
         {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -486,12 +497,16 @@ def test_agent_contribution_schema_matches_runtime_report():
     )
     assert actual == expected
     Draft202012Validator.check_schema(actual)
+    Draft202012Validator(
+        actual["$defs"]["AgentRunContribution"]["properties"]["actual_cash_flow_quote"]
+    ).validate("1E-7")
 
     marked_path = path.with_name("agent-marked-contribution-report-v2.schema.json")
     marked_actual = json.loads(marked_path.read_text(encoding="utf-8"))
     from ai_quant_os.agent_attribution import AgentMarkedContributionReport
 
     marked_expected = TypeAdapter(AgentMarkedContributionReport).json_schema(mode="validation")
+    allow_decimal_exponent_strings(marked_expected)
     marked_expected.update(
         {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -500,3 +515,6 @@ def test_agent_contribution_schema_matches_runtime_report():
     )
     assert marked_actual == marked_expected
     Draft202012Validator.check_schema(marked_actual)
+    Draft202012Validator(
+        marked_actual["$defs"]["AgentMarkedContribution"]["properties"]["cash_flow_quote"]
+    ).validate("1E-7")
