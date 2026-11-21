@@ -39,6 +39,29 @@ jobs:
         working-directory: apps/web
       - run: npm run build
         working-directory: apps/web
+      - if: ${{ matrix.profile == 'linux' }}
+        name: Install pinned Linux OpenTelemetry Collector
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="$GITHUB_WORKSPACE/data-local/tools/otelcol-contrib-0.162.0"
+          mkdir -p "$tool_dir"
+          archive="$RUNNER_TEMP/otelcol-contrib_0.162.0_linux_amd64.tar.gz"
+          curl --fail --location --retry 3 --retry-delay 2 --max-time 180 \
+            'https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.162.0/otelcol-contrib_0.162.0_linux_amd64.tar.gz' \
+            --output "$archive"
+          printf '%s  %s\n' \
+            'fcc063749f730f8c21fe29f2d340ff174f5f1c5885bd3156fb6c985a3036fcc3' "$archive" \
+            | sha256sum --check --status
+          test "$(stat --format=%s "$archive")" = '112285869'
+          tar -xzf "$archive" -C "$tool_dir"
+          binary="$tool_dir/otelcol-contrib"
+          test -f "$binary"
+          chmod 0755 "$binary"
+          printf '%s  %s\n' \
+            '2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064' "$binary" \
+            | sha256sum --check --status
+          printf 'AI_QUANT_NATIVE_COLLECTOR_EXE=%s\n' "$binary" >> "$GITHUB_ENV"
       - if: ${{ matrix.profile == 'windows' }}
         run: npx playwright install chromium
         working-directory: apps/web

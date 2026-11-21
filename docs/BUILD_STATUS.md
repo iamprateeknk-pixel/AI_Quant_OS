@@ -1,5 +1,23 @@
 # Build status against the execution pack
 
+## Update (2026-11-21)
+
+- P12 now captures six deterministic Mission Control PAPER states from a
+  loopback-only fixture and compares checked-in screenshots in the Windows
+  locked CI job. Local captures matched all six baselines with zero changed
+  pixels; the hosted Windows visual step passed on commit `b52b25d`. The broader
+  hosted run for that commit remains in progress.
+- The managed local OpenTelemetry Collector now selects the pinned Windows or
+  Linux amd64 distribution and validates its executable digest before start.
+  Linux asset manifest `infra/observability/collector-linux-release.json`
+  records the official release asset digest and extracted executable digest;
+  the archive was downloaded, size checked, and hash verified locally. Focused
+  local runtime/Collector tests pass (**22 passed, 5 skipped**), with Ruff,
+  formatting, CI YAML parsing, and `git diff --check` clean. The locked Linux CI
+  job now installs this exact binary and runs native Collector and managed
+  local-app integration coverage. Hosted native Linux acceptance for this
+  increment is pending. This remains a per-user process, not a system service.
+
 ## Update (2026-11-19)
 
 - The web build's security gate flagged Next.js 16.4.2 as affected by the

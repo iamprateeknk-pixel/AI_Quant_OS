@@ -1,9 +1,10 @@
 # Local paper trace collector
 
 Development configuration for upstream OpenTelemetry Collector Contrib **0.162.0**.
-The Windows amd64 archive and executable hashes are pinned in
-`collector-release.json`. The archive matched the official GitHub release asset
-digest; independent signature attestation and Linux verification remain pending.
+Windows amd64 and Linux amd64 archive and executable hashes are pinned in
+`collector-release.json` and `collector-linux-release.json`. Both archive hashes
+match the GitHub release API asset digests; independent signature attestation
+remains pending.
 
 ## Run with the existing local binary
 
@@ -33,6 +34,14 @@ launcher environment; the opt-in mode retains rotating traces under the local
 app state directory and exposes them through the existing protected trace reader.
 See `docs/LOCAL_APPLICATION_HANDOFF.md` for its environment boundary and startup
 behavior.
+
+The managed local launcher supports Linux amd64 as well. Place the verified
+`otelcol-contrib` executable at
+`data-local/tools/otelcol-contrib-0.162.0/otelcol-contrib`; the Linux asset and
+executable hashes are in `collector-linux-release.json`. The locked Linux CI job
+downloads that exact archive, checks its official archive digest, size and
+executable digest, and exercises both native Collector behavior and managed
+local-app startup/shutdown. This is a local user process, not a systemd service.
 
 For the manual workflow, set `AI_QUANT_OTEL_ENABLED=1` and
 `AI_QUANT_OTEL_ENDPOINT=http://127.0.0.1:4318/v1/traces` in the backend's launch

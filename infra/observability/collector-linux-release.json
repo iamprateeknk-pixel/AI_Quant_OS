@@ -1,0 +1,10 @@
+{
+  "version": "0.162.0",
+  "platform": "linux_amd64",
+  "source": "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.162.0/otelcol-contrib_0.162.0_linux_amd64.tar.gz",
+  "archive_sha256": "fcc063749f730f8c21fe29f2d340ff174f5f1c5885bd3156fb6c985a3036fcc3",
+  "archive_bytes": 112285869,
+  "executable": "otelcol-contrib",
+  "executable_sha256": "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064",
+  "trust": "GitHub release API asset digest matched; no independent signature attestation"
+}

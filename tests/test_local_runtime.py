@@ -115,6 +115,23 @@ def test_managed_local_collector_requires_telemetry_and_exposes_only_trace_file_
         )
 
 
+def test_managed_collector_selects_pinned_windows_and_linux_distributions():
+    root = Path(__file__).resolve().parents[1]
+    module = runtime()
+    windows_binary, windows_digest = module._collector_distribution(
+        root, system="Windows", machine="AMD64"
+    )
+    linux_binary, linux_digest = module._collector_distribution(
+        root, system="Linux", machine="x86_64"
+    )
+    assert windows_binary.name == "otelcol-contrib.exe"
+    assert linux_binary.name == "otelcol-contrib"
+    assert windows_digest == "f8f69bd67025f29353b44440069046ca5bdb50cbbfcd6f359d465f0fe84e436e"
+    assert len(linux_digest) == 64
+    with pytest.raises(RuntimeError, match="unsupported"):
+        module._collector_distribution(root, system="Linux", machine="aarch64")
+
+
 def test_local_monitoring_alert_flag_is_explicit_and_backend_only(tmp_path):
     settings = runtime().LocalSettings(Path.cwd(), tmp_path)
     backend, frontend = settings.environments({"AI_QUANT_PROMETHEUS_ALERTS_ENABLED": "1"})
