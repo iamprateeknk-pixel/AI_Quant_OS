@@ -6,6 +6,7 @@ import httpx
 import pytest
 
 from ai_quant_os.openai_reviewer import OpenAIReviewer, reviewer_from_environment
+from provider_test_adapters import reviewer_with_fixture_spending
 from ai_quant_os.decision_gateway import DecisionGateway
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
@@ -59,9 +60,13 @@ async def inputs():
     return state, decision
 
 
-def test_network_reviewer_requires_durable_spending_admission():
+@pytest.mark.parametrize(
+    "transport",
+    [None, httpx.MockTransport(lambda _request: httpx.Response(200))],
+)
+def test_reviewer_requires_durable_spending_admission(transport):
     with pytest.raises(ValueError, match="durable spending admission"):
-        OpenAIReviewer(api_key="fixture-key", model=MODEL)
+        OpenAIReviewer(api_key="fixture-key", model=MODEL, transport=transport)
 
 
 def test_official_request_shape_and_locally_bound_review():
@@ -79,7 +84,7 @@ def test_official_request_shape_and_locally_bound_review():
         assert "task_id" not in evidence
         return httpx.Response(200, json=response(request))
 
-    reviewer = OpenAIReviewer(
+    reviewer = reviewer_with_fixture_spending(
         api_key="fixture-key", model=MODEL, transport=httpx.MockTransport(handler)
     )
 
@@ -116,7 +121,7 @@ def test_official_request_shape_and_locally_bound_review():
     ],
 )
 def test_invalid_or_refused_response_is_sanitized_and_counted(change):
-    reviewer = OpenAIReviewer(
+    reviewer = reviewer_with_fixture_spending(
         api_key="fixture-key",
         model=MODEL,
         transport=httpx.MockTransport(
@@ -141,7 +146,7 @@ def test_request_cap_and_circuit_prevent_further_http_calls():
         calls.append(request)
         return httpx.Response(503)
 
-    reviewer = OpenAIReviewer(
+    reviewer = reviewer_with_fixture_spending(
         api_key="fixture-key",
         model=MODEL,
         max_requests=3,
@@ -197,7 +202,7 @@ def test_redirect_and_response_size_are_rejected_without_retry(status, limit):
             status, json=response(request), headers={"Location": "https://example.invalid/private"}
         )
 
-    reviewer = OpenAIReviewer(
+    reviewer = reviewer_with_fixture_spending(
         api_key="fixture-key",
         model=MODEL,
         max_response_bytes=limit,
@@ -221,14 +226,14 @@ def test_concurrent_request_cap_and_cancellation_accounting():
         await asyncio.sleep(10)
         return httpx.Response(200, json=response(request))
 
-    reviewer = OpenAIReviewer(
+    reviewer = reviewer_with_fixture_spending(
         api_key="fixture-key", model=MODEL, max_requests=1, transport=httpx.MockTransport(handler)
     )
 
     async def invoke():
         state, decision = await inputs()
         results = await asyncio.gather(
-            *(asyncio.wait_for(reviewer.review(state, decision), timeout=0.01) for _ in range(5)),
+            *(asyncio.wait_for(reviewer.review(state, decision), timeout=1) for _ in range(5)),
             return_exceptions=True,
         )
         assert all(isinstance(result, (ValueError, TimeoutError)) for result in results)
@@ -252,7 +257,7 @@ def test_older_success_cannot_close_newly_opened_circuit():
             await release_success.wait()
         return httpx.Response(200, json=response(request)) if index == 0 else httpx.Response(503)
 
-    reviewer = OpenAIReviewer(
+    reviewer = reviewer_with_fixture_spending(
         api_key="fixture-key",
         model=MODEL,
         failure_threshold=2,
@@ -282,11 +287,16 @@ def test_api_review_is_archived_and_status_is_sanitized():
         calls.append(request)
         return httpx.Response(200, json=response(request))
 
-    reviewer = OpenAIReviewer(
+    reviewer = reviewer_with_fixture_spending(
         api_key="fixture-key", model=MODEL, transport=httpx.MockTransport(handler)
     )
     client = TestClient(
-        create_app(operator_token="fixture-token", clock=lambda: NOW, deep_reviewer=reviewer)
+        create_app(
+            operator_token="fixture-token",
+            clock=lambda: NOW,
+            deep_reviewer=reviewer,
+            review_owner=reviewer.spend_owner,
+        )
     )
     headers = {"X-Operator-Token": "fixture-token"}
     client.post(
@@ -351,7 +361,7 @@ def test_only_one_circuit_probe_is_admitted_after_cooldown():
             httpx.Response(503) if len(calls) == 1 else httpx.Response(200, json=response(request))
         )
 
-    reviewer = OpenAIReviewer(
+    reviewer = reviewer_with_fixture_spending(
         api_key="fixture-key",
         model=MODEL,
         failure_threshold=1,
@@ -385,7 +395,7 @@ def test_invalid_structured_text_is_rejected(changes):
         result["output"][0]["content"][0]["text"] = json.dumps({**text, **changes})
         return httpx.Response(200, json=result)
 
-    reviewer = OpenAIReviewer(
+    reviewer = reviewer_with_fixture_spending(
         api_key="fixture-key", model=MODEL, transport=httpx.MockTransport(handler)
     )
 

@@ -32,9 +32,9 @@ admitting their pinned model. Constructors verify selected model/accounting unde
 original custody. Source, permission, owner and asynchronous-boundary checks remain.
 Constructing either adapter with its default outbound HTTP client now requires a
 durable spending store and typed owner; an omitted ledger fails before any call.
-An explicitly injected transport is caller-owned dependency injection and does not
-inherit this guarantee, so production wiring must pair such a transport with its
-own durable admission boundary.
+The same admission requirement applies when a custom HTTP transport is injected.
+That transport can alter request routing and remains caller-controlled, but it
+cannot bypass reservation and settlement in either adapter.
 
 To use one shared book through environment configuration:
 
