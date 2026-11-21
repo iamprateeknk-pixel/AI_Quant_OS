@@ -30,6 +30,11 @@ model and role in that book. No retry, refund, reset or reserve spending was add
 Both real adapters accept their original standalone policy or a shared policy
 admitting their pinned model. Constructors verify selected model/accounting under
 original custody. Source, permission, owner and asynchronous-boundary checks remain.
+Constructing either adapter with its default outbound HTTP client now requires a
+durable spending store and typed owner; an omitted ledger fails before any call.
+An explicitly injected transport is caller-owned dependency injection and does not
+inherit this guarantee, so production wiring must pair such a transport with its
+own durable admission boundary.
 
 To use one shared book through environment configuration:
 

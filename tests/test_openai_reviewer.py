@@ -59,6 +59,11 @@ async def inputs():
     return state, decision
 
 
+def test_network_reviewer_requires_durable_spending_admission():
+    with pytest.raises(ValueError, match="durable spending admission"):
+        OpenAIReviewer(api_key="fixture-key", model=MODEL)
+
+
 def test_official_request_shape_and_locally_bound_review():
     def handler(request):
         assert str(request.url) == "https://api.openai.com/v1/responses"

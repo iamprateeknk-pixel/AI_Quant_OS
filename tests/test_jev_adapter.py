@@ -44,6 +44,11 @@ def response(**changes):
     }
 
 
+def test_network_adapter_requires_durable_spending_admission():
+    with pytest.raises(ValueError, match="durable spending admission"):
+        JevClassifier(api_key="fixture-only-key", model=MODEL)
+
+
 def test_adapter_uses_official_choice_contract_and_preserves_probability_semantics():
     requests = []
 

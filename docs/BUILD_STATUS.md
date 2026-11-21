@@ -2,6 +2,11 @@
 
 ## Update (2026-11-21)
 
+- Jev and OpenAI adapter construction now refuses to create the default outbound
+  network client without a durable provider spending ledger and declared owner.
+  Red tests demonstrated both bypasses before the guard; both fail closed now.
+  Explicitly injected custom transports remain caller-owned. The affected adapter,
+  provider admission and shared spending suites pass (**121 tests**); Ruff passes.
 - P12 now captures six deterministic Mission Control PAPER states from a
   loopback-only fixture and compares checked-in screenshots in the Windows
   locked CI job. Local captures matched all six baselines with zero changed
