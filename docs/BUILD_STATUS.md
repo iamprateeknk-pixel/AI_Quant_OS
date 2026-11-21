@@ -14,9 +14,17 @@
   the archive was downloaded, size checked, and hash verified locally. Focused
   local runtime/Collector tests pass (**22 passed, 5 skipped**), with Ruff,
   formatting, CI YAML parsing, and `git diff --check` clean. The locked Linux CI
-  job now installs this exact binary and runs native Collector and managed
-  local-app integration coverage. Hosted native Linux acceptance for this
-  increment is pending. This remains a per-user process, not a system service.
+  job installed this exact binary and passed native Collector and managed
+  local-app integration coverage on run `44876344187`. This remains a per-user
+  process, not a system service.
+- The same hosted run's general Python suite reported **3,655 passed, 71
+  skipped, 1 failed**. The failure was a timing assumption in
+  `test_enabled_application_runs_and_stops_worker_with_protected_status`: the
+  daily accounting receipt and execution-attribution record are separate
+  durable writes, so the test could request attribution before its background
+  publication completed. The test now waits for that read to become available
+  under a fresh bounded deadline. The full scheduler file passes locally (**14
+  passed**); the hosted rerun is pending.
 
 ## Update (2026-11-19)
 
