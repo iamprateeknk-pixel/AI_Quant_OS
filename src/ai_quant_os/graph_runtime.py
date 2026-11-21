@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Awaitable, Callable, TypedDict
+from typing import Awaitable, Callable, Mapping, TypedDict
 
 import aiosqlite
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
@@ -17,7 +17,9 @@ from pydantic import BaseModel
 
 from ai_quant_os.agent_context import CompiledContext, require_context_for_agent
 from ai_quant_os.agent_envelope import AgentEnvelope
+from ai_quant_os.agent_model_router import AgentModelRouter, RoutingDecision
 from ai_quant_os.agent_registry import AgentRegistry, AgentToolBoundary
+from ai_quant_os.agent_routing import AgentExecutionRoute
 from ai_quant_os.context_checkpoints import ContextCheckpoint
 from ai_quant_os.graph_ledger import GraphLedger, GraphReceipt, GraphRecord
 from ai_quant_os.graph_trace import GraphTrace
@@ -69,9 +71,22 @@ class GraphRuntime:
         implementations: dict[tuple[str, str], AgentImplementation],
         tools: AgentToolBoundary,
         clock: Callable[[], datetime],
+        model_router: AgentModelRouter | None = None,
+        model_routing: Mapping[tuple[str, str], tuple[int, int]] | None = None,
     ) -> None:
         self._ledger, self._registry, self._tools, self._clock = ledger, registry, tools, clock
         self._implementations = implementations.copy()
+        self._model_router = model_router if model_router is not None else AgentModelRouter()
+        self._model_routing = dict(model_routing or {})
+        if set(self._model_routing) - set(self._implementations):
+            raise ValueError("Model routing references an unavailable agent implementation")
+        if any(
+            type(estimates) is not tuple
+            or len(estimates) != 2
+            or any(type(value) is not int or value <= 0 for value in estimates)
+            for estimates in self._model_routing.values()
+        ):
+            raise ValueError("Routed agents require positive input and output token estimates")
         for (agent, version), implementation in self._implementations.items():
             manifest = registry.get(agent, version)
             if (
@@ -103,6 +118,8 @@ class GraphRuntime:
         implementations: dict[tuple[str, str], AgentImplementation],
         tools: AgentToolBoundary,
         clock: Callable[[], datetime] | None = None,
+        model_router: AgentModelRouter | None = None,
+        model_routing: Mapping[tuple[str, str], tuple[int, int]] | None = None,
     ):
         ledger = GraphLedger(path, clock=clock)
         try:
@@ -123,6 +140,8 @@ class GraphRuntime:
                     implementations=implementations,
                     tools=tools,
                     clock=clock or (lambda: datetime.now(timezone.utc)),
+                    model_router=model_router,
+                    model_routing=model_routing,
                 )
         finally:
             ledger.close()
@@ -179,9 +198,24 @@ class GraphRuntime:
             self._ledger.transition(run_id, "CREATED", failure)
             return {}
         context = record.checkpoint.context
-        implementation = self._implementations[(context.agent_id, context.agent_version)]
+        agent_key = (context.agent_id, context.agent_version)
+        implementation = self._implementations[agent_key]
+        invocation = AgentInvocation(context, BoundAgentTools(context, self))
+        route_decision: RoutingDecision | None = None
+        route_receipt: AgentExecutionRoute | None = None
+        if agent_key in self._model_routing:
+            estimated_input_tokens, estimated_output_tokens = self._model_routing[agent_key]
+            route_decision = self._model_router.prepare(
+                self._registry,
+                context.agent_id,
+                context.agent_version,
+                task_id=context.task_id,
+                estimated_input_tokens=estimated_input_tokens,
+                estimated_output_tokens=estimated_output_tokens,
+            )
+            route_receipt = self._route_receipt(route_decision)
         # Commit before the external invocation; never replay a RUNNING reservation.
-        self._ledger.transition(run_id, "CREATED", "RUNNING")
+        self._ledger.transition(run_id, "CREATED", "RUNNING", routing=route_receipt)
         status, raw = "FAILED", None
         remaining = (context.valid_until - self._clock()).total_seconds()
         timeout = min(record.checkpoint.manifest.timeout_seconds, remaining)
@@ -189,10 +223,30 @@ class GraphRuntime:
             self.require_context(context)
             if timeout <= 0:
                 raise ValueError("Expired context")
-            output = await asyncio.wait_for(
-                implementation.invoke(AgentInvocation(context, BoundAgentTools(context, self))),
-                timeout=timeout,
-            )
+            if route_decision is None:
+                output = await asyncio.wait_for(implementation.invoke(invocation), timeout=timeout)
+            else:
+                estimates = self._model_routing[agent_key]
+
+                def record_route(decision: RoutingDecision) -> None:
+                    nonlocal route_decision
+                    route_decision = decision
+
+                _, output = await asyncio.wait_for(
+                    self._model_router.execute(
+                        self._registry,
+                        context.agent_id,
+                        context.agent_version,
+                        task_id=context.task_id,
+                        deterministic=lambda: implementation.invoke(invocation),
+                        estimated_input_tokens=estimates[0],
+                        estimated_output_tokens=estimates[1],
+                        provider_context=invocation,
+                        decision=route_decision,
+                        on_decision=record_route,
+                    ),
+                    timeout=timeout,
+                )
             self.require_context(context)
             if not isinstance(output, implementation.output_schema):
                 status = "INVALID"
@@ -218,8 +272,33 @@ class GraphRuntime:
         except Exception:
             status = "FAILED"
         # Caller cancellation deliberately leaves RUNNING: outcome may be uncertain.
-        self._ledger.transition(run_id, "RUNNING", status, raw if status == "COMPLETED" else None)
+        self._ledger.transition(
+            run_id,
+            "RUNNING",
+            status,
+            raw if status == "COMPLETED" else None,
+            routing=self._route_receipt(route_decision) if route_decision is not None else None,
+        )
         return {}
+
+    @staticmethod
+    def _route_receipt(decision: RoutingDecision) -> AgentExecutionRoute:
+        return AgentExecutionRoute(
+            agent_id=decision.agent_id,
+            agent_version=decision.agent_version,
+            task_id=decision.task_id,
+            squad=decision.squad,
+            criticality=decision.criticality,
+            kind=decision.kind,
+            governor_decision=decision.governor_decision,
+            routed_tier=decision.routed_tier.value,
+            execution_path=decision.executed_via,
+            provider_id=decision.provider_id,
+            attempted_provider_id=decision.attempted_provider_id,
+            fallback_reasons=decision.fallback_reasons,
+            input_tokens=decision.input_tokens,
+            output_tokens=decision.output_tokens,
+        )
 
     async def _finalize(self, state: GraphState) -> dict:
         self._ledger.get(state["run_id"])

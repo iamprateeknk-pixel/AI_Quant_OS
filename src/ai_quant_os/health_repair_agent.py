@@ -157,6 +157,10 @@ def _observations(context: CompiledContext):
             "health-repair:" + name + ":" + sha256(row.payload_json.encode()).hexdigest()
             for name, row in zip(INPUT_NAMES, context.inputs, strict=True)
         )
+        or any(
+            row.source_adapter_ref != "ai_quant_os.health_repair_sources@1.0.0"
+            for row in context.inputs
+        )
         or traces.input_name != "traces"
         or tests.input_name != "code_tests"
         or traces.reason != "TRACE_ARCHIVE_NOT_CONNECTED"
@@ -203,6 +207,10 @@ def _observations_v3(context: CompiledContext):
             "health-repair:" + name + ":" + sha256(row.payload_json.encode()).hexdigest()
             for name, row in zip(INPUT_NAMES, context.inputs, strict=True)
         )
+        or any(
+            row.source_adapter_ref != "ai_quant_os.health_repair_sources@1.0.0"
+            for row in context.inputs
+        )
         or health.open_incidents != incident.total_incidents
         or traces.input_name != "traces"
         or tests.input_name != "code_tests"
@@ -244,6 +252,10 @@ def _observations_v4(context: CompiledContext):
         != tuple(
             "health-repair:" + name + ":" + sha256(row.payload_json.encode()).hexdigest()
             for name, row in zip(INPUT_NAMES, context.inputs, strict=True)
+        )
+        or any(
+            row.source_adapter_ref != "ai_quant_os.health_repair_sources@1.0.0"
+            for row in context.inputs
         )
         or health.open_incidents != incidents.total_incidents
         or tests.input_name != "code_tests"

@@ -65,6 +65,8 @@ def test_context_fetch_and_graph_dispatch_share_one_original_role_quota(tmp_path
             registry,
             {"world_state": SourceBinding("WORLD_STATE_READ", "GENERAL", fetch)},
             clock=lambda: NOW,
+            timeout_seconds=10,
+            overall_timeout_seconds=30,
             call_budget=guard,
         )
         result = await compiler.compile("A02", "0.1.0", task_id="context", scope="PAPER")
@@ -379,26 +381,51 @@ def test_builder_context_uses_same_quota_for_reviewed_inert_candidate(tmp_path):
 
 
 def test_validation_context_exhaustion_cannot_restore_failed_candidate_evidence(package, tmp_path):
+    from contextlib import ExitStack
     from ai_quant_os.candidate_validation_store import CandidateValidationStore
+    from ai_quant_os.holdout_validator_rpc import HoldoutRpcClient, process_rpc_frame
+    from ai_quant_os.holdout_validator_service import HoldoutRequestHandler
+    from ai_quant_os.research_evidence_catalog import HoldoutEvidenceStore
+    from ai_quant_os.research_store import ResearchStore
+    from ai_quant_os.validation_package_store import ValidationPackageStore
     from test_candidate_validation_store import failed_tests
     from test_research_hypothesis_api import NOW as RESEARCH_NOW, HEADERS
 
-    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
-        failure = archive.put_failure(package, failed_tests(package))
-    with TestClient(
-        create_app(
-            paper_db_path=tmp_path / "paper.sqlite3",
-            operator_token="fixture-hypothesis",
-            clock=lambda: RESEARCH_NOW,
-            agent_call_policy=exhausted_role_policy("A10"),
+    with ExitStack() as stack:
+        holdouts = stack.enter_context(
+            HoldoutEvidenceStore(tmp_path / "service.research-data.holdout.sqlite3")
         )
-    ) as client:
-        result = client.post(
-            "/api/v1/sandbox/validation-scientist/context",
-            headers=HEADERS,
-            json={"task_id": "validation-quota", "artifact_ref": failure.failure_ref},
+        packages = stack.enter_context(
+            ValidationPackageStore(tmp_path / "service.validation-packages.sqlite3")
         )
-        assert result.status_code == 403, result.text
-        assert result.json()["detail"] == "Validation context admission denied"
-        status = client.get("/api/v1/agents/call-budget", headers=HEADERS).json()
-        assert status["agents"][9]["daily_calls"] == 0
+        validations = stack.enter_context(
+            CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3")
+        )
+        research = ResearchStore(tmp_path / "service.research.sqlite3")
+        failure = validations.put_failure(package, failed_tests(package))
+        handler = HoldoutRequestHandler(holdouts, packages, validations, research)
+
+        class LocalServiceClient:
+            def exchange(self, frame, *, timeout_ms):
+                assert timeout_ms > 0
+                return process_rpc_frame(frame, handler)
+
+        validator_client = HoldoutRpcClient(LocalServiceClient())
+        with TestClient(
+            create_app(
+                paper_db_path=tmp_path / "paper.sqlite3",
+                operator_token="fixture-hypothesis",
+                clock=lambda: RESEARCH_NOW,
+                agent_call_policy=exhausted_role_policy("A10"),
+                holdout_rpc_client=validator_client,
+            )
+        ) as client:
+            result = client.post(
+                "/api/v1/sandbox/validation-scientist/context",
+                headers=HEADERS,
+                json={"task_id": "validation-quota", "artifact_ref": failure.failure_ref},
+            )
+            assert result.status_code == 403, result.text
+            assert result.json()["detail"] == "Validation context admission denied"
+            status = client.get("/api/v1/agents/call-budget", headers=HEADERS).json()
+            assert status["agents"][9]["daily_calls"] == 0

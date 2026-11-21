@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, create_model
 
 from ai_quant_os.agent_context import ContextCompiler, EvidenceRecord, SourceBinding
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
+from ai_quant_os.agent_model_router import AgentModelRouter, LlmResult
+from ai_quant_os.cost_governor import ModelTier
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -36,7 +38,12 @@ async def context(registry):
 
 
 async def open_runtime(
-    path, registry, handlers, clock=lambda: NOW, output_schema=RegimeDistribution
+    path,
+    registry,
+    handlers,
+    clock=lambda: NOW,
+    output_schema=RegimeDistribution,
+    **runtime_options,
 ):
     # Import inside the test so missing implementation is an explicit failing assertion.
     import importlib.util
@@ -61,6 +68,7 @@ async def open_runtime(
         implementations=implementations,
         tools=AgentToolBoundary(registry, {}),
         clock=clock,
+        **runtime_options,
     )
 
 
@@ -117,6 +125,131 @@ def test_real_graph_executes_once_and_survives_restart(tmp_path):
             assert await runtime.run("run-1", evidence) == result
             assert runtime.quality_receipts() == observations
         assert calls == [evidence.context_ref]
+
+    asyncio.run(run())
+
+
+def test_graph_model_route_is_typed_durable_and_injected_only_for_allowlisted_agent(tmp_path):
+    async def run():
+        registry = load_agent_catalog()
+        evidence = await context(registry)
+        calls = []
+
+        async def deterministic(invocation):
+            calls.append("deterministic")
+            return RegimeDistribution(label="TRENDING")
+
+        async def provider(task, tier, invocation):
+            calls.append("provider")
+            assert task.agent_id == "A02"
+            assert task.task_id == "task"
+            assert tier is ModelTier.ROUTINE
+            assert invocation.context.context_ref == evidence.context_ref
+            return LlmResult(RegimeDistribution(label="RANGING"), input_tokens=17, output_tokens=3)
+
+        router = AgentModelRouter()
+        router.register_contextual_provider(
+            "fixture-provider", tiers={ModelTier.ROUTINE}, invoke=provider
+        )
+        path = tmp_path / "runtime.sqlite3"
+        async with await open_runtime(
+            path,
+            registry,
+            deterministic,
+            model_router=router,
+            model_routing={("A02", "0.1.0"): (100, 50)},
+        ) as runtime:
+            receipt = await runtime.run("model-run", evidence)
+            assert receipt.status == "COMPLETED"
+            assert receipt.output_json == '{"label":"RANGING"}'
+            trace = runtime.trace("model-run")
+            assert trace.schema_version == "1.1"
+            assert trace.routing.execution_path == "PROVIDER"
+            assert trace.routing.provider_id == "fixture-provider"
+            assert trace.routing.attempted_provider_id == "fixture-provider"
+            assert trace.routing.routed_tier == "ROUTINE"
+            assert trace.routing.input_tokens == 17
+            assert trace.routing.output_tokens == 3
+        async with await open_runtime(path, registry, deterministic) as runtime:
+            durable_trace = runtime.trace("model-run")
+            assert durable_trace.model_dump_json() == trace.model_dump_json()
+            assert durable_trace.events[0].status == "CREATED"
+            assert durable_trace.events[1].status == "RUNNING"
+            assert durable_trace.events[2].status == "COMPLETED"
+
+        async def unavailable_provider(task, tier, invocation):
+            raise RuntimeError("provider credential must not escape into the receipt")
+
+        failing_router = AgentModelRouter()
+        failing_router.register_contextual_provider(
+            "failing-provider", tiers={ModelTier.ROUTINE}, invoke=unavailable_provider
+        )
+        async with await open_runtime(
+            path,
+            registry,
+            deterministic,
+            model_router=failing_router,
+            model_routing={("A02", "0.1.0"): (100, 50)},
+        ) as runtime:
+            fallback = await runtime.run("fallback-run", evidence)
+            assert fallback.status == "COMPLETED"
+            assert fallback.output_json == '{"label":"TRENDING"}'
+            fallback_trace = runtime.trace("fallback-run")
+            assert fallback_trace.routing.execution_path == "DETERMINISTIC"
+            assert fallback_trace.routing.provider_id is None
+            assert fallback_trace.routing.attempted_provider_id == "failing-provider"
+            assert fallback_trace.routing.fallback_reasons == ("PROVIDER_FAILED",)
+            assert "credential" not in fallback_trace.model_dump_json().lower()
+
+        assert calls == ["provider", "deterministic"]
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize(
+    "input_tokens,output_tokens",
+    [(True, 1), (1.5, 1), (10_000_001, 1), (1, False), (1, 1.5), (1, 10_000_001)],
+)
+def test_invalid_provider_token_usage_falls_back_without_stranding_graph_run(
+    tmp_path, input_tokens, output_tokens
+):
+    async def run():
+        registry = load_agent_catalog()
+        evidence = await context(registry)
+        calls = []
+
+        async def deterministic(invocation):
+            calls.append("deterministic")
+            return RegimeDistribution(label="TRENDING")
+
+        async def malformed_provider(task, tier, invocation):
+            return LlmResult(
+                RegimeDistribution(label="RANGING"),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
+        router = AgentModelRouter()
+        router.register_contextual_provider(
+            "malformed-provider", tiers={ModelTier.ROUTINE}, invoke=malformed_provider
+        )
+        async with await open_runtime(
+            tmp_path / "runtime.sqlite3",
+            registry,
+            deterministic,
+            model_router=router,
+            model_routing={("A02", "0.1.0"): (100, 50)},
+        ) as runtime:
+            receipt = await runtime.run("malformed-usage", evidence)
+            trace = runtime.trace("malformed-usage")
+            assert receipt.status == "COMPLETED"
+            assert receipt.output_json == '{"label":"TRENDING"}'
+            assert trace.routing.execution_path == "DETERMINISTIC"
+            assert trace.routing.attempted_provider_id == "malformed-provider"
+            assert trace.routing.fallback_reasons == ("PROVIDER_FAILED",)
+            assert trace.routing.input_tokens is None
+            assert trace.routing.output_tokens is None
+        assert calls == ["deterministic"]
 
     asyncio.run(run())
 

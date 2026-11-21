@@ -113,7 +113,7 @@ def test_complete_scorecard_binds_native_reports_and_never_skips_missing_gates(
         "-m",
         "ai_quant_os.candidate_validation_cli",
         "--validation-archive",
-        str(tmp_path / "paper.validation-packages.sqlite3"),
+        str(tmp_path / "service.validation-packages.sqlite3"),
         "--package-ref",
         package.package_ref,
     ]

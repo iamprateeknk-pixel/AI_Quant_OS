@@ -1,5 +1,5 @@
 export type RealtimeFrame = {
-  epoch: string; sequence: number; captured_at: string; valid_until: string;
+  schema_version: "1.0"; epoch: string; sequence: number; captured_at: string; source_timestamp: string; received_at: string; valid_until: string;
   safety_state: "NORMAL" | "CAUTION" | "REDUCED_RISK" | "NO_NEW_RISK" | "FLATTEN_ONLY" | "HALT"; order_count: number;
   world_version: string; world_status: string;
   instruments: {instrument_id: string; quote_status: string; history_status: string; bar_count: number; regime: string; mid_price:string|null; spread_bps:string|null; return_bps:string|null; realized_volatility_bps:string|null}[];
@@ -21,7 +21,7 @@ export function frameCurrent(frame: RealtimeFrame, now: number): boolean {
   return Number.isFinite(now) && Date.parse(frame.captured_at) <= now+MAX_FUTURE_CLOCK_SKEW_MS && now < Date.parse(frame.valid_until);
 }
 export function parseRealtimeFrame(value: unknown, now: number): RealtimeFrame | null {
-  if (!record(value) || value.schema_version !== "1.0" || value.mode !== "PAPER" || typeof value.epoch !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(value.epoch) || !Number.isSafeInteger(value.sequence) || (value.sequence as number)<1 || !stamp(value.captured_at) || !stamp(value.valid_until) || !includes(["NORMAL","CAUTION","REDUCED_RISK","NO_NEW_RISK","FLATTEN_ONLY","HALT"],value.safety_state) || !Number.isSafeInteger(value.order_count) || (value.order_count as number)<0 || (value.order_count as number)>100000 || !record(value.world)) return null;
+  if (!Number.isFinite(now) || !record(value) || value.schema_version !== "1.0" || value.mode !== "PAPER" || typeof value.epoch !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[0-9a-f]{12}$/.test(value.epoch) || !Number.isSafeInteger(value.sequence) || (value.sequence as number)<1 || !stamp(value.captured_at) || !stamp(value.valid_until) || !includes(["NORMAL","CAUTION","REDUCED_RISK","NO_NEW_RISK","FLATTEN_ONLY","HALT"],value.safety_state) || !Number.isSafeInteger(value.order_count) || (value.order_count as number)<0 || (value.order_count as number)>100000 || !record(value.world)) return null;
   const world=value.world;
   if(world.schema_version!=="1.0" || world.source!=="PAPER_SIMULATED" || typeof world.world_state_version!=="string" || !/^world:[a-f0-9]{64}$/.test(world.world_state_version) || !stamp(world.as_of) || Date.parse(world.as_of)!==Date.parse(value.captured_at) || !stamp(world.valid_until) || !includes(["EMPTY","READY","DEGRADED"],world.status) || !Array.isArray(world.instruments) || world.instruments.length<1 || world.instruments.length>8) return null;
   const start=Date.parse(value.captured_at),end=Date.parse(value.valid_until);
@@ -41,7 +41,7 @@ export function parseRealtimeFrame(value: unknown, now: number): RealtimeFrame |
     if(JSON.stringify(ids)!==JSON.stringify(row.instrument_ids) || row.fresh_quote_count!==instruments.filter(item=>ids.includes(item.instrument_id) && item.quote_status==="FRESH").length) return null;
     currencies.add(row.currency);currency_twins.push({currency:row.currency,instrument_ids:ids,fresh_quote_count:row.fresh_quote_count as number,macro_available:row.macro_available});
   }
-  const frame:RealtimeFrame={epoch:value.epoch,sequence:value.sequence as number,captured_at:value.captured_at,valid_until:value.valid_until,safety_state:value.safety_state as RealtimeFrame["safety_state"],order_count:value.order_count as number,world_version:world.world_state_version,world_status:world.status as string,instruments,currency_twins};
+  const frame:RealtimeFrame={schema_version:"1.0",epoch:value.epoch,sequence:value.sequence as number,captured_at:value.captured_at,source_timestamp:world.as_of,received_at:new Date(now).toISOString(),valid_until:value.valid_until,safety_state:value.safety_state as RealtimeFrame["safety_state"],order_count:value.order_count as number,world_version:world.world_state_version,world_status:world.status as string,instruments,currency_twins};
   return frameCurrent(frame,now)?frame:null;
 }
 export function acceptRealtimeFrame(previous: RealtimeFrame | null, next: RealtimeFrame, reset: boolean): boolean {

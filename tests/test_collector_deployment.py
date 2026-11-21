@@ -47,14 +47,43 @@ def test_collector_configuration_is_local_bounded_and_has_no_remote_export():
     }
 
 
+def test_windows_and_linux_release_assets_are_pinned_to_the_expected_collector():
+    windows = json.loads(RELEASE.read_text(encoding="utf-8"))
+    linux = json.loads(
+        (ROOT / "infra/observability/collector-linux-release.json").read_text(encoding="utf-8")
+    )
+    assert windows["version"] == linux["version"] == "0.162.0"
+    assert windows["platform"] == "windows_amd64"
+    assert linux["platform"] == "linux_amd64"
+    assert (
+        windows["archive_sha256"]
+        == "b371829181e89947a1a6570b8b6c38c20d85e2d215b76bf042f89b365b9e5c3d"
+    )
+    assert (
+        linux["archive_sha256"]
+        == "fcc063749f730f8c21fe29f2d340ff174f5f1c5885bd3156fb6c985a3036fcc3"
+    )
+    assert linux["archive_bytes"] == 112285869
+    assert linux["executable"] == "otelcol-contrib"
+    assert (
+        linux["executable_sha256"]
+        == "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064"
+    )
+
+
 @pytest.fixture
 def native_collector():
     value = os.getenv("AI_QUANT_NATIVE_COLLECTOR_EXE")
     if not value:
         pytest.skip("Pinned native collector acceptance requires explicit executable path")
     executable = Path(value).resolve()
-    manifest = json.loads(RELEASE.read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.162.0" and manifest["platform"] == "windows_amd64"
+    manifest = json.loads(
+        (ROOT / "infra/observability/collector-linux-release.json").read_text(encoding="utf-8")
+        if os.name != "nt"
+        else RELEASE.read_text(encoding="utf-8")
+    )
+    expected_platform = "windows_amd64" if os.name == "nt" else "linux_amd64"
+    assert manifest["version"] == "0.162.0" and manifest["platform"] == expected_platform
     assert hashlib.sha256(executable.read_bytes()).hexdigest() == manifest["executable_sha256"]
     result = subprocess.run([str(executable), "--version"], capture_output=True, timeout=30)
     assert result.returncode == 0 and b"0.162.0" in result.stdout

@@ -732,10 +732,12 @@ stays disabled** (see "Honestly not done").
   invalid; expired → refused; out-of-scope agent → refused; failing
   or foreign holdout → refused; valid policy + passing holdout →
   authorized, still not applied.
-- Follow-up for the A17 owner: `evolution_director_agent` still
-  hardcodes `INDEPENDENT_PROMOTION_GATE_UNAVAILABLE` in its blocker
-  list. The gate now exists; consuming it (and dropping that blocker)
-  is the mission owner's change, deliberately not made here.
+- Follow-up (2026-11-19): A17 now calls `EvolutionPromotionGate.decide`
+  with the deployment's current no-policy state and uses its precise refusal
+  reasons as blockers. With no signed policy provisioned, it reports
+  `SIGNED_POLICY_MISSING` instead of claiming the implemented gate is
+  unavailable. The plan remains `WAIT_FOR_EVIDENCE`; the gate still cannot
+  apply a promotion.
 
 ### P10.4 — repair trial pipeline (`repair_trials.py`)
 
@@ -821,8 +823,9 @@ ownership).
 - **Evolution coverage remains A02/A07** for the reasons in P11.1;
   the coverage audit, not a claim, is the deliverable for the other
   16 agents.
-- A17's hardcoded `INDEPENDENT_PROMOTION_GATE_UNAVAILABLE` blocker is
-  unchanged (mission owner's file); the gate it names now exists.
+- Follow-up (2026-11-19): A17 now calls `EvolutionPromotionGate.decide`
+  and reports its `SIGNED_POLICY_MISSING` refusal for the current deployment;
+  the tournament plan remains withheld and promotion remains disabled.
 
 ### Verification
 

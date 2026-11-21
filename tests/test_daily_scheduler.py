@@ -196,11 +196,15 @@ def test_enabled_application_runs_and_stops_worker_with_protected_status(tmp_pat
             == 200
         )
         execution_url = "/api/v1/paper/evidence/daily/2026-01-02/execution-attribution"
-        assert client.get(execution_url, headers=headers).status_code == 200
-        assert (
-            client.get(execution_url, headers=headers).json()["report"]["contribution"]["coverage"]
-            == "EMPTY"
-        )
+        execution_response = client.get(execution_url, headers=headers)
+        # The scheduler publishes daily accounting and execution attribution
+        # in separate durable writes; the daily receipt may be visible first.
+        execution_deadline = time.monotonic() + 5
+        while execution_response.status_code == 404 and time.monotonic() < execution_deadline:
+            time.sleep(0.05)
+            execution_response = client.get(execution_url, headers=headers)
+        assert execution_response.status_code == 200, execution_response.text
+        assert execution_response.json()["report"]["contribution"]["coverage"] == "EMPTY"
     assert app.state.daily_task is None
 
 

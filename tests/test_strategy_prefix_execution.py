@@ -294,7 +294,7 @@ def test_operator_execute_is_wired_to_original_archives_and_exact_pins(
     argv = [
         "strategy-container",
         "--validation-archive",
-        str(job.path.parent.parent / "paper.validation-packages.sqlite3"),
+        str(job.path.parent.parent / "service.validation-packages.sqlite3"),
         "--package-ref",
         package.package_ref,
         "--index",

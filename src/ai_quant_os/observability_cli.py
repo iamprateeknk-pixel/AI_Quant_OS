@@ -14,6 +14,7 @@ import socket
 import sys
 import tempfile
 import time
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -29,6 +30,8 @@ class RuntimeSettings:
     grafana_port: int
     operator_token: str
     grafana_password: str
+    alertmanager_port: int = 9093
+    webhook_url_file: Path | None = None
 
     def validate(self) -> None:
         ports = (self.api_port, self.prometheus_port, self.grafana_port)
@@ -36,6 +39,15 @@ class RuntimeSettings:
             raise ValueError("ports must be integers from 1 through 65535")
         if len(set(ports)) != len(ports):
             raise ValueError("API, Prometheus, and Grafana ports must be distinct")
+        if self.webhook_url_file is not None:
+            if (
+                type(self.alertmanager_port) is not int
+                or not 1 <= self.alertmanager_port <= 65535
+                or self.alertmanager_port in ports
+                or not isinstance(self.webhook_url_file, Path)
+            ):
+                raise ValueError("Alertmanager port must be distinct and valid")
+            _read_webhook_url(self.webhook_url_file)
         if not self.operator_token or "\n" in self.operator_token or "\r" in self.operator_token:
             raise ValueError("a single-line PAPER operator token is required")
         if len(self.grafana_password) < 12 or "\n" in self.grafana_password:
@@ -54,6 +66,33 @@ class PreparedRuntime:
     prometheus_binary: Path
     grafana_binary: Path
     grafana_home: Path
+    alertmanager_config: Path | None = None
+    alertmanager_arguments: list[str] | None = None
+    alertmanager_environment: dict[str, str] | None = None
+    alertmanager_binary: Path | None = None
+
+
+def _read_webhook_url(path: Path) -> str:
+    try:
+        raw_url = path.read_bytes()
+        if len(raw_url) > 4096:
+            raise ValueError("Webhook URL file exceeds the configured bound")
+        url = raw_url.decode("utf-8").strip()
+        parsed = urlsplit(url)
+        if (
+            not url
+            or any(ord(character) < 32 for character in url)
+            or parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.fragment
+        ):
+            raise ValueError("A credential-free HTTPS webhook URL is required")
+        _ = parsed.port
+        return url
+    except (OSError, UnicodeDecodeError, ValueError) as error:
+        raise ValueError("A readable HTTPS webhook URL file is required") from error
 
 
 def _sha256(path: Path) -> str:
@@ -108,6 +147,27 @@ def _verify_native(checkout: Path) -> tuple[Path, Path, Path]:
     return prom, grafana, grafana_home
 
 
+def _verify_alertmanager(checkout: Path) -> Path:
+    if os.name != "nt":
+        raise RuntimeError("the pinned native Alertmanager binary currently supports Windows only")
+    manifest = json.loads(
+        (checkout / "infra/observability/alertmanager-release.json").read_text(encoding="utf-8")
+    )
+    if manifest.get("version") != "0.35.0" or manifest.get("platform") != "windows_amd64":
+        raise RuntimeError("pinned Alertmanager release manifest is invalid")
+    executable = manifest.get("executable")
+    if not isinstance(executable, dict) or executable.get("name") != "alertmanager.exe":
+        raise RuntimeError("pinned Alertmanager executable manifest is invalid")
+    binary = checkout / "data-local/tools/alertmanager-0.35.0/alertmanager.exe"
+    if (
+        not binary.is_file()
+        or binary.stat().st_size != executable.get("bytes")
+        or _sha256(binary) != executable.get("sha256")
+    ):
+        raise RuntimeError("pinned Alertmanager executable missing or hash mismatch")
+    return binary
+
+
 def prepare_runtime(settings: RuntimeSettings, run_directory: Path) -> PreparedRuntime:
     settings.validate()
     checkout = settings.checkout.resolve()
@@ -116,11 +176,20 @@ def prepare_runtime(settings: RuntimeSettings, run_directory: Path) -> PreparedR
         (settings.state / name).mkdir(parents=True, exist_ok=True)
     (settings.state / "prometheus").mkdir(parents=True, exist_ok=True)
     prom_binary, grafana_binary, grafana_home = _verify_native(checkout)
+    alertmanager_binary = (
+        _verify_alertmanager(checkout) if settings.webhook_url_file is not None else None
+    )
 
     source_config = json.loads((checkout / "infra/observability/prometheus.json").read_text())
     source_config["scrape_configs"][0]["static_configs"] = [
         {"targets": [f"127.0.0.1:{settings.api_port}"]}
     ]
+    if alertmanager_binary is not None:
+        source_config["alerting"] = {
+            "alertmanagers": [
+                {"static_configs": [{"targets": [f"127.0.0.1:{settings.alertmanager_port}"]}]}
+            ]
+        }
     config = run_directory / "prometheus.json"
     config.write_text(json.dumps(source_config, indent=2) + "\n", encoding="utf-8")
     shutil.copyfile(
@@ -132,6 +201,55 @@ def prepare_runtime(settings: RuntimeSettings, run_directory: Path) -> PreparedR
         settings.grafana_password, encoding="utf-8"
     )
     (run_directory / "operator-secret-key").write_text(secrets.token_urlsafe(48), encoding="utf-8")
+
+    alertmanager_config = None
+    alertmanager_arguments = None
+    if alertmanager_binary is not None and settings.webhook_url_file is not None:
+        (settings.state / "alertmanager").mkdir(parents=True, exist_ok=True)
+        webhook_url = _read_webhook_url(settings.webhook_url_file)
+        (run_directory / "webhook-url").write_text(webhook_url, encoding="utf-8")
+        alertmanager_config = run_directory / "alertmanager.json"
+        alertmanager_config.write_text(
+            json.dumps(
+                {
+                    "global": {"resolve_timeout": "5m"},
+                    "route": {
+                        "receiver": "paper-webhook",
+                        "group_by": ["alertname"],
+                        "group_wait": "10s",
+                        "group_interval": "1m",
+                        "repeat_interval": "4h",
+                    },
+                    "receivers": [
+                        {
+                            "name": "paper-webhook",
+                            "webhook_configs": [
+                                {
+                                    "url_file": "webhook-url",
+                                    "send_resolved": True,
+                                    "max_alerts": 2,
+                                    "timeout": "5s",
+                                    "http_config": {
+                                        "follow_redirects": False,
+                                        "proxy_from_environment": False,
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        alertmanager_arguments = [
+            str(alertmanager_binary),
+            f"--config.file={alertmanager_config}",
+            f"--storage.path={settings.state / 'alertmanager'}",
+            "--cluster.listen-address=",
+            f"--web.listen-address=127.0.0.1:{settings.alertmanager_port}",
+        ]
 
     grafana_source = checkout / "infra/observability/grafana"
     provisioning = run_directory / "provisioning"
@@ -157,7 +275,9 @@ def prepare_runtime(settings: RuntimeSettings, run_directory: Path) -> PreparedR
     clean_env = {
         key: value
         for key, value in os.environ.items()
-        if not key.startswith("GF_") and key not in secret_names
+        if not key.startswith("GF_")
+        and key not in secret_names
+        and key.lower() not in {"http_proxy", "https_proxy", "all_proxy"}
     }
     prom_env = dict(clean_env)
     grafana_env = {
@@ -170,6 +290,7 @@ def prepare_runtime(settings: RuntimeSettings, run_directory: Path) -> PreparedR
         "GF_PATHS_PROVISIONING": str(provisioning),
         "AI_QUANT_GRAFANA_DASHBOARDS": str(dashboards),
     }
+    alertmanager_env = dict(clean_env) if alertmanager_binary is not None else None
     return PreparedRuntime(
         run_directory,
         config,
@@ -181,6 +302,10 @@ def prepare_runtime(settings: RuntimeSettings, run_directory: Path) -> PreparedR
         prom_binary,
         grafana_binary,
         grafana_home,
+        alertmanager_config,
+        alertmanager_arguments,
+        alertmanager_env,
+        alertmanager_binary,
     )
 
 
@@ -214,7 +339,10 @@ def run(settings: RuntimeSettings, run_seconds: int | None = None) -> int:
     if run_seconds is not None and not 1 <= run_seconds <= 60:
         raise ValueError("--run-seconds must be between 1 and 60")
     checkout = settings.checkout.resolve()
-    for port in (settings.prometheus_port, settings.grafana_port):
+    ports = [settings.prometheus_port, settings.grafana_port]
+    if settings.webhook_url_file is not None:
+        ports.append(settings.alertmanager_port)
+    for port in ports:
         if not _free_loopback_port(port):
             raise RuntimeError(f"requested loopback port {port} is already in use")
     with httpx.Client(timeout=2, trust_env=False, follow_redirects=False) as client:
@@ -230,6 +358,18 @@ def run(settings: RuntimeSettings, run_seconds: int | None = None) -> int:
     with tempfile.TemporaryDirectory(prefix="observability-run-", dir=settings.state) as temp:
         runtime = prepare_runtime(settings, Path(temp) / "private")
         with ExitStack() as stack:
+            alertmanager = None
+            if runtime.alertmanager_arguments is not None:
+                alertmanager = OwnedProcess(
+                    runtime.alertmanager_arguments,
+                    cwd=runtime.run_directory,
+                    environment=runtime.alertmanager_environment or {},
+                )
+                stack.callback(alertmanager.close)
+                _wait_ready(
+                    alertmanager,
+                    f"http://127.0.0.1:{settings.alertmanager_port}/-/ready",
+                )
             prom = OwnedProcess(
                 runtime.prometheus_arguments,
                 cwd=runtime.run_directory,
@@ -261,12 +401,21 @@ def run(settings: RuntimeSettings, run_seconds: int | None = None) -> int:
                         "status": "READY",
                         "prometheus": f"http://127.0.0.1:{settings.prometheus_port}",
                         "grafana": f"http://127.0.0.1:{settings.grafana_port}",
+                        **(
+                            {"alertmanager": (f"http://127.0.0.1:{settings.alertmanager_port}")}
+                            if alertmanager is not None
+                            else {}
+                        ),
                     }
                 )
             )
             deadline = time.monotonic() + run_seconds if run_seconds else None
             while True:
-                if prom.process.poll() is not None or grafana.process.poll() is not None:
+                if (
+                    prom.process.poll() is not None
+                    or grafana.process.poll() is not None
+                    or (alertmanager is not None and alertmanager.process.poll() is not None)
+                ):
                     raise RuntimeError("an observability process exited unexpectedly")
                 if deadline is not None and time.monotonic() >= deadline:
                     break
@@ -283,6 +432,15 @@ def main() -> int:
     parser.add_argument("--api-port", type=int, default=8000)
     parser.add_argument("--prometheus-port", type=int, default=9090)
     parser.add_argument("--grafana-port", type=int, default=3100)
+    parser.add_argument("--alertmanager-port", type=int, default=9093)
+    parser.add_argument(
+        "--webhook-url-file",
+        type=Path,
+        default=Path(os.environ["AI_QUANT_ALERT_WEBHOOK_URL_FILE"])
+        if os.getenv("AI_QUANT_ALERT_WEBHOOK_URL_FILE")
+        else None,
+        help="private file containing an HTTPS notification URL; enables external delivery",
+    )
     parser.add_argument("--run-seconds", type=int)
     args = parser.parse_args()
     token, password = (
@@ -303,6 +461,8 @@ def main() -> int:
                 args.grafana_port,
                 token,
                 password,
+                args.alertmanager_port,
+                args.webhook_url_file.resolve() if args.webhook_url_file else None,
             ),
             args.run_seconds,
         )

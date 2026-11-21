@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 import os
 import threading
 import uuid
@@ -42,7 +43,7 @@ def request(**changes):
 
 
 def test_request_is_strictly_bound_to_validation_identity_and_refs():
-    assert HOLDOUT_PIPE_NAME.endswith(".v3")
+    assert HOLDOUT_PIPE_NAME.endswith(".v4")
     parsed = HoldoutRequest.model_validate(request())
     assert parsed.operation == "VALIDATION_RUN"
     assert parsed.holdout_ref == "holdout-001"
@@ -108,15 +109,132 @@ def test_validation_package_preparation_request_can_transfer_only_checked_inputs
     assert decode_frame(encoded, HoldoutRequest) == prepared
 
     with pytest.raises(ValidationError):
-        HoldoutRequest.model_validate(
-            request(operation="VALIDATION_RUN", preparation=payload)
+        HoldoutRequest.model_validate(request(operation="VALIDATION_RUN", preparation=payload))
+
+
+def test_validation_publication_request_is_bounded_and_has_no_caller_supplied_archive_scope():
+    from ai_quant_os.holdout_validator_rpc import HoldoutValidationPublication
+
+    publication = HoldoutValidationPublication(
+        kind="PREREQUISITE_FAILURE",
+        package_ref="validation-package:" + "a" * 64,
+        test_result_json='{"status":"PROPOSED_TESTS_FAILED_UNATTESTED"}',
+    )
+    payload = request(
+        operation="VALIDATION_PUBLISH",
+        candidate_ref=None,
+        training_ref=None,
+        holdout_ref=None,
+        evidence_ref=publication.package_ref,
+        publication=publication,
+    )
+    parsed = HoldoutRequest.model_validate(payload)
+    assert decode_frame(encode_frame(parsed), HoldoutRequest) == parsed
+    assert len(encode_frame(parsed)) <= MAX_FRAME_BYTES + 4
+
+    for invalid in (
+        {**payload, "agent_id": "A11"},
+        {**payload, "evidence_ref": "validation-package:" + "b" * 64},
+        {**payload, "candidate_ref": "caller-controlled-candidate"},
+    ):
+        with pytest.raises(ValidationError):
+            HoldoutRequest.model_validate(invalid)
+
+    with pytest.raises(ValidationError):
+        HoldoutValidationPublication(
+            kind="PREREQUISITE_FAILURE",
+            package_ref=publication.package_ref,
+            test_result_json="x" * (MAX_FRAME_BYTES + 1),
         )
+
+
+def test_holdout_ingestion_request_binds_bytes_and_training_inventory():
+    import base64
+    from hashlib import sha256
+
+    from ai_quant_os.holdout_validator_rpc import HoldoutDatasetPublication
+
+    raw = b"checked holdout csv"
+    publication = HoldoutDatasetPublication(
+        source_id="sealed-feed",
+        raw_base64=base64.b64encode(raw).decode(),
+        raw_sha256=sha256(raw).hexdigest(),
+        training_receipts_json=(),
+    )
+    payload = request(
+        operation="HOLDOUT_PUBLISH",
+        candidate_ref=None,
+        training_ref=None,
+        holdout_ref=None,
+        evidence_ref="holdout-ingest:" + publication.raw_sha256,
+        holdout_publication=publication,
+    )
+    parsed = HoldoutRequest.model_validate(payload)
+    assert decode_frame(encode_frame(parsed), HoldoutRequest) == parsed
+    assert len(encode_frame(parsed)) <= MAX_FRAME_BYTES + 4
+
+    for invalid in (
+        {**payload, "agent_id": "A11"},
+        {**payload, "evidence_ref": "holdout-ingest:" + "0" * 64},
+        {**payload, "candidate_ref": "candidate-001"},
+    ):
+        with pytest.raises(ValidationError):
+            HoldoutRequest.model_validate(invalid)
+    with pytest.raises(ValidationError):
+        HoldoutDatasetPublication(
+            source_id="sealed-feed",
+            raw_base64=base64.b64encode(raw).decode(),
+            raw_sha256="0" * 64,
+            training_receipts_json=(),
+        )
+
+    from hashlib import sha256
+
+    from ai_quant_os.research_evidence_catalog import _receipt
+    from test_research_evidence_catalog import NOW, raw_bars
+
+    raw_csv = raw_bars(minute=10)
+    uploaded = HoldoutDatasetPublication(
+        source_id="sealed-feed",
+        raw_base64=base64.b64encode(raw_csv).decode(),
+        raw_sha256=sha256(raw_csv).hexdigest(),
+        training_receipts_json=(),
+    )
+    ingestion = HoldoutRequest.model_validate(
+        request(
+            operation="HOLDOUT_PUBLISH",
+            candidate_ref=None,
+            training_ref=None,
+            holdout_ref=None,
+            evidence_ref="holdout-ingest:" + uploaded.raw_sha256,
+            holdout_publication=uploaded,
+        )
+    )
+    receipt_json = _receipt(raw_csv, "sealed-feed", "HOLDOUT", NOW).model_dump_json()
+    response = HoldoutResponse(
+        request_id=ingestion.request_id,
+        task_id=ingestion.task_id,
+        context_ref=ingestion.context_ref,
+        status="CHECKED_HOLDOUT_PUBLISHED",
+        evidence_ref=ingestion.evidence_ref,
+        summary_sha256=sha256(receipt_json.encode()).hexdigest(),
+        aggregate={},
+        published_ref=_receipt(raw_csv, "sealed-feed", "HOLDOUT", NOW).dataset_ref,
+        receipt_json=receipt_json,
+    )
+    assert verify_response(ingestion, response) == response
+    with pytest.raises(ValueError, match="receipt binding"):
+        verify_response(ingestion, response.model_copy(update={"receipt_json": "{}"}))
 
 
 def test_installed_client_fails_closed_off_windows(monkeypatch):
     from ai_quant_os import holdout_validator_rpc as rpc
 
-    monkeypatch.setattr(rpc.os, "name", "posix")
+    monkeypatch.setattr(
+        rpc,
+        "os",
+        SimpleNamespace(**{**vars(rpc.os), "name": "posix"}),
+    )
     client = rpc.installed_windows_holdout_client()
     with pytest.raises(ConnectionError, match="service is unavailable"):
         client.call(HoldoutRequest.model_validate(request()))
@@ -125,7 +243,11 @@ def test_installed_client_fails_closed_off_windows(monkeypatch):
 def test_installed_client_fails_closed_when_service_identity_is_unregistered(monkeypatch):
     from ai_quant_os import holdout_service_security, holdout_validator_rpc as rpc
 
-    monkeypatch.setattr(rpc.os, "name", "nt")
+    monkeypatch.setattr(
+        rpc,
+        "os",
+        SimpleNamespace(**{**vars(rpc.os), "name": "nt"}),
+    )
     monkeypatch.setattr(
         holdout_service_security,
         "service_sid_for_name",

@@ -4,6 +4,7 @@ import subprocess
 import sys
 from datetime import timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -50,7 +51,11 @@ def test_worker_dispatches_reconciliation_without_dispatching_submission(monkeyp
             account_scope_ref=module.account_scope(enrollment_value.connection),
         )
 
-    monkeypatch.setattr(module.os, "name", "nt")
+    monkeypatch.setattr(
+        module,
+        "os",
+        SimpleNamespace(**{**vars(module.os), "name": "nt"}),
+    )
     monkeypatch.setattr(module.Path, "is_file", lambda self: True)
     monkeypatch.setattr(module, "reconcile_demo_order", reconcile)
     monkeypatch.setattr(module, "submit_demo_order", lambda *a, **k: pytest.fail("Must not submit"))

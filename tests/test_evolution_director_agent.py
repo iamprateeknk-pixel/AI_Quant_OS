@@ -36,7 +36,8 @@ def test_a17_withholds_evolution_plan_without_quality_and_promotion_evidence():
     assert output.tournament_actions == ()
     assert "QUALITY_METRICS_UNAVAILABLE" in output.blockers
     assert "TRAINING_DATASETS_UNAVAILABLE" in output.blockers
-    assert "INDEPENDENT_PROMOTION_GATE_UNAVAILABLE" in output.blockers
+    assert "SIGNED_POLICY_MISSING" in output.blockers
+    assert "INDEPENDENT_PROMOTION_GATE_UNAVAILABLE" not in output.blockers
     assert output.promotion_allowed is False
 
 

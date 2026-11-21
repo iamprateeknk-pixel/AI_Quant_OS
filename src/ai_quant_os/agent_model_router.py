@@ -68,14 +68,18 @@ class LlmResult:
     output_tokens: int
 
     def __post_init__(self) -> None:
-        if self.input_tokens < 0 or self.output_tokens < 0:
-            raise ValueError("Provider token usage cannot be negative")
+        if any(
+            type(value) is not int or not 0 <= value <= 10_000_000
+            for value in (self.input_tokens, self.output_tokens)
+        ):
+            raise ValueError("Provider token usage must be a bounded nonnegative integer")
 
 
 #: A provider call: given the governed task and the admitted tier,
 #: produce a result. Providers are plain callables so tests (and any
 #: future real adapter) bind without the router importing an SDK.
 ProviderInvoke = Callable[[TaskRequest, ModelTier], Awaitable[LlmResult]]
+ContextualProviderInvoke = Callable[[TaskRequest, ModelTier, object], Awaitable[LlmResult]]
 DeterministicInvoke = Callable[[], Awaitable[object]]
 
 
@@ -83,7 +87,8 @@ DeterministicInvoke = Callable[[], Awaitable[object]]
 class _Provider:
     provider_id: str
     tiers: frozenset
-    invoke: ProviderInvoke
+    invoke: ProviderInvoke | ContextualProviderInvoke
+    accepts_context: bool = False
 
 
 @dataclass(frozen=True)
@@ -100,7 +105,10 @@ class RoutingDecision:
     routed_tier: ModelTier
     executed_via: Literal["DETERMINISTIC", "PROVIDER"]
     provider_id: str | None
+    attempted_provider_id: str | None
     fallback_reasons: tuple[str, ...]
+    input_tokens: int | None = None
+    output_tokens: int | None = None
 
 
 class AgentModelRouter:
@@ -140,7 +148,34 @@ class AgentModelRouter:
             raise ValueError("Providers cannot serve the DETERMINISTIC tier")
         if provider_id in self._providers:
             raise ValueError("Provider is already registered")
-        self._providers[provider_id] = _Provider(provider_id, tier_set, invoke)
+        self._register(provider_id, tier_set, invoke, accepts_context=False)
+
+    def register_contextual_provider(
+        self,
+        provider_id: str,
+        *,
+        tiers: Iterable[ModelTier],
+        invoke: ContextualProviderInvoke,
+    ) -> None:
+        """Register a provider that receives the current typed agent invocation."""
+        tier_set = frozenset(tiers)
+        if not provider_id or not tier_set or not callable(invoke):
+            raise ValueError("Provider id, tiers and invoke callable are required")
+        if ModelTier.DETERMINISTIC in tier_set:
+            raise ValueError("Providers cannot serve the DETERMINISTIC tier")
+        self._register(provider_id, tier_set, invoke, accepts_context=True)
+
+    def _register(
+        self,
+        provider_id: str,
+        tiers: frozenset,
+        invoke: ProviderInvoke | ContextualProviderInvoke,
+        *,
+        accepts_context: bool,
+    ) -> None:
+        if provider_id in self._providers:
+            raise ValueError("Provider is already registered")
+        self._providers[provider_id] = _Provider(provider_id, tiers, invoke, accepts_context)
 
     @property
     def enabled_providers(self) -> tuple[str, ...]:
@@ -221,6 +256,7 @@ class AgentModelRouter:
                 routed_tier=tier,
                 executed_via="DETERMINISTIC",
                 provider_id=None,
+                attempted_provider_id=None,
                 fallback_reasons=(),
             )
         admission = self._budget.admit(task, tier)
@@ -245,7 +281,38 @@ class AgentModelRouter:
             routed_tier=admission.tier,
             executed_via="PROVIDER" if provider is not None else "DETERMINISTIC",
             provider_id=provider.provider_id if provider is not None else None,
+            attempted_provider_id=provider.provider_id if provider is not None else None,
             fallback_reasons=tuple(fallbacks),
+        )
+
+    def prepare(
+        self,
+        registry: AgentRegistry,
+        agent_id: str,
+        version: str,
+        *,
+        task_id: str,
+        kind: str = "llm",
+        estimated_input_tokens: int = 0,
+        estimated_output_tokens: int = 0,
+        uncertainty: bool = False,
+        disagreement: bool = False,
+        verifier_failed: bool = False,
+    ) -> RoutingDecision:
+        """Observe task rate and return the route to persist before invocation."""
+        if self._storm is not None:
+            self._storm.observe(task_id, agent_id, self._clock())
+        return self.route(
+            registry,
+            agent_id,
+            version,
+            task_id=task_id,
+            kind=kind,
+            estimated_input_tokens=estimated_input_tokens,
+            estimated_output_tokens=estimated_output_tokens,
+            uncertainty=uncertainty,
+            disagreement=disagreement,
+            verifier_failed=verifier_failed,
         )
 
     async def execute(
@@ -262,6 +329,9 @@ class AgentModelRouter:
         uncertainty: bool = False,
         disagreement: bool = False,
         verifier_failed: bool = False,
+        provider_context: object = None,
+        decision: RoutingDecision | None = None,
+        on_decision: Callable[[RoutingDecision], None] | None = None,
     ) -> tuple[RoutingDecision, object]:
         """Execute one agent task, honouring the routing decision.
 
@@ -271,20 +341,26 @@ class AgentModelRouter:
         provider token usage is recorded with the governor only when a
         provider call completed.
         """
-        if self._storm is not None:
-            self._storm.observe(task_id, agent_id, self._clock())
-        decision = self.route(
-            registry,
-            agent_id,
-            version,
-            task_id=task_id,
-            kind=kind,
-            estimated_input_tokens=estimated_input_tokens,
-            estimated_output_tokens=estimated_output_tokens,
-            uncertainty=uncertainty,
-            disagreement=disagreement,
-            verifier_failed=verifier_failed,
-        )
+        if decision is None:
+            decision = self.prepare(
+                registry,
+                agent_id,
+                version,
+                task_id=task_id,
+                kind=kind,
+                estimated_input_tokens=estimated_input_tokens,
+                estimated_output_tokens=estimated_output_tokens,
+                uncertainty=uncertainty,
+                disagreement=disagreement,
+                verifier_failed=verifier_failed,
+            )
+        elif (
+            decision.agent_id,
+            decision.agent_version,
+            decision.task_id,
+            decision.kind,
+        ) != (agent_id, version, task_id, kind):
+            raise ValueError("Prepared model route does not match this agent task")
         if decision.executed_via == "PROVIDER":
             provider = self._providers[decision.provider_id]
             task = self._task(
@@ -297,17 +373,41 @@ class AgentModelRouter:
                 estimated_output_tokens=estimated_output_tokens,
             )
             try:
-                result = await provider.invoke(task, decision.routed_tier)
+                if provider.accepts_context:
+                    result = await provider.invoke(task, decision.routed_tier, provider_context)
+                else:
+                    result = await provider.invoke(task, decision.routed_tier)
             except Exception:
                 decision = replace(
                     decision,
                     executed_via="DETERMINISTIC",
                     provider_id=None,
+                    attempted_provider_id=provider.provider_id,
                     fallback_reasons=(*decision.fallback_reasons, "PROVIDER_FAILED"),
                 )
+                if on_decision is not None:
+                    on_decision(decision)
             else:
                 if not isinstance(result, LlmResult):
-                    raise ValueError("Provider returned an invalid result")
+                    decision = replace(
+                        decision,
+                        executed_via="DETERMINISTIC",
+                        provider_id=None,
+                        attempted_provider_id=provider.provider_id,
+                        fallback_reasons=(*decision.fallback_reasons, "PROVIDER_FAILED"),
+                    )
+                    if on_decision is not None:
+                        on_decision(decision)
+                    return decision, await deterministic()
                 self._budget.record_usage(task, result.input_tokens, result.output_tokens)
+                decision = replace(
+                    decision,
+                    input_tokens=result.input_tokens,
+                    output_tokens=result.output_tokens,
+                )
+                if on_decision is not None:
+                    on_decision(decision)
                 return decision, result.output
+        if on_decision is not None:
+            on_decision(decision)
         return decision, await deterministic()

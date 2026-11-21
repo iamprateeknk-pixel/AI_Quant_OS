@@ -91,6 +91,10 @@ class HoldoutRequestHandler:
             return self._prepare_validation(request)
         if request.operation == "VALIDATION_PACKAGE_METADATA":
             return self._validation_package_metadata(request)
+        if request.operation == "VALIDATION_PUBLISH":
+            return self._publish_validation(request)
+        if request.operation == "HOLDOUT_PUBLISH":
+            return self._publish_holdout(request)
         if request.operation == "STRESS_RUN":
             return self._stress(request)
         if request.operation == "STRESS_CONTEXT":
@@ -157,9 +161,7 @@ class HoldoutRequestHandler:
             or training_receipt.dataset_ref != request.training_ref
         ):
             raise PermissionError("Validation package candidate or TRAINING binding mismatch")
-        checked_bytes(
-            payload.training_raw_base64, training_receipt.raw_sha256, 1048576
-        )
+        checked_bytes(payload.training_raw_base64, training_receipt.raw_sha256, 1048576)
         holdout = self._holdouts.get(request.holdout_ref)
         if holdout is None or holdout[0].resource_class != "HOLDOUT":
             raise PermissionError("Service-owned HOLDOUT dataset unavailable")
@@ -212,6 +214,148 @@ class HoldoutRequestHandler:
             ),
         )
 
+    def _publish_validation(self, request: HoldoutRequest) -> HoldoutResponse:
+        from ai_quant_os.candidate_prerequisite_failure import record_prerequisite_failure
+        from ai_quant_os.candidate_test_contracts import CandidateTestResult
+        from ai_quant_os.candidate_validation_contracts import CandidateValidationPolicy
+        from ai_quant_os.strategy_prefix_run_contracts import StrategyPrefixRunReport
+        from ai_quant_os.candidate_dataset_run_contracts import CandidateDatasetRunReport
+        from ai_quant_os.validation_scientist_sources import validation_summary
+
+        publication = request.publication
+        if publication is None or publication.package_ref != request.evidence_ref:
+            raise PermissionError("Validation publication binding missing")
+        package = self._packages.get(publication.package_ref)
+        if package is None:
+            raise PermissionError("Service-owned validation package unavailable")
+        self._require_service_package_holdout(package)
+
+        try:
+            tested = CandidateTestResult.model_validate_json(
+                publication.test_result_json, strict=True
+            )
+            if tested.model_dump_json() != publication.test_result_json:
+                raise ValueError("Canonical proposed-test observation required")
+        except (ValueError, TypeError) as error:
+            raise PermissionError("Validation publication evidence refused") from error
+
+        if publication.kind == "PREREQUISITE_FAILURE":
+            try:
+                artifact = record_prerequisite_failure(package, tested)
+            except (ValueError, TypeError) as error:
+                raise PermissionError("Validation publication evidence refused") from error
+            saved = self._validations.put_failure(package, tested)
+        else:
+            try:
+                holdout = StrategyPrefixRunReport.model_validate_json(
+                    publication.holdout_report_json, strict=True
+                )
+                windows = tuple(
+                    CandidateDatasetRunReport.model_validate_json(value, strict=True)
+                    for value in publication.development_reports_json
+                )
+                if holdout.model_dump_json() != publication.holdout_report_json or any(
+                    report.model_dump_json() != raw
+                    for report, raw in zip(
+                        windows, publication.development_reports_json, strict=True
+                    )
+                ):
+                    raise ValueError("Canonical validation reports required")
+                policy = (
+                    None
+                    if publication.policy_json is None
+                    else CandidateValidationPolicy.model_validate_json(
+                        publication.policy_json, strict=True
+                    )
+                )
+                if policy is not None and policy.model_dump_json() != publication.policy_json:
+                    raise ValueError("Canonical validation policy required")
+                from ai_quant_os.candidate_validation import evaluate_candidate
+
+                artifact = evaluate_candidate(package, tested, holdout, windows, policy=policy)
+            except (ValueError, TypeError) as error:
+                raise PermissionError("Validation publication evidence refused") from error
+            saved = self._validations.put_evaluation(
+                package, tested, holdout, windows, policy=policy
+            )
+        if saved != artifact:
+            raise RuntimeError("Validation publication changed during service retention")
+        summary = validation_summary(package, artifact)
+        return HoldoutResponse(
+            request_id=request.request_id,
+            task_id=request.task_id,
+            context_ref=request.context_ref,
+            status="CHECKED_VALIDATION_PUBLISHED",
+            evidence_ref=request.evidence_ref,
+            summary_sha256=summary.summary_sha256,
+            aggregate=HoldoutAggregate(outcome=summary.outcome, gate_count=len(summary.gates)),
+            published_ref=(
+                artifact.failure_ref if hasattr(artifact, "failure_ref") else artifact.scorecard_ref
+            ),
+        )
+
+    def _require_service_package_holdout(self, package) -> None:
+        from ai_quant_os.validation_package_contracts import checked_bytes
+
+        holdout_ref = package.holdout.receipt.dataset_ref
+        held = self._holdouts.get(holdout_ref)
+        if held is None or held[0] != package.holdout.receipt:
+            raise PermissionError("Archived HOLDOUT receipt mismatch")
+        package_bytes = checked_bytes(
+            package.holdout.raw_base64, package.holdout.receipt.raw_sha256, 1048576
+        )
+        if held[1] != package_bytes:
+            raise PermissionError("Archived HOLDOUT bytes mismatch")
+
+    def _publish_holdout(self, request: HoldoutRequest) -> HoldoutResponse:
+        from ai_quant_os.research_data_contracts import ResearchDataReceipt
+
+        publication = request.holdout_publication
+        if publication is None:
+            raise PermissionError("HOLDOUT publication payload missing")
+        try:
+            raw = base64.b64decode(publication.raw_base64, validate=True)
+            if (
+                sha256(raw).hexdigest() != publication.raw_sha256
+                or base64.b64encode(raw).decode("ascii") != publication.raw_base64
+            ):
+                raise ValueError("HOLDOUT upload digest mismatch")
+            training = tuple(
+                ResearchDataReceipt.model_validate_json(value, strict=True)
+                for value in publication.training_receipts_json
+            )
+            if any(
+                receipt.model_dump_json() != encoded
+                for receipt, encoded in zip(
+                    training, publication.training_receipts_json, strict=True
+                )
+            ):
+                raise ValueError("Canonical TRAINING receipts required")
+        except (ValueError, TypeError) as error:
+            raise PermissionError("HOLDOUT publication evidence refused") from error
+
+        try:
+            receipt = self._holdouts.publish(
+                raw,
+                source_id=publication.source_id,
+                received_at=datetime.now(timezone.utc),
+                training_receipts=training,
+            )
+        except (ValueError, TypeError) as error:
+            raise PermissionError("HOLDOUT publication evidence refused") from error
+        receipt_json = receipt.model_dump_json()
+        return HoldoutResponse(
+            request_id=request.request_id,
+            task_id=request.task_id,
+            context_ref=request.context_ref,
+            status="CHECKED_HOLDOUT_PUBLISHED",
+            evidence_ref=request.evidence_ref,
+            summary_sha256=sha256(receipt_json.encode("utf-8")).hexdigest(),
+            aggregate=HoldoutAggregate(),
+            published_ref=receipt.dataset_ref,
+            receipt_json=receipt_json,
+        )
+
     def _checked_validation(self, request: HoldoutRequest):
         from ai_quant_os.validation_scientist_sources import validation_summary
 
@@ -229,29 +373,21 @@ class HoldoutRequestHandler:
                 package.holdout.receipt.dataset_ref,
             )
         )
-        request_scope = (
-            (None, None, None, None)
-            if request.operation == "VALIDATION_CONTEXT"
-            else (
+        if request.operation == "VALIDATION_CONTEXT":
+            scope_matches = (
+                package is not None and artifact.candidate_ref == package.candidate.candidate_ref
+            )
+        else:
+            request_scope = (
                 request.candidate_ref,
                 request.candidate_ref,
                 request.training_ref,
                 request.holdout_ref,
             )
-        )
-        if package is None or package_scope != request_scope:
+            scope_matches = package_scope == request_scope
+        if package is None or not scope_matches:
             raise PermissionError("Validation evidence scope mismatch")
-        holdout_ref = package.holdout.receipt.dataset_ref
-        held = self._holdouts.get(holdout_ref)
-        if held is None or held[0] != package.holdout.receipt:
-            raise PermissionError("Archived HOLDOUT receipt mismatch")
-        from ai_quant_os.validation_package_contracts import checked_bytes
-
-        package_bytes = checked_bytes(
-            package.holdout.raw_base64, package.holdout.receipt.raw_sha256, 1048576
-        )
-        if held[1] != package_bytes:
-            raise PermissionError("Archived HOLDOUT bytes mismatch")
+        self._require_service_package_holdout(package)
         return package, artifact, validation_summary(package, artifact)
 
     def _validation(self, request: HoldoutRequest) -> HoldoutResponse:
@@ -775,6 +911,94 @@ class WindowsNamedPipeServer:
 _SERVICE_REGISTRY_KEY = r"SOFTWARE\AIQuantOS\HoldoutValidator"
 
 
+class _ServiceRuntimeUnavailable(RuntimeError):
+    """The active Python installation cannot be used safely by LocalService."""
+
+
+def _path_is_within(path: Path, directory: Path) -> bool:
+    candidate = Path(path).resolve(strict=False)
+    parent = Path(directory).resolve(strict=False)
+    return candidate == parent or parent in candidate.parents
+
+
+def _validate_service_runtime_paths(
+    *,
+    operator_profile: Path,
+    python_prefix: Path,
+    base_prefix: Path,
+    python_executable: Path,
+    service_executable: Path,
+    package_directory: Path,
+    module_file: Path,
+    import_paths: tuple[Path, ...],
+) -> None:
+    """Reject profile-scoped and editable runtimes before the service is registered.
+
+    This path check catches the known PythonService startup failure mode. It does
+    not replace ACL verification or a real LocalService process test.
+    """
+    profile = Path(operator_profile).resolve(strict=False)
+    paths = (
+        Path(python_prefix),
+        Path(base_prefix),
+        Path(python_executable),
+        Path(service_executable),
+        Path(package_directory),
+        Path(module_file),
+        *(Path(path) for path in import_paths if str(path)),
+    )
+    if any(_path_is_within(path, profile) for path in paths):
+        raise _ServiceRuntimeUnavailable(
+            "HOLDOUT validator requires a machine-wide Python runtime and package "
+            "outside the operator profile. No service or archive data was changed."
+        )
+    if not (
+        _path_is_within(python_executable, python_prefix)
+        or _path_is_within(python_executable, base_prefix)
+    ) or not (
+        _path_is_within(service_executable, python_prefix)
+        or _path_is_within(service_executable, base_prefix)
+    ):
+        raise _ServiceRuntimeUnavailable(
+            "HOLDOUT validator PythonService executable does not belong to the active "
+            "Python installation. No service or archive data was changed."
+        )
+    if not _path_is_within(module_file, package_directory):
+        raise _ServiceRuntimeUnavailable(
+            "HOLDOUT validator requires an installed, non-editable ai-quant-os package; "
+            "a source checkout cannot be used by LocalService. No service or archive "
+            "data was changed."
+        )
+
+
+def _require_service_runtime() -> None:
+    """Check PythonService and package paths before changing SCM or archive state."""
+    import sys
+    import sysconfig
+
+    import win32serviceutil
+
+    profile = Path(os.environ.get("USERPROFILE") or Path.home())
+    import_paths = tuple(Path(path) for path in sys.path if path and Path(path).is_absolute())
+    try:
+        service_executable = Path(win32serviceutil.LocatePythonServiceExe())
+    except Exception:
+        raise _ServiceRuntimeUnavailable(
+            "HOLDOUT validator could not locate the active PythonService executable. "
+            "No service or archive data was changed."
+        ) from None
+    _validate_service_runtime_paths(
+        operator_profile=profile,
+        python_prefix=Path(sys.prefix),
+        base_prefix=Path(sys.base_prefix),
+        python_executable=Path(sys.executable),
+        service_executable=service_executable,
+        package_directory=Path(sysconfig.get_path("purelib")),
+        module_file=Path(__file__),
+        import_paths=import_paths,
+    )
+
+
 def _read_service_settings() -> tuple[Path, str]:
     import winreg
 
@@ -870,8 +1094,10 @@ if os.name == "nt":
             self.SvcStop()
 
         def SvcDoRun(self):
+            startup_stage = "configuration"
             try:
                 data_dir, operator_sid = _read_service_settings()
+                startup_stage = "service_identity"
                 service_sid = service_sid_for_name(self._svc_name_, security=win32security)
                 token = win32security.OpenProcessToken(
                     win32api.GetCurrentProcess(), win32security.TOKEN_QUERY
@@ -886,11 +1112,13 @@ if os.name == "nt":
                         raise PermissionError("HOLDOUT service SID missing from process token")
                 finally:
                     win32api.CloseHandle(token)
+                startup_stage = "holdout_acl"
                 verify_holdout_directory_tree(
                     data_dir,
                     HoldoutDirectoryAcl(service_sid),
                     security=win32security,
                 )
+                startup_stage = "open_archives"
                 holdout_store = _open_service_holdout_store(data_dir)
                 archive_paths = {
                     "packages": data_dir / "validation-packages.sqlite3",
@@ -907,6 +1135,7 @@ if os.name == "nt":
                 packages = ValidationPackageStore(archive_paths["packages"])
                 validations = CandidateValidationStore(archive_paths["validations"])
                 research = ResearchStore(archive_paths["research"])
+                startup_stage = "start_listener"
                 self.ReportServiceStatus(win32service.SERVICE_RUNNING)
                 server = WindowsNamedPipeServer(service_sid, operator_sid)
                 try:
@@ -918,8 +1147,12 @@ if os.name == "nt":
                     validations.close()
                     packages.close()
                     holdout_store.close()
-            except Exception:
-                servicemanager.LogErrorMsg("HOLDOUT validator startup or runtime failure")
+            except Exception as error:
+                code = getattr(error, "winerror", 0) or 0
+                servicemanager.LogErrorMsg(
+                    "HOLDOUT validator failure "
+                    f"(stage={startup_stage}, type={type(error).__name__}, code={code})"
+                )
                 self.ReportServiceStatus(
                     win32service.SERVICE_STOPPED,
                     win32ExitCode=winerror.ERROR_SERVICE_SPECIFIC_ERROR,
@@ -947,6 +1180,7 @@ def _install_service(data_dir: Path, *, paper_db: Path, research_workspace: Path
     research_workspace = Path(research_workspace)
     if not paper_db.is_absolute() or not research_workspace.is_absolute():
         raise ValueError("PAPER and research source paths must be absolute")
+    _require_service_runtime()
     operator_sid = current_process_user_sid()
     _ensure_service_registered(win32service, win32serviceutil)
     try:
@@ -959,10 +1193,18 @@ def _install_service(data_dir: Path, *, paper_db: Path, research_workspace: Path
         )
         present = tuple((data_dir / name).is_file() for name in archive_names)
         if all(present):
-            adopt_existing = False
+            # A complete archive set may be left behind by a failed ACL transition.
+            # Reapply the exact service/SYSTEM policy so installation can resume.
+            adopt_existing = True
         elif any(present):
             raise FileExistsError("HOLDOUT service archive set is incomplete")
         else:
+            # Limit the short staging window to this operator, service, and SYSTEM.
+            secure_holdout_directory(
+                data_dir,
+                adopt_existing=False,
+                staging_operator_sid=operator_sid,
+            )
             stage_service_archives(
                 data_dir,
                 holdout_source=paper_db.with_name(paper_db.stem + ".research-data.holdout.sqlite3"),
@@ -1051,6 +1293,8 @@ def main(argv: list[str] | None = None) -> int:
         else:
             _remove_service()
             result = {"service": "AIQuantHoldout", "state": "REMOVED_DATA_PRESERVED"}
+    except _ServiceRuntimeUnavailable as error:
+        parser.exit(2, f"{error}\n")
     except Exception:
         parser.exit(2, "HOLDOUT validator service operation failed; data was preserved.\n")
     print(json.dumps(result))

@@ -918,28 +918,25 @@
       "type": "object"
     },
     "PaperDailyReport": {
-      "additionalProperties": false,
       "properties": {
-        "accounting_method": {
-          "const": "UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1",
-          "default": "UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1",
-          "title": "Accounting Method",
+        "day": {
+          "format": "date",
+          "title": "Day",
+          "type": "string"
+        },
+        "opening_ledger_sha256": {
+          "title": "Opening Ledger Sha256",
           "type": "string"
         },
         "closing_ledger_sha256": {
           "title": "Closing Ledger Sha256",
           "type": "string"
         },
-        "day": {
-          "format": "date",
-          "title": "Day",
-          "type": "string"
-        },
-        "evidence_gaps": {
+        "strategies": {
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/DailyStrategyContribution"
           },
-          "title": "Evidence Gaps",
+          "title": "Strategies",
           "type": "array"
         },
         "instruments": {
@@ -949,40 +946,6 @@
           "title": "Instruments",
           "type": "array"
         },
-        "marking_method": {
-          "const": "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
-          "default": "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
-          "title": "Marking Method",
-          "type": "string"
-        },
-        "mode": {
-          "const": "PAPER",
-          "default": "PAPER",
-          "title": "Mode",
-          "type": "string"
-        },
-        "opening_ledger_sha256": {
-          "title": "Opening Ledger Sha256",
-          "type": "string"
-        },
-        "promotion_allowed": {
-          "const": false,
-          "default": false,
-          "title": "Promotion Allowed",
-          "type": "boolean"
-        },
-        "reconciled": {
-          "const": true,
-          "default": true,
-          "title": "Reconciled",
-          "type": "boolean"
-        },
-        "schema_version": {
-          "const": "1.0",
-          "default": "1.0",
-          "title": "Schema Version",
-          "type": "string"
-        },
         "state": {
           "enum": [
             "COMPLETE_ACCOUNTING",
@@ -991,11 +954,58 @@
           "title": "State",
           "type": "string"
         },
-        "strategies": {
+        "evidence_gaps": {
           "items": {
-            "$ref": "#/$defs/DailyStrategyContribution"
+            "type": "string"
           },
-          "title": "Strategies",
+          "title": "Evidence Gaps",
+          "type": "array"
+        },
+        "schema_version": {
+          "default": "1.0",
+          "enum": [
+            "1.0",
+            "1.1"
+          ],
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "mode": {
+          "const": "PAPER",
+          "default": "PAPER",
+          "title": "Mode",
+          "type": "string"
+        },
+        "accounting_method": {
+          "const": "UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1",
+          "default": "UTC_DAY_CASH_PLUS_INVENTORY_CHANGE_V1",
+          "title": "Accounting Method",
+          "type": "string"
+        },
+        "marking_method": {
+          "const": "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
+          "default": "COMMON_PORTFOLIO_LIQUIDATION_MARK_V1",
+          "title": "Marking Method",
+          "type": "string"
+        },
+        "reconciled": {
+          "const": true,
+          "default": true,
+          "title": "Reconciled",
+          "type": "boolean"
+        },
+        "promotion_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Promotion Allowed",
+          "type": "boolean"
+        },
+        "candidate_contributions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DailyCandidateContribution"
+          },
+          "title": "Candidate Contributions",
           "type": "array"
         }
       },
@@ -1209,6 +1219,144 @@
         "quote_currency"
       ],
       "title": "StrategyExecutionContribution",
+      "type": "object"
+    },
+    "DailyCandidateContribution": {
+      "properties": {
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "opening_quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Opening Quantity",
+          "type": "string"
+        },
+        "closing_quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Closing Quantity",
+          "type": "string"
+        },
+        "cash_flow_before_fees_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Cash Flow Before Fees Quote",
+          "type": "string"
+        },
+        "fee_cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee Cash Flow Quote",
+          "type": "string"
+        },
+        "cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Cash Flow Quote",
+          "type": "string"
+        },
+        "opening_inventory_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Opening Inventory Quote"
+        },
+        "closing_inventory_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Closing Inventory Quote"
+        },
+        "daily_pnl_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Daily Pnl Quote"
+        },
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        },
+        "candidate_assignment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Assignment Id"
+        },
+        "candidate_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Id"
+        },
+        "genome_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Genome Sha256"
+        }
+      },
+      "required": [
+        "fill_count",
+        "opening_quantity",
+        "closing_quantity",
+        "cash_flow_before_fees_quote",
+        "fee_cash_flow_quote",
+        "cash_flow_quote",
+        "opening_inventory_quote",
+        "closing_inventory_quote",
+        "daily_pnl_quote",
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "quote_currency"
+      ],
+      "title": "DailyCandidateContribution",
       "type": "object"
     }
   },

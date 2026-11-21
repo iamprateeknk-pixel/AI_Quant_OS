@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
 from ai_quant_os.calibration_store import CalibrationStore
 from ai_quant_os.agent_runs import AgentRun, verify_run_snapshot
+from ai_quant_os.agent_model_router import AgentModelRouter
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
 from ai_quant_os.graph_runtime import GraphRuntime
 from ai_quant_os.incident_agent import incident_implementation
@@ -164,7 +165,6 @@ from ai_quant_os.validation_package_api import install_validation_package_routes
 from ai_quant_os.validation_package_service import ValidationPreparation
 from ai_quant_os.strategy_builder_sources import builder_sources
 from ai_quant_os.strategy_builder_service import CandidateCreate
-from ai_quant_os.candidate_validation_store import CandidateValidationStore
 from ai_quant_os.validation_scientist_agent import validation_implementation
 from ai_quant_os.validation_scientist_sources import (
     summary_for_context,
@@ -415,6 +415,7 @@ def create_app(
     temporal_repair_trust_store: Path | None = None,
     temporal_repair_trust_root_public_key: bytes | None = None,
     health_watchdog_enabled: bool | None = None,
+    expected_quote_instruments: tuple[str, ...] | None = None,
     demo_sync_state_dir: Path | None = None,
     telemetry: PaperTelemetry | None = None,
     collector_trace_file: Path | None = None,
@@ -422,6 +423,8 @@ def create_app(
     holdout_rpc_client=None,
     risk_policy: PaperRiskPolicy | None = None,
     mcp_agent_tools: Mapping[str, Collection[str]] | None = None,
+    agent_model_router: AgentModelRouter | None = None,
+    model_routing: Mapping[tuple[str, str], tuple[int, int]] | None = None,
 ) -> FastAPI:
     configured_token = (
         operator_token if operator_token is not None else os.getenv("AI_QUANT_OPERATOR_TOKEN")
@@ -465,6 +468,23 @@ def create_app(
     )
     world_state = WorldStateEngine(PAPER_INSTRUMENTS, max_quote_age_seconds=5)
     instrument_catalog = {item.instrument_id: item for item in PAPER_INSTRUMENTS}
+    if expected_quote_instruments is None:
+        configured_expected_quotes = tuple(
+            value.strip()
+            for value in os.getenv("AI_QUANT_EXPECTED_PAPER_INSTRUMENTS", "").split(",")
+            if value.strip()
+        )
+    else:
+        configured_expected_quotes = expected_quote_instruments
+    if (
+        not isinstance(configured_expected_quotes, tuple)
+        or any(
+            not isinstance(instrument_id, str) or instrument_id not in instrument_catalog
+            for instrument_id in configured_expected_quotes
+        )
+        or len(set(configured_expected_quotes)) != len(configured_expected_quotes)
+    ):
+        raise ValueError("Expected quote instruments must be unique supported PAPER instruments")
     risk = RiskKernel(limits, currency_policy=currency_policy)
     configured_path = paper_db_path or (
         Path(os.environ["AI_QUANT_PAPER_DB"]) if os.getenv("AI_QUANT_PAPER_DB") else None
@@ -650,11 +670,6 @@ def create_app(
         else None
     )
     ingress_health = IngressHealth()
-    candidate_validation_store = CandidateValidationStore(
-        configured_path.with_name(configured_path.stem + ".candidate-validations.sqlite3")
-        if configured_path
-        else None
-    )
     validator_client = holdout_rpc_client or installed_windows_holdout_client()
     risk.set_safety_state(state_store.safety_state())
     router = BrokerRouter(
@@ -714,6 +729,7 @@ def create_app(
                 ),
                 lambda: tuple(quotes.copy().values()),
                 current_time,
+                expected_quote_instruments=configured_expected_quotes,
                 control_lock=control_lock,
             )
             # Disabling monitoring cannot clear persisted safety/quarantine evidence.
@@ -862,6 +878,8 @@ def create_app(
                     call_budget=call_budget,
                 ),
                 clock=current_time,
+                model_router=agent_model_router,
+                model_routing=model_routing,
             ) as runtime,
             AsyncExitStack() as services,
         ):
@@ -3297,7 +3315,7 @@ def create_app(
     install_validation_scientist_routes(
         app,
         require_operator,
-        store=candidate_validation_store,
+        validator_client=validator_client,
         compile_context=compile_validation_context,
         archived_context=archived_agent_context,
         runtime=require_graph_runtime,

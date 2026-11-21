@@ -422,6 +422,18 @@
           "default": null,
           "title": "Source Id"
         },
+        "source_adapter_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Adapter Ref"
+        },
         "as_of": {
           "anyOf": [
             {

@@ -72,6 +72,97 @@ def test_context_is_reproducible_provenance_bound_and_reports_missing_inputs():
         require_current_context(result, now=NOW + timedelta(seconds=3))
 
 
+def test_source_adapter_version_is_bound_into_context_evidence():
+    async def fetch():
+        return EvidenceRecord(
+            source_id="same-upstream-source",
+            as_of=NOW,
+            valid_until=NOW + timedelta(seconds=3),
+            trusted=True,
+            payload_json='{"value":1}',
+        )
+
+    first = compile_context(
+        {
+            "world_state": SourceBinding(
+                "WORLD_STATE_READ",
+                "GENERAL",
+                fetch,
+                adapter_ref="test.world-state@1.0.0",
+            )
+        }
+    )
+    upgraded = compile_context(
+        {
+            "world_state": SourceBinding(
+                "WORLD_STATE_READ",
+                "GENERAL",
+                fetch,
+                adapter_ref="test.world-state@2.0.0",
+            )
+        }
+    )
+
+    assert first.inputs[0].source_id == upgraded.inputs[0].source_id == "same-upstream-source"
+    assert first.inputs[0].source_adapter_ref == "test.world-state@1.0.0"
+    assert upgraded.inputs[0].source_adapter_ref == "test.world-state@2.0.0"
+    assert first.inputs[0].content_ref != upgraded.inputs[0].content_ref
+    assert first.context_ref != upgraded.context_ref
+
+
+def test_source_binding_rejects_unversioned_adapter_reference():
+    async def fetch():
+        return EvidenceRecord(
+            source_id="fixture",
+            as_of=NOW,
+            valid_until=NOW + timedelta(seconds=3),
+            trusted=True,
+            payload_json="{}",
+        )
+
+    with pytest.raises(ValueError, match="source adapter reference"):
+        SourceBinding("WORLD_STATE_READ", "GENERAL", fetch, adapter_ref="test.world-state")
+
+
+def test_protected_source_adapter_version_changes_bound_identity():
+    dataset = receipt("HOLDOUT")
+    catalog = DatasetResourceCatalog.from_receipts((dataset,))
+    fetch = binding("HOLDOUT_READ", "HOLDOUT").fetch
+    first = compile_context(
+        {
+            "immutable_datasets": SourceBinding(
+                "HOLDOUT_READ",
+                "HOLDOUT",
+                fetch,
+                resource_refs=(dataset.dataset_ref,),
+                resource_catalog=catalog,
+                adapter_ref="test.holdout@1.0.0",
+            )
+        },
+        agent="A10",
+        scope="SANDBOX",
+    )
+    upgraded = compile_context(
+        {
+            "immutable_datasets": SourceBinding(
+                "HOLDOUT_READ",
+                "HOLDOUT",
+                fetch,
+                resource_refs=(dataset.dataset_ref,),
+                resource_catalog=catalog,
+                adapter_ref="test.holdout@2.0.0",
+            )
+        },
+        agent="A10",
+        scope="SANDBOX",
+    )
+    first_item = next(row for row in first.inputs if row.input_name == "immutable_datasets")
+    upgraded_item = next(row for row in upgraded.inputs if row.input_name == "immutable_datasets")
+    assert first_item.source_id != upgraded_item.source_id
+    assert first_item.content_ref != upgraded_item.content_ref
+    assert first.context_ref != upgraded.context_ref
+
+
 @pytest.mark.parametrize("agent", ["A08", "A09", "A16", "A17"])
 def test_holdout_cannot_leak_through_generic_source_capability(agent):
     registry = load_agent_catalog()

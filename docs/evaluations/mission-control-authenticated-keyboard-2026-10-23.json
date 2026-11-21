@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "observed_at_utc": "2026-10-23T09:24:55Z",
+  "environment": {
+    "launcher": "ai-quant-local",
+    "build_mode": "production Next.js build",
+    "api_origin": "http://127.0.0.1:8127",
+    "web_origin": "http://127.0.0.1:3127",
+    "browser_driver": "Playwright CLI 0.1.22",
+    "state_directory": "data-local/p12-keyboard-acceptance-2026-10-23",
+    "synthetic_operator_access_code_used": true,
+    "real_credentials_used": false
+  },
+  "paper_state": {
+    "safety_state": "NORMAL",
+    "paper_route_enabled": true,
+    "paper_orders": 0,
+    "paper_fills": 0,
+    "simulated_broker_orders": 0,
+    "simulated_broker_fills": 0,
+    "audit_events": 0,
+    "external_broker_connected": false,
+    "safety_action_submitted": false,
+    "route_action_submitted": false,
+    "reconciliation_submitted": false,
+    "session_revocation_submitted": false
+  },
+  "keyboard_checks": [
+    {
+      "route": "/brokers",
+      "result": "Tab reached reason, confirmation, and re-authentication fields. With synthetic values entered, Tab reached the enabled Disable new PAPER orders button.",
+      "action_activated": false,
+      "backend_state_after": "PAPER route remained enabled"
+    },
+    {
+      "route": "/orders",
+      "result": "Tab reached the reconciliation acknowledgment checkbox. Space toggled it on; Tab reached the enabled Compare paper ledgers button.",
+      "action_activated": false
+    },
+    {
+      "route": "/settings",
+      "result": "Tab reached Refresh sessions and session-selection buttons. The revocation form was opened for a synthetic session; Space toggled its confirmation checkbox, Tab reached the re-authentication field and enabled Revoke session button.",
+      "action_activated": false
+    }
+  ],
+  "responsive_check": {
+    "route": "/settings",
+    "viewport": [320, 800],
+    "document_width": 320,
+    "horizontal_overflow": false
+  },
+  "browser_observations": {
+    "console_errors_after_reload_and_authenticated_route_checks": 0,
+    "console_warnings": 0
+  },
+  "limits": [
+    "This is authenticated keyboard reachability evidence for the listed controls, not full acceptance of every Mission Control route.",
+    "Incident-review acknowledgment was not exercised because the isolated PAPER journal had no incident rows.",
+    "No action button was activated; populated order/fill states were not exercised.",
+    "Manual screen-reader and target-spacing review remain open."
+  ],
+  "cleanup": {
+    "playwright_browser_closed": true,
+    "local_supervisor_stopped": true,
+    "owned_api_and_web_ports_released": true,
+    "isolated_state_directory_retained": true
+  }
+}

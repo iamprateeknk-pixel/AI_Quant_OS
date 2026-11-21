@@ -15,7 +15,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validato
 
 MAX_FRAME_BYTES = 2097152
 _RESPONSE_RECEIVED_ACK = b"ACK1"
-HOLDOUT_PIPE_NAME = r"\\.\pipe\AIQuantHoldout.v3"
+HOLDOUT_PIPE_NAME = r"\\.\pipe\AIQuantHoldout.v4"
 _MAX_ID_LENGTH = 512
 _SERVICE_SID_PATTERN = re.compile(r"^S-1-5-80-(?:\d+-){4}\d+$")
 FrameModel = TypeVar("FrameModel", bound=BaseModel)
@@ -40,12 +40,93 @@ class HoldoutValidationPreparation(BaseModel):
             raw = base64.b64decode(value, validate=True)
         except (ValueError, UnicodeError) as error:
             raise ValueError("Invalid validation training snapshot") from error
-        if (
-            not 0 < len(raw) <= 1048576
-            or base64.b64encode(raw).decode("ascii") != value
-        ):
+        if not 0 < len(raw) <= 1048576 or base64.b64encode(raw).decode("ascii") != value:
             raise ValueError("Invalid validation training snapshot")
         return value
+
+
+class HoldoutValidationPublication(BaseModel):
+    """Untrusted validation inputs for service-side recomputation and retention."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    kind: Literal["PREREQUISITE_FAILURE", "EVALUATION"]
+    package_ref: str = Field(pattern=r"^validation-package:[a-f0-9]{64}$")
+    test_result_json: str = Field(min_length=2, max_length=1048576)
+    holdout_report_json: str | None = Field(default=None, min_length=2, max_length=1048576)
+    development_reports_json: tuple[str, ...] = Field(default=(), max_length=2048)
+    policy_json: str | None = Field(default=None, min_length=2, max_length=65536)
+
+    @field_validator("development_reports_json")
+    @classmethod
+    def bounded_development_reports(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        if any(not 1 < len(value) <= 1048576 for value in values):
+            raise ValueError("Development validation report exceeds byte bound")
+        return values
+
+    @model_validator(mode="after")
+    def operation_shape(self):
+        if self.kind == "PREREQUISITE_FAILURE":
+            if (
+                self.holdout_report_json is not None
+                or self.development_reports_json
+                or self.policy_json is not None
+            ):
+                raise ValueError("Prerequisite publication cannot contain downstream reports")
+        elif self.holdout_report_json is None or not self.development_reports_json:
+            raise ValueError("Evaluation publication requires holdout and development reports")
+        return self
+
+
+class HoldoutDatasetPublication(BaseModel):
+    """Bounded operator-supplied HOLDOUT bytes and checked TRAINING metadata."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    source_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$")
+    raw_base64: str = Field(min_length=4, max_length=1398104)
+    raw_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    training_receipts_json: tuple[str, ...] = Field(max_length=64)
+
+    @field_validator("raw_base64")
+    @classmethod
+    def validate_holdout_bytes(cls, value: str) -> str:
+        try:
+            raw = base64.b64decode(value, validate=True)
+        except (ValueError, UnicodeError) as error:
+            raise ValueError("Invalid HOLDOUT upload bytes") from error
+        if not 0 < len(raw) <= 1048576 or base64.b64encode(raw).decode("ascii") != value:
+            raise ValueError("Invalid HOLDOUT upload bytes")
+        return value
+
+    @field_validator("training_receipts_json")
+    @classmethod
+    def validate_training_receipts(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        from ai_quant_os.research_data_contracts import ResearchDataReceipt
+
+        if any(not 1 < len(value) <= 4096 for value in values):
+            raise ValueError("TRAINING receipt exceeds the publication bound")
+        receipts = tuple(
+            ResearchDataReceipt.model_validate_json(value, strict=True) for value in values
+        )
+        if (
+            any(receipt.resource_class != "TRAINING" for receipt in receipts)
+            or any(
+                receipt.model_dump_json() != value
+                for receipt, value in zip(receipts, values, strict=True)
+            )
+            or tuple(sorted(receipt.dataset_ref for receipt in receipts))
+            != tuple(receipt.dataset_ref for receipt in receipts)
+            or len({receipt.dataset_ref for receipt in receipts}) != len(receipts)
+        ):
+            raise ValueError("Canonical sorted TRAINING receipts are required")
+        return values
+
+    @model_validator(mode="after")
+    def upload_digest_matches(self):
+        if sha256(base64.b64decode(self.raw_base64)).hexdigest() != self.raw_sha256:
+            raise ValueError("HOLDOUT upload digest mismatch")
+        return self
 
 
 def _identifier(value: str) -> str:
@@ -71,6 +152,8 @@ class HoldoutRequest(BaseModel):
         "STRESS_CONTEXT",
         "VALIDATION_PREPARE",
         "VALIDATION_PACKAGE_METADATA",
+        "VALIDATION_PUBLISH",
+        "HOLDOUT_PUBLISH",
     ]
     agent_id: Literal["A10", "A11"]
     agent_version: Literal["0.2.0"]
@@ -81,6 +164,8 @@ class HoldoutRequest(BaseModel):
     holdout_ref: str | None = Field(default=None, min_length=1, max_length=512)
     evidence_ref: str = Field(min_length=1, max_length=512)
     preparation: HoldoutValidationPreparation | None = None
+    publication: HoldoutValidationPublication | None = None
+    holdout_publication: HoldoutDatasetPublication | None = None
 
     @field_validator(
         "request_id",
@@ -105,16 +190,32 @@ class HoldoutRequest(BaseModel):
             ("A11", "STRESS_CONTEXT"),
             ("A10", "VALIDATION_PREPARE"),
             ("A10", "VALIDATION_PACKAGE_METADATA"),
+            ("A10", "VALIDATION_PUBLISH"),
+            ("A10", "HOLDOUT_PUBLISH"),
         }:
             raise ValueError("RPC operation is not authorized for this agent")
         refs = (self.candidate_ref, self.training_ref, self.holdout_ref)
-        if self.operation.endswith("_CONTEXT") or self.operation == "VALIDATION_PACKAGE_METADATA":
+        if self.operation.endswith("_CONTEXT") or self.operation in {
+            "VALIDATION_PACKAGE_METADATA",
+            "VALIDATION_PUBLISH",
+            "HOLDOUT_PUBLISH",
+        }:
             if any(value is not None for value in refs):
                 raise ValueError("Context request cannot supply archive scope refs")
         elif any(value is None for value in refs):
             raise ValueError("Validation requests require complete archive scope refs")
         if (self.operation == "VALIDATION_PREPARE") != (self.preparation is not None):
             raise ValueError("Validation preparation payload does not match operation")
+        if (self.operation == "VALIDATION_PUBLISH") != (self.publication is not None):
+            raise ValueError("Validation publication payload does not match operation")
+        if (self.operation == "HOLDOUT_PUBLISH") != (self.holdout_publication is not None):
+            raise ValueError("HOLDOUT publication payload does not match operation")
+        if self.publication is not None and self.evidence_ref != self.publication.package_ref:
+            raise ValueError("Validation publication package binding mismatch")
+        if self.holdout_publication is not None and self.evidence_ref != (
+            "holdout-ingest:" + self.holdout_publication.raw_sha256
+        ):
+            raise ValueError("HOLDOUT publication evidence binding mismatch")
 
 
 class HoldoutScenarioAggregate(BaseModel):
@@ -186,12 +287,19 @@ class HoldoutResponse(BaseModel):
         "CHECKED_ARCHIVED_STRESS_CONTEXT",
         "CHECKED_VALIDATION_PACKAGE_PREPARED",
         "CHECKED_VALIDATION_PACKAGE_METADATA",
+        "CHECKED_VALIDATION_PUBLISHED",
+        "CHECKED_HOLDOUT_PUBLISHED",
     ]
     evidence_ref: str = Field(min_length=1, max_length=512)
     summary_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     aggregate: HoldoutAggregate
     context_snapshot: HoldoutContextSnapshot | None = None
     package_metadata_json: str | None = Field(default=None, max_length=16384)
+    published_ref: str | None = Field(
+        default=None,
+        pattern=r"^(?:candidate-(?:validation|prerequisite-failure)|research-data):[a-f0-9]{64}$",
+    )
+    receipt_json: str | None = Field(default=None, max_length=4096)
 
     @field_validator("request_id", "task_id", "context_ref", "evidence_ref")
     @classmethod
@@ -317,13 +425,15 @@ def verify_response(request: HoldoutRequest, response: HoldoutResponse) -> Holdo
         "STRESS_CONTEXT": "CHECKED_ARCHIVED_STRESS_CONTEXT",
         "VALIDATION_PREPARE": "CHECKED_VALIDATION_PACKAGE_PREPARED",
         "VALIDATION_PACKAGE_METADATA": "CHECKED_VALIDATION_PACKAGE_METADATA",
+        "VALIDATION_PUBLISH": "CHECKED_VALIDATION_PUBLISHED",
+        "HOLDOUT_PUBLISH": "CHECKED_HOLDOUT_PUBLISHED",
     }[request.operation]
     if response.status != expected_status:
         raise ValueError("Validator response operation mismatch")
     if response.evidence_ref != request.evidence_ref:
         raise ValueError("Validator response evidence identity mismatch")
     aggregate = response.aggregate
-    if request.operation in {"VALIDATION_RUN", "VALIDATION_CONTEXT"}:
+    if request.operation in {"VALIDATION_RUN", "VALIDATION_CONTEXT", "VALIDATION_PUBLISH"}:
         if aggregate.outcome is None or aggregate.gate_count is None or aggregate.state is not None:
             raise ValueError("Validator response aggregate operation mismatch")
     elif request.operation == "STRESS_RUN" or request.operation == "STRESS_CONTEXT":
@@ -336,13 +446,36 @@ def verify_response(request: HoldoutRequest, response: HoldoutResponse) -> Holdo
         or aggregate.scenarios
     ):
         raise ValueError("Validator response aggregate operation mismatch")
+    if request.operation == "HOLDOUT_PUBLISH" and aggregate != HoldoutAggregate():
+        raise ValueError("Validator HOLDOUT publication aggregate mismatch")
     needs_snapshot = request.operation in {"VALIDATION_CONTEXT", "STRESS_CONTEXT"}
     if needs_snapshot != (response.context_snapshot is not None):
         raise ValueError("Validator context snapshot operation mismatch")
-    if (
-        request.operation in {"VALIDATION_PREPARE", "VALIDATION_PACKAGE_METADATA"}
-    ) != (response.package_metadata_json is not None):
+    if (request.operation in {"VALIDATION_PREPARE", "VALIDATION_PACKAGE_METADATA"}) != (
+        response.package_metadata_json is not None
+    ):
         raise ValueError("Validator package metadata operation mismatch")
+    needs_published_ref = request.operation in {"VALIDATION_PUBLISH", "HOLDOUT_PUBLISH"}
+    if needs_published_ref != (response.published_ref is not None):
+        raise ValueError("Validator published result reference operation mismatch")
+    if (request.operation == "HOLDOUT_PUBLISH") != (response.receipt_json is not None):
+        raise ValueError("Validator HOLDOUT receipt operation mismatch")
+    if request.operation == "HOLDOUT_PUBLISH":
+        if response.published_ref is None:
+            raise ValueError("Validator HOLDOUT reference is missing")
+        from ai_quant_os.research_data_contracts import ResearchDataReceipt
+
+        try:
+            receipt = ResearchDataReceipt.model_validate_json(response.receipt_json, strict=True)
+        except (ValueError, TypeError):
+            raise ValueError("Validator HOLDOUT receipt binding mismatch") from None
+        if (
+            receipt.model_dump_json() != response.receipt_json
+            or receipt.resource_class != "HOLDOUT"
+            or receipt.dataset_ref != response.published_ref
+            or sha256(response.receipt_json.encode("utf-8")).hexdigest() != response.summary_sha256
+        ):
+            raise ValueError("Validator HOLDOUT receipt binding mismatch")
     if (
         response.context_snapshot is not None
         and response.context_snapshot.agent_id != request.agent_id

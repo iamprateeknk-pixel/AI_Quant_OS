@@ -30,6 +30,7 @@ def test_catalog_covers_exact_pack_agents_and_reports_planned_implementations():
     assert registry.get("A07", "0.2.0").implementation_status == "IMPLEMENTED"
     assert registry.get("A11", "0.2.0").implementation_status == "PARTIAL"
     assert registry.get("A11", "0.2.0").output_type == "AdversarialScorecard"
+    assert registry.get("A09", "0.2.0").timeout_seconds == 5
 
 
 @pytest.mark.parametrize("agent_id", [f"A{index:02}" for index in range(1, 19)])
@@ -254,7 +255,7 @@ def test_timeout_cancels_handler_and_exception_details_are_sanitized():
             await AgentToolBoundary(registry, {"WORLD_STATE_READ": slow}).call(
                 "A02", "9.0.0", "WORLD_STATE_READ", scope="PAPER", payload={}
             )
-        with pytest.raises(ValueError, match="Agent tool failed") as error:
+        with pytest.raises(RuntimeError, match="Agent tool failed") as error:
             await AgentToolBoundary(registry, {"WORLD_STATE_READ": fail}).call(
                 "A02", "9.0.0", "WORLD_STATE_READ", scope="PAPER", payload={}
             )

@@ -61,7 +61,7 @@ def test_real_engine_full_prefix_run_and_restart(package, tmp_path):
             "-m",
             "ai_quant_os.strategy_prefix_run_cli",
             "--validation-archive",
-            str(tmp_path / "paper.validation-packages.sqlite3"),
+            str(tmp_path / "service.validation-packages.sqlite3"),
             "--package-ref",
             package.package_ref,
             "--root",

@@ -49,6 +49,17 @@ def metadata(path):
     return parse_metadata(read_repair_image_input(path, 65536))
 
 
+def _repair_worker_assets() -> Path:
+    module_path = Path(__file__).resolve()
+    source_root = module_path.parents[2]
+    source_assets = source_root / "infra" / "repair-worker"
+    if (source_root / "pyproject.toml").is_file() and source_assets.is_dir():
+        return source_assets
+    import sysconfig
+
+    return Path(sysconfig.get_path("data")) / "infra" / "repair-worker"
+
+
 @dataclass(frozen=True)
 class CandidateTestJob:
     path: Path
@@ -69,7 +80,7 @@ def prepare(package, root, owner):
     if any(row.name != LOCK_NAME for row in root.iterdir()):
         raise ValueError("Candidate test root must be new and empty")
     request = candidate_test_request(package)
-    recipes = Path(__file__).resolve().parents[2] / "infra/repair-worker"
+    recipes = _repair_worker_assets()
     sources = {
         "request.json": request.model_dump_json().encode(),
         "runtime_guard.py": read_repair_image_input(recipes / "dependency_probe.py", 32768),

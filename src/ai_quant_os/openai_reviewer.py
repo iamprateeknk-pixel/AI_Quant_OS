@@ -112,6 +112,8 @@ class OpenAIReviewer:
             spend_owner is not None and type(spend_owner) is not ProviderOwner
         ):
             raise ValueError("Spending ledger requires a declared typed owner")
+        if spend_store is None:
+            raise ValueError("Reviewer network calls require durable spending admission")
         self._spend_store, self.spend_owner, self._utc_clock = spend_store, spend_owner, utc_clock
         if spend_store is not None:
             retained = spend_store.status(utc_clock(), model=model)

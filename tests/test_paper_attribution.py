@@ -62,9 +62,11 @@ def test_random_strategy_partitions_reconcile_without_netting_away_fees(terms):
 
 
 def test_committed_paper_evidence_replays_from_its_source_snapshot():
+    from copy import deepcopy
     import json
     from pathlib import Path
     from pydantic import TypeAdapter
+    from jsonschema import Draft202012Validator, ValidationError
     from ai_quant_os.paper_attribution import (
         OrderAttribution,
         StrategyContributionReport,
@@ -75,11 +77,54 @@ def test_committed_paper_evidence_replays_from_its_source_snapshot():
     artifact = json.loads(
         (Path(__file__).parents[1] / "docs/evaluations/paper-attribution-baseline.json").read_text()
     )
+    evaluation_schema = json.loads(
+        (
+            Path(__file__).parents[1] / "docs/schemas/paper-attribution-evaluation.schema.json"
+        ).read_text()
+    )
+    validator = Draft202012Validator(evaluation_schema)
+    validator.validate(artifact)
+    exponent_report = deepcopy(artifact)
+    exponent_report["report"]["candidate_contributions"][0]["cash_flow_quote"] = "1E-7"
+    validator.validate(exponent_report)
+    numeric_report = deepcopy(artifact)
+    numeric_report["report"]["candidate_contributions"][0]["cash_flow_quote"] = 0.0000001
+    with pytest.raises(ValidationError):
+        validator.validate(numeric_report)
     owners = TypeAdapter(tuple[OrderAttribution, ...]).validate_python(artifact["owners"])
     fills = TypeAdapter(tuple[PaperFill, ...]).validate_python(artifact["fills"])
     quotes = TypeAdapter(tuple[MarketSnapshot, ...]).validate_python(artifact["quotes"])
     catalog = TypeAdapter(tuple[CurrencyInstrument, ...]).validate_python(artifact["catalog"])
     expected = TypeAdapter(StrategyContributionReport).validate_python(artifact["report"])
+    legacy_report = {
+        key: value for key, value in artifact["report"].items() if key != "candidate_contributions"
+    }
+    assert (
+        not TypeAdapter(StrategyContributionReport)
+        .validate_python(legacy_report)
+        .candidate_contributions
+    )
+    published_report_schema = json.loads(
+        (
+            Path(__file__).parents[1] / "docs/schemas/paper-strategy-contributions.schema.json"
+        ).read_text()
+    )
+    expected_report_schema = TypeAdapter(StrategyContributionReport).json_schema(
+        mode="serialization"
+    )
+
+    def use_wire_decimal_pattern(value):
+        if isinstance(value, dict):
+            if value.get("pattern") == r"^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$":
+                value["pattern"] = r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$"
+            for child in value.values():
+                use_wire_decimal_pattern(child)
+        elif isinstance(value, list):
+            for child in value:
+                use_wire_decimal_pattern(child)
+
+    use_wire_decimal_pattern(expected_report_schema)
+    assert published_report_schema == expected_report_schema
     assert (
         build_strategy_contributions(owners, fills, quotes, catalog, now=expected.as_of) == expected
     )
@@ -142,6 +187,39 @@ def test_common_mark_reconciles_hedged_strategy_contributions_exactly():
     assert sum(row.marked_pnl_quote for row in result.strategies) == total.marked_pnl_quote
     assert result.reconciled is True and result.mode == "PAPER"
     assert "DECISION_PRICE_BENCHMARK_MISSING" in result.evidence_gaps
+
+
+def test_candidate_contributions_preserve_exact_genome_and_unassigned_fills():
+    owners, fills, quote = fixtures()
+    bound = replace(
+        owners[0],
+        candidate_assignment_id="paper-assignment-1",
+        candidate_id="a" * 64,
+        genome_sha256="b" * 64,
+    )
+    result = report((bound, owners[1]), fills, quote)
+
+    assert [
+        (row.candidate_assignment_id, row.candidate_id, row.genome_sha256, row.fill_count)
+        for row in result.candidate_contributions
+    ] == [
+        (None, None, None, 1),
+        ("paper-assignment-1", "a" * 64, "b" * 64, 1),
+    ]
+    assert (
+        sum(row.cash_flow_quote for row in result.candidate_contributions)
+        == result.instruments[0].cash_flow_quote
+    )
+    assert "CANDIDATE_GENOME_BINDING_MISSING" in result.evidence_gaps
+
+    fully_bound = replace(
+        owners[1],
+        candidate_assignment_id="paper-assignment-2",
+        candidate_id="c" * 64,
+        genome_sha256="d" * 64,
+    )
+    complete = report((bound, fully_bound), fills, quote)
+    assert "CANDIDATE_GENOME_BINDING_MISSING" not in complete.evidence_gaps
 
 
 @pytest.mark.parametrize("change", ["stale", "future", "untrusted"])

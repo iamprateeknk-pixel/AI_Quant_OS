@@ -16,6 +16,7 @@ from ai_quant_os.evolution_director_sources import (
     EvolutionEvidenceGap,
     INPUT_NAMES,
 )
+from ai_quant_os.evolution_promotion_policy import EvolutionPromotionGate, PromotionTrustStore
 from ai_quant_os.graph_runtime import AgentImplementation, AgentInvocation
 
 
@@ -86,9 +87,19 @@ def _observations(context: CompiledContext):
         "TRAINING_DATASETS_UNAVAILABLE",
         "COSTS_UNAVAILABLE",
         "TRACE_QUALITY_UNAVAILABLE",
-        "INDEPENDENT_PROMOTION_GATE_UNAVAILABLE",
         "QUALITY_CALIBRATION_UNAVAILABLE",
     }
+    gate = EvolutionPromotionGate(PromotionTrustStore(trusted_public_keys={}))
+    decision = gate.decide(
+        policy_raw=None,
+        holdout=None,
+        challenger_genome_ref="agent-genome:" + "0" * 64,
+        agent_id="A17",
+        now=context.created_at,
+    )
+    if decision.promotion_applied:
+        raise ValueError("Evolution promotion gate unexpectedly applied a promotion")
+    blockers.update(decision.reasons)
     if quality.availability != "AVAILABLE":
         blockers.add("QUALITY_METRICS_UNAVAILABLE")
     return inventory, tuple(sorted(blockers))

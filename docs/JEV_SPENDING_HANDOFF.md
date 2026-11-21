@@ -46,9 +46,11 @@ registered versions. The existing logical tool-call ledger remains separate.
 The OpenAI reviewer policy, accounting, schemas and Costs view remain unchanged.
 Jev and OpenAI do **not** yet share one aggregate monetary ceiling or Costs table.
 
-Trusted direct library fixtures may still construct an unconfigured classifier;
-its status explicitly says `NOT_CONFIGURED` and does not assert spending admission.
-Production embedding must supply the ledger and the admitted route wrapper.
+Both classifier constructors require a durable spending ledger and declared owner,
+including when a custom transport is injected. Tests that use mock transports now
+exercise a temporary audited journal; production embedding must still use the
+admitted route wrapper to enforce role call ceilings in addition to token/money
+spending admission.
 
 ## Reservation and settlement
 

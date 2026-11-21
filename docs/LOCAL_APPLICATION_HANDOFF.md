@@ -52,9 +52,10 @@ Frontend `.env` variants are refused because Next would otherwise load them itse
 This relies on a trusted host, checkout, dependencies and build; it is not a browser,
 credential or candidate-code security sandbox.
 
-OpenTelemetry stays disabled by default. To have `ai-quant-local` start the pinned
-local Windows Collector before the API and keep it available during bounded API
-shutdown, explicitly set `AI_QUANT_OTEL_ENABLED=1` and
+OpenTelemetry stays disabled by default. On Windows or Linux amd64, to have
+`ai-quant-local` start the platform-pinned local Collector before the API and keep
+it available during bounded API shutdown, explicitly set
+`AI_QUANT_OTEL_ENABLED=1` and
 `AI_QUANT_OTEL_COLLECTOR_MANAGED=1`. The launcher verifies the Collector hash,
 validates a generated loopback config and stores rotated traces and the generated
 config under `<state>/observability`. It passes the trace-file path to the API for
@@ -135,10 +136,14 @@ same-state competing API refusal. Existing repair lock tests verify its unchange
 namespace, restart/owner death and file-integrity constraints.
 
 The Windows/Linux CI job builds the actual frontend and requires these integrations
-with `AI_QUANT_REQUIRE_LOCAL_WEB=1`. Hosted CI and Linux process behavior remain
-unverified here. Production services, locked Python dependency deployment, global
-writer coordination, staging, durable process/startup diagnostics, complete system
-health checks, operator sessions and independent review remain open. Docker/data
+with `AI_QUANT_REQUIRE_LOCAL_WEB=1`. Hosted run
+[40836433785](https://github.com/iamprateeknk-pixel/AI_Quant_OS/actions/runs/40836433785)
+passed all 17 jobs on code revision `0dfd881`, including the Linux and Windows
+locked suites and local-application integration jobs. This verifies the checked-in
+paper startup paths under CI; it does not certify production services, locked
+Python deployment outside the tested profiles, global writer coordination,
+staging, durable process/startup diagnostics, complete system health checks,
+operator sessions or independent review. Docker/data
 services and optional workers are separate explicit workflows. This command does
 not complete the full execution pack or permit live capital.
 

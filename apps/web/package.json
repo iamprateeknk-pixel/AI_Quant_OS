@@ -9,10 +9,12 @@
     "lint": "eslint",
     "test": "node --test tests/*.test.mjs",
     "visual:compare": "node scripts/compare-visual.mjs",
-    "visual:compare-suite": "node scripts/compare-visual-suite.mjs"
+    "visual:compare-suite": "node scripts/compare-visual-suite.mjs",
+    "visual:regression": "node scripts/capture-visual-suite.mjs",
+    "visual:update-baselines": "node scripts/capture-visual-suite.mjs --update-baselines"
   },
   "dependencies": {
-    "next": "16.4.0",
+    "next": "16.4.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "0.35.5"
@@ -22,7 +24,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.4.0",
+    "eslint-config-next": "16.4.6",
+    "playwright": "1.63.0",
     "typescript": "^5"
   }
 }

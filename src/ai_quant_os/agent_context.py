@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
@@ -15,6 +16,10 @@ from ai_quant_os.contracts import _require_aware
 from ai_quant_os.research_data_contracts import ResearchDataReceipt
 
 ResourceClass = Literal["GENERAL", "TRAINING", "HOLDOUT"]
+_ADAPTER_REF = re.compile(
+    r"[A-Za-z_][A-Za-z0-9_-]*(?:\.[A-Za-z_][A-Za-z0-9_-]*)*@"
+    r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?\Z"
+)
 InputStatus = Literal[
     "AVAILABLE",
     "MISSING",
@@ -37,6 +42,7 @@ def _json(value: object) -> str:
 class EvidenceRecord(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     source_id: str = Field(min_length=1, max_length=256)
+    adapter_ref: str | None = Field(default=None, max_length=100)
     as_of: AwareDatetime
     valid_until: AwareDatetime
     trusted: bool
@@ -44,6 +50,8 @@ class EvidenceRecord(BaseModel):
 
     @model_validator(mode="after")
     def canonical_payload(self) -> "EvidenceRecord":
+        if self.adapter_ref is not None and _ADAPTER_REF.fullmatch(self.adapter_ref) is None:
+            raise ValueError("Invalid source adapter reference")
         if self.valid_until <= self.as_of:
             raise ValueError("Source expiry must follow observation")
         value = json.loads(self.payload_json)
@@ -56,7 +64,10 @@ class EvidenceRecord(BaseModel):
 
     @property
     def content_ref(self) -> str:
-        return "context-evidence:" + sha256(self.model_dump_json().encode()).hexdigest()
+        return (
+            "context-evidence:"
+            + sha256(self.model_dump_json(exclude_none=True).encode()).hexdigest()
+        )
 
 
 @dataclass(frozen=True)
@@ -153,6 +164,7 @@ class SourceBinding:
     fetch: Callable[[], Awaitable[EvidenceRecord]]
     resource_refs: tuple[str, ...] = ()
     resource_catalog: DatasetResourceCatalog | None = None
+    adapter_ref: str | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -161,20 +173,36 @@ class SourceBinding:
             or not callable(self.fetch)
         ):
             raise ValueError("Invalid read-only context source binding")
+        adapter_ref = self.adapter_ref
+        if adapter_ref is None:
+            module = getattr(self.fetch, "__module__", None) or "unknown"
+            adapter_ref = f"{module}@1.0.0"
+            object.__setattr__(self, "adapter_ref", adapter_ref)
+        if (
+            not isinstance(adapter_ref, str)
+            or len(adapter_ref) > 100
+            or _ADAPTER_REF.fullmatch(adapter_ref) is None
+        ):
+            raise ValueError("Invalid source adapter reference")
 
 
 def bind_resource_provenance(record: EvidenceRecord, binding: SourceBinding) -> EvidenceRecord:
-    if binding.resource_class not in {"TRAINING", "HOLDOUT"}:
-        return record
-    if binding.resource_catalog is None:
-        raise PermissionError("Protected dataset resource binding denied")
-    provenance = _json([record.source_id, binding.resource_class, binding.resource_refs])
+    if binding.resource_class in {"TRAINING", "HOLDOUT"}:
+        if binding.resource_catalog is None:
+            raise PermissionError("Protected dataset resource binding denied")
+        provenance = _json(
+            [record.source_id, binding.adapter_ref, binding.resource_class, binding.resource_refs]
+        )
+        source_id = (
+            binding.resource_catalog.catalog_ref + ":" + sha256(provenance.encode()).hexdigest()
+        )
+    else:
+        source_id = record.source_id
     return EvidenceRecord.model_validate(
         {
             **record.model_dump(),
-            "source_id": binding.resource_catalog.catalog_ref
-            + ":"
-            + sha256(provenance.encode()).hexdigest(),
+            "source_id": source_id,
+            "adapter_ref": binding.adapter_ref,
         }
     )
 
@@ -186,6 +214,7 @@ class ContextInput(BaseModel):
     resource_class: ResourceClass | None = None
     source_tool: str | None = None
     source_id: str | None = None
+    source_adapter_ref: str | None = None
     as_of: AwareDatetime | None = None
     valid_until: AwareDatetime | None = None
     content_ref: str | None = None
@@ -242,6 +271,7 @@ def verify_context(context: CompiledContext) -> None:
                 raise ValueError("Context integrity source capability mismatch")
             record = EvidenceRecord(
                 source_id=row.source_id,
+                adapter_ref=row.source_adapter_ref,
                 as_of=row.as_of,
                 valid_until=row.valid_until,
                 trusted=True,
@@ -259,6 +289,7 @@ def verify_context(context: CompiledContext) -> None:
             value is not None
             for value in (
                 row.source_id,
+                row.source_adapter_ref,
                 row.as_of,
                 row.valid_until,
                 row.content_ref,
@@ -397,6 +428,7 @@ class ContextCompiler:
                     resource_class=binding.resource_class,
                     source_tool=binding.tool,
                     source_id=record.source_id,
+                    source_adapter_ref=record.adapter_ref,
                     as_of=record.as_of,
                     valid_until=record.valid_until,
                     content_ref=record.content_ref,

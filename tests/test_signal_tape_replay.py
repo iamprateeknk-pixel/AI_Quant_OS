@@ -15,9 +15,8 @@ pytest.importorskip("nautilus_trader")
 from ai_quant_os.api import create_app
 from ai_quant_os.market_data import BarDataset
 from ai_quant_os.research_data_parsing import parse_research_csv
-from ai_quant_os.validation_package_store import ValidationPackageStore
 from test_research_hypothesis_api import NOW, HEADERS
-from test_validation_package_api import prepare
+from test_validation_package_api import prepare, validation_service_environment
 from test_research_hypothesis_api import run as research_run
 from test_strategy_builder_api import build
 from ai_quant_os.research_hypothesis_contracts import ResearchHypothesis
@@ -25,18 +24,14 @@ from ai_quant_os.research_hypothesis_contracts import ResearchHypothesis
 
 @pytest.fixture
 def package(tmp_path):
-    with TestClient(
-        create_app(
-            operator_token="fixture-hypothesis",
-            clock=lambda: NOW,
-            paper_db_path=tmp_path / "paper.sqlite3",
-        )
-    ) as client:
-        payload, _, _ = prepare(client)
-        response = client.post("/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload)
-        assert response.status_code == 200, response.text
-    with ValidationPackageStore(tmp_path / "paper.validation-packages.sqlite3") as archive:
-        return archive.get(response.json()["package_ref"])
+    with validation_service_environment(tmp_path) as (settings, holdout, packages):
+        with TestClient(create_app(**settings)) as client:
+            payload, _, _ = prepare(client, holdout.dataset_ref)
+            response = client.post(
+                "/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload
+            )
+            assert response.status_code == 200, response.text
+        return packages.get(response.json()["package_ref"])
 
 
 def tape_payload(package):
@@ -179,7 +174,7 @@ def test_actual_cli_replays_checked_package_without_overwriting_output(package, 
         "-m",
         "ai_quant_os.signal_tape_cli",
         "--archive",
-        str(tmp_path / "paper.validation-packages.sqlite3"),
+        str(tmp_path / "service.validation-packages.sqlite3"),
         "--package-ref",
         package.package_ref,
         "--signals",
@@ -212,7 +207,7 @@ def test_cli_invalid_input_has_no_success_output_or_new_archive(package, tmp_pat
         payload["isolation_verified"] = True
     path.write_bytes(b"x" * 1048577 if damage == "oversize" else json.dumps(payload).encode())
     archive = tmp_path / (
-        "absent.sqlite3" if damage == "missing_archive" else "paper.validation-packages.sqlite3"
+        "absent.sqlite3" if damage == "missing_archive" else "service.validation-packages.sqlite3"
     )
     output = tmp_path / "must-not-exist.json"
     result = subprocess.run(
@@ -257,7 +252,6 @@ def test_unrepresentable_native_fee_rate_cannot_silently_become_zero(package):
 
 
 def currency_package(root, identifier, plan):
-    path = root / f"{identifier}.sqlite3"
     prices = [
         Decimal(110) + Decimal(i) / 100
         if identifier.endswith("JPY")
@@ -267,53 +261,48 @@ def currency_package(root, identifier, plan):
     csv = "instrument_id,observed_at,open,high,low,close,volume\n" + "".join(
         f"{identifier},2026-10-01T00:{i:02}:00Z,{p},{p},{p},{p},1\n" for i, p in enumerate(prices)
     )
-    with TestClient(
-        create_app(operator_token="fixture-hypothesis", clock=lambda: NOW, paper_db_path=path)
-    ) as client:
-        published = client.post(
-            "/api/v1/paper/research/datasets",
-            headers=HEADERS,
-            json={"source_id": "development", "resource_class": "TRAINING", "csv": csv},
-        )
-        assert published.status_code == 200, published.text
-        _, _, output = research_run(client)
-        hypothesis = ResearchHypothesis.model_validate(output["hypotheses"][0])
-        reviewed = client.post(
-            "/api/v1/sandbox/research/reviews",
-            headers=HEADERS,
-            json={
-                "review_id": "currency-review",
-                "run_id": "research-1",
-                "hypothesis_signature": hypothesis.signature,
-                "rationale": "Synthetic native currency check.",
-            },
-        )
-        assert reviewed.status_code == 200, reviewed.text
-        build(client, reviewed.json()["review"])
-        holdout = client.post(
-            "/api/v1/paper/research/datasets",
-            headers=HEADERS,
-            json={
-                "source_id": "later",
-                "resource_class": "HOLDOUT",
-                "csv": csv.replace("2026-10-01", "2026-10-02"),
-            },
-        )
-        assert holdout.status_code == 200, holdout.text
-        retained = client.post(
-            "/api/v1/sandbox/validation/packages",
-            headers=HEADERS,
-            json={
-                "run_id": "build-1",
-                "holdout_ref": holdout.json()["receipt"]["dataset_ref"],
-                "plan": plan.model_dump(mode="json"),
-            },
-        )
-        assert retained.status_code == 200, retained.text
-    with ValidationPackageStore(
-        path.with_name(path.stem + ".validation-packages.sqlite3")
-    ) as archive:
-        return archive.get(retained.json()["package_ref"])
+    holdout_csv = csv.replace("2026-10-01", "2026-10-02").encode()
+    with validation_service_environment(
+        root,
+        holdout_raw=holdout_csv,
+        paper_db_path=root / f"{identifier}.sqlite3",
+    ) as (
+        settings,
+        holdout,
+        packages,
+    ):
+        with TestClient(create_app(**settings)) as client:
+            published = client.post(
+                "/api/v1/paper/research/datasets",
+                headers=HEADERS,
+                json={"source_id": "development", "resource_class": "TRAINING", "csv": csv},
+            )
+            assert published.status_code == 200, published.text
+            _, _, output = research_run(client)
+            hypothesis = ResearchHypothesis.model_validate(output["hypotheses"][0])
+            reviewed = client.post(
+                "/api/v1/sandbox/research/reviews",
+                headers=HEADERS,
+                json={
+                    "review_id": "currency-review",
+                    "run_id": "research-1",
+                    "hypothesis_signature": hypothesis.signature,
+                    "rationale": "Synthetic native currency check.",
+                },
+            )
+            assert reviewed.status_code == 200, reviewed.text
+            build(client, reviewed.json()["review"])
+            retained = client.post(
+                "/api/v1/sandbox/validation/packages",
+                headers=HEADERS,
+                json={
+                    "run_id": "build-1",
+                    "holdout_ref": holdout.dataset_ref,
+                    "plan": plan.model_dump(mode="json"),
+                },
+            )
+            assert retained.status_code == 200, retained.text
+        return packages.get(retained.json()["package_ref"])
 
 
 @pytest.mark.parametrize(

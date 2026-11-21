@@ -101,6 +101,75 @@ def api_state_stopped():
     return FakeServiceApi.SERVICE_STOPPED
 
 
+def test_service_runtime_paths_reject_an_operator_profile_runtime(tmp_path):
+    import pytest
+    import ai_quant_os.holdout_validator_service as service
+
+    validate = getattr(service, "_validate_service_runtime_paths", None)
+    assert callable(validate), "service install must validate its runtime before registration"
+
+    profile = tmp_path / "Users" / "operator"
+    prefix = tmp_path / "workspace" / ".venv"
+    purelib = prefix / "Lib" / "site-packages"
+    with pytest.raises(RuntimeError, match="machine-wide"):
+        validate(
+            operator_profile=profile,
+            python_prefix=prefix,
+            base_prefix=profile / "AppData" / "Python311",
+            python_executable=prefix / "Scripts" / "python.exe",
+            service_executable=prefix / "pythonservice.exe",
+            package_directory=purelib,
+            module_file=purelib / "ai_quant_os" / "holdout_validator_service.py",
+            import_paths=(profile / "AppData" / "Python311" / "Lib", purelib),
+        )
+
+
+def test_service_runtime_paths_reject_editable_checkout_source(tmp_path):
+    import pytest
+    import ai_quant_os.holdout_validator_service as service
+
+    validate = getattr(service, "_validate_service_runtime_paths", None)
+    assert callable(validate), "service install must require an installed package"
+
+    prefix = tmp_path / "Program Files" / "Python311"
+    purelib = prefix / "Lib" / "site-packages"
+    with pytest.raises(RuntimeError, match="non-editable"):
+        validate(
+            operator_profile=tmp_path / "Users" / "operator",
+            python_prefix=prefix,
+            base_prefix=prefix,
+            python_executable=prefix / "python.exe",
+            service_executable=prefix / "pythonservice.exe",
+            package_directory=purelib,
+            module_file=tmp_path
+            / "workspace"
+            / "src"
+            / "ai_quant_os"
+            / "holdout_validator_service.py",
+            import_paths=(prefix / "Lib", purelib),
+        )
+
+
+def test_service_runtime_paths_accept_machine_installed_package(tmp_path):
+    import ai_quant_os.holdout_validator_service as service
+
+    validate = getattr(service, "_validate_service_runtime_paths", None)
+    assert callable(validate), "service install must validate its runtime before registration"
+
+    prefix = tmp_path / "Program Files" / "AIQuantOS" / "Python311"
+    purelib = prefix / "Lib" / "site-packages"
+    validate(
+        operator_profile=tmp_path / "Users" / "operator",
+        python_prefix=prefix,
+        base_prefix=prefix,
+        python_executable=prefix / "python.exe",
+        service_executable=prefix / "pythonservice.exe",
+        package_directory=purelib,
+        module_file=purelib / "ai_quant_os" / "holdout_validator_service.py",
+        import_paths=(prefix / "Lib", purelib),
+    )
+
+
 def test_pipe_server_rejects_unsafe_configuration():
     try:
         WindowsNamedPipeServer("S-1-5-80-bad", "S-1-5-21-1-2-3-4")
@@ -180,6 +249,80 @@ def test_service_handler_refuses_validation_scope_before_reading_holdout():
     )
     with __import__("pytest").raises(PermissionError, match="scope mismatch"):
         handler(request)
+
+
+def test_service_publishes_checked_holdout_bytes_and_returns_receipt_only(tmp_path):
+    import base64
+    from hashlib import sha256
+    from uuid import uuid4
+
+    import pytest
+
+    from ai_quant_os.candidate_validation_store import CandidateValidationStore
+    from ai_quant_os.holdout_validator_rpc import verify_response
+    from ai_quant_os.research_evidence_catalog import HoldoutEvidenceStore, ResearchEvidenceCatalog
+    from ai_quant_os.validation_package_store import ValidationPackageStore
+    from test_research_evidence_catalog import NOW, raw_bars
+
+    source_path = tmp_path / "service-source.sqlite3"
+    with ResearchEvidenceCatalog(source_path):
+        pass
+    with ResearchEvidenceCatalog(tmp_path / "training-source.sqlite3") as training_catalog:
+        training_receipt = training_catalog.publish(
+            raw_bars(),
+            source_id="training-source",
+            resource_class="TRAINING",
+            received_at=NOW,
+        )
+    holdout_path = source_path.with_name("service-source.holdout.sqlite3")
+    with (
+        HoldoutEvidenceStore(holdout_path) as holdouts,
+        ValidationPackageStore(tmp_path / "packages.sqlite3") as packages,
+        CandidateValidationStore(tmp_path / "validations.sqlite3") as validations,
+    ):
+        handler = HoldoutRequestHandler(holdouts, packages, validations, research=None)
+        raw = raw_bars(minute=10)
+        publication = {
+            "source_id": "sealed-feed",
+            "raw_base64": base64.b64encode(raw).decode(),
+            "raw_sha256": sha256(raw).hexdigest(),
+            "training_receipts_json": (training_receipt.model_dump_json(),),
+        }
+        request = HoldoutRequest(
+            request_id=uuid4().hex,
+            operation="HOLDOUT_PUBLISH",
+            agent_id="A10",
+            agent_version="0.2.0",
+            task_id="operator-holdout-ingest",
+            context_ref="holdout-ingest:" + uuid4().hex,
+            evidence_ref="holdout-ingest:" + publication["raw_sha256"],
+            holdout_publication=publication,
+        )
+        response = handler(request)
+        verify_response(request, response)
+        stored = holdouts.get(response.published_ref)
+        assert stored is not None and stored[1] == raw
+        assert raw.decode() not in response.model_dump_json()
+        retry = handler(request)
+        assert retry.receipt_json == response.receipt_json
+
+        overlap_raw = raw_bars()
+        overlap = dict(
+            publication,
+            source_id="overlap",
+            raw_base64=base64.b64encode(overlap_raw).decode(),
+            raw_sha256=sha256(overlap_raw).hexdigest(),
+        )
+        overlap_request = HoldoutRequest.model_validate(
+            request.model_dump(mode="python")
+            | {
+                "request_id": uuid4().hex,
+                "evidence_ref": "holdout-ingest:" + overlap["raw_sha256"],
+                "holdout_publication": overlap,
+            }
+        )
+        with pytest.raises(PermissionError):
+            handler(overlap_request)
 
 
 def test_validation_context_reply_contains_only_checked_summary_and_holdout_receipt():
@@ -390,8 +533,9 @@ def test_service_prepares_and_retains_validation_package_without_returning_holdo
 
     research = ResearchStore(tmp_path / "service.research.sqlite3")
     with (
-        HoldoutEvidenceStore(service_research.with_name("service.research-data.holdout.sqlite3"))
-        as holdouts,
+        HoldoutEvidenceStore(
+            service_research.with_name("service.research-data.holdout.sqlite3")
+        ) as holdouts,
         ValidationPackageStore(tmp_path / "service.validation-packages.sqlite3") as packages,
         CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3") as validations,
     ):
@@ -522,6 +666,195 @@ def test_stage_service_archives_verifies_copies_and_preserves_sources(tmp_path):
             research_source=invalid_research.resolve(),
         )
     assert list(failed_stage.iterdir()) == []
+
+
+def test_service_install_secures_staging_directory_before_copy_and_never_starts_on_acl_failure(
+    tmp_path, monkeypatch
+):
+    import sys
+    from types import ModuleType
+
+    import pytest
+    import ai_quant_os.holdout_validator_service as service
+
+    if __import__("os").name != "nt":
+        pytest.skip("HOLDOUT service installation is Windows-only")
+
+    from ai_quant_os.candidate_validation_store import CandidateValidationStore
+    from ai_quant_os.research_evidence_catalog import ResearchEvidenceCatalog
+    from ai_quant_os.research_store import ResearchStore
+    from ai_quant_os.validation_package_store import ValidationPackageStore
+
+    source_dir = (tmp_path / "sources").resolve()
+    source_dir.mkdir()
+    paper_db = source_dir / "paper.sqlite3"
+    research_workspace = (source_dir / "research-workspace").resolve()
+    research_workspace.mkdir()
+    with ResearchEvidenceCatalog(source_dir / "paper.research-data.sqlite3"):
+        pass
+    with ValidationPackageStore(source_dir / "paper.validation-packages.sqlite3"):
+        pass
+    with CandidateValidationStore(source_dir / "paper.candidate-validations.sqlite3"):
+        pass
+    ResearchStore(research_workspace / "research.sqlite3")
+    sources = (
+        source_dir / "paper.research-data.holdout.sqlite3",
+        source_dir / "paper.validation-packages.sqlite3",
+        source_dir / "paper.candidate-validations.sqlite3",
+        research_workspace / "research.sqlite3",
+    )
+    source_bytes = {path: path.read_bytes() for path in sources}
+
+    events = []
+    fake_service = ModuleType("win32service")
+    fake_service_util = ModuleType("win32serviceutil")
+    fake_service_util.StartService = lambda name: events.append(("start", name))
+    monkeypatch.setitem(sys.modules, "win32service", fake_service)
+    monkeypatch.setitem(sys.modules, "win32serviceutil", fake_service_util)
+    monkeypatch.setattr(service, "_require_service_runtime", lambda: events.append("runtime"))
+    monkeypatch.setattr(service, "_ensure_service_registered", lambda *_: events.append("register"))
+    monkeypatch.setattr(
+        service, "configure_holdout_service_sid", lambda **_: events.append("service-sid")
+    )
+    monkeypatch.setattr(service, "current_process_user_sid", lambda: "S-1-5-21-1-2-3-1001")
+    real_stage = service.stage_service_archives
+
+    def track_stage(*args, **kwargs):
+        events.append("stage")
+        return real_stage(*args, **kwargs)
+
+    monkeypatch.setattr(service, "stage_service_archives", track_stage)
+    monkeypatch.setattr(
+        service,
+        "_write_service_settings",
+        lambda *_: events.append("settings"),
+    )
+    acl_fail_on_call = None
+    acl_call_count = 0
+
+    def verify_acl(data_dir, *, adopt_existing, staging_operator_sid=None):
+        nonlocal acl_call_count
+        acl_call_count += 1
+        data_dir.mkdir(parents=True, exist_ok=True)
+        events.append(("acl", adopt_existing, staging_operator_sid))
+        archives = tuple(
+            data_dir / name
+            for name in (
+                "research-data.holdout.sqlite3",
+                "validation-packages.sqlite3",
+                "candidate-validations.sqlite3",
+                "research.sqlite3",
+            )
+        )
+        if any(path.exists() for path in archives):
+            assert all(path.is_file() for path in archives)
+        else:
+            assert all(not path.exists() for path in archives)
+        if acl_call_count == acl_fail_on_call:
+            raise PermissionError("synthetic ACL acceptance failure")
+
+    monkeypatch.setattr(service, "secure_holdout_directory", verify_acl)
+
+    def refuse_runtime():
+        events.append("runtime")
+        raise service._ServiceRuntimeUnavailable("synthetic runtime refusal")
+
+    monkeypatch.setattr(service, "_require_service_runtime", refuse_runtime)
+    refused_data_dir = (tmp_path / "service-runtime-refused").resolve()
+    with pytest.raises(RuntimeError, match="synthetic runtime refusal"):
+        service._install_service(
+            refused_data_dir,
+            paper_db=paper_db,
+            research_workspace=research_workspace,
+        )
+    assert events == ["runtime"]
+    assert not refused_data_dir.exists()
+
+    events.clear()
+    monkeypatch.setattr(service, "_require_service_runtime", lambda: events.append("runtime"))
+
+    good_data_dir = (tmp_path / "service-good").resolve()
+    service._install_service(
+        good_data_dir,
+        paper_db=paper_db,
+        research_workspace=research_workspace,
+    )
+    assert events == [
+        "runtime",
+        "register",
+        "service-sid",
+        ("acl", False, "S-1-5-21-1-2-3-1001"),
+        "stage",
+        "settings",
+        ("acl", True, None),
+        ("start", "AIQuantHoldout"),
+    ]
+    assert all(path.read_bytes() == content for path, content in source_bytes.items())
+
+    events.clear()
+    acl_call_count = 0
+    existing_data_dir = (tmp_path / "service-existing").resolve()
+    existing_data_dir.mkdir()
+    archive_names = (
+        "research-data.holdout.sqlite3",
+        "validation-packages.sqlite3",
+        "candidate-validations.sqlite3",
+        "research.sqlite3",
+    )
+    for name, source in zip(archive_names, sources, strict=True):
+        (existing_data_dir / name).write_bytes(source.read_bytes())
+    service._install_service(
+        existing_data_dir,
+        paper_db=paper_db,
+        research_workspace=research_workspace,
+    )
+    assert events == [
+        "runtime",
+        "register",
+        "service-sid",
+        "settings",
+        ("acl", True, None),
+        ("start", "AIQuantHoldout"),
+    ]
+
+    events.clear()
+    acl_call_count = 0
+    acl_fail_on_call = 1
+    failed_data_dir = (tmp_path / "service-failed").resolve()
+    with pytest.raises(PermissionError, match="synthetic ACL"):
+        service._install_service(
+            failed_data_dir,
+            paper_db=paper_db,
+            research_workspace=research_workspace,
+        )
+    assert events[-1] == ("acl", False, "S-1-5-21-1-2-3-1001")
+    assert not any(event == "stage" for event in events)
+    assert list(failed_data_dir.iterdir()) == []
+    assert not any(isinstance(event, tuple) and event[0] == "start" for event in events)
+    assert all(path.read_bytes() == content for path, content in source_bytes.items())
+
+    events.clear()
+    acl_call_count = 0
+    acl_fail_on_call = 2
+    final_acl_failure_dir = (tmp_path / "service-final-acl-failed").resolve()
+    with pytest.raises(PermissionError, match="synthetic ACL"):
+        service._install_service(
+            final_acl_failure_dir,
+            paper_db=paper_db,
+            research_workspace=research_workspace,
+        )
+    assert "stage" in events
+    assert all(
+        (final_acl_failure_dir / name).is_file()
+        for name in (
+            "research-data.holdout.sqlite3",
+            "validation-packages.sqlite3",
+            "candidate-validations.sqlite3",
+            "research.sqlite3",
+        )
+    )
+    assert not any(isinstance(event, tuple) and event[0] == "start" for event in events)
+    assert all(path.read_bytes() == content for path, content in source_bytes.items())
 
 
 @__import__("pytest").mark.skipif(__import__("os").name != "nt", reason="Windows named-pipe test")

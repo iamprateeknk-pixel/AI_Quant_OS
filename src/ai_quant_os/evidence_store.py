@@ -24,6 +24,12 @@ class EvidenceConflictError(ValueError):
 def encode_evidence(value):
     record = json.loads(TypeAdapter(type(value)).dump_json(value))
     _preserve_optional_candidate_binding(record)
+    if (
+        type(value) is DailyEvidence
+        and value.report.schema_version == "1.0"
+        and not value.report.candidate_contributions
+    ):
+        record["report"].pop("candidate_contributions", None)
     return json.dumps(record, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
 
 

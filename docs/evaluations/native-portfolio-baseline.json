@@ -656,12 +656,14 @@
         ]
       }
     ],
+    "liquidation": null,
+    "maintenance_model": "ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1",
     "native_balance_usd": "99986.11",
     "native_order_count": 12,
     "net_pnl_usd": "-17.07794462011680554726912342",
     "promotion_allowed": false,
-    "replay_model": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1",
-    "schema_version": "1.0",
+    "replay_model": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V2",
+    "schema_version": "1.1",
     "total_fees_usd": "1.2",
     "valuation_model": "FINAL_QUOTE_PNL_SIGN_FX_DECIMAL28_V1",
     "venue": "PAPER"

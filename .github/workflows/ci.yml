@@ -7,7 +7,7 @@ on:
 jobs:
   locked-application:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 90
     strategy:
       matrix:
         include:
@@ -39,6 +39,53 @@ jobs:
         working-directory: apps/web
       - run: npm run build
         working-directory: apps/web
+      - if: ${{ matrix.profile == 'linux' }}
+        name: Install pinned Linux OpenTelemetry Collector
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="$GITHUB_WORKSPACE/data-local/tools/otelcol-contrib-0.162.0"
+          mkdir -p "$tool_dir"
+          archive="$RUNNER_TEMP/otelcol-contrib_0.162.0_linux_amd64.tar.gz"
+          curl --fail --location --retry 3 --retry-delay 2 --max-time 180 \
+            'https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.162.0/otelcol-contrib_0.162.0_linux_amd64.tar.gz' \
+            --output "$archive"
+          printf '%s  %s\n' \
+            'fcc063749f730f8c21fe29f2d340ff174f5f1c5885bd3156fb6c985a3036fcc3' "$archive" \
+            | sha256sum --check --status
+          test "$(stat --format=%s "$archive")" = '112285869'
+          tar -xzf "$archive" -C "$tool_dir"
+          binary="$tool_dir/otelcol-contrib"
+          test -f "$binary"
+          chmod 0755 "$binary"
+          printf '%s  %s\n' \
+            '2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064' "$binary" \
+            | sha256sum --check --status
+          printf 'AI_QUANT_NATIVE_COLLECTOR_EXE=%s\n' "$binary" >> "$GITHUB_ENV"
+      - if: ${{ matrix.profile == 'windows' }}
+        run: npx playwright install chromium
+        working-directory: apps/web
+      - if: ${{ matrix.profile == 'windows' }}
+        run: npm run visual:regression
+        working-directory: apps/web
+      - if: ${{ matrix.profile == 'windows' }}
+        name: Install pinned Alertmanager for webhook configuration acceptance
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $toolDirectory = Join-Path $env:GITHUB_WORKSPACE 'data-local/tools/alertmanager-0.35.0'
+          $archive = Join-Path $env:RUNNER_TEMP 'alertmanager-0.35.0.windows-amd64.zip'
+          Invoke-WebRequest `
+            -Uri 'https://github.com/prometheus/alertmanager/releases/download/v0.35.0/alertmanager-0.35.0.windows-amd64.zip' `
+            -OutFile $archive
+          if ((Get-Item -LiteralPath $archive).Length -ne 43531739) { throw 'Alertmanager archive size differs from the pinned manifest' }
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'cdf8cd664889bf3f27771881e10814f3d5916310aba90717b4424deb358b0fa3') { throw 'Alertmanager archive digest differs from the pinned manifest' }
+          New-Item -ItemType Directory -Path $toolDirectory -Force | Out-Null
+          Expand-Archive -LiteralPath $archive -DestinationPath $env:RUNNER_TEMP
+          $executable = Join-Path $env:RUNNER_TEMP 'alertmanager-0.35.0.windows-amd64/alertmanager.exe'
+          if ((Get-Item -LiteralPath $executable).Length -ne 55130112) { throw 'Alertmanager executable size differs from the pinned manifest' }
+          if ((Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash.ToLowerInvariant() -ne '313a07892a709bd96f8770266bec6ec85c46c21350d582f5cfc8d80b04cf7b69') { throw 'Alertmanager executable digest differs from the pinned manifest' }
+          Copy-Item -LiteralPath $executable -Destination (Join-Path $toolDirectory 'alertmanager.exe')
       - run: python -m pytest -q
   secrets:
     runs-on: ubuntu-latest
@@ -57,7 +104,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - run: python -m pip install -e ".[dev,data]"
+      - run: python -m pip install -e ".[dev,data,trading,recovery,observability]"
       - run: python -m ruff check src tests scripts
       - run: python -m ruff format --check src tests scripts
       - run: python -m pytest -q
@@ -74,6 +121,7 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
+      - run: npm audit --audit-level=moderate
       - run: npm run lint
       - run: npm test
       - run: npm run build

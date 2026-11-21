@@ -6,8 +6,16 @@ from decimal import Decimal
 from hashlib import sha256
 from typing import Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_serializer,
+    model_validator,
+)
 
+from ai_quant_os.agent_routing import AgentExecutionRoute
 from ai_quant_os.graph_ledger import RunStatus
 
 
@@ -63,7 +71,7 @@ def timing(events: tuple[GraphTraceEvent, ...]):
 
 class GraphTrace(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.0", "1.1"] = "1.0"
     mode: Literal["PAPER"] = "PAPER"
     scope: Literal["PAPER", "SANDBOX"]
     archival_only: Literal[True] = True
@@ -84,6 +92,14 @@ class GraphTrace(BaseModel):
     events: tuple[GraphTraceEvent, ...] = Field(min_length=1, max_length=3)
     timing_state: Literal["AVAILABLE", "PARTIAL", "UNAVAILABLE", "CLOCK_REGRESSION"]
     elapsed_seconds: Decimal | None = Field(ge=0)
+    routing: AgentExecutionRoute | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_trace_shape(self, handler):
+        value = handler(self)
+        if self.routing is None:
+            value.pop("routing", None)
+        return value
 
     @model_validator(mode="after")
     def bound_timeline(self):
@@ -96,6 +112,14 @@ class GraphTrace(BaseModel):
             raise ValueError("Graph trace context expiry mismatch")
         if self.trace_id != trace_identity(self.run_id, self.context_ref, self.manifest_ref):
             raise ValueError("Graph trace identity mismatch")
+        if (self.schema_version == "1.1") != (self.routing is not None):
+            raise ValueError("Graph trace routing version mismatch")
+        if self.routing is not None and (
+            self.routing.agent_id,
+            self.routing.agent_version,
+            self.routing.task_id,
+        ) != (self.agent_id, self.agent_version, self.task_id):
+            raise ValueError("Graph trace routing identity mismatch")
         states = [row.status for row in self.events]
         if states[0] != "CREATED" or states[-1] != self.status:
             raise ValueError("Graph trace terminal binding mismatch")

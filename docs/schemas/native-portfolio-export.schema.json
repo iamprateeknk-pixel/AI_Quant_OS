@@ -231,8 +231,11 @@
           "type": "string"
         },
         "schema_version": {
-          "const": "1.0",
-          "default": "1.0",
+          "enum": [
+            "1.0",
+            "1.1"
+          ],
+          "default": "1.1",
           "title": "Schema Version",
           "type": "string"
         },
@@ -255,8 +258,11 @@
           "type": "string"
         },
         "replay_model": {
-          "const": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1",
-          "default": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1",
+          "enum": [
+            "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1",
+            "SYNCHRONIZED_BAR_PORTFOLIO_USD_V2"
+          ],
+          "default": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V2",
           "title": "Replay Model",
           "type": "string"
         },
@@ -283,6 +289,24 @@
           "default": "ALL_CURRENT_OPENS_BEFORE_CAUSAL_DECISIONS_V1",
           "title": "Decision Model",
           "type": "string"
+        },
+        "maintenance_model": {
+          "const": "ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1",
+          "default": "ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1",
+          "title": "Maintenance Model",
+          "type": "string"
+        },
+        "liquidation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MaintenanceLiquidation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Liquidation"
         }
       },
       "required": [
@@ -292,10 +316,73 @@
         "native_order_count",
         "total_fees_usd",
         "net_pnl_usd",
-        "native_balance_usd"
+        "native_balance_usd",
+        "schema_version",
+        "replay_model"
       ],
       "title": "PortfolioReport",
-      "type": "object"
+      "type": "object",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              }
+            },
+            "required": [
+              "schema_version"
+            ]
+          },
+          "then": {
+            "properties": {
+              "replay_model": {
+                "const": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1"
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "maintenance_model"
+                  ]
+                },
+                {
+                  "required": [
+                    "liquidation"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "1.1"
+              }
+            },
+            "required": [
+              "schema_version"
+            ]
+          },
+          "then": {
+            "properties": {
+              "replay_model": {
+                "const": "SYNCHRONIZED_BAR_PORTFOLIO_USD_V2"
+              },
+              "maintenance_model": {
+                "const": "ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1"
+              }
+            },
+            "required": [
+              "maintenance_model",
+              "liquidation"
+            ]
+          }
+        }
+      ]
     },
     "SourceFingerprint": {
       "properties": {
@@ -444,6 +531,42 @@
         "source_files"
       ],
       "title": "StrategyImplementation",
+      "type": "object"
+    },
+    "MaintenanceLiquidation": {
+      "properties": {
+        "triggered_at": {
+          "format": "date-time",
+          "title": "Triggered At",
+          "type": "string"
+        },
+        "equity_usd": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Equity Usd",
+          "type": "string"
+        },
+        "required_margin_usd": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Required Margin Usd",
+          "type": "string"
+        },
+        "instruments": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Instruments",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "triggered_at",
+        "equity_usd",
+        "required_margin_usd",
+        "instruments"
+      ],
+      "title": "MaintenanceLiquidation",
       "type": "object"
     }
   },

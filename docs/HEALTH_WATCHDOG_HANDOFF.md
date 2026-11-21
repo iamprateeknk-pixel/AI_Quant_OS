@@ -12,6 +12,13 @@ are accepted. Temporal is optional: this watchdog does not automatically start o
 retry a Temporal workflow. The protected recovery commands remain available when
 their separate configuration is enabled.
 
+Set `AI_QUANT_EXPECTED_PAPER_INSTRUMENTS` to a comma-separated subset of the
+supported PAPER instruments (for example `EURUSD,GBPUSD`) when those feeds are
+expected in this session. An unset value declares no expected instruments; the
+watchdog does not infer subscriptions from the broader supported catalogue.
+Every declared instrument without a quote gets a durable `QUOTE_MISSING`
+incident. The alert records absence only; it does not identify a provider outage.
+
 The journal is a sibling `<paper-stem>.health.sqlite3`. Startup verifies it and
 restores safety and exact manifest/version quarantine before graph use. Disabling
 monitoring later does **not** clear existing journal pins or safety state. Every
@@ -44,17 +51,20 @@ other programs writing the SQLite files must not run concurrently.
 | CLOCK_REGRESSION | HALT; retain the observed local time regression; no NTP/offset measurement is claimed |
 | WATCHDOG_FAILURE | HALT; attempt the owning paper audit as fallback for monitor/storage failure |
 | BROKER_UNCONFIRMED | NO_NEW_RISK; retain UNKNOWN/DISPATCHING reservation; never resend or reconcile automatically |
+| QUOTE_MISSING | NO_NEW_RISK; retain an incident for each expected PAPER instrument absent from the quote source |
 | QUOTE_STALE / QUOTE_FUTURE / QUOTE_UNTRUSTED | NO_NEW_RISK; retain the actual quote snapshot; five-second freshness matches the current paper kernel |
 | AGENT_FAILED / AGENT_TIMEOUT / AGENT_INVALID / AGENT_UNCERTAIN | NO_NEW_RISK plus exact-version, exact-manifest quarantine |
 
 Higher existing safety states are preserved. Both health and paper recovery stops
 hold kernel authority through the owning audit commit, preventing a new approval
-between persistent containment and the in-memory transition. Missing quotes and ordinary
-CREATED/RUNNING/WAIT_FOR_DATA/UNAVAILABLE/EXPIRED/DENIED agent states do not by
-themselves claim failure or quarantine. An orphaned RUNNING run becomes UNCERTAIN
-through the existing explicit graph resume semantics; automatic orphan resolution
-is not implemented. The watchdog does not claim missing-provider or idle-feed
-health, production health coverage, agent performance scoring or clock calibration.
+between persistent containment and the in-memory transition. Missing-feed checks
+are limited to the configured PAPER instrument catalogue and do not identify a
+provider outage. Ordinary CREATED/RUNNING/WAIT_FOR_DATA/UNAVAILABLE/EXPIRED/DENIED
+agent states do not by themselves claim failure or quarantine. An orphaned RUNNING
+run becomes UNCERTAIN through the existing explicit graph resume semantics;
+automatic orphan resolution is not implemented. The watchdog does not claim
+provider-specific or production health coverage, agent performance scoring or
+clock calibration.
 
 ## Evidence and permissions
 
