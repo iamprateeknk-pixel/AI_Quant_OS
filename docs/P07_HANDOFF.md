@@ -26,11 +26,12 @@ the HOLDOUT and two validation archives are derived from the PAPER database
 path, and the research archive is read from the workspace. Sources remain
 untouched. Before runtime checks, registration, ACL setup, or staging, install
 now validates the PAPER SQLite integrity and checks each derived archive's
-SQLite integrity and expected schema using read-only connections. Missing,
-malformed, or incomplete sources therefore cannot leave a service registration
-or staging directory behind. Staging requires an empty service data directory
-and refuses unrelated files. Existing complete service archives are preserved
-on re-install, and partial archive sets are refused.
+SQLite integrity, expected schema, archived records, and audit-chain bindings
+using read-only connections. Missing, malformed, or incomplete sources therefore
+cannot leave a service registration or staging directory behind. Staging
+requires an empty service data directory and refuses unrelated files. Existing
+complete service archives are preserved on re-install, and partial archive sets
+are refused.
 
 The 2026-10-23 workstation probe used only four explicitly synthetic empty
 SQLite archives. It verified the owner and final DACL on the staged files and

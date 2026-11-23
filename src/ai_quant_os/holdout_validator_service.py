@@ -527,6 +527,8 @@ def _open_service_holdout_store(data_dir: Path) -> HoldoutEvidenceStore:
 
 
 def _validate_service_archive(path: Path, store_type) -> None:
+    from ai_quant_os.audit_chain import AuditChain
+    from ai_quant_os.candidate_validation_store import CandidateValidationStore
     from ai_quant_os.research_store import ResearchStore
     from ai_quant_os.validation_package_store import ValidationPackageStore
 
@@ -554,6 +556,18 @@ def _validate_service_archive(path: Path, store_type) -> None:
             verifier = object.__new__(ResearchStore)
             for experiment_id in experiment_ids:
                 verifier._report(verifier._row(db, experiment_id))
+        return
+    if store_type in (CandidateValidationStore, ValidationPackageStore):
+        with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as db:
+            db.execute("PRAGMA query_only=ON")
+            if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise ValueError("Source archive integrity check failed")
+            verifier = object.__new__(store_type)
+            verifier._db = db
+            verifier._audit = AuditChain(db)
+            if store_type is CandidateValidationStore:
+                verifier._capacity = 32
+            verifier._verified()
         return
     required_tables = (
         {"validation_packages", "audit_events", "audit_chain", "audit_head"}

@@ -801,6 +801,25 @@ def test_service_install_secures_staging_directory_before_copy_and_never_starts_
     finally:
         invalid_archive.write_bytes(source_bytes[invalid_archive])
 
+    with sqlite3.connect(invalid_archive) as db:
+        db.execute(
+            "UPDATE audit_head SET head_hash=? WHERE singleton=1",
+            ("f" * 64,),
+        )
+    events.clear()
+    tampered_data_dir = (tmp_path / "service-tampered-source").resolve()
+    try:
+        with pytest.raises(ValueError, match="Audit integrity verification failed"):
+            service._install_service(
+                tampered_data_dir,
+                paper_db=paper_db,
+                research_workspace=research_workspace,
+            )
+        assert events == []
+        assert not tampered_data_dir.exists()
+    finally:
+        invalid_archive.write_bytes(source_bytes[invalid_archive])
+
     good_data_dir = (tmp_path / "service-good").resolve()
     service._install_service(
         good_data_dir,
