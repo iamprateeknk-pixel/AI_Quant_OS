@@ -68,8 +68,9 @@ validation. Evaluation 0134 records staged-file identity and fresh checks.
 Native browser navigation, login/retry timing, timer throttling, visibility,
 keyboard/focus and visual acceptance remain pending under the existing browser
 launch refusal. Costs and portfolio position/currency observations now use the
-shared authenticated stream for bounded read-only refresh. Per-tab/multi-worker
-production load, order and agent detail subscriptions, OTel/Grafana and
+shared authenticated stream for bounded read-only refresh. Orders receipts and
+fills also refresh under that stream. Per-tab/multi-worker production load,
+agent detail subscriptions, OTel/Grafana and
 independent critical review remain open. All P00–P13 remain incomplete. No
 provider, broker SDK, remote push, promotion or live capital is activated.
 
