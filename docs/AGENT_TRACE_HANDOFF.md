@@ -60,6 +60,17 @@ states. The parser rejects duplicate/unbounded child rows, invalid statuses and
 inconsistent trace availability. Schema parity is maintained in
 `docs/schemas/graph-trace.schema.json`.
 
+## Graph execution spans
+
+When owned OpenTelemetry is enabled, the API's existing request trace now includes
+bounded internal spans for graph admission, execution, implementation invocation,
+authorized tool calls, read-tool source access and finalization. A nested child
+graph inherits its parent tool span through the runtime-owned context. Attributes
+are allowlisted agent/version/phase/tool values only; run IDs, task IDs,
+contexts, source references, tool payloads and outputs are excluded. Telemetry stays
+optional and cannot change graph admission or execution results. Standalone graph
+runtimes remain uninstrumented unless a telemetry owner is supplied.
+
 ## Verification and pending work
 
 See `evaluations/agent-trace-0106.json` for fresh staged-checkout scope, hashes and
@@ -68,6 +79,7 @@ Coverage includes real API graphs/restart, exact injected transition times, lega
 and mixed journals, backward time, failures/timeouts/cancellation/recovery, rehashed
 historical forgery, rollback, corruption isolation and typed schema claims.
 
-Node/tool/source spans, OTel/export/retention, aggregate quality/performance
-metrics, full UI workflows and independent acceptance remain open. No browser or
-full release acceptance is claimed. All P00-P13 remain incomplete.
+Detailed per-source provenance spans, cross-request/distributed trace correlation,
+export/retention policy, aggregate quality/performance metrics, full UI workflows
+and independent acceptance remain open. No browser or full release acceptance is
+claimed. All P00-P13 remain incomplete.

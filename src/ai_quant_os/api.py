@@ -880,6 +880,7 @@ def create_app(
                 clock=current_time,
                 model_router=agent_model_router,
                 model_routing=model_routing,
+                telemetry=configured_telemetry,
             ) as runtime,
             AsyncExitStack() as services,
         ):

@@ -101,6 +101,82 @@ def test_parent_trace_links_only_verified_saved_child_runs(tmp_path):
         assert child_trace.status_code == 200
 
 
+def test_protected_supervisor_api_exports_nested_graph_spans(tmp_path):
+    pytest.importorskip("opentelemetry.sdk.trace.export.in_memory_span_exporter")
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    from ai_quant_os.paper_telemetry import PaperTelemetry
+
+    exporter = InMemorySpanExporter()
+    telemetry = PaperTelemetry(exporter=exporter)
+    try:
+        with TestClient(
+            create_app(
+                operator_token="fixture-supervisor",
+                clock=lambda: API_NOW,
+                paper_db_path=tmp_path / "paper.sqlite3",
+                telemetry=telemetry,
+            )
+        ) as client:
+            context = client.post(
+                "/api/v1/paper/tasks/supervise/context",
+                headers=HEADERS,
+                json={"task_id": "observed-task", "task_kind": "DATA_REVIEW"},
+            )
+            assert context.status_code == 200
+            response = client.post(
+                "/api/v1/paper/agents/execute",
+                headers=HEADERS,
+                json={
+                    "run_id": "observed-task",
+                    "context_ref": context.json()["context_ref"],
+                },
+            )
+            assert response.status_code == 200
+            observed_trace = int(response.headers["X-Paper-Trace-Id"], 16)
+        assert telemetry.flush()
+        spans = [
+            span
+            for span in exporter.get_finished_spans()
+            if span.context.trace_id == observed_trace
+        ]
+        names = [span.name for span in spans]
+        assert "paper.http" in names
+        assert names.count("paper.agent.graph.execute") >= 2
+        assert "paper.agent.tool.call" in names
+        by_span_id = {span.context.span_id: span for span in spans}
+        graph_admits = [span for span in spans if span.name == "paper.agent.graph.admit"]
+        tool_span_ids = {
+            span.context.span_id for span in spans if span.name == "paper.agent.tool.call"
+        }
+        assert any(
+            span.parent.span_id in by_span_id
+            and by_span_id[span.parent.span_id].name == "paper.http"
+            for span in graph_admits
+        )
+        assert any(span.parent.span_id in tool_span_ids for span in graph_admits)
+        graph_spans = [span for span in spans if span.name.startswith("paper.agent")]
+        assert all(
+            key
+            in {
+                "ai_quant.mode",
+                "ai_quant.agent.id",
+                "ai_quant.agent.version",
+                "ai_quant.agent.phase",
+                "ai_quant.agent.tool",
+            }
+            for span in graph_spans
+            for key in span.attributes
+        )
+        assert all(
+            "observed-task" not in str(value)
+            for span in graph_spans
+            for value in span.attributes.values()
+        )
+    finally:
+        telemetry.close()
+
+
 def rewrite_events(path, mutate):
     """Model an imported legacy journal or attacker able to rehash its local chain."""
     from ai_quant_os.audit_chain import event_hash, GENESIS

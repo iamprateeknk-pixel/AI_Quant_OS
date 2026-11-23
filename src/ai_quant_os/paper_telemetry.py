@@ -14,6 +14,7 @@ from math import isfinite
 from urllib.parse import urlsplit
 
 import httpx
+from ai_quant_os.agent_permissions import KNOWN_TOOLS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -115,6 +116,16 @@ class PaperSpan:
                 "FAILED",
                 "INVALID",
             }
+            or key == "ai_quant.agent.id"
+            and isinstance(value, str)
+            and re.fullmatch(r"A(?:0[1-9]|1[0-8])", value)
+            or key == "ai_quant.agent.version"
+            and isinstance(value, str)
+            and re.fullmatch(r"\d+\.\d+\.\d+", value)
+            or key == "ai_quant.agent.phase"
+            and value in {"ADMIT", "EXECUTE", "FINALIZE", "INVOKE", "TOOL", "SOURCE"}
+            or key == "ai_quant.agent.tool"
+            and value in KNOWN_TOOLS
             or key
             in {
                 "ai_quant.order.id",
@@ -194,6 +205,12 @@ class PaperTelemetry:
             "paper.agent.archive",
             "paper.provider.classify",
             "paper.provider.review",
+            "paper.agent.graph.admit",
+            "paper.agent.graph.execute",
+            "paper.agent.invoke",
+            "paper.agent.tool.call",
+            "paper.agent.source.read",
+            "paper.agent.graph.finalize",
         }
         manager = None
         native = None

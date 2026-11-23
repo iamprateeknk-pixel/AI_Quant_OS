@@ -8,6 +8,7 @@ from ai_quant_os.agent_context import ContextCompiler, EvidenceRecord, SourceBin
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
 from ai_quant_os.agent_model_router import AgentModelRouter, LlmResult
 from ai_quant_os.cost_governor import ModelTier
+from ai_quant_os.paper_telemetry import PaperTelemetry
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -43,6 +44,7 @@ async def open_runtime(
     handlers,
     clock=lambda: NOW,
     output_schema=RegimeDistribution,
+    tool_handlers=None,
     **runtime_options,
 ):
     # Import inside the test so missing implementation is an explicit failing assertion.
@@ -66,7 +68,7 @@ async def open_runtime(
         path,
         registry=registry,
         implementations=implementations,
-        tools=AgentToolBoundary(registry, {}),
+        tools=AgentToolBoundary(registry, tool_handlers or {}),
         clock=clock,
         **runtime_options,
     )
@@ -125,6 +127,89 @@ def test_real_graph_executes_once_and_survives_restart(tmp_path):
             assert await runtime.run("run-1", evidence) == result
             assert runtime.quality_receipts() == observations
         assert calls == [evidence.context_ref]
+
+    asyncio.run(run())
+
+
+def test_graph_and_tool_spans_keep_only_bounded_metadata_and_parentage(tmp_path):
+    pytest.importorskip("opentelemetry.sdk.trace.export.in_memory_span_exporter")
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    async def run():
+        registry = load_agent_catalog()
+        evidence = await context(registry)
+        exporter = InMemorySpanExporter()
+        telemetry = PaperTelemetry(exporter=exporter)
+        tool_calls = []
+
+        async def read_tool(invocation):
+            tool_calls.append(invocation.tool)
+            return {"private_payload": "must-not-be-an-attribute"}
+
+        async def handler(invocation):
+            await invocation.tools.call(
+                "WORLD_STATE_READ",
+                {"instrument_id": "EURUSD", "private_input": "must-not-be-an-attribute"},
+            )
+            return RegimeDistribution(label="TRENDING")
+
+        try:
+            async with await open_runtime(
+                tmp_path / "traced.sqlite3",
+                registry,
+                handler,
+                telemetry=telemetry,
+                tool_handlers={"WORLD_STATE_READ": read_tool},
+            ) as runtime:
+                with telemetry.span("paper.http", root=True):
+                    receipt = await runtime.run("trace-run", evidence)
+                assert receipt.status == "COMPLETED"
+                assert tool_calls == ["WORLD_STATE_READ"]
+                assert telemetry.flush()
+
+            spans = exporter.get_finished_spans()
+            by_name = {span.name: span for span in spans}
+            assert set(by_name) == {
+                "paper.http",
+                "paper.agent.graph.admit",
+                "paper.agent.graph.execute",
+                "paper.agent.invoke",
+                "paper.agent.tool.call",
+                "paper.agent.source.read",
+                "paper.agent.graph.finalize",
+            }
+            root = by_name["paper.http"]
+            execute = by_name["paper.agent.graph.execute"]
+            invoke = by_name["paper.agent.invoke"]
+            tool = by_name["paper.agent.tool.call"]
+            source = by_name["paper.agent.source.read"]
+            assert execute.parent.span_id == root.context.span_id
+            assert invoke.parent.span_id == execute.context.span_id
+            assert tool.parent.span_id == invoke.context.span_id
+            assert source.parent.span_id == tool.context.span_id
+            assert all(span.context.trace_id == root.context.trace_id for span in spans)
+            assert execute.attributes["ai_quant.agent.phase"] == "EXECUTE"
+            assert invoke.attributes["ai_quant.agent.id"] == "A02"
+            assert invoke.attributes["ai_quant.agent.version"] == "0.1.0"
+            assert tool.attributes["ai_quant.agent.tool"] == "WORLD_STATE_READ"
+            assert source.attributes["ai_quant.agent.phase"] == "SOURCE"
+            assert all(
+                "private" not in str(value) for span in spans for value in span.attributes.values()
+            )
+            assert all(
+                key
+                in {
+                    "ai_quant.mode",
+                    "ai_quant.agent.id",
+                    "ai_quant.agent.version",
+                    "ai_quant.agent.phase",
+                    "ai_quant.agent.tool",
+                }
+                for span in spans
+                for key in span.attributes
+            )
+        finally:
+            telemetry.close()
 
     asyncio.run(run())
 

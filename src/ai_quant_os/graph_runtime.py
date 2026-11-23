@@ -2,7 +2,7 @@
 
 import asyncio
 import json
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, nullcontext
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from ai_quant_os.agent_context import CompiledContext, require_context_for_agent
 from ai_quant_os.agent_envelope import AgentEnvelope
 from ai_quant_os.agent_model_router import AgentModelRouter, RoutingDecision
+from ai_quant_os.agent_permissions import READ_TOOLS
 from ai_quant_os.agent_registry import AgentRegistry, AgentToolBoundary
 from ai_quant_os.agent_routing import AgentExecutionRoute
 from ai_quant_os.context_checkpoints import ContextCheckpoint
@@ -48,7 +49,19 @@ class BoundAgentTools:
 
     async def call(self, tool: str, payload: dict[str, object]) -> dict[str, object]:
         self._runtime.require_context(self._context)
-        result = await self._runtime._tools.call(
+        with self._runtime._span("paper.agent.tool.call") as span:
+            self._runtime._tag_span(span, self._context, phase="TOOL", tool=tool)
+            if tool in READ_TOOLS:
+                with self._runtime._span("paper.agent.source.read") as source_span:
+                    self._runtime._tag_span(source_span, self._context, phase="SOURCE", tool=tool)
+                    result = await self._call_tool(tool, payload)
+            else:
+                result = await self._call_tool(tool, payload)
+        self._runtime.require_context(self._context)
+        return result
+
+    async def _call_tool(self, tool: str, payload: dict[str, object]) -> dict[str, object]:
+        return await self._runtime._tools.call(
             self._context.agent_id,
             self._context.agent_version,
             tool,
@@ -57,8 +70,6 @@ class BoundAgentTools:
             context_ref=self._context.context_ref,
             task_id=self._context.task_id,
         )
-        self._runtime.require_context(self._context)
-        return result
 
 
 class GraphRuntime:
@@ -73,10 +84,12 @@ class GraphRuntime:
         clock: Callable[[], datetime],
         model_router: AgentModelRouter | None = None,
         model_routing: Mapping[tuple[str, str], tuple[int, int]] | None = None,
+        telemetry=None,
     ) -> None:
         self._ledger, self._registry, self._tools, self._clock = ledger, registry, tools, clock
         self._implementations = implementations.copy()
         self._model_router = model_router if model_router is not None else AgentModelRouter()
+        self._telemetry = telemetry
         self._model_routing = dict(model_routing or {})
         if set(self._model_routing) - set(self._implementations):
             raise ValueError("Model routing references an unavailable agent implementation")
@@ -99,9 +112,18 @@ class GraphRuntime:
                 raise ValueError("Agent implementation contract mismatch")
         self._locks: dict[str, asyncio.Lock] = {}
         builder = StateGraph(GraphState)
-        builder.add_node("admit", self._admit)
-        builder.add_node("execute", self._execute)
-        builder.add_node("finalize", self._finalize)
+        builder.add_node(
+            "admit",
+            self._observed_node("paper.agent.graph.admit", "ADMIT", self._admit),
+        )
+        builder.add_node(
+            "execute",
+            self._observed_node("paper.agent.graph.execute", "EXECUTE", self._execute),
+        )
+        builder.add_node(
+            "finalize",
+            self._observed_node("paper.agent.graph.finalize", "FINALIZE", self._finalize),
+        )
         builder.add_edge(START, "admit")
         builder.add_edge("admit", "execute")
         builder.add_edge("execute", "finalize")
@@ -120,6 +142,7 @@ class GraphRuntime:
         clock: Callable[[], datetime] | None = None,
         model_router: AgentModelRouter | None = None,
         model_routing: Mapping[tuple[str, str], tuple[int, int]] | None = None,
+        telemetry=None,
     ):
         ledger = GraphLedger(path, clock=clock)
         try:
@@ -142,6 +165,7 @@ class GraphRuntime:
                     clock=clock or (lambda: datetime.now(timezone.utc)),
                     model_router=model_router,
                     model_routing=model_routing,
+                    telemetry=telemetry,
                 )
         finally:
             ledger.close()
@@ -166,6 +190,32 @@ class GraphRuntime:
             scope=context.scope,
             now=self._clock(),
         )
+
+    def _telemetry_enabled(self) -> bool:
+        return self._telemetry is not None and self._telemetry.state().get("enabled") is True
+
+    def _span(self, name: str):
+        return self._telemetry.span(name) if self._telemetry_enabled() else nullcontext(None)
+
+    @staticmethod
+    def _tag_span(span, context: CompiledContext, *, phase: str, tool: str | None = None) -> None:
+        if span is None:
+            return
+        span.set("ai_quant.agent.id", context.agent_id)
+        span.set("ai_quant.agent.version", context.agent_version)
+        span.set("ai_quant.agent.phase", phase)
+        if tool is not None:
+            span.set("ai_quant.agent.tool", tool)
+
+    def _observed_node(self, name: str, phase: str, operation):
+        async def observe(state: GraphState) -> dict:
+            if not self._telemetry_enabled():
+                return await operation(state)
+            with self._span(name) as span:
+                span.set("ai_quant.agent.phase", phase)
+                return await operation(state)
+
+        return observe
 
     def _admission(self, record: GraphRecord) -> str | None:
         try:
@@ -224,7 +274,11 @@ class GraphRuntime:
             if timeout <= 0:
                 raise ValueError("Expired context")
             if route_decision is None:
-                output = await asyncio.wait_for(implementation.invoke(invocation), timeout=timeout)
+                with self._span("paper.agent.invoke") as span:
+                    self._tag_span(span, context, phase="INVOKE")
+                    output = await asyncio.wait_for(
+                        implementation.invoke(invocation), timeout=timeout
+                    )
             else:
                 estimates = self._model_routing[agent_key]
 
@@ -232,21 +286,23 @@ class GraphRuntime:
                     nonlocal route_decision
                     route_decision = decision
 
-                _, output = await asyncio.wait_for(
-                    self._model_router.execute(
-                        self._registry,
-                        context.agent_id,
-                        context.agent_version,
-                        task_id=context.task_id,
-                        deterministic=lambda: implementation.invoke(invocation),
-                        estimated_input_tokens=estimates[0],
-                        estimated_output_tokens=estimates[1],
-                        provider_context=invocation,
-                        decision=route_decision,
-                        on_decision=record_route,
-                    ),
-                    timeout=timeout,
-                )
+                with self._span("paper.agent.invoke") as span:
+                    self._tag_span(span, context, phase="INVOKE")
+                    _, output = await asyncio.wait_for(
+                        self._model_router.execute(
+                            self._registry,
+                            context.agent_id,
+                            context.agent_version,
+                            task_id=context.task_id,
+                            deterministic=lambda: implementation.invoke(invocation),
+                            estimated_input_tokens=estimates[0],
+                            estimated_output_tokens=estimates[1],
+                            provider_context=invocation,
+                            decision=route_decision,
+                            on_decision=record_route,
+                        ),
+                        timeout=timeout,
+                    )
             self.require_context(context)
             if not isinstance(output, implementation.output_schema):
                 status = "INVALID"

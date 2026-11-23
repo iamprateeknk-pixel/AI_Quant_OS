@@ -131,8 +131,19 @@
   and explicit unavailable states without exposing child payloads. Legacy 1.0
   and routed 1.1 traces retain their shapes. Focused trace backend tests pass
   (**18 passed**) and focused trace parser/panel tests pass (**11 passed**).
-  Node/tool/source spans, OTel/export/retention, aggregate quality/performance
-  metrics, full UI workflows and independent acceptance remain open.
+- The existing opt-in OTel request trace now includes nested spans for durable
+  graph admission/execution, implementation invocation, authorized tool calls,
+  read-tool source access and finalization. Attributes are restricted to fixed
+  agent/version/phase/tool metadata; request IDs, task/context/source
+  payloads and outputs are omitted. A real in-memory SDK test verifies parentage,
+  payload exclusion and protected API wiring. Detailed per-source provenance,
+  cross-request trace correlation, export/retention policy, aggregate
+  quality/performance metrics, full UI workflows and independent acceptance stay
+  open.
+- Graph span coverage verifies API wiring, nested request/graph/invocation/tool/
+  source parentage and metadata-only attributes using the actual in-memory OTel
+  SDK. The graph/runtime/trace/telemetry regression group passes (**90 passed**);
+  architecture boundaries pass (**10 passed**), and Ruff lint/format checks pass.
 
 ## Current repository-wide verification (2026-10-29)
 
