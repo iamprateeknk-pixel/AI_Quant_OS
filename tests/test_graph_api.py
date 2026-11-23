@@ -53,6 +53,7 @@ def test_graph_api_uses_archived_context_and_retains_failure_on_restart(tmp_path
         assert client.get("/api/v1/agents/operational-quality").status_code == 401
         quality = client.get("/api/v1/agents/operational-quality", headers=HEADERS)
         assert quality.status_code == 200
+        assert quality.headers["cache-control"] == "no-store"
         quality_body = quality.json()
         assert quality_body["availability"] == "AVAILABLE"
         assert quality_body["source_receipt_count"] == 1

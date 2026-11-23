@@ -18,6 +18,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from ai_quant_os.calibration import EvaluationBatch, build_calibration_report
@@ -1669,7 +1670,7 @@ def create_app(
         "/api/v1/agents/operational-quality",
         dependencies=[Depends(require_operator)],
     )
-    def agent_operational_quality() -> dict[str, object]:
+    def agent_operational_quality() -> JSONResponse:
         receipts = None
         traces = None
         unavailable_reason = "GRAPH_LEDGER_UNAVAILABLE"
@@ -1698,7 +1699,10 @@ def create_app(
                 now=now,
                 unavailable_reason="GRAPH_LEDGER_UNAVAILABLE",
             )
-        return observation.model_dump(mode="json")
+        return JSONResponse(
+            observation.model_dump(mode="json"),
+            headers={"Cache-Control": "no-store"},
+        )
 
     @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:
