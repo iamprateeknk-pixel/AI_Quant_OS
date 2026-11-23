@@ -54,10 +54,14 @@ def _verify_tree(home):
 def test_dashboard_exposes_bounded_agent_execution_metrics_without_quality_claims():
     dashboard = json.loads((ASSETS / "dashboards/paper-http.json").read_text())
     panels = {panel["title"]: panel for panel in dashboard["panels"]}
+    http_duration = panels["Observed request duration p95"]
     attempts = panels["Agent graph attempts per second"]
     duration = panels["Agent execution duration p95 (bucket estimate)"]
+    http_query = http_duration["targets"][0]["expr"]
     attempt_query = attempts["targets"][0]["expr"]
     duration_query = duration["targets"][0]["expr"]
+    assert "ai_quant_paper_http_duration_seconds_count" in http_query
+    assert "> 0" in http_query
     assert "ai_quant_paper_agent_executions_total" in attempt_query
     assert "by (agent_id,status)" in attempt_query
     assert "ai_quant_paper_agent_execution_duration_seconds_bucket" in duration_query
@@ -459,6 +463,31 @@ def test_native_grafana_auth_provisioning_query_and_source_failure(
             assert len(rows) == 1 and rows[0]["metric"]["agent_id"] == "A02"
             assert rows[0]["metric"]["status"] == "WAIT_FOR_DATA"
             assert float(rows[0]["value"][1]) > 0
+            with httpx.Client(timeout=3, trust_env=False, follow_redirects=False) as paper:
+                observed_orders = paper.get(base + "/api/v1/orders", headers=headers)
+                assert observed_orders.status_code == 200
+            proxy_query(
+                'ai_quant_paper_http_duration_seconds_count{method="GET",route="/api/v1/orders",status_class="2xx",job="paper_http"}',
+                1,
+            )
+            http_duration_query = next(
+                target["expr"]
+                for panel in original_dashboard["panels"]
+                if panel["title"] == "Observed request duration p95"
+                for target in panel.get("targets", [])
+            )
+            deadline = time.monotonic() + 30
+            while True:
+                http_p95 = client.get(
+                    url + f"/api/datasources/proxy/uid/{UID}/api/v1/query",
+                    params={"query": http_duration_query},
+                )
+                rows = http_p95.json()["data"]["result"] if http_p95.status_code == 200 else []
+                if rows:
+                    break
+                assert time.monotonic() < deadline, "HTTP duration dashboard query deadline"
+                time.sleep(0.1)
+            assert len(rows) == 1 and float(rows[0]["value"][1]) > 0
             query = {
                 "queries": [
                     {

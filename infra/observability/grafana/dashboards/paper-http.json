@@ -278,7 +278,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(ai_quant_paper_http_duration_seconds_bucket{job=\"paper_http\"}[5m]))) and on() (min(up{job=\"paper_http\"}) == 1)",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(ai_quant_paper_http_duration_seconds_bucket{job=\"paper_http\"}[5m]))) and on() (sum(rate(ai_quant_paper_http_duration_seconds_count{job=\"paper_http\"}[5m])) > 0) and on() (min(up{job=\"paper_http\"}) == 1)",
           "range": true,
           "instant": false,
           "datasource": {
