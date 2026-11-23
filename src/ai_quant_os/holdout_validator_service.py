@@ -526,6 +526,99 @@ def _open_service_holdout_store(data_dir: Path) -> HoldoutEvidenceStore:
     return HoldoutEvidenceStore(Path(data_dir) / "research-data.holdout.sqlite3")
 
 
+def _validate_service_archive(path: Path, store_type) -> None:
+    from ai_quant_os.research_store import ResearchStore
+    from ai_quant_os.validation_package_store import ValidationPackageStore
+
+    if store_type is HoldoutEvidenceStore:
+        store = store_type(path)
+        store.close()
+        return
+    if store_type is ResearchStore:
+        with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as db:
+            if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise ValueError("Research archive integrity check failed")
+            tables = {
+                row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            }
+            required = {
+                "research_hypotheses",
+                "research_experiments",
+                "research_holdout_claims",
+            }
+            if not required <= tables:
+                raise ValueError("Research archive schema is incomplete")
+            experiment_ids = tuple(
+                row[0] for row in db.execute("SELECT experiment_id FROM research_experiments")
+            )
+            verifier = object.__new__(ResearchStore)
+            for experiment_id in experiment_ids:
+                verifier._report(verifier._row(db, experiment_id))
+        return
+    required_tables = (
+        {"validation_packages", "audit_events", "audit_chain", "audit_head"}
+        if store_type is ValidationPackageStore
+        else {"candidate_validations", "audit_events", "audit_chain", "audit_head"}
+    )
+    with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as db:
+        if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+            raise ValueError("Source archive integrity check failed")
+        tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if (
+            not required_tables <= tables
+            or db.execute("SELECT COUNT(*) FROM audit_head").fetchone()[0] != 1
+        ):
+            raise ValueError("Source archive metadata is incomplete")
+
+
+def _require_service_source_file(path: Path) -> None:
+    metadata = os.lstat(path)
+    if (
+        not path.is_absolute()
+        or not path.is_file()
+        or path.is_symlink()
+        or getattr(metadata, "st_file_attributes", 0) & 0x400
+    ):
+        raise ValueError("Source archive must be an absolute regular file")
+
+
+def _validate_service_source(path: Path, store_type) -> None:
+    _require_service_source_file(path)
+    _validate_service_archive(path, store_type)
+
+
+def _preflight_service_sources(paper_db: Path, research_workspace: Path) -> None:
+    from ai_quant_os.candidate_validation_store import CandidateValidationStore
+    from ai_quant_os.research_evidence_catalog import HoldoutEvidenceStore
+    from ai_quant_os.research_store import ResearchStore
+    from ai_quant_os.validation_package_store import ValidationPackageStore
+
+    sources = (
+        paper_db,
+        paper_db.with_name(paper_db.stem + ".research-data.holdout.sqlite3"),
+        paper_db.with_name(paper_db.stem + ".validation-packages.sqlite3"),
+        paper_db.with_name(paper_db.stem + ".candidate-validations.sqlite3"),
+        research_workspace / "research.sqlite3",
+    )
+    if any(not path.is_file() for path in sources):
+        raise FileNotFoundError("Required real PAPER and research archives are unavailable")
+    _require_service_source_file(paper_db)
+    with closing(sqlite3.connect(paper_db.as_uri() + "?mode=ro", uri=True)) as db:
+        if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+            raise ValueError("PAPER database integrity check failed")
+    for source, store_type in zip(
+        sources[1:],
+        (
+            HoldoutEvidenceStore,
+            ValidationPackageStore,
+            CandidateValidationStore,
+            ResearchStore,
+        ),
+        strict=True,
+    ):
+        _validate_service_source(source, store_type)
+
+
 def stage_service_archives(
     data_dir: Path,
     *,
@@ -560,58 +653,6 @@ def stage_service_archives(
     if any(path.exists() or path.is_symlink() for path in destinations.values()):
         raise FileExistsError("HOLDOUT service archive destination already exists")
 
-    def validate_archive(path: Path, store_type) -> None:
-        if store_type is ResearchStore:
-            with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as db:
-                if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
-                    raise ValueError("Research archive integrity check failed")
-                tables = {
-                    row[0]
-                    for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")
-                }
-                required = {
-                    "research_hypotheses",
-                    "research_experiments",
-                    "research_holdout_claims",
-                }
-                if not required <= tables:
-                    raise ValueError("Research archive schema is incomplete")
-                experiment_ids = tuple(
-                    row[0] for row in db.execute("SELECT experiment_id FROM research_experiments")
-                )
-                verifier = object.__new__(ResearchStore)
-                for experiment_id in experiment_ids:
-                    verifier._report(verifier._row(db, experiment_id))
-            return
-        store = store_type(path)
-        close = getattr(store, "close", None)
-        if close is not None:
-            close()
-
-    def validate_source(path: Path, store_type) -> None:
-        if store_type is HoldoutEvidenceStore:
-            validate_archive(path, store_type)
-            return
-        if store_type is ResearchStore:
-            validate_archive(path, store_type)
-            return
-        required_tables = (
-            {"validation_packages", "audit_events", "audit_chain", "audit_head"}
-            if store_type is ValidationPackageStore
-            else {"candidate_validations", "audit_events", "audit_chain", "audit_head"}
-        )
-        with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)) as db:
-            if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
-                raise ValueError("Source archive integrity check failed")
-            tables = {
-                row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            }
-            if (
-                not required_tables <= tables
-                or db.execute("SELECT COUNT(*) FROM audit_head").fetchone()[0] != 1
-            ):
-                raise ValueError("Source archive metadata is incomplete")
-
     staged: list[Path] = []
     try:
         for name, (source, store_type) in sources.items():
@@ -626,7 +667,7 @@ def stage_service_archives(
                 or getattr(metadata, "st_file_attributes", 0) & 0x400
             ):
                 raise ValueError("Source archive must be an absolute regular file")
-            validate_source(source, store_type)
+            _validate_service_source(source, store_type)
             descriptor, temp_name = tempfile.mkstemp(prefix=f".{name}.", suffix=".stage", dir=root)
             os.close(descriptor)
             temporary = Path(temp_name)
@@ -634,7 +675,7 @@ def stage_service_archives(
                 with closing(sqlite3.connect(source.as_uri() + "?mode=ro", uri=True)) as source_db:
                     with closing(sqlite3.connect(temporary)) as destination_db:
                         source_db.backup(destination_db)
-                validate_archive(temporary, store_type)
+                _validate_service_archive(temporary, store_type)
                 os.link(temporary, destinations[name])
                 staged.append(destinations[name])
             finally:
@@ -1180,15 +1221,7 @@ def _install_service(data_dir: Path, *, paper_db: Path, research_workspace: Path
     research_workspace = Path(research_workspace)
     if not paper_db.is_absolute() or not research_workspace.is_absolute():
         raise ValueError("PAPER and research source paths must be absolute")
-    source_archives = (
-        paper_db,
-        paper_db.with_name(paper_db.stem + ".research-data.holdout.sqlite3"),
-        paper_db.with_name(paper_db.stem + ".validation-packages.sqlite3"),
-        paper_db.with_name(paper_db.stem + ".candidate-validations.sqlite3"),
-        research_workspace / "research.sqlite3",
-    )
-    if any(not path.is_file() for path in source_archives):
-        raise FileNotFoundError("Required real PAPER and research archives are unavailable")
+    _preflight_service_sources(paper_db, research_workspace)
     _require_service_runtime()
     operator_sid = current_process_user_sid()
     _ensure_service_registered(win32service, win32serviceutil)

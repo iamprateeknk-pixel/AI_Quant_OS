@@ -786,6 +786,21 @@ def test_service_install_secures_staging_directory_before_copy_and_never_starts_
     assert events == []
     assert not missing_data_dir.exists()
 
+    invalid_archive = source_dir / "paper.validation-packages.sqlite3"
+    invalid_archive.write_bytes(b"not a SQLite database")
+    invalid_data_dir = (tmp_path / "service-invalid-source").resolve()
+    try:
+        with pytest.raises((sqlite3.DatabaseError, ValueError)):
+            service._install_service(
+                invalid_data_dir,
+                paper_db=paper_db,
+                research_workspace=research_workspace,
+            )
+        assert events == []
+        assert not invalid_data_dir.exists()
+    finally:
+        invalid_archive.write_bytes(source_bytes[invalid_archive])
+
     good_data_dir = (tmp_path / "service-good").resolve()
     service._install_service(
         good_data_dir,
