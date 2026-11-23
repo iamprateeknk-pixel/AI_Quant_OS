@@ -9,7 +9,8 @@ function isRead(value:unknown):value is Read {
 export function parseCostsSnapshot(value:unknown):CostsSnapshot|null {
  if(!value||typeof value!=="object"||Array.isArray(value))return null;
  const row=value as Record<string,unknown>;
- if(Object.keys(row).length!==4||typeof row.observed_at!=="string"||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(row.observed_at)||!Number.isFinite(Date.parse(row.observed_at))||!isRead(row.callBudget)||!isRead(row.reviewSpending)||!isRead(row.sharedSpending))return null;
+ const observedAt=typeof row.observed_at==="string"?Date.parse(row.observed_at):NaN;
+ if(Object.keys(row).length!==4||typeof row.observed_at!=="string"||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(row.observed_at)||!Number.isFinite(observedAt)||new Date(observedAt).toISOString()!==row.observed_at||!isRead(row.callBudget)||!isRead(row.reviewSpending)||!isRead(row.sharedSpending))return null;
  return{observed_at:row.observed_at,callBudget:row.callBudget,reviewSpending:row.reviewSpending,sharedSpending:row.sharedSpending};
 }
 /** Same-origin protected read with a strict response bound; cookies never enter JavaScript. */
