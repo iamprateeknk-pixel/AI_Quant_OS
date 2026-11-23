@@ -26,6 +26,7 @@ TaskKind = Literal["HYPOTHESIS_RESEARCH"]
 TASK_AGENTS = {"HYPOTHESIS_RESEARCH": ("A08",)}
 ValidationTaskKind = Literal["VALIDATION_REVIEW"]
 ConstructionTaskKind = Literal["STRATEGY_CONSTRUCTION"]
+AdversarialTaskKind = Literal["ADVERSARIAL_REVIEW"]
 
 
 class ResearchSupervisionInput(BaseModel):
@@ -714,4 +715,163 @@ async def coordinate_task_v5(invocation: AgentInvocation) -> TaskPlanV5:
 def task_supervisor_research_implementation_v5(registry: AgentRegistry) -> AgentImplementation:
     return AgentImplementation(
         registry.get("A01", "0.9.0").manifest_ref, TaskPlanV5, coordinate_task_v5
+    )
+
+
+class AdversarialResearchSupervisionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    task_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,128}$")
+    experiment_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
+
+
+class AdversarialTaskDeclaration(SupervisorObservation):
+    task_id: str = Field(min_length=1, max_length=128)
+    task_kind: AdversarialTaskKind
+    experiment_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
+
+
+def executable_v6(agent: str, version: str) -> bool:
+    return (agent, version) in {("A01", "0.10.0"), ("A11", "0.2.0")}
+
+
+class TaskRegistryEvidenceV6(SupervisorObservation):
+    entries: tuple[CatalogEntry, ...] = Field(min_length=1, max_length=128)
+
+    @model_validator(mode="after")
+    def exact_catalog(self):
+        keys = [(row.manifest.agent_id, row.manifest.agent_version) for row in self.entries]
+        if keys != sorted(set(keys)):
+            raise ValueError("Supervisor catalog must have unique ordered versions")
+        for row in self.entries:
+            expected = executable_v6(row.manifest.agent_id, row.manifest.agent_version)
+            if row.executable != expected or (
+                expected and row.manifest.implementation_status == "PLANNED"
+            ):
+                raise ValueError("Unsupported v6 adversarial supervisor execution catalog")
+        return self
+
+
+class TaskSupervisorEvidenceV6(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    agent_registry: TaskRegistryEvidenceV6
+    world_state: MacroWorldEvidence
+    health: HealthEvidence
+    permissions: SandboxPermissionsEvidence
+    task_spec: AdversarialTaskDeclaration
+
+    @model_validator(mode="after")
+    def bound_snapshot(self):
+        world = self.world_state.world
+        for observation in (self.agent_registry, self.health, self.permissions, self.task_spec):
+            if (observation.as_of, observation.world_state_version) != (
+                world.as_of,
+                world.world_state_version,
+            ):
+                raise ValueError("Supervisor evidence refers to different observations")
+        expected = tuple(
+            PermissionEntry(
+                manifest_ref=row.manifest.manifest_ref, tools=sandbox_effective_tools(row)
+            )
+            for row in self.agent_registry.entries
+        )
+        if self.permissions.entries != expected:
+            raise ValueError("Supervisor permissions do not match sandbox catalog lifecycle")
+        return self
+
+
+def read_context_v6(context: CompiledContext) -> TaskSupervisorEvidenceV6:
+    if (context.agent_id, context.agent_version, context.scope, context.status) != (
+        "A01",
+        "0.10.0",
+        "SANDBOX",
+        "READY",
+    ):
+        raise ValueError("Adversarial supervisor requires its complete sandbox context")
+    evidence = TaskSupervisorEvidenceV6.model_validate(
+        {row.input_name: json.loads(row.payload_json) for row in context.inputs}
+    )
+    world = evidence.world_state.world
+    if (
+        world.as_of > context.created_at
+        or context.valid_until > world.valid_until
+        or evidence.task_spec.task_id != context.task_id
+    ):
+        raise ValueError("Adversarial supervisor source identity or expiry mismatch")
+    return evidence
+
+
+def wake_plan_v6(evidence: TaskSupervisorEvidenceV6):
+    return plan_task_targets(evidence, ("A11",), "0.10.0", deferred_type=TaskDeferredTarget)
+
+
+def child_run_id_v6(context_ref: str, agent_id: str) -> str:
+    if not context_ref.startswith("agent-context:") or agent_id != "A11":
+        raise ValueError("Invalid adversarial supervisor child identity")
+    return "supervisor_" + sha256(f"{context_ref}:{agent_id}:0.2.0".encode()).hexdigest()
+
+
+class TaskSpecialistCallV6(SpecialistCall):
+    @model_validator(mode="after")
+    def receipt_claims(self):
+        if (self.status == "COMPLETED") != (self.output_sha256 is not None):
+            raise ValueError("Supervisor output claim/status mismatch")
+        not_started = self.status.startswith("NOT_STARTED")
+        if not_started != (self.context_ref is None) or not_started != (self.valid_until is None):
+            raise ValueError("Supervisor receipt presence/status mismatch")
+        if (self.agent_id, self.agent_version) != ("A11", "0.2.0"):
+            raise ValueError("Adversarial supervisor cannot call this agent version")
+        return self
+
+    @classmethod
+    def from_receipt(cls, receipt):
+        return cls(
+            agent_id=receipt.agent_id,
+            agent_version=receipt.agent_version,
+            manifest_ref=receipt.manifest_ref,
+            run_id=receipt.run_id,
+            status=receipt.status,
+            context_ref=receipt.context_ref,
+            valid_until=receipt.valid_until,
+            output_sha256=sha256(receipt.output_json.encode()).hexdigest()
+            if receipt.output_json
+            else None,
+        )
+
+
+class TaskPlanV6(TaskPlanV3):
+    agent_version: Literal["0.10.0"] = "0.10.0"
+    output_type: Literal["TaskPlanV6"] = "TaskPlanV6"
+    policy_version: Literal["sandbox-adversarial-supervisor-v1"] = (
+        "sandbox-adversarial-supervisor-v1"
+    )
+    task_kind: AdversarialTaskKind
+    calls: tuple[TaskSpecialistCallV6, ...] = Field(max_length=1)
+
+    def require_context(self, context: CompiledContext) -> None:
+        require_declared_plan_context(
+            self,
+            context,
+            read_context=read_context_v6,
+            wake_plan=wake_plan_v6,
+            child_run_id=child_run_id_v6,
+        )
+
+
+async def coordinate_task_v6(invocation: AgentInvocation) -> TaskPlanV6:
+    evidence = read_context_v6(invocation.context)
+    selected, deferred = wake_plan_v6(evidence)
+    return await coordinate_plan(
+        invocation,
+        evidence,
+        selected,
+        deferred,
+        plan_type=TaskPlanV6,
+        call_type=TaskSpecialistCallV6,
+        plan_fields={"task_kind": evidence.task_spec.task_kind, "max_calls": 1},
+    )
+
+
+def task_supervisor_research_implementation_v6(registry: AgentRegistry) -> AgentImplementation:
+    return AgentImplementation(
+        registry.get("A01", "0.10.0").manifest_ref, TaskPlanV6, coordinate_task_v6
     )

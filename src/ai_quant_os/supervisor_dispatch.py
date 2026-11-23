@@ -78,6 +78,16 @@ def dispatch_contract(version: str):
 
         return read_context_v5, wake_plan_v5, child_run_id_v5, TaskSpecialistCallV5, "SANDBOX"
 
+    if version == "0.10.0":
+        from ai_quant_os.task_supervisor_research import (
+            read_context_v6,
+            wake_plan_v6,
+            child_run_id_v6,
+            TaskSpecialistCallV6,
+        )
+
+        return read_context_v6, wake_plan_v6, child_run_id_v6, TaskSpecialistCallV6, "SANDBOX"
+
     if version == "0.4.0":
         from ai_quant_os.task_supervisor import read_context, wake_plan as task_wake_plan
         from ai_quant_os.supervisor_drift import child_run_id as task_child_id, DriftSpecialistCall
@@ -183,15 +193,16 @@ class SupervisorDispatch:
                     receipt = await runtime.resume(run_id)
                 else:
                     try:
-                        if parent.agent_version in {"0.8.0", "0.9.0"}:
+                        if parent.agent_version in {"0.8.0", "0.9.0", "0.10.0"}:
                             if self._compile_child_parent_aware is None:
                                 raise PermissionError("Bound supervisor child unavailable")
                             evidence = read_context(parent)
-                            source_ref = (
-                                evidence.task_spec.artifact_ref
-                                if parent.agent_version == "0.8.0"
-                                else evidence.task_spec.review_ref
-                            )
+                            source_field = {
+                                "0.8.0": "artifact_ref",
+                                "0.9.0": "review_ref",
+                                "0.10.0": "experiment_id",
+                            }[parent.agent_version]
+                            source_ref = getattr(evidence.task_spec, source_field)
                             child = await self._compile_child_parent_aware(
                                 parent,
                                 target.agent_id,

@@ -374,6 +374,16 @@ def load_agent_catalog() -> AgentRegistry:
     registry.register(
         AgentManifest.model_validate(
             {
+                **registry.get("A01", "0.9.0").model_dump(),
+                "agent_version": "0.10.0",
+                "output_type": "TaskPlanV6",
+                "implementation_status": "PARTIAL",
+            }
+        )
+    )
+    registry.register(
+        AgentManifest.model_validate(
+            {
                 **registry.get("A12", "0.2.0").model_dump(),
                 "agent_version": "0.3.0",
                 "output_type": "EligibleStrategySetV3",

@@ -49,6 +49,7 @@ from ai_quant_os.task_supervisor_research import (
     task_supervisor_research_implementation_v3,
     task_supervisor_research_implementation_v4,
     task_supervisor_research_implementation_v5,
+    task_supervisor_research_implementation_v6,
 )
 from ai_quant_os.task_supervisor_research_api import install_research_supervisor_routes
 from ai_quant_os.graph_trace import GraphTrace
@@ -814,6 +815,7 @@ def create_app(
                     ("A01", "0.7.0"): task_supervisor_research_implementation_v3(agent_registry),
                     ("A01", "0.8.0"): task_supervisor_research_implementation_v4(agent_registry),
                     ("A01", "0.9.0"): task_supervisor_research_implementation_v5(agent_registry),
+                    ("A01", "0.10.0"): task_supervisor_research_implementation_v6(agent_registry),
                     ("A02", "0.2.0"): regime_implementation(agent_registry),
                     ("A03", "0.2.0"): macro_implementation(agent_registry),
                     ("A04", "0.2.0"): currency_strength_implementation(agent_registry),
@@ -1690,6 +1692,7 @@ def create_app(
             ("A01", "0.7.0"),
             ("A01", "0.8.0"),
             ("A01", "0.9.0"),
+            ("A01", "0.10.0"),
         }:
             raise HTTPException(422, "Typed sandbox research supervision route required")
         if (payload.agent_id, payload.agent_version) == ("A01", "0.4.0") and task_kind is None:
@@ -2184,6 +2187,7 @@ def create_app(
         agent_version: str = "0.6.0",
         artifact_ref: str | None = None,
         review_ref: str | None = None,
+        experiment_id: str | None = None,
     ) -> CompiledContext:
         require_graph_runtime()
         await supervisor_admission()
@@ -2226,10 +2230,13 @@ def create_app(
                 if agent_version == "0.8.0"
                 else "STRATEGY_CONSTRUCTION"
                 if agent_version == "0.9.0"
+                else "ADVERSARIAL_REVIEW"
+                if agent_version == "0.10.0"
                 else "HYPOTHESIS_RESEARCH"
             ),
             artifact_ref=artifact_ref,
             review_ref=review_ref,
+            experiment_id=experiment_id,
             health_status="UNAVAILABLE"
             if health is None
             else "ERROR"
@@ -2538,10 +2545,11 @@ def create_app(
     async def compile_supervisor_child_parent_aware(
         parent: CompiledContext, agent_id: str, agent_version: str, source_ref: str
     ) -> CompiledContext:
-        if (agent_id, agent_version) != ("A10", "0.2.0") and (agent_id, agent_version) != (
-            "A09",
-            "0.2.0",
-        ):
+        if (agent_id, agent_version) not in {
+            ("A10", "0.2.0"),
+            ("A09", "0.2.0"),
+            ("A11", "0.2.0"),
+        }:
             raise PermissionError("Unsupported bound supervisor child")
         if (parent.agent_id, parent.agent_version, parent.scope) == ("A01", "0.8.0", "SANDBOX"):
             if (agent_id, agent_version) != ("A10", "0.2.0"):
@@ -2559,6 +2567,14 @@ def create_app(
             if read_context_v5(parent).task_spec.review_ref != source_ref:
                 raise PermissionError("Review differs from declared parent task")
             return await compile_builder_context(parent.task_id, source_ref)
+        if (parent.agent_id, parent.agent_version, parent.scope) == ("A01", "0.10.0", "SANDBOX"):
+            if (agent_id, agent_version) != ("A11", "0.2.0"):
+                raise PermissionError("Unsupported adversarial supervisor child")
+            from ai_quant_os.task_supervisor_research import read_context_v6
+
+            if read_context_v6(parent).task_spec.experiment_id != source_ref:
+                raise PermissionError("Experiment differs from declared parent task")
+            return await compile_adversarial_context(parent.task_id, source_ref)
         raise PermissionError("Bound child requires its supported A01 parent")
 
     @app.post("/api/v1/paper/agents/execute", dependencies=[Depends(require_operator)])
@@ -3408,6 +3424,21 @@ def create_app(
         route_prefix="/api/v1/sandbox/research/supervise/v5",
         agent_version="0.9.0",
         context_input_model=ConstructionResearchSupervisionInput,
+    )
+    from ai_quant_os.task_supervisor_research import AdversarialResearchSupervisionInput
+
+    install_research_supervisor_routes(
+        app,
+        require_operator,
+        compile_context=lambda task_id, experiment_id: compile_research_supervisor_context(
+            task_id, "0.10.0", experiment_id=experiment_id
+        ),
+        archived_context=archived_agent_context,
+        runtime=require_graph_runtime,
+        observe_receipt=observe_research_receipt,
+        route_prefix="/api/v1/sandbox/research/supervise/v6",
+        agent_version="0.10.0",
+        context_input_model=AdversarialResearchSupervisionInput,
     )
     install_daily_routes(
         app,

@@ -26,7 +26,7 @@ def install_research_supervisor_routes(
     app: FastAPI,
     require_operator: Callable,
     *,
-    compile_context: Callable[[str], Awaitable[CompiledContext]],
+    compile_context: Callable[..., Awaitable[CompiledContext]],
     archived_context: Callable[[str], CompiledContext],
     runtime: Callable[[], GraphRuntime],
     observe_receipt: Callable[[GraphReceipt], Awaitable[None]],
@@ -44,6 +44,8 @@ def install_research_supervisor_routes(
                 context = await compile_context(payload.task_id, payload.artifact_ref)
             elif hasattr(payload, "review_ref"):
                 context = await compile_context(payload.task_id, payload.review_ref)
+            elif hasattr(payload, "experiment_id"):
+                context = await compile_context(payload.task_id, payload.experiment_id)
             else:
                 context = await compile_context(payload.task_id)
         except KeyError as error:
