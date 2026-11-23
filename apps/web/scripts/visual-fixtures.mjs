@@ -188,6 +188,45 @@ export function createVisualFixtureServer() {
       activeState(name);
       stateName = name;
     },
+    agentObservation(observedAt = new Date(FIXED_TIME)) {
+      const state = activeState(stateName);
+      return {
+        observed_at: new Date(observedAt).toISOString(),
+        registry: { ok: true, value: registry(state).agents },
+      };
+    },
+    realtimeFrame(sequence, capturedAt = new Date(FIXED_TIME)) {
+      const state = activeState(stateName);
+      const captured = new Date(capturedAt);
+      const validUntil = new Date(captured.getTime() + 3000).toISOString();
+      return {
+        schema_version: '1.0',
+        mode: 'PAPER',
+        epoch: '12345678-1234-4123-8123-123456789abc',
+        sequence,
+        captured_at: captured.toISOString(),
+        valid_until: validUntil,
+        safety_state: state.safetyState,
+        order_count: 0,
+        world: {
+          schema_version: '1.0',
+          source: 'PAPER_SIMULATED',
+          world_state_version: WORLD_VERSION,
+          as_of: captured.toISOString(),
+          valid_until: new Date(captured.getTime() + 5000).toISOString(),
+          status: 'READY',
+          instruments: [{
+            instrument_id: 'EURUSD', quote_status: 'FRESH', history_status: 'FRESH',
+            bar_count: 1, regime: 'TRENDING', mid_price: '1.08002', spread_bps: '0.185',
+            return_bps: '0.1', realized_volatility_bps: '0.2',
+          }],
+          currency_twins: [
+            { currency: 'EUR', instrument_ids: ['EURUSD'], fresh_quote_count: 1, macro_available: false },
+            { currency: 'USD', instrument_ids: ['EURUSD'], fresh_quote_count: 1, macro_available: false },
+          ],
+        },
+      };
+    },
     async close() {
       if (!server.listening) return;
       await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));

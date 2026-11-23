@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
 import { createVisualFixtureServer, VISUAL_STATES } from '../scripts/visual-fixtures.mjs';
 
 test('visual fixtures expose the six deterministic PAPER states', async () => {
@@ -45,6 +47,31 @@ test('visual fixtures expose the six deterministic PAPER states', async () => {
     assert.equal(incidentPage.incidents[0].code, 'AGENT_FAILED');
   } finally {
     await fixtures.close();
+  }
+});
+
+test('visual fixtures provide valid current PAPER frames and state-matched agent observations', async () => {
+  const source = readFileSync(new URL('../src/features/realtime/frames.ts', import.meta.url), 'utf8');
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const { parseRealtimeFrame } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+  const fixtures = createVisualFixtureServer();
+  const now = Date.parse('2026-10-20T12:00:00.000Z');
+
+  for (const state of VISUAL_STATES.filter((item) => item.path === '/agents')) {
+    fixtures.setState(state.name);
+    const observation = fixtures.agentObservation();
+    assert.equal(observation.registry.ok, true);
+    assert.equal(observation.observed_at, '2026-10-20T12:00:00.000Z');
+    assert(observation.registry.value.some((agent) => agent.lifecycle === state.agentLifecycle));
+
+    const frame = fixtures.realtimeFrame(1);
+    assert.equal(frame.safety_state, state.safetyState);
+    assert(parseRealtimeFrame(frame, now));
+
+    const later = new Date(now + 5000);
+    const refreshed = fixtures.realtimeFrame(2, later);
+    assert(parseRealtimeFrame(refreshed, later.getTime()));
+    assert.equal(fixtures.agentObservation(later).observed_at, later.toISOString());
   }
 });
 

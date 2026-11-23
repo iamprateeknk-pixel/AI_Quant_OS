@@ -97,7 +97,12 @@ async function captureStates(page, origin, fixtures) {
       await page.getByText(state.safetyState, { exact: true }).first().waitFor();
     } else if (state.path === '/agents') {
       await page.getByRole('heading', { name: 'Registered agent versions' }).waitFor();
-      await page.getByText(state.agentLifecycle, { exact: true }).waitFor();
+      try {
+        await page.getByText(state.agentLifecycle, { exact: true }).waitFor();
+      } catch (error) {
+        console.error(`${state.name} rendered page:\n${(await page.locator('body').innerText()).slice(0, 4000)}`);
+        throw error;
+      }
     } else {
       await page.getByText('AGENT_FAILED', { exact: true }).waitFor();
     }
@@ -143,12 +148,54 @@ async function main() {
       sameSite: 'Strict',
     }]);
     const page = await context.newPage();
+    await page.addInitScript(() => {
+      class VisualEventSource extends EventTarget {
+        constructor(url) {
+          super();
+          this.url = url;
+          this.readyState = 0;
+          this.onerror = null;
+          void fetch(url, { cache: 'no-store' }).then(async (response) => {
+            if (!response.ok) throw new Error('Visual realtime fixture unavailable');
+            const frame = await response.json();
+            if (this.readyState === 2) return;
+            this.readyState = 1;
+            this.dispatchEvent(new MessageEvent('reset', {
+              data: JSON.stringify(frame),
+              lastEventId: `${frame.epoch}:${frame.sequence}`,
+            }));
+          }).catch(() => {
+            if (this.readyState !== 2) this.onerror?.(new Event('error'));
+          });
+        }
+        close() { this.readyState = 2; }
+      }
+      Object.defineProperty(window, 'EventSource', { configurable: true, value: VisualEventSource });
+    });
     await page.clock.install({ time: FIXED_TIME });
+    const fixtureClockStarted = Date.now();
+    const fixtureNow = () => new Date(FIXED_TIME.getTime() + Date.now() - fixtureClockStarted - 50);
     await page.route('**/api/operator/session/authorization', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ authorized: false }),
+      body: JSON.stringify({ authorized: true }),
     }));
+    let realtimeSequence = 0;
+    await page.route('**/api/realtime/events', (route) => {
+      const frame = fixtures.realtimeFrame(++realtimeSequence, fixtureNow());
+      return route.fulfill({
+        status: 200,
+        headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify(frame),
+      });
+    });
+    await page.route('**/api/agents/observations', (route) => {
+      return route.fulfill({
+        status: 200,
+        headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify(fixtures.agentObservation(fixtureNow())),
+      });
+    });
     await page.route('**/api/incidents/monitoring', (route) => route.fulfill({
       status: 503,
       contentType: 'application/json',
