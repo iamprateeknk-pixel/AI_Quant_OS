@@ -164,6 +164,26 @@ def test_api_zero_quota_blocks_both_mock_transports_and_keeps_paper_control(tmp_
     assert calls == []
 
 
+def test_direct_jev_adapter_call_cannot_bypass_durable_call_admission():
+    import httpx
+    from provider_test_adapters import jev_with_fixture_spending
+    from test_jev_adapter import MODEL, response
+
+    requests = []
+    provider = jev_with_fixture_spending(
+        api_key="fixture-only-key",
+        model=MODEL,
+        transport=httpx.MockTransport(
+            lambda request: requests.append(request) or httpx.Response(200, json=response())
+        ),
+    )
+
+    with pytest.raises(PermissionError, match="call admission"):
+        asyncio.run(provider.classify(world(), "EURUSD"))
+
+    assert requests == []
+
+
 def test_classification_and_review_concurrently_share_last_call(tmp_path):
     from ai_quant_os.decision_gateway import DecisionGateway
 

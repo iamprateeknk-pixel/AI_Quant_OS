@@ -8,7 +8,11 @@ import pytest
 
 from ai_quant_os.decision_gateway import DecisionGateway
 from ai_quant_os.jev_adapter import JevClassifier, jev_from_environment
-from provider_test_adapters import jev_with_fixture_spending
+from provider_test_adapters import (
+    admitted_jev_for_test,
+    call_jev_for_test,
+    jev_with_fixture_spending,
+)
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
 from ai_quant_os.world_state import WorldStateEngine
@@ -78,7 +82,7 @@ def test_adapter_uses_official_choice_contract_and_preserves_probability_semanti
         api_key="fixture-only-key", model=MODEL, transport=httpx.MockTransport(handle)
     )
     result = asyncio.run(
-        DecisionGateway(primary=adapter, clock=lambda: NOW).classify(
+        DecisionGateway(primary=admitted_jev_for_test(adapter), clock=lambda: NOW).classify(
             world(), instrument_id="EURUSD", task_id="task"
         )
     )
@@ -131,7 +135,7 @@ def test_invalid_provider_responses_fall_back(payload):
         transport=httpx.MockTransport(lambda request: httpx.Response(200, json=payload)),
     )
     result = asyncio.run(
-        DecisionGateway(primary=adapter, clock=lambda: NOW).classify(
+        DecisionGateway(primary=admitted_jev_for_test(adapter), clock=lambda: NOW).classify(
             world(), instrument_id="EURUSD", task_id="task"
         )
     )
@@ -158,15 +162,15 @@ def test_circuit_and_request_budget_prevent_additional_calls():
     )
     for _ in range(3):
         with pytest.raises(ValueError):
-            asyncio.run(adapter.classify(world(), "EURUSD"))
+            asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     assert len(calls) == 2
     assert adapter.status()["circuit_state"] == "OPEN"
     clock[0] = 11
     with pytest.raises(ValueError):
-        asyncio.run(adapter.classify(world(), "EURUSD"))
+        asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     assert len(calls) == 3
     with pytest.raises(ValueError):
-        asyncio.run(adapter.classify(world(), "EURUSD"))
+        asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     assert len(calls) == 3
     assert adapter.status()["budget_exhausted"] is True
 
@@ -182,7 +186,7 @@ def test_redirects_and_response_body_limits_are_rejected_without_retries():
         api_key="fixture-only-key", model=MODEL, transport=httpx.MockTransport(redirect)
     )
     with pytest.raises(ValueError):
-        asyncio.run(adapter.classify(world(), "EURUSD"))
+        asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     assert len(calls) == 1
     huge = jev_with_fixture_spending(
         api_key="fixture-only-key",
@@ -191,7 +195,7 @@ def test_redirects_and_response_body_limits_are_rejected_without_retries():
         transport=httpx.MockTransport(lambda request: httpx.Response(200, content=b"x" * 101)),
     )
     with pytest.raises(ValueError):
-        asyncio.run(huge.classify(world(), "EURUSD"))
+        asyncio.run(call_jev_for_test(huge, world(), "EURUSD"))
 
 
 def test_environment_is_disabled_by_default_and_rejects_partial_or_alias_configuration(
@@ -229,7 +233,7 @@ def test_usage_is_recorded_even_if_response_model_is_rejected():
         ),
     )
     with pytest.raises(ValueError):
-        asyncio.run(adapter.classify(world(), "EURUSD"))
+        asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     assert adapter.status()["input_tokens"] == 100
     assert adapter.status()["unreported_usage_count"] == 0
     failed = jev_with_fixture_spending(
@@ -238,7 +242,7 @@ def test_usage_is_recorded_even_if_response_model_is_rejected():
         transport=httpx.MockTransport(lambda request: httpx.Response(503)),
     )
     with pytest.raises(ValueError):
-        asyncio.run(failed.classify(world(), "EURUSD"))
+        asyncio.run(call_jev_for_test(failed, world(), "EURUSD"))
     assert failed.status()["unreported_usage_count"] == 1
 
 
@@ -259,7 +263,8 @@ def test_request_budget_is_atomic_under_concurrent_calls():
 
     async def invoke():
         return await asyncio.gather(
-            *(adapter.classify(world(), "EURUSD") for _ in range(8)), return_exceptions=True
+            *(call_jev_for_test(adapter, world(), "EURUSD") for _ in range(8)),
+            return_exceptions=True,
         )
 
     results = asyncio.run(invoke())
@@ -348,9 +353,9 @@ def test_gateway_timeout_cancels_io_and_tracks_unreported_usage():
         api_key="fixture-only-key", model=MODEL, transport=httpx.MockTransport(slow)
     )
     result = asyncio.run(
-        DecisionGateway(primary=adapter, clock=lambda: NOW, timeout_seconds=1).classify(
-            world(), instrument_id="EURUSD", task_id="task"
-        )
+        DecisionGateway(
+            primary=admitted_jev_for_test(adapter), clock=lambda: NOW, timeout_seconds=1
+        ).classify(world(), instrument_id="EURUSD", task_id="task")
     )
     assert "PRIMARY_TIMEOUT" in result.output.fallback_reasons
     assert cancelled == [True]
@@ -377,7 +382,8 @@ def test_old_inflight_success_cannot_close_newly_opened_circuit():
 
     async def invoke():
         return await asyncio.gather(
-            *(adapter.classify(world(), "EURUSD") for _ in range(3)), return_exceptions=True
+            *(call_jev_for_test(adapter, world(), "EURUSD") for _ in range(3)),
+            return_exceptions=True,
         )
 
     results = asyncio.run(invoke())
@@ -405,13 +411,13 @@ def test_cooldown_allows_one_probe_and_success_closes_circuit():
         transport=httpx.MockTransport(handle),
     )
     with pytest.raises(ValueError):
-        asyncio.run(adapter.classify(world(), "EURUSD"))
+        asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     clock[0] = 11
 
     async def invoke():
         return await asyncio.gather(
-            adapter.classify(world(), "EURUSD"),
-            adapter.classify(world(), "EURUSD"),
+            call_jev_for_test(adapter, world(), "EURUSD"),
+            call_jev_for_test(adapter, world(), "EURUSD"),
             return_exceptions=True,
         )
 

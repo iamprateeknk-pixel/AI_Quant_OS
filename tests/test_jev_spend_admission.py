@@ -22,6 +22,7 @@ from ai_quant_os.provider_call_admission import (
 from ai_quant_os.agent_call_budgets import AgentCallBudget
 from ai_quant_os.provider_spend_policy import SpendRule
 from ai_quant_os.provider_spend_store import ProviderSpendStore
+from provider_test_adapters import call_jev_for_test
 from test_jev_adapter import MODEL, NOW, response, world
 
 
@@ -198,7 +199,7 @@ def test_adapter_reserves_before_single_official_request_and_reports_input_seman
         )
 
     adapter = classifier(store, handle)
-    candidate = asyncio.run(adapter.classify(world(), "EURUSD"))
+    candidate = asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     assert candidate.classification == "RANGING"
     assert len(calls) == 1
     assert counters(store)["daily_tokens"] == 123
@@ -226,7 +227,7 @@ def test_rejected_content_is_charged_only_from_bounded_matching_native_usage(tmp
         payload["usage"]["input_tokens"] = 10**9 + 1
     adapter = classifier(store, lambda request: httpx.Response(200, json=payload))
     with pytest.raises(ValueError):
-        asyncio.run(adapter.classify(world(), "EURUSD"))
+        asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     assert counters(store)["pending_count"] == (0 if change == "invalid_answer" else 1)
     assert counters(store)["daily_tokens"] == (
         100 if change == "invalid_answer" else JEV_INPUT_CEILING
@@ -246,7 +247,7 @@ def test_cancellation_retains_original_hold_without_retry(tmp_path):
     adapter = classifier(store, handle)
 
     async def invoke():
-        task = asyncio.create_task(adapter.classify(world(), "EURUSD"))
+        task = asyncio.create_task(call_jev_for_test(adapter, world(), "EURUSD"))
         await entered.wait()
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
@@ -267,7 +268,7 @@ def test_guard_rechecks_after_durable_reservation_before_provider_effect(tmp_pat
 
     adapter = classifier(store, lambda request: calls.append(request))
     with pytest.raises(ValueError):
-        asyncio.run(adapter.classify_with_admission(world(), "EURUSD", guard))
+        asyncio.run(adapter._classify_with_admission(world(), "EURUSD", guard))
     assert calls == []
     assert counters(store)["pending_count"] == 1
 
@@ -278,7 +279,7 @@ def test_expired_source_is_denied_before_hold_and_transport(tmp_path):
     adapter = classifier(store, lambda request: calls.append(request))
     stale = replace(world(), valid_until=NOW)
     with pytest.raises(ValueError):
-        asyncio.run(adapter.classify(stale, "EURUSD"))
+        asyncio.run(call_jev_for_test(adapter, stale, "EURUSD"))
     assert calls == []
     assert counters(store)["pending_count"] == 0
 
@@ -371,7 +372,7 @@ def test_native_above_context_usage_is_retained_and_stops_future_dispatch(tmp_pa
     adapter = classifier(store, handle)
     for _ in range(2):
         with pytest.raises(ValueError):
-            asyncio.run(adapter.classify(world(), "EURUSD"))
+            asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     assert len(calls) == 1
     assert store.status(NOW)["state"] == "BREACHED"
     assert counters(store)["daily_tokens"] == JEV_INPUT_CEILING + 1
@@ -385,7 +386,7 @@ def test_duplicate_native_usage_keeps_full_hold(tmp_path):
     )
     adapter = classifier(store, lambda request: httpx.Response(200, content=raw))
     with pytest.raises(ValueError):
-        asyncio.run(adapter.classify(world(), "EURUSD"))
+        asyncio.run(call_jev_for_test(adapter, world(), "EURUSD"))
     assert counters(store)["unsettled_tokens"] == JEV_INPUT_CEILING
 
 

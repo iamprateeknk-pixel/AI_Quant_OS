@@ -246,7 +246,7 @@ class JevClassifier:
                 self._probe = False
 
     async def classify(self, snapshot: WorldState, instrument_id: str) -> ClassificationCandidate:
-        return await self.classify_with_admission(snapshot, instrument_id, lambda: None)
+        raise PermissionError("Jev provider call admission is required")
 
     def _check_admission(self, snapshot: WorldState, guard: Callable[[], None]) -> None:
         guard()
@@ -256,7 +256,7 @@ class JevClassifier:
         ):
             raise ValueError("Jev source unavailable or expired")
 
-    async def classify_with_admission(
+    async def _classify_with_admission(
         self, snapshot: WorldState, instrument_id: str, guard: Callable[[], None]
     ) -> ClassificationCandidate:
         item = next(

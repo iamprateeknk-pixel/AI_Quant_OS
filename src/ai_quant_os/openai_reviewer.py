@@ -207,9 +207,9 @@ class OpenAIReviewer:
                 return bytes(chunks)
 
     async def review(self, snapshot: WorldState, decision: AgentEnvelope) -> ReviewCandidate:
-        return await self._review(snapshot, decision, lambda: None)
+        raise PermissionError("OpenAI provider call admission is required")
 
-    async def review_with_admission(
+    async def _review_with_admission(
         self, snapshot: WorldState, decision: AgentEnvelope, guard: Callable[[], None]
     ) -> ReviewCandidate:
         return await self._review(snapshot, decision, guard)

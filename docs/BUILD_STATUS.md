@@ -1,5 +1,16 @@
 # Build status against the execution pack
 
+## Update (2026-11-23)
+
+- Jev and OpenAI adapter public calls now fail closed unless dispatched through
+  the durable provider-call admission wrappers. This closes the direct public
+  `.classify()` / `.review()` quota bypass while preserving call-specific route
+  checks and shared spending settlement. Regression suite: **125 passed** across
+  the Jev/OpenAI adapters, spend admission, shared spending and provider-call
+  admission. Private adapter implementation methods are not an OS boundary
+  against arbitrary code in the same Python process; call-budget-disabled mode
+  remains explicitly unconfigured.
+
 ## Update (2026-11-21)
 
 - Jev and OpenAI adapter construction now refuses to create the default outbound

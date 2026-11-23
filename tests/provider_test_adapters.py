@@ -13,6 +13,12 @@ from ai_quant_os.openai_reviewer import OpenAIReviewer
 from ai_quant_os.provider_call_admission import ProviderOwner
 from ai_quant_os.provider_spend_policy import ProviderSpendPolicy, SpendRule
 from ai_quant_os.provider_spend_store import ProviderSpendStore
+from ai_quant_os.agent_call_budgets import AgentCallBudget
+from ai_quant_os.agent_registry import load_agent_catalog
+from ai_quant_os.provider_call_admission import (
+    AdmittedClassifier,
+    ProviderCallAdmission,
+)
 
 FIXTURE_NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -75,3 +81,21 @@ def reviewer_with_fixture_spending(**options) -> OpenAIReviewer:
     reviewer = OpenAIReviewer(**options)
     reviewer._test_spend_directory = temporary
     return reviewer
+
+
+async def call_jev_for_test(adapter: JevClassifier, snapshot, instrument_id: str):
+    return await adapter._classify_with_admission(snapshot, instrument_id, lambda: None)
+
+
+async def call_reviewer_for_test(reviewer: OpenAIReviewer, snapshot, decision):
+    return await reviewer._review_with_admission(snapshot, decision, lambda: None)
+
+
+def admitted_jev_for_test(adapter: JevClassifier) -> AdmittedClassifier:
+    admission = ProviderCallAdmission(
+        load_agent_catalog(),
+        AgentCallBudget(None, policy=None, clock=lambda: FIXTURE_NOW),
+        adapter.spend_owner,
+        clock=lambda: FIXTURE_NOW,
+    )
+    return AdmittedClassifier(adapter, admission)

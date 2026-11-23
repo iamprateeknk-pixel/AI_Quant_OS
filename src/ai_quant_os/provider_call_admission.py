@@ -154,7 +154,7 @@ class AdmittedClassifier:
     async def classify(self, snapshot: WorldState, instrument_id: str) -> object:
         await self._admission.reserve(self._provider, snapshot, instrument_id)
         with self._span():
-            guarded = getattr(self._provider, "classify_with_admission", None)
+            guarded = getattr(self._provider, "_classify_with_admission", None)
             result = (
                 await guarded(
                     snapshot, instrument_id, lambda: self._admission.check(snapshot, instrument_id)
@@ -185,7 +185,7 @@ class AdmittedReviewer:
         instrument = decision.output.instrument_id
         await self._admission.reserve(self._provider, snapshot, instrument, decision)
         with self._span():
-            guarded_review = getattr(self._provider, "review_with_admission", None)
+            guarded_review = getattr(self._provider, "_review_with_admission", None)
             if callable(guarded_review):
                 result = await guarded_review(
                     snapshot,

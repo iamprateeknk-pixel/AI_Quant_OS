@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from ai_quant_os.openai_reviewer import OpenAIReviewer, reviewer_from_environment
-from provider_test_adapters import reviewer_with_fixture_spending
+from provider_test_adapters import call_reviewer_for_test, reviewer_with_fixture_spending
 from ai_quant_os.decision_gateway import DecisionGateway
 from ai_quant_os.market import MarketSnapshot
 from ai_quant_os.paper_instruments import PAPER_INSTRUMENTS
@@ -69,6 +69,23 @@ def test_reviewer_requires_durable_spending_admission(transport):
         OpenAIReviewer(api_key="fixture-key", model=MODEL, transport=transport)
 
 
+def test_direct_reviewer_call_cannot_bypass_durable_call_admission():
+    calls = []
+    reviewer = reviewer_with_fixture_spending(
+        api_key="fixture-key",
+        model=MODEL,
+        transport=httpx.MockTransport(lambda request: calls.append(request) or httpx.Response(500)),
+    )
+
+    async def invoke():
+        state, decision = await inputs()
+        with pytest.raises(PermissionError, match="call admission"):
+            await reviewer.review(state, decision)
+
+    asyncio.run(invoke())
+    assert calls == []
+
+
 def test_official_request_shape_and_locally_bound_review():
     def handler(request):
         assert str(request.url) == "https://api.openai.com/v1/responses"
@@ -90,7 +107,7 @@ def test_official_request_shape_and_locally_bound_review():
 
     async def invoke():
         state, decision = await inputs()
-        item = await reviewer.review(state, decision)
+        item = await call_reviewer_for_test(reviewer, state, decision)
         assert item.parent_trace_id == decision.trace_id
         assert item.world_state_version == state.world_state_version
         assert item.expires_at == decision.expires_at
@@ -132,7 +149,7 @@ def test_invalid_or_refused_response_is_sanitized_and_counted(change):
     async def invoke():
         state, decision = await inputs()
         with pytest.raises(ValueError, match="OpenAI review unavailable or invalid"):
-            await reviewer.review(state, decision)
+            await call_reviewer_for_test(reviewer, state, decision)
 
     asyncio.run(invoke())
     assert reviewer.status()["failure_count"] == 1
@@ -160,12 +177,12 @@ def test_request_cap_and_circuit_prevent_further_http_calls():
         state, decision = await inputs()
         for _ in range(3):
             with pytest.raises(ValueError):
-                await reviewer.review(state, decision)
+                await call_reviewer_for_test(reviewer, state, decision)
         assert len(calls) == 2
         time[0] = 11
         for _ in range(2):
             with pytest.raises(ValueError):
-                await reviewer.review(state, decision)
+                await call_reviewer_for_test(reviewer, state, decision)
 
     asyncio.run(invoke())
     assert len(calls) == 3
@@ -212,7 +229,7 @@ def test_redirect_and_response_size_are_rejected_without_retry(status, limit):
     async def invoke():
         state, decision = await inputs()
         with pytest.raises(ValueError):
-            await reviewer.review(state, decision)
+            await call_reviewer_for_test(reviewer, state, decision)
 
     asyncio.run(invoke())
     assert len(calls) == 1
@@ -233,7 +250,10 @@ def test_concurrent_request_cap_and_cancellation_accounting():
     async def invoke():
         state, decision = await inputs()
         results = await asyncio.gather(
-            *(asyncio.wait_for(reviewer.review(state, decision), timeout=1) for _ in range(5)),
+            *(
+                asyncio.wait_for(call_reviewer_for_test(reviewer, state, decision), timeout=1)
+                for _ in range(5)
+            ),
             return_exceptions=True,
         )
         assert all(isinstance(result, (ValueError, TimeoutError)) for result in results)
@@ -266,10 +286,11 @@ def test_older_success_cannot_close_newly_opened_circuit():
 
     async def invoke():
         state, decision = await inputs()
-        older = asyncio.create_task(reviewer.review(state, decision))
+        older = asyncio.create_task(call_reviewer_for_test(reviewer, state, decision))
         await asyncio.wait_for(started.wait(), timeout=2)
         results = await asyncio.gather(
-            *(reviewer.review(state, decision) for _ in range(2)), return_exceptions=True
+            *(call_reviewer_for_test(reviewer, state, decision) for _ in range(2)),
+            return_exceptions=True,
         )
         assert all(isinstance(result, ValueError) for result in results)
         assert reviewer.status()["circuit_state"] == "OPEN"
@@ -373,10 +394,11 @@ def test_only_one_circuit_probe_is_admitted_after_cooldown():
     async def invoke():
         state, decision = await inputs()
         with pytest.raises(ValueError):
-            await reviewer.review(state, decision)
+            await call_reviewer_for_test(reviewer, state, decision)
         time[0] = 2
         results = await asyncio.gather(
-            *(reviewer.review(state, decision) for _ in range(2)), return_exceptions=True
+            *(call_reviewer_for_test(reviewer, state, decision) for _ in range(2)),
+            return_exceptions=True,
         )
         assert sum(isinstance(result, ValueError) for result in results) == 1
 
@@ -402,7 +424,7 @@ def test_invalid_structured_text_is_rejected(changes):
     async def invoke():
         state, decision = await inputs()
         with pytest.raises(ValueError, match="unavailable or invalid"):
-            await reviewer.review(state, decision)
+            await call_reviewer_for_test(reviewer, state, decision)
 
     asyncio.run(invoke())
     assert reviewer.status()["failure_count"] == 1
