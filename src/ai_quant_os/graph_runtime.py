@@ -518,8 +518,22 @@ class GraphRuntime:
         payload.update(schema_version="1.2", children=tuple(children))
         return GraphTrace.model_validate(payload)
 
-    def archive_page(self, *, after_run_id: str = "", head: str | None = None, limit: int = 25):
-        return self._ledger.page(after_run_id=after_run_id, head=head, limit=limit)
+    def archive_page(
+        self,
+        *,
+        after_run_id: str = "",
+        head: str | None = None,
+        limit: int = 25,
+        agent_id: str | None = None,
+        agent_version: str | None = None,
+    ):
+        return self._ledger.page(
+            after_run_id=after_run_id,
+            head=head,
+            limit=limit,
+            agent_id=agent_id,
+            agent_version=agent_version,
+        )
 
     def current(self, run_id: str) -> bool:
         """Current evidence/permission eligibility; never establishes order authority."""

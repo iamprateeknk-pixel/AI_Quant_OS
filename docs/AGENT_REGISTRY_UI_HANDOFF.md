@@ -37,8 +37,18 @@ that executable handlers exist. The page performs no agent action or capital act
 
 This advances the FINAL frontend pack's Agent Control page; it does not complete
 it. Health, current tasks, genome/model routes, latency, cost, calibration, last
-errors, trace/evidence/tool/memory/evaluation histories, controlled diagnostics,
-quarantine/restart requests and challenger comparisons remain unwired. No action
-controls are offered without their backend admission and audited outcome workflow.
+errors, evidence/tool/memory/evaluation histories, controlled diagnostics,
+quarantine/restart requests and challenger comparisons remain unwired. Saved graph
+execution summaries link to the existing trace view. No action controls are offered
+without their backend admission and audited outcome workflow.
 Automatic refresh/realtime reconciliation and independent frontend acceptance also
 remain open. The entire P00–P13 execution pack remains incomplete.
+
+## Update: per-version execution history
+
+The contract details now link to the archived execution list filtered by the exact
+agent ID and version. The protected graph-run endpoint accepts the filter only as a
+complete validated pair, keeps the archive head bound across pages, and returns
+metadata summaries only. Each page is checked so every row matches the selected
+version before it is rendered. This is historical advisory evidence; it does not
+show current eligibility or provide execution controls. See ADR 0226.

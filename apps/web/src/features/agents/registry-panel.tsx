@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { AgentManifest } from "./registry";
 
 type Result = { ok: true; value: AgentManifest[] } | { ok: false; reason: string };
@@ -18,7 +19,7 @@ export function AgentRegistryPanel({ result }: { result: Result }) {
           <div><dt>Declared tools</dt><dd>{agent.allowed_tools.join(", ") || "None"}</dd></div>
           <div><dt>Timeout</dt><dd>{agent.timeout_seconds} seconds</dd></div>
           <div><dt>Manifest reference</dt><dd className="mono agent-manifest-ref">{agent.manifest_ref}</dd></div>
-        </dl></details></td>
+        </dl><p><Link href={`/traces?agent_id=${encodeURIComponent(agent.agent_id)}&agent_version=${encodeURIComponent(agent.agent_version)}`} prefetch={false}>View saved executions for this version</Link></p></details></td>
       </tr>)}</tbody>
     </table></div> : <div className="empty-list">No agent versions registered.</div> : <div className="empty-list" role="status">Agent registry unavailable. {result.reason}. Refresh to try again.</div>}
   </section>;

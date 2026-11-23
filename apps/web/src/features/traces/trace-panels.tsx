@@ -10,15 +10,16 @@ function Unavailable({reason}:{reason:string}) {
   return <div className="empty-list" role="status"><p>{message}</p><Link href={reason === "SIGN_IN" ? "/settings" : "/traces"} prefetch={false}>{reason === "SIGN_IN" ? "Open owner sign-in" : "Reload execution list"}</Link></div>;
 }
 
-export function GraphRunListPanel({result,after="",head}:{result:ReadResult;after?:string;head?:string}) {
-  const page = result.ok ? parseGraphRunPage(result.value,after,head) : null;
+export function GraphRunListPanel({result,after="",head,agentId,agentVersion}:{result:ReadResult;after?:string;head?:string;agentId?:string;agentVersion?:string}) {
+  const page = result.ok ? parseGraphRunPage(result.value,after,head,agentId,agentVersion) : null;
+  const filtered = agentId !== undefined && agentVersion !== undefined;
   return <section className="panel content-panel">
     <div className="panel-heading"><h2>Saved agent executions</h2><span>{page ? `${page.total} SAVED` : "UNAVAILABLE"}</span></div>
-    <p className="panel-muted">Original paper and sandbox runs, ordered by execution ID. Open a run to inspect its saved transitions. Context observation is when the input snapshot was prepared; it is separate from execution timing.</p>
+    <p className="panel-muted">{filtered ? `Saved paper and sandbox runs for ${agentId} version ${agentVersion}, ordered by execution ID.` : "Original paper and sandbox runs, ordered by execution ID."} Open a run to inspect its saved transitions. Context observation is when the input snapshot was prepared; it is separate from execution timing.</p>
     {page ? page.records.length ? <>
       <div className="table-scroll"><table className="graph-run-table"><caption className="sr-only">Saved agent executions and original context observations</caption><thead><tr><th scope="col">Execution</th><th scope="col">Agent / version</th><th scope="col">Task</th><th scope="col">Outcome</th><th scope="col">Scope</th><th scope="col">Context observed (UTC)</th></tr></thead><tbody>{page.records.map(row=><tr key={row.run_id}><th scope="row" className="trace-reference"><Link href={`/traces/${encodeURIComponent(row.run_id)}`} prefetch={false}>{row.run_id}</Link></th><td>{row.agent_id}<br/><span className="mono">{row.agent_version}</span></td><td className="trace-reference">{row.task_id}</td><td>{labels[row.status]}</td><td>{row.scope === "SANDBOX" ? "Sandbox" : "Paper"}</td><td><time dateTime={row.context_observed_at}>{utc(row.context_observed_at)}</time></td></tr>)}</tbody></table></div>
-      <nav className="trace-pagination" aria-label="Execution pages"><Link href="/traces" prefetch={false}>Reload first page</Link>{page.next_after && <Link href={`/traces?after=${encodeURIComponent(page.next_after)}&head=${page.head_hash}`} prefetch={false}>Next executions</Link>}</nav>
-    </> : <div className="empty-list" role="status"><p>{page.total ? "No more executions on this page." : "No agent executions saved."}</p><Link href="/traces" prefetch={false}>Reload execution list</Link></div> : <Unavailable reason={result.ok ? "UNAVAILABLE" : result.reason}/>}
+      <nav className="trace-pagination" aria-label="Execution pages"><Link href={filtered ? `/traces?agent_id=${encodeURIComponent(agentId!)}&agent_version=${encodeURIComponent(agentVersion!)}` : "/traces"} prefetch={false}>Reload first page</Link>{page.next_after && <Link href={`/traces?after=${encodeURIComponent(page.next_after)}&head=${page.head_hash}${filtered ? `&agent_id=${encodeURIComponent(agentId!)}&agent_version=${encodeURIComponent(agentVersion!)}` : ""}`} prefetch={false}>Next executions</Link>}{filtered && <Link href="/traces" prefetch={false}>Show all executions</Link>}</nav>
+    </> : <div className="empty-list" role="status"><p>{page.total ? "No more executions on this page." : filtered ? "No saved executions for this agent version." : "No agent executions saved."}</p><nav className="trace-pagination" aria-label="Execution filters"><Link href={filtered ? `/traces?agent_id=${encodeURIComponent(agentId!)}&agent_version=${encodeURIComponent(agentVersion!)}` : "/traces"} prefetch={false}>Reload execution list</Link>{filtered && <Link href="/traces" prefetch={false}>Show all executions</Link>}</nav></div> : <Unavailable reason={result.ok ? "UNAVAILABLE" : result.reason}/>}
   </section>;
 }
 
