@@ -73,8 +73,10 @@ labels and label attempt counts as operational activity, not quality. Missing
 attributable duration samples remain absent; p95 is not an SLA. These panels do
 not assert current throughput or a current source health state. Use existing
 private server credentials through separately configured scraper headers, never
-committed config values or UI inputs. Scraper/service deployment, credential
-lifecycle, native Prometheus ingestion, actual dashboard render acceptance,
+committed config values or UI inputs. Native Prometheus ingestion and the actual
+agent p95 expression are exercised locally; the panel suppresses zero-rate
+histograms so Grafana does not receive a `NaN` quantile when no durations accrue.
+Scraper/service deployment, credential lifecycle, browser-render acceptance,
 justified alerts and delivery tests remain pending. The collector's trace-only
 configuration is unchanged; metrics are not sent to its OTLP receiver.
 
@@ -84,6 +86,9 @@ Native tests check exact HTTP and agent bucket boundaries/count/sum, repeated
 cumulative reads, overflow conservation, concurrent SDK records, actual order/replay API
 observations, secret omission, authentication/revocation, disabled/broken reads,
 record failure without changed orders and actual ASGI exception/cancellation.
+The pinned local Grafana/Prometheus integration also executes a PAPER agent
+graph, observes its attempt and duration samples through Prometheus, and verifies
+the provisioned agent p95 expression returns a positive labeled observation.
 App shutdown closes its metrics owner without resetting/restarting trace workers.
 SDK metric errors are counted as instrumentation errors and do not change paper
 risk/order/HALT authority. Counts are volatile and restart begins a new inventory.

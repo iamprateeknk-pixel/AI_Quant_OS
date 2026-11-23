@@ -62,6 +62,8 @@ def test_dashboard_exposes_bounded_agent_execution_metrics_without_quality_claim
     assert "by (agent_id,status)" in attempt_query
     assert "ai_quant_paper_agent_execution_duration_seconds_bucket" in duration_query
     assert "by (le,agent_id,status)" in duration_query
+    assert "ai_quant_paper_agent_execution_duration_seconds_count" in duration_query
+    assert "> 0" in duration_query
     assert "No attributable execution sample" in duration["fieldConfig"]["defaults"]["noValue"]
     assert "not model quality" in dashboard["description"]
 
@@ -227,7 +229,10 @@ def test_native_grafana_auth_provisioning_query_and_source_failure(
         server = uvicorn.Server(
             uvicorn.Config(
                 create_app(
-                    operator_token="fixture-grafana-paper", clock=lambda: NOW, telemetry=telemetry
+                    operator_token="fixture-grafana-paper",
+                    clock=lambda: NOW,
+                    telemetry=telemetry,
+                    paper_db_path=tmp_path / "paper.sqlite3",
                 ),
                 log_level="error",
                 access_log=False,
@@ -270,6 +275,19 @@ def test_native_grafana_auth_provisioning_query_and_source_failure(
             assert accepted.status_code == 200 and accepted.json()["status"] == "ACCEPTED"
             replay = paper.post(base + "/api/v1/paper/intents", headers=headers, json=payload())
             assert replay.json() == accepted.json()
+            context = paper.post(
+                base + "/api/v1/paper/agents/context",
+                headers=headers,
+                json={"agent_id": "A02", "agent_version": "0.1.0", "task_id": "grafana-agent"},
+            )
+            assert context.status_code == 200
+            agent_run = paper.post(
+                base + "/api/v1/paper/agents/execute",
+                headers=headers,
+                json={"run_id": "grafana-agent-run", "context_ref": context.json()["context_ref"]},
+            )
+            assert agent_run.status_code == 200
+            assert agent_run.json()["receipt"]["status"] == "WAIT_FOR_DATA"
         prom_port, grafana_port = _port(), _port()
         prom_config = json.loads((ROOT / "infra/observability/prometheus.json").read_text())
         prom_config["global"] = {"scrape_interval": "1s", "scrape_timeout": "500ms"}
@@ -393,6 +411,54 @@ def test_native_grafana_auth_provisioning_query_and_source_failure(
 
             proxy_query('up{job="paper_http"}', 1)
             proxy_query("ai_quant_paper_http_duration_seconds_count{" + selector + "}", 2)
+            agent_selector = 'agent_id="A02",status="WAIT_FOR_DATA",job="paper_http"'
+            proxy_query("ai_quant_paper_agent_executions_total{" + agent_selector + "}", 1)
+            proxy_query(
+                "ai_quant_paper_agent_execution_duration_seconds_count{" + agent_selector + "}",
+                1,
+            )
+            agent_duration_query = next(
+                target["expr"]
+                for panel in original_dashboard["panels"]
+                if panel["title"] == "Agent execution duration p95 (bucket estimate)"
+                for target in panel.get("targets", [])
+            )
+            with httpx.Client(timeout=3, trust_env=False, follow_redirects=False) as paper:
+                context = paper.post(
+                    base + "/api/v1/paper/agents/context",
+                    headers=headers,
+                    json={
+                        "agent_id": "A02",
+                        "agent_version": "0.1.0",
+                        "task_id": "grafana-agent-p95",
+                    },
+                )
+                assert context.status_code == 200
+                agent_run = paper.post(
+                    base + "/api/v1/paper/agents/execute",
+                    headers=headers,
+                    json={
+                        "run_id": "grafana-agent-p95-run",
+                        "context_ref": context.json()["context_ref"],
+                    },
+                )
+                assert agent_run.status_code == 200
+                assert agent_run.json()["receipt"]["status"] == "WAIT_FOR_DATA"
+            proxy_query("ai_quant_paper_agent_executions_total{" + agent_selector + "}", 2)
+            deadline = time.monotonic() + 30
+            while True:
+                p95 = client.get(
+                    url + f"/api/datasources/proxy/uid/{UID}/api/v1/query",
+                    params={"query": agent_duration_query},
+                )
+                rows = p95.json()["data"]["result"] if p95.status_code == 200 else []
+                if rows:
+                    break
+                assert time.monotonic() < deadline, "Agent duration dashboard query deadline"
+                time.sleep(0.1)
+            assert len(rows) == 1 and rows[0]["metric"]["agent_id"] == "A02"
+            assert rows[0]["metric"]["status"] == "WAIT_FOR_DATA"
+            assert float(rows[0]["value"][1]) > 0
             query = {
                 "queries": [
                     {

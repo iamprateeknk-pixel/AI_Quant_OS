@@ -395,7 +395,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le,agent_id,status) (rate(ai_quant_paper_agent_execution_duration_seconds_bucket{job=\"paper_http\"}[5m]))) and on() (min(up{job=\"paper_http\"}) == 1)",
+          "expr": "histogram_quantile(0.95, sum by (le,agent_id,status) (rate(ai_quant_paper_agent_execution_duration_seconds_bucket{job=\"paper_http\"}[5m]))) and on(agent_id,status) (sum by (agent_id,status) (rate(ai_quant_paper_agent_execution_duration_seconds_count{job=\"paper_http\"}[5m])) > 0) and on() (min(up{job=\"paper_http\"}) == 1)",
           "legendFormat": "{{agent_id}} \u00b7 {{status}}",
           "range": true,
           "instant": false,
