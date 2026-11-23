@@ -51,6 +51,21 @@ def _verify_tree(home):
     ).hexdigest()
 
 
+def test_dashboard_exposes_bounded_agent_execution_metrics_without_quality_claims():
+    dashboard = json.loads((ASSETS / "dashboards/paper-http.json").read_text())
+    panels = {panel["title"]: panel for panel in dashboard["panels"]}
+    attempts = panels["Agent graph attempts per second"]
+    duration = panels["Agent execution duration p95 (bucket estimate)"]
+    attempt_query = attempts["targets"][0]["expr"]
+    duration_query = duration["targets"][0]["expr"]
+    assert "ai_quant_paper_agent_executions_total" in attempt_query
+    assert "by (agent_id,status)" in attempt_query
+    assert "ai_quant_paper_agent_execution_duration_seconds_bucket" in duration_query
+    assert "by (le,agent_id,status)" in duration_query
+    assert "No attributable execution sample" in duration["fieldConfig"]["defaults"]["noValue"]
+    assert "not model quality" in dashboard["description"]
+
+
 @pytest.fixture(scope="module")
 def native_grafana():
     value = os.getenv("AI_QUANT_NATIVE_GRAFANA_HOME")

@@ -1,8 +1,8 @@
 {
   "id": null,
   "uid": "paper-http-observations",
-  "title": "Paper HTTP Observations",
-  "description": "Volatile original SDK HTTP measurements; failed/missing scrapes withhold current metric panels. No trading/delivery authority.",
+  "title": "Paper HTTP and Agent Observations",
+  "description": "Volatile original SDK HTTP and agent execution measurements; failed/missing scrapes withhold current metric panels. Counts are operational attempts, not model quality or authority.",
   "tags": [
     "paper",
     "local-observations"
@@ -20,7 +20,7 @@
     {
       "id": 1,
       "type": "text",
-      "title": "Paper HTTP observations",
+      "title": "Paper HTTP and agent execution observations",
       "gridPos": {
         "x": 0,
         "y": 0,
@@ -29,7 +29,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "Local paper HTTP metrics only. Check scrape status and observation age first. Historical samples are not current source health, trading state, complete traces or delivery proof. Missing data remains missing; no zeros are substituted. Route detail beyond capacity is grouped under OTHER_ROUTE."
+        "content": "Local PAPER HTTP and agent execution measurements. Agent counts are terminal attempts, not model quality, accuracy, strategy performance or promotion evidence. Duration p95 is a bucket estimate, not an SLA. Check scrape status and observation age first. Missing data remains missing; no zeros are substituted."
       }
     },
     {
@@ -307,6 +307,104 @@
           "sort": "none"
         }
       }
+    },
+    {
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "paper-http-source"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "noValue": "No current measured samples",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "id": 8,
+      "title": "Agent graph attempts per second",
+      "description": "Volatile terminal graph attempts by fixed agent and status. This is operational activity, not model quality or successful strategy performance.",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (agent_id,status) (rate(ai_quant_paper_agent_executions_total{job=\"paper_http\"}[5m])) and on() (min(up{job=\"paper_http\"}) == 1)",
+          "legendFormat": "{{agent_id}} \u00b7 {{status}}",
+          "range": true,
+          "instant": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "paper-http-source"
+          }
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "paper-http-source"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "No attributable execution sample",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "id": 9,
+      "title": "Agent execution duration p95 (bucket estimate)",
+      "description": "Attributable terminal execution durations only. UNCERTAIN recovery attempts have no duration sample; this estimate is not an SLA or model-quality measure.",
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le,agent_id,status) (rate(ai_quant_paper_agent_execution_duration_seconds_bucket{job=\"paper_http\"}[5m]))) and on() (min(up{job=\"paper_http\"}) == 1)",
+          "legendFormat": "{{agent_id}} \u00b7 {{status}}",
+          "range": true,
+          "instant": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "paper-http-source"
+          }
+        }
+      ]
     }
   ],
   "templating": {

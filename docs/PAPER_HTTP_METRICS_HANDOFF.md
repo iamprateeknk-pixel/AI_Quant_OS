@@ -67,10 +67,14 @@ sum by (agent_id,status) (rate(ai_quant_paper_agent_executions_total[5m]))
 histogram_quantile(0.95, sum by (le) (rate(ai_quant_paper_agent_execution_duration_seconds_bucket[5m])))
 ```
 
-They do not assert current throughput, SLO thresholds or an installed dashboard.
-Use existing private server credentials through separately configured scraper
-headers, never committed config values or UI inputs. Scraper/service deployment,
-credential lifecycle, native Prometheus parsing/ingestion, Grafana dashboards,
+The provisioned Grafana dashboard includes HTTP panels and agent attempt-rate
+and bucket-estimated p95 panels. The agent panels expose fixed agent/status
+labels and label attempt counts as operational activity, not quality. Missing
+attributable duration samples remain absent; p95 is not an SLA. These panels do
+not assert current throughput or a current source health state. Use existing
+private server credentials through separately configured scraper headers, never
+committed config values or UI inputs. Scraper/service deployment, credential
+lifecycle, native Prometheus ingestion, actual dashboard render acceptance,
 justified alerts and delivery tests remain pending. The collector's trace-only
 configuration is unchanged; metrics are not sent to its OTLP receiver.
 
