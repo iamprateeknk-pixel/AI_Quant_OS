@@ -12,7 +12,7 @@ No agent has broker submission, risk-policy mutation, credential access, product
 
 | Agent | Mission | Current implementation |
 |---|---|---|
-| A01 | Master Supervisor | Bounded task planning and specialist dispatch (0.2–0.4) |
+| A01 | Master Supervisor | Bounded task planning and fixed specialist cohorts (0.2–0.10.0) |
 | A02 | Market Regime | Deterministic multi-window shadow analysis; uncalibrated |
 | A03 | Macro & Central Bank | Dated ECB-rate and event evidence; macro bias remains unassessed |
 | A04 | Currency Strength | Relative currency evidence; shadow output |
@@ -34,6 +34,15 @@ No agent has broker submission, risk-policy mutation, credential access, product
 The application composition root installs all 18 handlers. Per-agent evaluations are retained under `docs/evaluations/`; detailed scope and limitations are in `docs/*_HANDOFF.md` and ADRs 0015–0019 and later linked agent decisions.
 
 ## Verified in this workspace
+
+- 2026-11-23: A01 0.10.0 now binds a single research experiment ID into a typed
+  SANDBOX supervision context and dispatches only A11 0.2.0. Parent-aware child
+  compilation rechecks that experiment before A11 uses the existing service-owned
+  HOLDOUT context compiler. Its research-supervisor/dispatch/source/API/registry
+  regression group passes 137 tests; Ruff, formatting, schema parity, and compile
+  checks pass. Earlier A01 contracts remain unchanged. This adds operator routing
+  only; it does not certify LocalService isolation or independent adversarial
+  acceptance. See ADR 0225.
 
 - 2026-11-19: Every server-declared `SourceBinding` now carries a validated module-scoped semantic adapter reference (default `1.0.0`). GENERAL source identities include the adapter reference; TRAINING/HOLDOUT identities bind it alongside the receipt-backed catalog and resource scope. A11 keeps the archived semantic source identity check while binding the adapter version. The focused context, adversarial, checkpoint, and trace-context suites pass **48 tests**; Ruff and formatting checks pass. This establishes versioned context provenance, not independent provider or data-quality acceptance.
 - 2026-10-19: The focused Windows selector/allocator/registry/graph/supervisor suite passes 144 tests. A13 0.3.0 passes an end-to-end PAPER graph test with a real A12 0.3.0 run, binds the exact retained result, and rejects absent or wrong-version upstream runs. A13 still returns no weights and no execution/promotion authority. See ADR 0207 and `docs/evaluations/meta-allocator-0207.json`.

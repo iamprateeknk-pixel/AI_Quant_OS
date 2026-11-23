@@ -125,3 +125,22 @@ existing review workflow; it does not replace operator review or authorize a
 candidate to run. Roll back the A01 0.9.0 registration, v5 route, dispatch
 contract and two schemas together; keep existing A08/A09 history and candidate
 records readable. See ADR 0221.
+
+## A01 0.10.0 adversarial review cohort
+
+A01 0.10.0 adds the authenticated SANDBOX route
+`POST /api/v1/sandbox/research/supervise/v6/context`, which accepts one task ID
+and one experiment ID. The task declaration binds the experiment into the
+content-addressed parent context. Its fixed dispatch contract can call only A11
+0.2.0, and parent-aware child compilation checks that A11 receives the exact
+experiment declared by the parent. A11 continues to obtain candidate, validation,
+stress, and HOLDOUT scope evidence through the service-owned HOLDOUT RPC; the
+parent contains no report bars, HOLDOUT payload, or A11 output. Child results are
+advisory and do not authorize execution, promotion, orders, or safety changes.
+
+The registry, task-plan, input schema, and versioned dispatch contract preserve
+all earlier A01 versions. The context reference and deterministic child run ID
+bind restart recovery to the original task/experiment declaration. A01 0.10.0
+remains PARTIAL/SHADOW; this does not establish service isolation, independent
+source quality, adversarial acceptance, or any P07/P00-P13 release gate. See
+ADR 0225.

@@ -116,15 +116,17 @@ def supervisor_sources(
     task_kind=None,
     artifact_ref=None,
     review_ref=None,
+    experiment_id=None,
 ) -> dict[str, SourceBinding]:
     common = dict(as_of=world.as_of, world_state_version=world.world_state_version)
     extra = {}
     permissions_type, permission_tools = PermissionsEvidence, effective_tools
-    if version not in {"0.4.0", "0.5.0", "0.6.0", "0.7.0", "0.8.0", "0.9.0"} and (
+    if version not in {"0.4.0", "0.5.0", "0.6.0", "0.7.0", "0.8.0", "0.9.0", "0.10.0"} and (
         task_id is not None
         or task_kind is not None
         or artifact_ref is not None
         or review_ref is not None
+        or experiment_id is not None
     ):
         raise ValueError("Task declaration requires a declared-task supervisor version")
     if version == "0.4.0":
@@ -212,6 +214,25 @@ def supervisor_sources(
         extra = {
             "task_spec": ConstructionTaskDeclaration(
                 **common, task_id=task_id, task_kind=task_kind, review_ref=review_ref
+            )
+        }
+    elif version == "0.10.0":
+        from ai_quant_os.task_supervisor_research import (
+            AdversarialTaskDeclaration,
+            TaskRegistryEvidenceV6 as TaskRegistryEvidence,
+            TaskSupervisorEvidenceV6 as TaskSupervisorEvidence,
+            executable_v6 as executable,
+            SandboxPermissionsEvidence,
+            sandbox_effective_tools,
+        )
+
+        if task_kind != "ADVERSARIAL_REVIEW" or experiment_id is None:
+            raise ValueError("Adversarial review declaration requires its experiment reference")
+        registry_type, evidence_type = TaskRegistryEvidence, TaskSupervisorEvidence
+        permissions_type, permission_tools = SandboxPermissionsEvidence, sandbox_effective_tools
+        extra = {
+            "task_spec": AdversarialTaskDeclaration(
+                **common, task_id=task_id, task_kind=task_kind, experiment_id=experiment_id
             )
         }
     elif version == "0.3.0":

@@ -206,10 +206,12 @@ def test_research_supervisor_schemas_and_registry_match_runtime():
         ResearchSupervisionInput,
         ValidationResearchSupervisionInput,
         ConstructionResearchSupervisionInput,
+        AdversarialResearchSupervisionInput,
         TaskPlan,
         TaskPlanV3,
         TaskPlanV4,
         TaskPlanV5,
+        TaskPlanV6,
     )
 
     schemas = Path(__file__).resolve().parents[1] / "docs/schemas"
@@ -222,6 +224,8 @@ def test_research_supervisor_schemas_and_registry_match_runtime():
         ("research-supervision-input-0.8.0", ValidationResearchSupervisionInput),
         ("task-plan-0.9.0", TaskPlanV5),
         ("research-supervision-input-0.9.0", ConstructionResearchSupervisionInput),
+        ("task-plan-0.10.0", TaskPlanV6),
+        ("research-supervision-input-0.10.0", AdversarialResearchSupervisionInput),
     ]:
         assert json.loads((schemas / f"{name}.schema.json").read_text(encoding="utf-8")) == (
             model.model_json_schema()
@@ -238,6 +242,9 @@ def test_research_supervisor_schemas_and_registry_match_runtime():
     manifest_v5 = load_agent_catalog().get("A01", "0.9.0")
     assert manifest_v5.output_type == "TaskPlanV5"
     assert manifest_v5.implementation_status == "PARTIAL"
+    manifest_v6 = load_agent_catalog().get("A01", "0.10.0")
+    assert manifest_v6.output_type == "TaskPlanV6"
+    assert manifest_v6.implementation_status == "PARTIAL"
 
 
 def test_research_supervisor_plan_is_bound_to_exact_sandbox_child(tmp_path):
@@ -471,3 +478,57 @@ def test_reviewed_construction_supervisor_dispatches_only_a09_and_restarts(tmp_p
         restored = client.get("/api/v1/agents/graph-runs/supervised-construction", headers=HEADERS)
         assert restored.status_code == 200
         assert restored.json()["receipt"] == parent
+
+
+def test_adversarial_supervisor_binds_experiment_and_only_selects_a11(tmp_path):
+    with TestClient(
+        create_app(
+            operator_token="fixture-hypothesis",
+            clock=lambda: NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+        )
+    ) as client:
+        seed(client)
+        before_orders = client.get("/api/v1/orders").json()
+        before_state = client.get("/api/v1/system/status").json()
+        compiled = client.post(
+            "/api/v1/sandbox/research/supervise/v6/context",
+            headers=HEADERS,
+            json={"task_id": "supervised-adversarial", "experiment_id": "adversarial-baseline"},
+        )
+        assert compiled.status_code == 200, compiled.text
+        context = compiled.json()
+        assert (context["agent_id"], context["agent_version"], context["scope"]) == (
+            "A01",
+            "0.10.0",
+            "SANDBOX",
+        )
+        task_spec = next(row for row in context["inputs"] if row["input_name"] == "task_spec")
+        declaration = json.loads(task_spec["payload_json"])
+        assert declaration["experiment_id"] == "adversarial-baseline"
+        assert declaration["task_kind"] == "ADVERSARIAL_REVIEW"
+        assert "holdout_ref" not in task_spec["payload_json"]
+
+        generic = client.post(
+            "/api/v1/paper/agents/context",
+            headers=HEADERS,
+            json={"agent_id": "A01", "agent_version": "0.10.0", "task_id": "wrong-scope"},
+        )
+        assert generic.status_code == 422
+
+        executed = client.post(
+            "/api/v1/sandbox/research/supervise/v6/execute",
+            headers=HEADERS,
+            json={"run_id": "supervised-adversarial", "context_ref": context["context_ref"]},
+        )
+        assert executed.status_code == 200, executed.text
+        parent = executed.json()["receipt"]
+        assert parent["status"] == "COMPLETED", json.dumps(parent, indent=2)
+        plan = json.loads(parent["output_json"])
+        assert plan["task_kind"] == "ADVERSARIAL_REVIEW"
+        assert [(row["agent_id"], row["agent_version"]) for row in plan["calls"]] == [
+            ("A11", "0.2.0")
+        ]
+        assert plan["calls"][0]["status"] == "NOT_STARTED_SOURCE"
+        assert client.get("/api/v1/orders").json() == before_orders
+        assert client.get("/api/v1/system/status").json() == before_state
