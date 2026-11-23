@@ -134,6 +134,20 @@ def test_protected_supervisor_api_exports_nested_graph_spans(tmp_path):
             )
             assert response.status_code == 200
             observed_trace = int(response.headers["X-Paper-Trace-Id"], 16)
+            metrics = client.get("/api/v1/observability/metrics", headers=HEADERS)
+            assert metrics.status_code == 200
+            assert (
+                metrics.headers["X-Paper-Metrics-Accounting"]
+                == "VOLATILE_SDK_HTTP_AND_AGENT_EXECUTIONS"
+            )
+            assert (
+                'ai_quant_paper_agent_executions_total{agent_id="A01",status="COMPLETED"} 1'
+                in metrics.text
+            )
+            assert (
+                'ai_quant_paper_agent_execution_duration_seconds_count{agent_id="A07",status="COMPLETED"} 1'
+                in metrics.text
+            )
         assert telemetry.flush()
         spans = [
             span

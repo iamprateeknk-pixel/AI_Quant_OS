@@ -166,6 +166,10 @@ def test_graph_and_tool_spans_keep_only_bounded_metadata_and_parentage(tmp_path)
                 assert receipt.status == "COMPLETED"
                 assert tool_calls == ["WORLD_STATE_READ"]
                 assert telemetry.flush()
+                assert (
+                    'ai_quant_paper_agent_executions_total{agent_id="A02",status="COMPLETED"} 1\n'
+                    in telemetry.metrics_text()
+                )
 
             spans = exporter.get_finished_spans()
             by_name = {span.name: span for span in spans}
@@ -401,9 +405,13 @@ def test_failures_withhold_output_and_never_repeat(tmp_path, kind, expected):
 
 
 def test_cancelled_invocation_is_uncertain_after_restart_not_reexecuted(tmp_path):
+    pytest.importorskip("opentelemetry.sdk.trace.export.in_memory_span_exporter")
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
     async def run():
         registry = load_agent_catalog()
         evidence = await context(registry)
+        telemetry = PaperTelemetry(exporter=InMemorySpanExporter())
         entered = asyncio.Event()
         calls = []
 
@@ -413,17 +421,26 @@ def test_cancelled_invocation_is_uncertain_after_restart_not_reexecuted(tmp_path
             await asyncio.sleep(30)
 
         path = tmp_path / "runtime.sqlite3"
-        async with await open_runtime(path, registry, handler) as runtime:
-            task = asyncio.create_task(runtime.run("run-1", evidence))
-            await entered.wait()
-            task.cancel()
-            with pytest.raises(asyncio.CancelledError):
-                await task
-        async with await open_runtime(path, registry, handler) as runtime:
-            result = await runtime.resume("run-1")
-            assert result.status == "UNCERTAIN"
-            assert result.output_json is None
-        assert calls == [1]
+        try:
+            async with await open_runtime(path, registry, handler, telemetry=telemetry) as runtime:
+                task = asyncio.create_task(runtime.run("run-1", evidence))
+                await entered.wait()
+                task.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await task
+            async with await open_runtime(path, registry, handler, telemetry=telemetry) as runtime:
+                result = await runtime.resume("run-1")
+                assert result.status == "UNCERTAIN"
+                assert result.output_json is None
+            metrics = telemetry.metrics_text()
+            labels = 'agent_id="A02",status="UNCERTAIN"'
+            assert f"ai_quant_paper_agent_executions_total{{{labels}}} 1\n" in metrics
+            assert (
+                f"ai_quant_paper_agent_execution_duration_seconds_count{{{labels}}}" not in metrics
+            )
+            assert calls == [1]
+        finally:
+            telemetry.close()
 
     asyncio.run(run())
 

@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager, nullcontext
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from time import monotonic_ns
 from typing import Awaitable, Callable, Mapping, TypedDict
 
 import aiosqlite
@@ -217,6 +218,17 @@ class GraphRuntime:
 
         return observe
 
+    def _record_agent(self, context: CompiledContext, status: str, started_ns: int | None) -> None:
+        if self._telemetry is not None:
+            try:
+                self._telemetry.record_agent(
+                    context.agent_id,
+                    status,
+                    monotonic_ns() - started_ns if started_ns is not None else None,
+                )
+            except Exception:
+                pass
+
     def _admission(self, record: GraphRecord) -> str | None:
         try:
             self.require_context(record.checkpoint.context)
@@ -233,9 +245,11 @@ class GraphRuntime:
     async def _admit(self, state: GraphState) -> dict:
         record = self._ledger.get(state["run_id"])
         if record.receipt.status == "CREATED":
+            started_ns = monotonic_ns()
             failure = self._admission(record)
             if failure:
                 self._ledger.transition(state["run_id"], "CREATED", failure)
+                self._record_agent(record.checkpoint.context, failure, started_ns)
         return {}
 
     async def _execute(self, state: GraphState) -> dict:
@@ -246,6 +260,7 @@ class GraphRuntime:
         failure = self._admission(record)
         if failure:
             self._ledger.transition(run_id, "CREATED", failure)
+            self._record_agent(record.checkpoint.context, failure, monotonic_ns())
             return {}
         context = record.checkpoint.context
         agent_key = (context.agent_id, context.agent_version)
@@ -267,6 +282,7 @@ class GraphRuntime:
         # Commit before the external invocation; never replay a RUNNING reservation.
         self._ledger.transition(run_id, "CREATED", "RUNNING", routing=route_receipt)
         status, raw = "FAILED", None
+        execution_started_ns = monotonic_ns()
         remaining = (context.valid_until - self._clock()).total_seconds()
         timeout = min(record.checkpoint.manifest.timeout_seconds, remaining)
         try:
@@ -335,6 +351,7 @@ class GraphRuntime:
             raw if status == "COMPLETED" else None,
             routing=self._route_receipt(route_decision) if route_decision is not None else None,
         )
+        self._record_agent(context, status, execution_started_ns)
         return {}
 
     @staticmethod
@@ -382,7 +399,9 @@ class GraphRuntime:
         async with self._locks[run_id]:
             record = self._ledger.get(run_id)
             if record.receipt.status == "RUNNING":
-                return self._ledger.transition(run_id, "RUNNING", "UNCERTAIN").receipt
+                receipt = self._ledger.transition(run_id, "RUNNING", "UNCERTAIN").receipt
+                self._record_agent(record.checkpoint.context, "UNCERTAIN", None)
+                return receipt
             if record.receipt.status != "CREATED":
                 return record.receipt
             config = self.config(run_id)

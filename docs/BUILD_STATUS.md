@@ -144,6 +144,13 @@
   source parentage and metadata-only attributes using the actual in-memory OTel
   SDK. The graph/runtime/trace/telemetry regression group passes (**90 passed**);
   architecture boundaries pass (**10 passed**), and Ruff lint/format checks pass.
+- The protected local OTel scrape now also exposes bounded volatile terminal
+  agent attempt counters and monotonic duration histograms by fixed agent ID and
+  outcome. The graph attempt measurement remains operational evidence, not
+  model quality, strategy returns or promotion evidence. HTTP and agent metrics,
+  graph runtime/trace and architecture checks pass (**73 tests**); Ruff lint and
+  formatting checks pass. Scraper operations, retention, dashboards, alert
+  thresholds and independent acceptance remain open.
 
 ## Current repository-wide verification (2026-10-29)
 

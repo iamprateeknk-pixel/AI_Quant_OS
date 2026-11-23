@@ -303,6 +303,13 @@ class PaperTelemetry:
             except Exception:
                 self._note_error()
 
+    def record_agent(self, agent_id, status, elapsed_ns):
+        if self._metrics:
+            try:
+                self._metrics.record_agent(agent_id, status, elapsed_ns)
+            except Exception:
+                self._note_error()
+
     def metrics_text(self):
         return self._metrics.render() if self._metrics else None
 

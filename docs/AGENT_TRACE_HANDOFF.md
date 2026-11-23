@@ -80,6 +80,7 @@ and mixed journals, backward time, failures/timeouts/cancellation/recovery, reha
 historical forgery, rollback, corruption isolation and typed schema claims.
 
 Detailed per-source provenance spans, cross-request/distributed trace correlation,
-export/retention policy, aggregate quality/performance metrics, full UI workflows
-and independent acceptance remain open. No browser or full release acceptance is
-claimed. All P00-P13 remain incomplete.
+provider-specific export/retention policy, calibrated aggregate quality and
+mission-performance metrics, full UI workflows and independent acceptance remain
+open. No browser or full release acceptance is claimed. All P00-P13 remain
+incomplete.
