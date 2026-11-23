@@ -30,6 +30,11 @@ model and role in that book. No retry, refund, reset or reserve spending was add
 Both real adapters accept their original standalone policy or a shared policy
 admitting their pinned model. Constructors verify selected model/accounting under
 original custody. Source, permission, owner and asynchronous-boundary checks remain.
+Constructing either adapter with its default outbound HTTP client now requires a
+durable spending store and typed owner; an omitted ledger fails before any call.
+The same admission requirement applies when a custom HTTP transport is injected.
+That transport can alter request routing and remains caller-controlled, but it
+cannot bypass reservation and settlement in either adapter.
 
 To use one shared book through environment configuration:
 
@@ -79,10 +84,14 @@ accounting is separate and never summed into this book. The server uses a fixed
 private endpoint, session cookie, no-store, redirect rejection, timeout and bounded
 256 KiB response; other protected reads retain their existing bounds.
 
-The view is a point-in-time snapshot with an explicit native GET refresh. It does
-not renew a live lease or perform provider calls, reserve spending, retries,
-refunds, migration or reset. Browser acceptance is pending under the preserved
-prior launch refusal. See ADR 0139 and evaluation 0139.
+The server reader remains a bounded point-in-time snapshot and never performs
+provider calls, reserves spending, retries, refunds, migration or reset. The Costs
+page now re-reads this and the independent call/review ledgers every 15 seconds
+while the shared authenticated PAPER stream is current. The live client withholds
+rows after stream loss, timeout or stale response; it does not renew source ledger
+leases or imply an atomic combination. Focused live route/store/browser-boundary
+tests cover these rules. Browser visual and accessibility acceptance remains
+pending under the preserved prior launch refusal. See ADR 0139 and evaluation 0139.
 
 ## Verification and remaining work
 
@@ -97,7 +106,7 @@ shared-budget failure. Existing provider/API/role/context/control regressions ru
 against fresh staged source with old schemas preserved.
 
 Actual billing and Jev billable overhead-bound correspondence remain open, as do
-platform allocation, additional families, realtime Costs, recovery spending,
+platform allocation, additional families, recovery spending,
 migration/retention, large-journal throughput/latency, deployment custody, browser
 and independent acceptance. Unknown Docker custody remains untouched. All P00–P13
 remain incomplete. See ADR 0138 and evaluation 0138.

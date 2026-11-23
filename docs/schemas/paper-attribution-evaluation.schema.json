@@ -473,6 +473,14 @@
           },
           "title": "Evidence Gaps",
           "type": "array"
+        },
+        "candidate_contributions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CandidateContribution"
+          },
+          "title": "Candidate Contributions",
+          "type": "array"
         }
       },
       "required": [
@@ -488,6 +496,125 @@
         "evidence_gaps"
       ],
       "title": "StrategyContributionReport",
+      "type": "object"
+    },
+    "CandidateContribution": {
+      "properties": {
+        "fill_count": {
+          "title": "Fill Count",
+          "type": "integer"
+        },
+        "net_quantity": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Net Quantity",
+          "type": "string"
+        },
+        "cash_flow_before_fees_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Cash Flow Before Fees Quote",
+          "type": "string"
+        },
+        "fee_cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Fee Cash Flow Quote",
+          "type": "string"
+        },
+        "cash_flow_quote": {
+          "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+          "title": "Cash Flow Quote",
+          "type": "string"
+        },
+        "marked_inventory_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Marked Inventory Quote"
+        },
+        "marked_pnl_quote": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Marked Pnl Quote"
+        },
+        "candidate_assignment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Candidate Assignment Id"
+        },
+        "candidate_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Candidate Id"
+        },
+        "genome_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Genome Sha256"
+        },
+        "strategy_id": {
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "strategy_version": {
+          "title": "Strategy Version",
+          "type": "string"
+        },
+        "instrument_id": {
+          "title": "Instrument Id",
+          "type": "string"
+        },
+        "quote_currency": {
+          "title": "Quote Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fill_count",
+        "net_quantity",
+        "cash_flow_before_fees_quote",
+        "fee_cash_flow_quote",
+        "cash_flow_quote",
+        "marked_inventory_quote",
+        "marked_pnl_quote",
+        "candidate_assignment_id",
+        "candidate_id",
+        "genome_sha256",
+        "strategy_id",
+        "strategy_version",
+        "instrument_id",
+        "quote_currency"
+      ],
+      "title": "CandidateContribution",
       "type": "object"
     }
   },

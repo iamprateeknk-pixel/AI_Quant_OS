@@ -106,7 +106,7 @@ def test_actual_development_windows_run_source_and_replay_with_pinned_identity(p
                 "-m",
                 "ai_quant_os.strategy_prefix_run_cli",
                 "--validation-archive",
-                str(tmp_path / "paper.validation-packages.sqlite3"),
+                str(tmp_path / "service.validation-packages.sqlite3"),
                 "--package-ref",
                 package.package_ref,
                 "--root",
@@ -144,38 +144,39 @@ def test_actual_development_windows_run_source_and_replay_with_pinned_identity(p
     from datetime import datetime, timezone
     from fastapi.testclient import TestClient
     from ai_quant_os.api import create_app
-    from ai_quant_os.candidate_validation_store import CandidateValidationStore
+    from test_validation_package_api import existing_validation_service
     from test_research_hypothesis_api import HEADERS
 
-    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
+    with existing_validation_service(tmp_path) as (validator_client, archive):
         assert (
             archive.put_evaluation(package, tested, holdout, tuple(completed_windows)) == scorecard
         )
-    with TestClient(
-        create_app(
-            operator_token="fixture-hypothesis",
-            paper_db_path=tmp_path / "paper.sqlite3",
-            clock=lambda: datetime.now(timezone.utc),
-        )
-    ) as client:
-        context = client.post(
-            "/api/v1/sandbox/validation-scientist/context",
-            headers=HEADERS,
-            json={"task_id": "actual-validation", "artifact_ref": scorecard.scorecard_ref},
-        )
-        assert context.status_code == 200, context.text
-        response = client.post(
-            "/api/v1/sandbox/validation-scientist/execute",
-            headers=HEADERS,
-            json={"run_id": "actual-validation", "context_ref": context.json()["context_ref"]},
-        )
-        assert response.status_code == 200, response.text
-        receipt = response.json()["receipt"]
-        assert receipt["status"] == "COMPLETED", receipt
-        output = json.loads(receipt["output_json"])
-        assert output["summary"]["artifact_ref"] == scorecard.scorecard_ref
-        assert len(output["summary"]["gates"]) == 15
-        assert output["promotion_allowed"] is False
-        (tmp_path / "validation-scientist-receipt.json").write_text(
-            json.dumps(receipt, sort_keys=True), encoding="utf-8"
-        )
+        with TestClient(
+            create_app(
+                operator_token="fixture-hypothesis",
+                paper_db_path=tmp_path / "paper.sqlite3",
+                clock=lambda: datetime.now(timezone.utc),
+                holdout_rpc_client=validator_client,
+            )
+        ) as client:
+            context = client.post(
+                "/api/v1/sandbox/validation-scientist/context",
+                headers=HEADERS,
+                json={"task_id": "actual-validation", "artifact_ref": scorecard.scorecard_ref},
+            )
+            assert context.status_code == 200, context.text
+            response = client.post(
+                "/api/v1/sandbox/validation-scientist/execute",
+                headers=HEADERS,
+                json={"run_id": "actual-validation", "context_ref": context.json()["context_ref"]},
+            )
+            assert response.status_code == 200, response.text
+            receipt = response.json()["receipt"]
+            assert receipt["status"] == "COMPLETED", receipt
+            output = json.loads(receipt["output_json"])
+            assert output["summary"]["artifact_ref"] == scorecard.scorecard_ref
+            assert len(output["summary"]["gates"]) == 15
+            assert output["promotion_allowed"] is False
+            (tmp_path / "validation-scientist-receipt.json").write_text(
+                json.dumps(receipt, sort_keys=True), encoding="utf-8"
+            )

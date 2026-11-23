@@ -1,4 +1,4 @@
-# Native paper HTTP metrics — increment 0151
+# Native paper HTTP and agent metrics — increments 0151/0226
 
 With optional paper tracing enabled, the same app owns a separate native OTel
 SDK 1.45.0 MeterProvider and cumulative reader. No global provider, periodic
@@ -11,10 +11,11 @@ Metrics remain disabled with the default `AI_QUANT_OTEL_ENABLED=0`.
 or unexpired session before and after the read. It returns uncached UTF-8
 Prometheus text 0.0.4, bounded to 1 MiB. Disabled, closed, incoherent or broken
 metrics return 503 with a fixed message, without fabricated zero samples. The
-`X-Paper-Metrics-Accounting: VOLATILE_SDK_HTTP_SCOPES` header states its scope.
+`X-Paper-Metrics-Accounting: VOLATILE_SDK_HTTP_AND_AGENT_EXECUTIONS` header states
+its scope.
 No browser credential or public unauthenticated metrics port is introduced.
 
-Two native SDK instruments are exposed:
+Four native SDK instruments are exposed:
 
 - `ai_quant_paper_http_duration_seconds`: cumulative histogram of elapsed ASGI
   scope time, including streaming body time, ending at normal return or exception.
@@ -22,6 +23,15 @@ Two native SDK instruments are exposed:
 - `ai_quant_paper_http_failures_total`: exceptions, cancellation or return without
   an acknowledged terminal response body. This differs from completed HTTP error
   responses, which remain visible through the histogram's status-class label.
+- `ai_quant_paper_agent_execution_duration_seconds`: elapsed monotonic time from
+  durable RUNNING admission to a terminal graph receipt. Graph attempts denied or
+  deferred during admission are measured through their terminal decision.
+  UNCERTAIN recovery observations have no attributable execution interval.
+- `ai_quant_paper_agent_executions_total`: terminal graph attempts by fixed agent
+  ID and outcome. These operational counts are not completion quality, model
+  accuracy, strategy performance, or promotion evidence.
+  UNCERTAIN recovery transitions increment this counter but intentionally have no
+  matching duration sample.
 
 Labels are only registered route template, fixed HTTP method and fixed response
 status class. Missing response status stays `UNKNOWN`. Raw path/query, request
@@ -31,6 +41,11 @@ are aggregated under `OTHER_ROUTE`, retaining method/status and every observatio
 at most 36 additional overflow combinations are possible. This deliberately loses
 route detail after capacity. Unknown routes use `UNMATCHED` without raw path data.
 Successful scrapes themselves enter the next observation after their body ends.
+Agent labels are limited to fixed A01–A18 and terminal status values (at most 162
+combinations). Task/run IDs, agent versions, contexts, sources, provider names,
+outputs, and prompts are omitted. Every non-UNCERTAIN counter must match exactly
+one duration series; UNCERTAIN has a count only. This distinction is enforced
+before exposition.
 
 The SDK's non-cumulative buckets are converted to cumulative Prometheus buckets
 in increasing order, including `+Inf == _count`. Counts remain strict integers;
@@ -48,21 +63,32 @@ sum(rate(ai_quant_paper_http_duration_seconds_count[5m]))
 sum(rate(ai_quant_paper_http_duration_seconds_count{status_class="5xx"}[5m]))
 sum(rate(ai_quant_paper_http_failures_total[5m]))
 histogram_quantile(0.95, sum by (le) (rate(ai_quant_paper_http_duration_seconds_bucket[5m])))
+sum by (agent_id,status) (rate(ai_quant_paper_agent_executions_total[5m]))
+histogram_quantile(0.95, sum by (le) (rate(ai_quant_paper_agent_execution_duration_seconds_bucket[5m])))
 ```
 
-They do not assert current throughput, SLO thresholds or an installed dashboard.
-Use existing private server credentials through separately configured scraper
-headers, never committed config values or UI inputs. Scraper/service deployment,
-credential lifecycle, native Prometheus parsing/ingestion, Grafana dashboards,
+The provisioned Grafana dashboard includes HTTP panels and agent attempt-rate
+and bucket-estimated p95 panels. The agent panels expose fixed agent/status
+labels and label attempt counts as operational activity, not quality. Missing
+attributable duration samples remain absent; p95 is not an SLA. These panels do
+not assert current throughput or a current source health state. Use existing
+private server credentials through separately configured scraper headers, never
+committed config values or UI inputs. Native Prometheus ingestion and both
+provisioned p95 expressions are exercised locally; the panels suppress zero-rate
+histograms so Grafana does not receive a `NaN` quantile when no durations accrue.
+Scraper/service deployment, credential lifecycle, browser-render acceptance,
 justified alerts and delivery tests remain pending. The collector's trace-only
 configuration is unchanged; metrics are not sent to its OTLP receiver.
 
 ## Verification, lifecycle and rollback
 
-Native tests check exact bucket boundaries/count/sum, repeated cumulative reads,
-overflow conservation, concurrent original SDK records, actual order/replay API
+Native tests check exact HTTP and agent bucket boundaries/count/sum, repeated
+cumulative reads, overflow conservation, concurrent SDK records, actual order/replay API
 observations, secret omission, authentication/revocation, disabled/broken reads,
 record failure without changed orders and actual ASGI exception/cancellation.
+The pinned local Grafana/Prometheus integration also executes PAPER HTTP and
+agent observations, scrapes both duration counters, and verifies the provisioned
+HTTP and agent p95 expressions return positive observations.
 App shutdown closes its metrics owner without resetting/restarting trace workers.
 SDK metric errors are counted as instrumentation errors and do not change paper
 risk/order/HALT authority. Counts are volatile and restart begins a new inventory.

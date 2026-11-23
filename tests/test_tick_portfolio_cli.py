@@ -89,7 +89,7 @@ def test_actual_cli_exports_source_bound_native_report_immutably(tmp_path):
     jsonschema.validate(
         record["report"],
         json.loads(
-            (schemas / "native-tick-portfolio-report.schema.json").read_text(encoding="utf-8")
+            (schemas / "native-tick-portfolio-report-v1.2.schema.json").read_text(encoding="utf-8")
         ),
     )
     jsonschema.validate(

@@ -64,11 +64,183 @@ def test_asynchronous_quotes_share_one_native_account_and_reproduce(tmp_path, mo
     )
     assert result.net_pnl_usd == Decimal("-10.6050")
     assert all(leg.final_position == 10 for leg in result.legs)
+    assert result.schema_version == "1.2"
+    assert result.replay_model == "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V3"
+    assert result.liquidation is None
     assert [f.quantity for f in result.legs[0].fills] == [10, 20, 20]
     assert result == m.run_native_tick_portfolio(
         tuple(reversed(source)), StrategyRegistry(tmp_path / "b"), fee_per_order_usd=Decimal(".10")
     )
     m.verify_tick_portfolio_report(result)
+    legacy = replace(
+        result,
+        schema_version="1.1",
+        replay_model="ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2",
+        maintenance_model=None,
+    )
+    m.verify_tick_portfolio_report(legacy)
+    import json
+    from pathlib import Path
+    from jsonschema import Draft202012Validator
+    from pydantic import TypeAdapter
+
+    legacy_schema = json.loads(
+        (
+            Path(__file__).parents[1] / "docs/schemas/native-tick-portfolio-report.schema.json"
+        ).read_text()
+    )
+    Draft202012Validator(legacy_schema).validate(
+        TypeAdapter(m.TickPortfolioReport).dump_python(legacy, mode="json")
+    )
+    current_schema = json.loads(
+        (
+            Path(__file__).parents[1] / "docs/schemas/native-tick-portfolio-report-v1.2.schema.json"
+        ).read_text()
+    )
+    Draft202012Validator(current_schema).validate(
+        TypeAdapter(m.TickPortfolioReport).dump_python(legacy, mode="json")
+    )
+
+
+def test_async_tick_portfolio_liquidates_all_legs_after_maintenance_breach(tmp_path):
+    import copy
+
+    m = module()
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    prices = ("1.1", "1.0", ".9", "1.0", "2.0", "2.5")
+    legs = tuple(
+        m.TickPortfolioInput(
+            TickDataset(
+                Tick(
+                    instrument,
+                    "fixture",
+                    index,
+                    start + timedelta(seconds=2 * index + offset),
+                    Decimal(price),
+                    Decimal(price) + Decimal(".0001"),
+                    Decimal(1000000),
+                    Decimal(1000000),
+                )
+                for index, price in enumerate(prices)
+            ),
+            StrategyGenome("tick-momentum@1.0.0", "TICK"),
+            10,
+        )
+        for instrument, offset in (("EURUSD", 0), ("GBPUSD", 1))
+    )
+
+    report = m.run_native_tick_portfolio(
+        legs, StrategyRegistry(tmp_path / "maintenance"), initial_balance_usd=Decimal("40")
+    )
+
+    assert report.liquidation is not None
+    assert report.schema_version == "1.2"
+    assert report.liquidation.triggered_at == start + timedelta(seconds=8)
+    assert report.liquidation.instruments == ("EURUSD", "GBPUSD")
+    assert report.liquidation.equity_usd < report.liquidation.required_margin_usd
+    assert all(leg.final_position == 0 for leg in report.legs)
+    assert all(leg.fills[-1].observed_at >= report.liquidation.triggered_at for leg in report.legs)
+    m.verify_tick_portfolio_report(report)
+    import json
+    from pathlib import Path
+    from jsonschema import Draft202012Validator, ValidationError
+    from pydantic import TypeAdapter
+
+    schema = json.loads(
+        (
+            Path(__file__).parents[1] / "docs/schemas/native-tick-portfolio-report-v1.2.schema.json"
+        ).read_text()
+    )
+    validator = Draft202012Validator(schema)
+    exported = TypeAdapter(m.TickPortfolioReport).dump_python(report, mode="json")
+    validator.validate(exported)
+    exponent = copy.deepcopy(exported)
+    exponent["native_balance_usd"] = "1E-7"
+    exponent["legs"][0]["fills"][0]["price"] = "1E-7"
+    validator.validate(exponent)
+    numeric = copy.deepcopy(exported)
+    numeric["native_balance_usd"] = 0.0000001
+    with pytest.raises(ValidationError):
+        validator.validate(numeric)
+    with pytest.raises(ValueError, match="liquidation"):
+        m.verify_tick_portfolio_report(
+            replace(
+                report,
+                liquidation=replace(report.liquidation, equity_usd=Decimal("39")),
+            )
+        )
+
+
+def test_async_tick_liquidation_refuses_export_when_an_affected_leg_has_no_exit_quote(
+    tmp_path,
+):
+    m = module()
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    prices = ("1.1", "1.0", ".9", "1.0", "2.0", "2.5")
+    full = inputs()
+    truncated = replace(
+        full[1],
+        dataset=TickDataset(
+            Tick(
+                "GBPUSD",
+                "fixture",
+                index,
+                start + timedelta(seconds=2 * index + 1),
+                Decimal(price),
+                Decimal(price) + Decimal(".0001"),
+                Decimal(1000000),
+                Decimal(1000000),
+            )
+            for index, price in enumerate(prices[:4])
+        ),
+    )
+    eur = replace(
+        full[0],
+        dataset=TickDataset(
+            replace(tick, bid=Decimal(price), ask=Decimal(price) + Decimal(".0001"))
+            for tick, price in zip(full[0].dataset.ticks[:6], prices, strict=True)
+        ),
+    )
+
+    with pytest.raises(ValueError, match="did not close every leg"):
+        m.run_native_tick_portfolio(
+            (eur, truncated),
+            StrategyRegistry(tmp_path / "missing-exit"),
+            initial_balance_usd=Decimal("40"),
+        )
+
+
+def test_async_maintenance_ignores_unpositioned_leg_before_first_quote(tmp_path):
+    m = module()
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    prices = ("1.1", "1.0", ".9", "1.0", "1.1", "1.2", "1.1", "1.0", "1.1", "1.2", "1.1")
+    legs = tuple(
+        m.TickPortfolioInput(
+            TickDataset(
+                Tick(
+                    instrument,
+                    "fixture",
+                    index,
+                    start + timedelta(seconds=2 * (index + first_index) + offset),
+                    Decimal(price),
+                    Decimal(price) + Decimal(".0001"),
+                    Decimal(1000000),
+                    Decimal(1000000),
+                )
+                for index, price in enumerate(prices[first_index:])
+            ),
+            StrategyGenome("tick-momentum@1.0.0", "TICK"),
+            10,
+        )
+        for instrument, offset, first_index in (("EURUSD", 0, 0), ("GBPUSD", 0, 5))
+    )
+
+    report = m.run_native_tick_portfolio(legs, StrategyRegistry(tmp_path / "delayed-leg"))
+
+    assert report.liquidation is None
+    assert report.legs[0].fills
+    assert all(fill.observed_at >= start + timedelta(seconds=10) for fill in report.legs[1].fills)
+    m.verify_tick_portfolio_report(report)
 
 
 def test_partial_tick_liquidity_limits_each_fill_to_displayed_side_size(tmp_path):
@@ -91,9 +263,9 @@ def test_partial_tick_liquidity_limits_each_fill_to_displayed_side_size(tmp_path
         fee_per_order_usd=Decimal(".10"),
     )
 
-    assert report.schema_version == "1.1"
+    assert report.schema_version == "1.2"
     assert report.liquidity_model == "SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1"
-    assert report.replay_model == "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"
+    assert report.replay_model == "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V3"
     assert any(fill.quantity < Decimal(10) for leg in report.legs for fill in leg.fills)
     assert report.total_fees_usd == Decimal(report.native_order_count) * Decimal(".10")
     for leg in report.legs:

@@ -14,6 +14,7 @@ from math import isfinite
 from urllib.parse import urlsplit
 
 import httpx
+from ai_quant_os.agent_permissions import KNOWN_TOOLS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -115,11 +116,23 @@ class PaperSpan:
                 "FAILED",
                 "INVALID",
             }
+            or key == "ai_quant.agent.id"
+            and isinstance(value, str)
+            and re.fullmatch(r"A(?:0[1-9]|1[0-8])", value)
+            or key == "ai_quant.agent.version"
+            and isinstance(value, str)
+            and re.fullmatch(r"\d+\.\d+\.\d+", value)
+            or key == "ai_quant.agent.phase"
+            and value in {"ADMIT", "EXECUTE", "FINALIZE", "INVOKE", "TOOL", "SOURCE"}
+            or key == "ai_quant.agent.tool"
+            and value in KNOWN_TOOLS
             or key
             in {
                 "ai_quant.order.id",
                 "ai_quant.agent.envelope_id",
                 "ai_quant.agent.parent_envelope_id",
+                "ai_quant.intent.id",
+                "ai_quant.risk.id",
             }
             and isinstance(value, str)
             and re.fullmatch(r"[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}", value)
@@ -194,6 +207,12 @@ class PaperTelemetry:
             "paper.agent.archive",
             "paper.provider.classify",
             "paper.provider.review",
+            "paper.agent.graph.admit",
+            "paper.agent.graph.execute",
+            "paper.agent.invoke",
+            "paper.agent.tool.call",
+            "paper.agent.source.read",
+            "paper.agent.graph.finalize",
         }
         manager = None
         native = None
@@ -283,6 +302,13 @@ class PaperTelemetry:
         if self._metrics:
             try:
                 self._metrics.record(route, method, status, elapsed_ns, failed)
+            except Exception:
+                self._note_error()
+
+    def record_agent(self, agent_id, status, elapsed_ns):
+        if self._metrics:
+            try:
+                self._metrics.record_agent(agent_id, status, elapsed_ns)
             except Exception:
                 self._note_error()
 

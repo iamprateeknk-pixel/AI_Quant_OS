@@ -46,7 +46,7 @@ def test_admission_precedes_handler_and_retains_failed_calls_across_versions(tmp
 
     async def run():
         for version in ("0.1.0", "0.2.0"):
-            with pytest.raises(ValueError, match="Agent tool failed"):
+            with pytest.raises(RuntimeError, match="Agent tool failed"):
                 await boundary.call("A02", version, "WORLD_STATE_READ", scope="PAPER", payload={})
         with pytest.raises(PermissionError, match="call budget"):
             await boundary.call("A02", "0.2.0", "WORLD_STATE_READ", scope="PAPER", payload={})
@@ -137,7 +137,7 @@ def test_protected_budget_status_and_paper_controls_survive_budget_corruption(tm
         status = client.get(url, headers={"X-Operator-Token": "operator"}).json()
         assert status["state"] == "ENFORCED" and len(status["agents"]) == 18
         assert status["recovery_spending_enabled"] is False
-        with pytest.raises(ValueError, match="Agent tool failed"):
+        with pytest.raises(PermissionError, match="Agent tool denied"):
             asyncio.run(
                 app.state.graph_runtime._tools.call(
                     "A01", "0.2.0", "TASK_ORCHESTRATE", scope="PAPER", payload={}

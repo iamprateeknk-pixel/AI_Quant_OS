@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.2",
   "mode": "PAPER",
   "delivery_verified": false,
   "independently_attested": false,
@@ -11,6 +11,7 @@
     {
       "trace_id": "1246073003b87d2f13578a90bfc60fff",
       "span_id": "e84c406ac6587a6c",
+      "source_ordinal": 0,
       "parent_span_id": null,
       "name": "paper.http",
       "start_ns": "1791739170917225900",
@@ -20,6 +21,8 @@
       "http_route": "/api/v1/paper/intents",
       "http_status": 200,
       "risk_decision": null,
+      "intent_id": null,
+      "risk_id": null,
       "order_id": null,
       "order_status": null,
       "envelope_id": null,
@@ -30,6 +33,7 @@
     {
       "trace_id": "1246073003b87d2f13578a90bfc60fff",
       "span_id": "16b5ca0e205419bc",
+      "source_ordinal": 0,
       "parent_span_id": "e84c406ac6587a6c",
       "name": "paper.risk.evaluate",
       "start_ns": "1791739170932195600",
@@ -39,6 +43,8 @@
       "http_route": null,
       "http_status": null,
       "risk_decision": "APPROVE",
+      "intent_id": "9f0385a1-2c4a-4b62-9d73-429062a645fe",
+      "risk_id": "f6a87d91-504b-4ca1-8a92-37412eae489d",
       "order_id": null,
       "order_status": null,
       "envelope_id": null,
@@ -49,6 +55,7 @@
     {
       "trace_id": "1246073003b87d2f13578a90bfc60fff",
       "span_id": "bad36e71903d6601",
+      "source_ordinal": 0,
       "parent_span_id": "e84c406ac6587a6c",
       "name": "paper.market.snapshot",
       "start_ns": "1791739170932195600",
@@ -58,6 +65,8 @@
       "http_route": null,
       "http_status": null,
       "risk_decision": null,
+      "intent_id": "9f0385a1-2c4a-4b62-9d73-429062a645fe",
+      "risk_id": null,
       "order_id": null,
       "order_status": null,
       "envelope_id": null,
@@ -68,6 +77,7 @@
     {
       "trace_id": "1246073003b87d2f13578a90bfc60fff",
       "span_id": "c2b02ba7f2600ac7",
+      "source_ordinal": 0,
       "parent_span_id": "e84c406ac6587a6c",
       "name": "paper.order.submit",
       "start_ns": "1791739170932612500",
@@ -77,6 +87,8 @@
       "http_route": null,
       "http_status": null,
       "risk_decision": null,
+      "intent_id": "9f0385a1-2c4a-4b62-9d73-429062a645fe",
+      "risk_id": "f6a87d91-504b-4ca1-8a92-37412eae489d",
       "order_id": "db630e40-7cd0-4065-a74d-98da6ce49912",
       "order_status": "ACCEPTED",
       "envelope_id": null,
@@ -88,8 +100,8 @@
   "files": [
     {
       "ordinal": 0,
-      "prefix_bytes": 3408,
-      "prefix_sha256": "3d299ba06ceaa39006bc5cc5092127a5cac3d50d9cf9903fa5c5f23adb234f67"
+      "prefix_bytes": 3864,
+      "prefix_sha256": "cf2d8f57422020a4f5bbb204275b250d5b4156cae9577a554f8b64ee1baed757"
     }
   ]
 }

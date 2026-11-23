@@ -103,7 +103,16 @@ def test_opt_in_telemetry_supervises_local_collector_and_retains_request_trace(
     from ai_quant_os.local_runtime import LocalSettings, local_application
 
     root = Path.cwd()
-    collector = root / "data-local/tools/otelcol-contrib-0.162.0/otelcol-contrib.exe"
+    default_collector = root / "data-local/tools/otelcol-contrib-0.162.0"
+    collector = Path(
+        os.environ.get(
+            "AI_QUANT_NATIVE_COLLECTOR_EXE",
+            str(
+                default_collector
+                / ("otelcol-contrib.exe" if os.name == "nt" else "otelcol-contrib")
+            ),
+        )
+    )
     if not collector.is_file():
         pytest.skip("Pinned local OpenTelemetry Collector is not installed")
     ports = _available_local_ports(3)

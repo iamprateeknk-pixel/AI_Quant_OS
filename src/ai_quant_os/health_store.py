@@ -9,7 +9,7 @@ from threading import Lock
 from dataclasses import dataclass
 
 from ai_quant_os.audit_chain import AuditChain
-from ai_quant_os.health_contracts import HealthIncident
+from ai_quant_os.health_contracts import AGENT_CODES, HealthIncident
 
 
 class HealthPageChanged(ValueError):
@@ -76,6 +76,7 @@ class HealthStore:
             "FROM health_transitions ORDER BY incident_id, rowid"
         ).fetchall()
         closed = set()
+        authorized_repairs = set()
         sequence = {}
         for transition_id, incident_id, raw, digest in transition_rows:
             if len(raw.encode()) > 4096 or sha256(raw.encode()).hexdigest() != digest:
@@ -93,12 +94,23 @@ class HealthStore:
                 raise ValueError("Health transition timestamp integrity failed") from error
             expected_sequence = sequence.get(incident_id, 0) + 1
             sequence[incident_id] = expected_sequence
+            expected_keys = {
+                "action",
+                "at",
+                "command_id",
+                "incident_id",
+                "reason",
+                "transition_id",
+            }
+            if event.get("action") == "REPAIR_CLOSURE_AUTHORIZED":
+                expected_keys.add("closure_ref")
             if (
                 event.get("transition_id") != transition_id
                 or transition_id != f"{incident_id}:{expected_sequence}"
                 or event.get("incident_id") != incident_id
-                or event.get("action") not in {"CLOSED", "REOPENED"}
+                or event.get("action") not in {"CLOSED", "REOPENED", "REPAIR_CLOSURE_AUTHORIZED"}
                 or json.dumps(event, sort_keys=True, separators=(",", ":")) != raw
+                or set(event) != expected_keys
                 or transition_at.utcoffset() is None
                 or transition_at.utcoffset().total_seconds() != 0
             ):
@@ -106,21 +118,42 @@ class HealthStore:
             if event["action"] == "CLOSED":
                 if (
                     incident_data.get("code")
-                    not in {"QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"}
+                    not in {
+                        "QUOTE_MISSING",
+                        "QUOTE_STALE",
+                        "QUOTE_FUTURE",
+                        "QUOTE_UNTRUSTED",
+                    }
                     or incident_id in closed
                     or not event.get("command_id")
                     or not event.get("reason")
                 ):
                     raise ValueError("Health closure transition policy failed")
                 closed.add(incident_id)
-            else:
+            elif event["action"] == "REOPENED":
                 if (
                     incident_id not in closed
                     or event.get("command_id") is not None
                     or event.get("reason") is not None
+                    or "closure_ref" in event
                 ):
                     raise ValueError("Health reopening transition policy failed")
                 closed.remove(incident_id)
+            else:
+                closure_ref = event.get("closure_ref")
+                if (
+                    incident_data.get("code") not in AGENT_CODES
+                    or not isinstance(closure_ref, str)
+                    or not closure_ref.startswith("repair-closure:")
+                    or len(closure_ref) != 79
+                    or any(char not in "0123456789abcdef" for char in closure_ref[15:])
+                    or event.get("command_id") != closure_ref
+                    or event.get("reason") != "CATALOG_RELEASE_REQUIRED"
+                    or incident_id in closed
+                    or incident_id in authorized_repairs
+                ):
+                    raise ValueError("Repair closure authorization policy failed")
+                authorized_repairs.add(incident_id)
             audit = self._db.execute(
                 "SELECT event_json FROM audit_events WHERE event_key = ?",
                 (f"health-transition:{transition_id}",),
@@ -134,7 +167,9 @@ class HealthStore:
                 raise ValueError("Health transition audit binding failed")
         return integrity
 
-    def _append_transition(self, incident_id, action, *, at, command_id=None, reason=None):
+    def _append_transition(
+        self, incident_id, action, *, at, command_id=None, reason=None, closure_ref=None
+    ):
         count = self._db.execute(
             "SELECT COUNT(*) FROM health_transitions WHERE incident_id = ?", (incident_id,)
         ).fetchone()[0]
@@ -147,6 +182,8 @@ class HealthStore:
             "reason": reason,
             "transition_id": transition_id,
         }
+        if action == "REPAIR_CLOSURE_AUTHORIZED":
+            event["closure_ref"] = closure_ref
         raw = json.dumps(event, sort_keys=True, separators=(",", ":"))
         digest = sha256(raw.encode()).hexdigest()
         self._db.execute(
@@ -163,6 +200,48 @@ class HealthStore:
             },
         )
         return event
+
+    def record_repair_closure_authorized(self, incident_id, *, closure_ref, authorized_at):
+        """Journal a repair authorization without closing the quarantined incident."""
+        if (
+            not isinstance(closure_ref, str)
+            or len(closure_ref) != 79
+            or not closure_ref.startswith("repair-closure:")
+            or any(char not in "0123456789abcdef" for char in closure_ref[15:])
+            or not isinstance(authorized_at, datetime)
+            or authorized_at.utcoffset() is None
+            or authorized_at.utcoffset().total_seconds() != 0
+        ):
+            raise ValueError("Invalid repair closure authorization")
+        with self._lock, self._db:
+            self._db.execute("BEGIN IMMEDIATE")
+            self._require_valid()
+            incident = self._read(incident_id)
+            if incident is None or incident.code not in AGENT_CODES:
+                raise ValueError("Repair closure authorization requires an agent incident")
+            prior_events = tuple(
+                json.loads(row[0])
+                for row in self._db.execute(
+                    "SELECT transition_json FROM health_transitions "
+                    "WHERE incident_id = ? ORDER BY rowid",
+                    (incident_id,),
+                )
+            )
+            authorizations = [
+                event for event in prior_events if event["action"] == "REPAIR_CLOSURE_AUTHORIZED"
+            ]
+            if authorizations:
+                if len(authorizations) == 1 and authorizations[0]["closure_ref"] == closure_ref:
+                    return authorizations[0]
+                raise ValueError("Agent incident already has a different repair authorization")
+            return self._append_transition(
+                incident_id,
+                "REPAIR_CLOSURE_AUTHORIZED",
+                at=authorized_at,
+                command_id=closure_ref,
+                reason="CATALOG_RELEASE_REQUIRED",
+                closure_ref=closure_ref,
+            )
 
     def transitions(self, incident_id):
         return self.transition_map((incident_id,)).get(incident_id, ())
@@ -198,7 +277,12 @@ class HealthStore:
             incident = self._read(incident_id)
             if incident is None:
                 raise ValueError("Unknown health incident")
-            if incident.code not in {"QUOTE_STALE", "QUOTE_FUTURE", "QUOTE_UNTRUSTED"}:
+            if incident.code not in {
+                "QUOTE_MISSING",
+                "QUOTE_STALE",
+                "QUOTE_FUTURE",
+                "QUOTE_UNTRUSTED",
+            }:
                 raise ValueError("Only quote incidents may be closed")
             prior = self._db.execute(
                 "SELECT transition_json FROM health_transitions WHERE incident_id = ? ORDER BY rowid DESC LIMIT 1",

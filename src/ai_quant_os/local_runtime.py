@@ -3,6 +3,7 @@
 import json
 import math
 import os
+import platform
 import secrets
 import shutil
 import socket
@@ -175,11 +176,38 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _collector_distribution(
+    checkout: Path, *, system: str | None = None, machine: str | None = None
+) -> tuple[Path, str]:
+    system = system or platform.system()
+    machine = (machine or platform.machine()).lower()
+    if system == "Windows" and machine in {"amd64", "x86_64"}:
+        manifest_path = checkout / "infra/observability/collector-release.json"
+        binary = checkout / "data-local/tools/otelcol-contrib-0.162.0/otelcol-contrib.exe"
+        expected_platform = "windows_amd64"
+    elif system == "Linux" and machine in {"amd64", "x86_64"}:
+        manifest_path = checkout / "infra/observability/collector-linux-release.json"
+        binary = checkout / "data-local/tools/otelcol-contrib-0.162.0/otelcol-contrib"
+        expected_platform = "linux_amd64"
+    else:
+        raise RuntimeError("unsupported managed OpenTelemetry Collector platform")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    digest = manifest.get("executable_sha256")
+    if (
+        manifest.get("version") != "0.162.0"
+        or manifest.get("platform") != expected_platform
+        or not isinstance(digest, str)
+        or len(digest) != 64
+        or any(character not in "0123456789abcdef" for character in digest)
+    ):
+        raise RuntimeError("pinned OpenTelemetry Collector manifest is invalid")
+    return binary, digest
+
+
 def _start_managed_collector(settings: LocalSettings, environment: dict[str, str]):
     checkout = settings.checkout.resolve()
-    manifest = json.loads((checkout / "infra/observability/collector-release.json").read_text())
-    binary = checkout / "data-local/tools/otelcol-contrib-0.162.0/otelcol-contrib.exe"
-    if not binary.is_file() or _sha256(binary) != manifest["executable_sha256"]:
+    binary, expected_hash = _collector_distribution(checkout)
+    if not binary.is_file() or _sha256(binary) != expected_hash:
         raise ValueError("Pinned OpenTelemetry Collector missing or hash mismatch")
     endpoint = urlsplit(environment["AI_QUANT_OTEL_ENDPOINT"])
     port = endpoint.port

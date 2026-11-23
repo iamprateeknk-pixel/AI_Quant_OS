@@ -1,4 +1,4 @@
-"""Protected original native HTTP metrics; reading grants no trading authority."""
+"""Protected volatile native HTTP and agent metrics; reads grant no authority."""
 
 from typing import Callable
 
@@ -27,7 +27,7 @@ def install_paper_metrics_routes(
         if text is None:
             raise HTTPException(
                 status_code=503,
-                detail="Original HTTP metrics unavailable",
+                detail="Original observability metrics unavailable",
                 headers={"Cache-Control": "no-store"},
             )
         return Response(
@@ -35,6 +35,6 @@ def install_paper_metrics_routes(
             headers={
                 "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
                 "Cache-Control": "no-store",
-                "X-Paper-Metrics-Accounting": "VOLATILE_SDK_HTTP_SCOPES",
+                "X-Paper-Metrics-Accounting": "VOLATILE_SDK_HTTP_AND_AGENT_EXECUTIONS",
             },
         )

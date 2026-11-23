@@ -37,6 +37,12 @@ class CollectorSpan(BaseModel):
     )
     http_status: int | None = Field(default=None, strict=True, ge=100, le=599)
     risk_decision: Literal["APPROVE", "REJECT", "HALT"] | None = None
+    intent_id: str | None = Field(
+        default=None, pattern=r"^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$"
+    )
+    risk_id: str | None = Field(
+        default=None, pattern=r"^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$"
+    )
     order_id: str | None = Field(
         default=None, pattern=r"^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$"
     )
@@ -80,6 +86,10 @@ class CollectorSpan(BaseModel):
         ):
             raise ValueError("Selected original SDK ordering required")
         return self
+
+
+class CollectorSourceSpan(CollectorSpan):
+    source_ordinal: int = Field(strict=True, ge=0, le=3)
 
 
 def attributes(rows):
@@ -134,6 +144,8 @@ def select_spans(document, trace_id):
                     "http.request.method": "http_method",
                     "http.route": "http_route",
                     "ai_quant.risk.decision": "risk_decision",
+                    "ai_quant.intent.id": "intent_id",
+                    "ai_quant.risk.id": "risk_id",
                     "ai_quant.order.id": "order_id",
                     "ai_quant.order.status": "order_status",
                     "ai_quant.agent.envelope_id": "envelope_id",

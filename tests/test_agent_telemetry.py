@@ -5,15 +5,28 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+import pytest
 
+import ai_quant_os.api as api_module
 from ai_quant_os.agent_call_policy import AgentCallPolicy, AgentCallRule
 from ai_quant_os.api import create_app
 from ai_quant_os.paper_telemetry import PaperTelemetry
-from ai_quant_os.provider_call_admission import ProviderOwner
+from ai_quant_os.provider_call_admission import ProviderCallAdmission, ProviderOwner
 
 NOW = datetime(2026, 10, 11, tzinfo=timezone.utc)
 HEADERS = {"X-Operator-Token": "private-token"}
 PATH = "/api/v1/paper/decisions/classify"
+
+
+@pytest.fixture(autouse=True)
+def _provider_deadline_with_test_scheduler_headroom(monkeypatch):
+    original_gateway = api_module.DecisionGateway
+
+    def gateway_with_headroom(**kwargs):
+        kwargs.setdefault("timeout_seconds", 2)
+        return original_gateway(**kwargs)
+
+    monkeypatch.setattr(api_module, "DecisionGateway", gateway_with_headroom)
 
 
 class Classifier:
@@ -272,3 +285,17 @@ def test_provider_exception_records_fixed_sdk_error_and_preserves_fallback_and_h
         )
     finally:
         telemetry.close()
+
+
+def test_admission_latency_does_not_skip_the_provider_telemetry_path(tmp_path, monkeypatch):
+    original_reserve = ProviderCallAdmission.reserve
+
+    async def delayed_reserve(self, provider, snapshot, instrument, decision=None):
+        await asyncio.sleep(0.25)
+        return await original_reserve(self, provider, snapshot, instrument, decision)
+
+    monkeypatch.setattr(ProviderCallAdmission, "reserve", delayed_reserve)
+    response, classifier, reviewer = invoke(tmp_path, PaperTelemetry())
+
+    assert classifier.calls == reviewer.calls == 1
+    assert response.json()["deep_review"]["output"]["status"] == "COMPLETED"

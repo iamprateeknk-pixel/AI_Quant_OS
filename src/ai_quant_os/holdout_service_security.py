@@ -1,5 +1,6 @@
 """Windows HOLDOUT directory ACL creation and post-write verification."""
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -16,14 +17,22 @@ _PIPE_CLIENT_ACCESS = (0x80000000 | 0x40000000 | 0x00100000) - 0x100000000
 class HoldoutDirectoryAcl:
     service_sid: str
     system_sid: str = _SYSTEM_SID
+    staging_sid: str | None = None
 
 
 def build_holdout_acl(rules: HoldoutDirectoryAcl, *, security):
-    """Build a protected DACL that grants inheritable full access to two SIDs."""
+    """Build a protected DACL for service/system and an optional staging operator."""
     if (
         not _SERVICE_SID.fullmatch(rules.service_sid)
         or rules.system_sid != _SYSTEM_SID
         or rules.service_sid == rules.system_sid
+        or (
+            rules.staging_sid is not None
+            and (
+                not _SID.fullmatch(rules.staging_sid)
+                or rules.staging_sid in {rules.service_sid, rules.system_sid}
+            )
+        )
     ):
         raise ValueError("Invalid HOLDOUT ACL principals")
     acl = security.ACL()
@@ -34,6 +43,13 @@ def build_holdout_acl(rules: HoldoutDirectoryAcl, *, security):
             inheritance,
             _FILE_ALL_ACCESS,
             security.ConvertStringSidToSid(sid_text),
+        )
+    if rules.staging_sid is not None:
+        acl.AddAccessAllowedAceEx(
+            security.ACL_REVISION,
+            inheritance,
+            _FILE_ALL_ACCESS,
+            security.ConvertStringSidToSid(rules.staging_sid),
         )
     return acl
 
@@ -86,6 +102,61 @@ def current_process_user_sid(*, security=None, process_api=None) -> str:
         return rendered
     finally:
         process_api.CloseHandle(token)
+
+
+def _luid_key(luid):
+    if isinstance(luid, int):
+        return luid
+    if isinstance(luid, tuple):
+        return tuple(luid)
+    return luid.HighPart, luid.LowPart
+
+
+@contextmanager
+def _enabled_restore_privilege(*, security, process_api):
+    """Temporarily enable SeRestorePrivilege, failing before callers mutate data."""
+    token = security.OpenProcessToken(
+        process_api.GetCurrentProcess(),
+        security.TOKEN_ADJUST_PRIVILEGES | security.TOKEN_QUERY,
+    )
+    restore_attributes = None
+    privilege_luid = None
+    restore_needed = False
+    try:
+        privilege_luid = security.LookupPrivilegeValue(None, security.SE_RESTORE_NAME)
+        privilege_key = _luid_key(privilege_luid)
+        for luid, attributes in security.GetTokenInformation(token, security.TokenPrivileges):
+            if _luid_key(luid) == privilege_key:
+                restore_attributes = attributes
+                break
+        if restore_attributes is None:
+            raise PermissionError(
+                "SeRestorePrivilege is not assigned to the elevated installer token"
+            )
+
+        restore_needed = True
+        security.AdjustTokenPrivileges(
+            token,
+            False,
+            ((privilege_luid, security.SE_PRIVILEGE_ENABLED),),
+        )
+        current_privileges = security.GetTokenInformation(token, security.TokenPrivileges)
+        if not any(
+            _luid_key(luid) == privilege_key and attributes & security.SE_PRIVILEGE_ENABLED
+            for luid, attributes in current_privileges
+        ):
+            raise PermissionError("Unable to enable SeRestorePrivilege for HOLDOUT ownership setup")
+        yield
+    finally:
+        try:
+            if restore_needed:
+                security.AdjustTokenPrivileges(
+                    token,
+                    False,
+                    ((privilege_luid, restore_attributes),),
+                )
+        finally:
+            process_api.CloseHandle(token)
 
 
 def verify_pipe_server_identity(
@@ -154,12 +225,14 @@ def _require_exact_acl(
     security,
     require_owner: bool = True,
     require_inheritable: bool = True,
+    descriptor=None,
 ) -> None:
-    descriptor = security.GetNamedSecurityInfo(
-        str(path),
-        security.SE_FILE_OBJECT,
-        security.DACL_SECURITY_INFORMATION | security.OWNER_SECURITY_INFORMATION,
-    )
+    if descriptor is None:
+        descriptor = security.GetNamedSecurityInfo(
+            str(path),
+            security.SE_FILE_OBJECT,
+            security.DACL_SECURITY_INFORMATION | security.OWNER_SECURITY_INFORMATION,
+        )
     dacl = descriptor.GetSecurityDescriptorDacl()
     owner = security.ConvertSidToStringSid(descriptor.GetSecurityDescriptorOwner())
     if dacl is None or (require_owner and owner != rules.service_sid):
@@ -176,12 +249,13 @@ def _require_exact_acl(
         ):
             raise PermissionError("HOLDOUT directory ACE is not inherited")
         observed.append((access, security.ConvertSidToStringSid(sid)))
-    expected = sorted(
-        (
-            (_FILE_ALL_ACCESS, rules.service_sid),
-            (_FILE_ALL_ACCESS, rules.system_sid),
-        )
-    )
+    expected_rules = [
+        (_FILE_ALL_ACCESS, rules.service_sid),
+        (_FILE_ALL_ACCESS, rules.system_sid),
+    ]
+    if rules.staging_sid is not None:
+        expected_rules.append((_FILE_ALL_ACCESS, rules.staging_sid))
+    expected = sorted(expected_rules)
     if sorted(observed) != expected:
         raise PermissionError("HOLDOUT directory DACL differs from policy")
 
@@ -221,11 +295,38 @@ def _holdout_children(root: Path, stat_module):
             yield child, stat_module.S_ISDIR(metadata.st_mode)
 
 
+def _open_acl_read_handles(entries, *, file_api, constants):
+    """Open READ_CONTROL handles before ACL changes remove installer traversal rights."""
+    handles = {}
+    try:
+        for path, is_directory in entries:
+            flags = constants.FILE_FLAG_BACKUP_SEMANTICS if is_directory else 0
+            handles[path] = file_api.CreateFile(
+                str(path),
+                constants.READ_CONTROL,
+                constants.FILE_SHARE_READ
+                | constants.FILE_SHARE_WRITE
+                | constants.FILE_SHARE_DELETE,
+                None,
+                constants.OPEN_EXISTING,
+                flags,
+                None,
+            )
+    except Exception:
+        for handle in handles.values():
+            file_api.CloseHandle(handle)
+        raise PermissionError(
+            "Unable to open the complete HOLDOUT tree for ACL verification"
+        ) from None
+    return handles
+
+
 def secure_holdout_directory(
     path: Path,
     *,
     service_name: str = "AIQuantHoldout",
     adopt_existing: bool = False,
+    staging_operator_sid: str | None = None,
 ) -> None:
     """Create and verify a protected service-owned directory. Requires elevation."""
     if os.name != "nt":
@@ -256,32 +357,62 @@ def secure_holdout_directory(
                     require_owner=False,
                     require_inheritable=is_directory,
                 )
-    target.mkdir(parents=True, exist_ok=True)
-    rules = HoldoutDirectoryAcl(service_sid=sid)
+    service_owner = win32security.ConvertStringSidToSid(sid)
+    rules = HoldoutDirectoryAcl(service_sid=sid, staging_sid=staging_operator_sid)
     dacl = build_holdout_acl(rules, security=win32security)
     security_flags = (
         win32security.DACL_SECURITY_INFORMATION
         | win32security.PROTECTED_DACL_SECURITY_INFORMATION
         | win32security.OWNER_SECURITY_INFORMATION
     )
-    if adopt_existing:
-        for child, _is_directory in children:
+    import win32api
+    import win32con
+    import win32file
+
+    with _enabled_restore_privilege(security=win32security, process_api=win32api):
+        target.mkdir(parents=True, exist_ok=True)
+        entries = [(target, True), *children]
+        handles = _open_acl_read_handles(
+            entries,
+            file_api=win32file,
+            constants=win32con,
+        )
+        try:
+            if adopt_existing:
+                for child, _is_directory in children:
+                    win32security.SetNamedSecurityInfo(
+                        str(child),
+                        win32security.SE_FILE_OBJECT,
+                        security_flags,
+                        service_owner,
+                        None,
+                        dacl,
+                        None,
+                    )
             win32security.SetNamedSecurityInfo(
-                str(child),
+                str(target),
                 win32security.SE_FILE_OBJECT,
                 security_flags,
-                sid,
+                service_owner,
                 None,
                 dacl,
                 None,
             )
-    win32security.SetNamedSecurityInfo(
-        str(target),
-        win32security.SE_FILE_OBJECT,
-        security_flags,
-        sid,
-        None,
-        dacl,
-        None,
-    )
-    verify_holdout_directory_tree(target, rules, security=win32security)
+            for path, is_directory in entries:
+                descriptor = win32security.GetSecurityInfo(
+                    handles[path],
+                    win32security.SE_FILE_OBJECT,
+                    win32security.DACL_SECURITY_INFORMATION
+                    | win32security.OWNER_SECURITY_INFORMATION,
+                )
+                _require_exact_acl(
+                    path,
+                    rules,
+                    security=win32security,
+                    require_owner=path == target,
+                    require_inheritable=is_directory,
+                    descriptor=descriptor,
+                )
+        finally:
+            for handle in handles.values():
+                win32api.CloseHandle(handle)

@@ -7,7 +7,11 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from ai_quant_os.health_contracts import HealthIncident
+from ai_quant_os.health_api import incident_view
+from ai_quant_os.health_store import HealthStore
+from ai_quant_os.health_timeline_contracts import HealthIncidentSummary
 from ai_quant_os.repair_certificates import verify_repair_certificate
+from ai_quant_os.repair_snapshots import canonical_json
 from ai_quant_os.repair_trials import RepairTrialStore, ShadowVerdict
 from test_repair_certificates import _signed_certificate, _snapshot
 
@@ -58,12 +62,8 @@ def _passing_evaluator(record):
 def _through_canary_passed(tmp_path):
     store, snapshot, trial = _open_trial(tmp_path)
     store.evaluate_shadow(trial.trial_id, _passing_evaluator, evaluated_at=NOW)
-    store.start_canary(
-        trial.trial_id, scope="agent:A02", entered_at=NOW, min_soak_seconds=300
-    )
-    passed = store.evaluate_canary(
-        trial.trial_id, now=NOW + timedelta(seconds=301), incidents=()
-    )
+    store.start_canary(trial.trial_id, scope="agent:A02", entered_at=NOW, min_soak_seconds=300)
+    passed = store.evaluate_canary(trial.trial_id, now=NOW + timedelta(seconds=301), incidents=())
     assert passed.state == "CANARY_PASSED"
     return store, snapshot, passed
 
@@ -76,16 +76,12 @@ def test_trial_opens_only_after_independent_verification_passes(tmp_path):
     with pytest.raises(ValueError, match="independent verification"):
         store.create_trial(snapshot, failed, replay_sha256=REPLAY_SHA256, created_at=NOW)
     verification = _verification(snapshot)
-    trial = store.create_trial(
-        snapshot, verification, replay_sha256=REPLAY_SHA256, created_at=NOW
-    )
+    trial = store.create_trial(snapshot, verification, replay_sha256=REPLAY_SHA256, created_at=NOW)
     assert trial.state == "SHADOW_PENDING"
     assert trial.agent_id == "A02"
     assert trial.incident_id == snapshot.incident["incident_id"]
     assert trial.promotion_allowed is False
-    again = store.create_trial(
-        snapshot, verification, replay_sha256=REPLAY_SHA256, created_at=NOW
-    )
+    again = store.create_trial(snapshot, verification, replay_sha256=REPLAY_SHA256, created_at=NOW)
     assert again.trial_id == trial.trial_id
 
 
@@ -131,31 +127,92 @@ def test_failed_shadow_never_reaches_canary(tmp_path):
         store.start_canary(trial.trial_id, scope="agent:A02", entered_at=NOW)
 
 
-def test_canary_soak_then_activation_authorization_and_closure(tmp_path):
-    store, snapshot, trial = _through_canary_passed(tmp_path)
+def test_canary_soak_then_activation_authorization_requires_health_journal(tmp_path):
+    store, _, trial = _through_canary_passed(tmp_path)
     with pytest.raises(ValueError, match="activation-authorized"):
         store.close_incident(trial.trial_id, closed_at=NOW + timedelta(seconds=400))
     authorized = store.authorize_activation(
-        trial.trial_id, operator_ref="operator:maintainer-1", authorized_at=NOW + timedelta(seconds=400)
+        trial.trial_id,
+        operator_ref="operator:maintainer-1",
+        authorized_at=NOW + timedelta(seconds=400),
     )
     assert authorized.state == "ACTIVATION_AUTHORIZED"
     assert authorized.activation is not None
     # Authorization never applies the version flip inside the trial store.
     assert authorized.activation.applied is False
-    closure = store.close_incident(trial.trial_id, closed_at=NOW + timedelta(seconds=500))
-    assert closure.state == "CLOSED_REPAIR_ACTIVATED"
-    assert closure.incident_id == snapshot.incident["incident_id"]
-    assert closure.candidate_id == snapshot.candidate_id
-    assert closure.trial_id == trial.trial_id
-    assert closure.certificate_sha256 == trial.certificate_sha256
-    assert closure.verifier_id == "independent-reviewer-1"
-    assert closure.verifier_verdict == "PASS"
-    assert closure.shadow_evidence_refs == ("shadow-evidence:" + "5" * 64,)
-    assert closure.canary_soak_seconds >= 300
-    assert closure.incidents_during_canary == 0
-    assert closure.journal_writeback is False
-    assert closure.closure_ref.startswith("repair-closure:")
-    assert store.closure_for(closure.incident_id) == closure
+    with pytest.raises(ValueError, match="requires the health journal"):
+        store.close_incident(trial.trial_id, closed_at=NOW + timedelta(seconds=500))
+
+
+def test_repair_closure_authorization_is_journaled_idempotently_and_keeps_incident_open(
+    tmp_path,
+):
+    snapshot = _snapshot()
+    incident = HealthIncident(
+        "AGENT_FAILED",
+        "original-run",
+        "{}",
+        NOW,
+        agent_id="A02",
+        agent_version="0.2.0",
+        manifest_ref="agent-manifest:" + "a" * 64,
+    )
+    snapshot = snapshot.__class__(
+        candidate_id=snapshot.candidate_id,
+        candidate_commit=snapshot.candidate_commit,
+        rollback_commit=snapshot.rollback_commit,
+        manifest_json=snapshot.manifest_json,
+        incident_json=canonical_json({**snapshot.incident, "incident_id": incident.incident_id}),
+        files=snapshot.files,
+    )
+    trials = RepairTrialStore(tmp_path / "trials.sqlite3")
+    health = HealthStore(tmp_path / "health.sqlite3")
+    health.record(incident)
+    trial = trials.create_trial(
+        snapshot, _verification(snapshot), replay_sha256=REPLAY_SHA256, created_at=NOW
+    )
+    trials.evaluate_shadow(trial.trial_id, _passing_evaluator, evaluated_at=NOW)
+    trials.start_canary(trial.trial_id, scope="agent:A02", entered_at=NOW, min_soak_seconds=300)
+    trials.evaluate_canary(trial.trial_id, now=NOW + timedelta(seconds=301), incidents=())
+    with pytest.raises(ValueError, match="cannot predate canary completion"):
+        trials.authorize_activation(
+            trial.trial_id,
+            operator_ref="operator:maintainer-1",
+            authorized_at=NOW + timedelta(seconds=300),
+        )
+    trials.authorize_activation(
+        trial.trial_id,
+        operator_ref="operator:maintainer-1",
+        authorized_at=NOW + timedelta(seconds=400),
+    )
+    with pytest.raises(ValueError, match="cannot predate canary completion or activation"):
+        trials.close_incident(
+            trial.trial_id, closed_at=NOW + timedelta(seconds=399), health_store=health
+        )
+
+    closure = trials.close_incident(
+        trial.trial_id, closed_at=NOW + timedelta(seconds=500), health_store=health
+    )
+
+    assert closure.state == "REPAIR_ACTIVATION_AUTHORIZED"
+    assert closure.journal_writeback is True
+    events = health.transitions(incident.incident_id)
+    assert len(events) == 1
+    assert events[0]["action"] == "REPAIR_CLOSURE_AUTHORIZED"
+    assert events[0]["closure_ref"] == closure.closure_ref
+    timeline_item = HealthIncidentSummary.model_validate(
+        incident_view(incident, transitions=events)
+    )
+    assert timeline_item.status == "OPEN"
+    assert timeline_item.transitions[0].closure_ref == closure.closure_ref
+    assert health.open_incidents() == (incident,)
+    assert (
+        trials.close_incident(
+            trial.trial_id, closed_at=NOW + timedelta(seconds=600), health_store=health
+        )
+        == closure
+    )
+    assert health.transitions(incident.incident_id) == events
 
 
 def test_canary_stays_active_until_the_soak_elapses(tmp_path):

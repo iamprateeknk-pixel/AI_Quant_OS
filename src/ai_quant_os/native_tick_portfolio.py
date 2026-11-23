@@ -14,7 +14,12 @@ from nautilus_trader.model.identifiers import TraderId, Venue
 from nautilus_trader.model.objects import Currency, Money, Price, Quantity
 
 from ai_quant_os.backtest import BacktestCosts
-from ai_quant_os.native_portfolio import _PortfolioReplay
+from ai_quant_os.native_portfolio import (
+    MaintenanceLiquidation,
+    _PortfolioReplay,
+    _quote_value_usd,
+    _maintenance_metrics,
+)
 from ai_quant_os.native_tick_evidence import canonical_tick_source, reconcile_tick_fills
 from ai_quant_os.nautilus_runtime import (
     NativeFill,
@@ -61,13 +66,17 @@ class TickPortfolioReport:
     total_fees_usd: Decimal
     net_pnl_usd: Decimal
     native_balance_usd: Decimal
-    schema_version: Literal["1.1"] = "1.1"
+    schema_version: Literal["1.1", "1.2"] = "1.2"
     engine: Literal["NAUTILUS_BACKTEST"] = "NAUTILUS_BACKTEST"
     engine_version: Literal["1.221.0"] = "1.221.0"
     venue: Literal["PAPER"] = "PAPER"
-    replay_model: Literal["ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"] = (
-        "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"
+    replay_model: Literal[
+        "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2", "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V3"
+    ] = "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V3"
+    maintenance_model: Literal["ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1"] | None = (
+        None
     )
+    liquidation: MaintenanceLiquidation | None = None
     liquidity_model: Literal["SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1"] = (
         "SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1"
     )
@@ -159,6 +168,129 @@ class _TickReplay(_PortfolioReplay):
                 self._remaining_ask_size -= quantity
             else:
                 self._remaining_bid_size -= quantity
+
+
+class _AsyncMaintenanceController:
+    def __init__(self, engine, prepared, initial_balance_usd, max_quote_age_seconds):
+        self.engine = engine
+        self.prepared = prepared
+        self.initial_balance_usd = initial_balance_usd
+        self.max_quote_age_seconds = max_quote_age_seconds
+        self.liquidation = None
+        self.checked_timestamp = None
+        self.checked_result = None
+        self.fill_counts = {row[2].instrument_id: 0 for row in prepared}
+        self.cash_flows = {row[2].instrument_id: Decimal(0) for row in prepared}
+        self.fees_usd = Decimal(0)
+
+    def check(self, ts_event):
+        if self.liquidation is not None:
+            return self.liquidation
+        if self.checked_timestamp == ts_event:
+            return self.checked_result
+        self.checked_timestamp = ts_event
+        open_bridges = tuple(row[4] for row in self.prepared if row[4].position)
+        if not open_bridges:
+            return None
+        current = next(
+            (
+                row[4].phases[ts_event][1]
+                for row in self.prepared
+                if ts_event in row[4].phases and row[4].phases[ts_event][0] == "TICK"
+            ),
+            None,
+        )
+        if current is None:
+            raise ValueError("Native maintenance check has no retained triggering tick")
+        for row in self.prepared:
+            instrument_id, bridge = row[2].instrument_id, row[4]
+            new_fills = bridge.fills[self.fill_counts[instrument_id] :]
+            for fill in new_fills:
+                self.cash_flows[instrument_id] += (
+                    fill.quantity * fill.price * (1 if fill.side == "SELL" else -1)
+                )
+                self.fees_usd += fill.fee
+            self.fill_counts[instrument_id] += len(new_fills)
+        needs_jpy_conversion = any(
+            row[2].quote_currency == "JPY"
+            and (row[4].position or self.cash_flows[row[2].instrument_id])
+            for row in self.prepared
+        )
+        legs = []
+        quotes = {}
+        for row in self.prepared:
+            instrument_id, currency, instrument, bridge = (
+                row[2].instrument_id,
+                row[2].quote_currency,
+                row[3],
+                row[4],
+            )
+            needs_quote = bool(bridge.position) or (
+                instrument_id == "USDJPY" and needs_jpy_conversion
+            )
+            bid = ask = Decimal(0)
+            if needs_quote:
+                quote = self.engine.cache.quote_tick(instrument.id)
+                if quote is None:
+                    self.checked_result = None
+                    return None
+                observed = bridge.phases.get(quote.ts_event)
+                if observed is None:
+                    raise ValueError("Native maintenance check quote has no retained source tick")
+                quote_time = observed[1].observed_at
+                age = (current.observed_at - quote_time).total_seconds()
+                if age < 0:
+                    raise ValueError("Native maintenance check contains a future quote")
+                if age > self.max_quote_age_seconds:
+                    self.checked_result = None
+                    return None
+                bid, ask = quote.bid_price.as_decimal(), quote.ask_price.as_decimal()
+                quotes[instrument_id] = (bid, ask)
+            legs.append(
+                (
+                    instrument_id,
+                    currency,
+                    bridge.position,
+                    tuple(bridge.fills),
+                    bid,
+                    ask,
+                    instrument.margin_maint,
+                )
+            )
+        usd_jpy_quote = quotes.get("USDJPY")
+        equity, required_margin, open_instruments = (
+            self.initial_balance_usd - self.fees_usd,
+            Decimal(0),
+            [],
+        )
+        for instrument_id, currency, position, _, bid, ask, ratio in legs:
+            marked_cash = self.cash_flows[instrument_id]
+            if position:
+                open_instruments.append(instrument_id)
+                marked_cash += position * (bid if position > 0 else ask)
+                maintenance_quote = abs(position) * ask * ratio
+                if currency == "JPY":
+                    if usd_jpy_quote is None:
+                        raise ValueError(
+                            "Native maintenance conversion requires current USDJPY evidence"
+                        )
+                    required_margin += maintenance_quote / usd_jpy_quote[0]
+                else:
+                    required_margin += _quote_value_usd(maintenance_quote, currency, usd_jpy_quote)
+            if marked_cash:
+                equity += _quote_value_usd(marked_cash, currency, usd_jpy_quote)
+        instruments = tuple(sorted(open_instruments))
+        if required_margin <= 0 or equity >= required_margin:
+            self.checked_result = None
+            return None
+        self.liquidation = MaintenanceLiquidation(
+            current.observed_at,
+            equity,
+            required_margin,
+            instruments,
+        )
+        self.checked_result = self.liquidation
+        return self.liquidation
 
 
 def _quote(engine, prepared, identifier, now, age):
@@ -289,7 +421,11 @@ def run_native_tick_portfolio(
                 use_message_queue=False,
                 bar_execution=False,
             )
+            maintenance = _AsyncMaintenanceController(
+                engine, prepared, initial_balance_usd, max_quote_age_seconds
+            )
             for _, _, _, instrument, bridge in prepared:
+                bridge.maintenance_check = maintenance.check
                 bridge.collateral_check = lambda active, order: _collateral(
                     engine, prepared, active, order, fee_per_order_usd, max_quote_age_seconds
                 )
@@ -356,6 +492,10 @@ def run_native_tick_portfolio(
                 fees,
                 sum((row.gross_pnl_usd for row in complete), Decimal(0)) - fees,
                 engine.cache.accounts()[0].balance_total(usd).as_decimal(),
+                schema_version="1.2",
+                replay_model="ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V3",
+                maintenance_model="ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1",
+                liquidation=maintenance.liquidation,
             )
             verify_tick_portfolio_report(report)
             return report
@@ -374,17 +514,35 @@ def verify_tick_portfolio_report(report):
             report.initial_balance_usd,
             report.max_quote_age_seconds,
         )
+        expected_replay = (
+            "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"
+            if report.schema_version == "1.1"
+            else "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V3"
+        )
         if (
-            report.schema_version != "1.1"
+            report.schema_version not in ("1.1", "1.2")
             or report.engine != "NAUTILUS_BACKTEST"
             or report.engine_version != "1.221.0"
             or report.venue != "PAPER"
-            or report.replay_model != "ASYNC_RECORDED_QUOTE_PORTFOLIO_USD_V2"
+            or report.replay_model != expected_replay
             or report.liquidity_model != "SOURCE_VISIBLE_SIDE_ORDER_SLICES_V1"
             or report.decision_model != "ALL_EVENT_QUOTES_BEFORE_PRIOR_HISTORY_TARGETS_V1"
             or report.valuation_model != "FINAL_MIDPOINT_SIGN_FX_DECIMAL28_V1"
             or report.collateral_model != "FRESH_GROSS_TARGET_NOTIONAL_USD_NATIVE_BALANCE_V1"
             or report.promotion_allowed is not False
+            or (
+                report.schema_version == "1.1"
+                and (report.maintenance_model is not None or report.liquidation is not None)
+            )
+            or (
+                report.schema_version == "1.2"
+                and report.maintenance_model
+                != "ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1"
+            )
+            or (
+                report.liquidation is not None
+                and type(report.liquidation) is not MaintenanceLiquidation
+            )
         ):
             raise ValueError("Tick portfolio model mismatch")
         if [r.instrument_id for r in report.legs] != [
@@ -428,6 +586,8 @@ def verify_tick_portfolio_report(report):
                 or row.fees_usd != sum((f.fee for f in row.fills), Decimal(0))
             ):
                 raise ValueError("Tick portfolio source/cash mismatch")
+        if report.liquidation is not None:
+            _verify_tick_liquidation(report)
         if (
             type(report.native_order_count) is not int
             or report.native_order_count != sum(len(r.fills) for r in report.legs)
@@ -440,3 +600,65 @@ def verify_tick_portfolio_report(report):
             or not report.native_balance_usd.is_finite()
         ):
             raise ValueError("Tick portfolio total mismatch")
+
+
+def _verify_tick_liquidation(report):
+    trigger = report.liquidation.triggered_at
+    positions, legs, usd_jpy_quote = {}, [], None
+    for row in report.legs:
+        source_quotes = tuple(tick for tick in row.source_ticks if tick.observed_at <= trigger)
+        if not source_quotes:
+            raise ValueError("Native tick liquidation time has no retained quote")
+        current = source_quotes[-1]
+        if not 0 <= (trigger - current.observed_at).total_seconds() <= report.max_quote_age_seconds:
+            raise ValueError("Native tick liquidation quote is stale")
+        position = sum(
+            (
+                fill.quantity if fill.side == "BUY" else -fill.quantity
+                for fill in row.fills
+                if fill.observed_at < trigger
+            ),
+            Decimal(0),
+        )
+        if position:
+            positions[row.instrument_id] = position
+        prior_fills = tuple(fill for fill in row.fills if fill.observed_at < trigger)
+        legs.append(
+            (
+                row.instrument_id,
+                row.quote_currency,
+                position,
+                prior_fills,
+                current.bid,
+                current.ask,
+                Decimal(1),
+            )
+        )
+        if row.instrument_id == "USDJPY":
+            usd_jpy_quote = (current.bid, current.ask)
+    equity, required_margin, instruments = _maintenance_metrics(
+        report.initial_balance_usd, tuple(legs), usd_jpy_quote
+    )
+    if instruments != report.liquidation.instruments:
+        raise ValueError("Native tick liquidation instruments do not reconcile")
+    if any(row.final_position for row in report.legs):
+        raise ValueError("Native tick liquidation did not close every leg")
+    if (
+        equity != report.liquidation.equity_usd
+        or required_margin != report.liquidation.required_margin_usd
+        or equity >= required_margin
+        or tuple(sorted(positions)) != report.liquidation.instruments
+    ):
+        raise ValueError("Native tick liquidation evidence does not reconcile")
+    for row in report.legs:
+        position = positions.get(row.instrument_id, Decimal(0))
+        for fill in row.fills:
+            if fill.observed_at < trigger:
+                continue
+            signed = fill.quantity if fill.side == "BUY" else -fill.quantity
+            next_position = position + signed
+            if abs(next_position) >= abs(position):
+                raise ValueError("Native tick post-liquidation fill increases exposure")
+            position = next_position
+        if position != 0:
+            raise ValueError("Native tick liquidation did not close every leg")

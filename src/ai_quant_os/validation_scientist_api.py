@@ -1,9 +1,19 @@
 """Protected sandbox context, graph and historical validation-result views."""
 
 import sqlite3
+from uuid import uuid4
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
+
+from ai_quant_os.holdout_validator_rpc import (
+    HoldoutContextSnapshot,
+    HoldoutRequest,
+    HoldoutResponse,
+    HoldoutRpcError,
+    verify_response,
+)
+from ai_quant_os.validation_scientist_sources import ValidationContextSnapshot
 
 
 class ValidationContextInput(BaseModel):
@@ -19,7 +29,14 @@ class ValidationGraphInput(BaseModel):
 
 
 def install_validation_scientist_routes(
-    app, require_operator, *, store, compile_context, archived_context, runtime, observe_receipt
+    app,
+    require_operator,
+    *,
+    validator_client,
+    compile_context,
+    archived_context,
+    runtime,
+    observe_receipt,
 ):
     def checked_context(reference):
         context = archived_context(reference)
@@ -97,18 +114,46 @@ def install_validation_scientist_routes(
     )
     def retained_validation(artifact_ref: str):
         try:
-            artifact = store.get(artifact_ref)
-            if artifact is None:
-                raise KeyError("Validation result not found")
+            request = HoldoutRequest(
+                request_id=uuid4().hex,
+                operation="VALIDATION_CONTEXT",
+                agent_id="A10",
+                agent_version="0.2.0",
+                task_id="validation-result-read",
+                context_ref="result-read:" + uuid4().hex,
+                evidence_ref=artifact_ref,
+            )
+            response = validator_client.call(request)
+            if type(response) is not HoldoutResponse:
+                raise ValueError("Validation result service response is invalid")
+            verify_response(request, response)
+            envelope = response.context_snapshot
+            if type(envelope) is not HoldoutContextSnapshot or envelope.agent_id != "A10":
+                raise ValueError("Validation result service omitted its checked summary")
+            snapshot = ValidationContextSnapshot.model_validate_json(
+                envelope.payload_json, strict=True
+            )
+            summary = snapshot.summary
+            if (
+                summary.artifact_ref != artifact_ref
+                or response.summary_sha256 != summary.summary_sha256
+                or response.aggregate.outcome != summary.outcome
+                or response.aggregate.gate_count != len(summary.gates)
+            ):
+                raise ValueError("Validation result service summary binding mismatch")
+        except HoldoutRpcError as error:
+            if error.error_code == "REQUEST_REFUSED":
+                raise HTTPException(404, "Validation result not found") from error
+            raise HTTPException(503, "Validation result service unavailable") from error
         except KeyError as error:
             raise HTTPException(404, "Validation result not found") from error
-        except (ValueError, sqlite3.Error) as error:
+        except (OSError, ValueError, sqlite3.Error, ConnectionError, TimeoutError) as error:
             raise HTTPException(503, "Validation result integrity unavailable") from error
         return {
             "mode": "PAPER",
             "scope": "SANDBOX",
             "archival_only": True,
             "artifact_ref": artifact_ref,
-            "artifact": artifact.model_dump(mode="json"),
+            "summary": summary.model_dump(mode="json"),
             "promotion_allowed": False,
         }

@@ -73,9 +73,11 @@ Evidence and source fingerprints are in `evaluations/agent-call-budgets-0098.jso
 
 This accounts for calls through `AgentToolBoundary` and, since ADR 0100, declared
 context fetches wired to the same quota in the API composition root. Snapshot
-preparation before compilation, direct library work and the legacy Jev/OpenAI
-adapters remain outside that boundary. Standalone compilers require explicit
-budget injection; fixed development evaluators retain their previous behavior.
+preparation before compilation and other direct library work remain outside that
+boundary. Since 2026-11-23, Jev/OpenAI public adapter methods refuse direct
+dispatch and their normal route wrappers reserve from this same quota first.
+Standalone compilers require explicit budget injection; fixed development
+evaluators retain their previous behavior.
 Provider token admission/settlement, monetary pricing/accounting, protected recovery
 spend authorization, fleet deployment/retention, adaptive routing, operator budget
 workflows and independent acceptance remain pending. Recovery spending and provider

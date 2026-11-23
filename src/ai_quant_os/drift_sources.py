@@ -111,6 +111,7 @@ def report_for_context(context: CompiledContext) -> ExecutionDriftReport:
         row = rows[name]
         original = EvidenceRecord(
             source_id="paper-drift:" + name + ":" + fingerprint(payload.model_dump(mode="json")),
+            adapter_ref=row.source_adapter_ref,
             as_of=ledger.as_of,
             valid_until=ledger.as_of + timedelta(seconds=5),
             trusted=True,

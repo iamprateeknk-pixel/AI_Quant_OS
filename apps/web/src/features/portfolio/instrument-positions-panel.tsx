@@ -1,8 +1,7 @@
-import { getPositions } from "@/lib/control-api";
+import type { PortfolioRead, Position } from "./portfolio-live-read";
 import { TableScrollRegion } from "../shared/table-scroll-region";
 
-export async function InstrumentPositionsPanel() {
-  const result = await getPositions();
+export function InstrumentPositionsPanel({ result }: { result: PortfolioRead<{ positions: Position[] }> }) {
   return <section className="panel content-panel">
     <div className="panel-heading"><h2>Filled positions</h2><span>PAPER LEDGER</span></div>
     {result.ok ? <TableScrollRegion label="Filled paper positions table"><table>

@@ -16,6 +16,7 @@ from ai_quant_os.provider_call_admission import (
 from ai_quant_os.agent_call_budgets import AgentCallBudget
 from ai_quant_os.agent_registry import load_agent_catalog
 from ai_quant_os.provider_spend_store import ProviderSpendStore
+from provider_test_adapters import call_reviewer_for_test
 from test_openai_reviewer import inputs, response, MODEL, NOW
 from test_provider_spend import policy
 
@@ -59,7 +60,7 @@ def test_exact_preflight_request_reserved_before_generation_and_settled_before_d
 
     async def invoke():
         world, decision = await inputs()
-        await reviewer.review(world, decision)
+        await call_reviewer_for_test(reviewer, world, decision)
 
     asyncio.run(invoke())
     row = next(row for row in store.status(NOW)["agents"] if row["agent_id"] == "A02")
@@ -89,7 +90,7 @@ def test_invalid_token_count_never_dispatches_generation(tmp_path, bad_count):
     async def invoke():
         world, decision = await inputs()
         with pytest.raises(ValueError):
-            await reviewer.review(world, decision)
+            await call_reviewer_for_test(reviewer, world, decision)
 
     asyncio.run(invoke())
     assert len(requests) == 1
@@ -113,7 +114,7 @@ def test_token_exhaustion_denies_generation_and_uncertain_request_never_refunds_
         world, decision = await inputs()
         for _ in range(2):
             with pytest.raises(ValueError):
-                await reviewer.review(world, decision)
+                await call_reviewer_for_test(reviewer, world, decision)
 
     asyncio.run(invoke())
     assert sum(not str(request.url).endswith("/input_tokens") for request in requests) == 1
@@ -148,7 +149,7 @@ def test_invalid_candidate_reports_are_charged_and_wrong_identity_remains_unknow
     async def invoke():
         world, decision = await inputs()
         with pytest.raises(ValueError):
-            await reviewer.review(world, decision)
+            await call_reviewer_for_test(reviewer, world, decision)
 
     asyncio.run(invoke())
     row = next(row for row in store.status(NOW)["agents"] if row["agent_id"] == "A02")
@@ -227,7 +228,7 @@ def test_cancelled_generation_retains_full_reservation(tmp_path):
 
     async def invoke():
         world, decision = await inputs()
-        task = asyncio.create_task(reviewer.review(world, decision))
+        task = asyncio.create_task(call_reviewer_for_test(reviewer, world, decision))
         await asyncio.wait_for(started.wait(), timeout=2)
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
@@ -260,7 +261,7 @@ def test_expiry_during_count_and_corrupt_archive_prevent_generation(tmp_path):
     async def invoke():
         world, decision = await inputs()
         with pytest.raises(ValueError):
-            await reviewer.review(world, decision)
+            await call_reviewer_for_test(reviewer, world, decision)
 
     asyncio.run(invoke())
     assert len(calls) == 1

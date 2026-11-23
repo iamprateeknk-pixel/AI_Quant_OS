@@ -1,0 +1,13 @@
+{
+  "version": "0.35.0",
+  "platform": "windows_amd64",
+  "source": "https://github.com/prometheus/alertmanager/releases/download/v0.35.0/alertmanager-0.35.0.windows-amd64.zip",
+  "archive_sha256": "cdf8cd664889bf3f27771881e10814f3d5916310aba90717b4424deb358b0fa3",
+  "archive_bytes": 43531739,
+  "executable": {
+    "name": "alertmanager.exe",
+    "sha256": "313a07892a709bd96f8770266bec6ec85c46c21350d582f5cfc8d80b04cf7b69",
+    "bytes": 55130112
+  },
+  "trust": "GitHub release API asset digest matched; upstream release tag is signed; no independent signature attestation"
+}

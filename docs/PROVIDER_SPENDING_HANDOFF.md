@@ -61,12 +61,13 @@ and an explicit rate reference are required. No operational price/budget is inve
 or enabled here. Preserve DB and pin together; removing configuration is not a
 migration. Factory activation without spending configuration now fails closed.
 
-Trusted embedded callers explicitly inject spend_store and spend_owner. Direct
-unconfigured library fixtures retain prior behavior and report NOT_CONFIGURED;
-production embedding needs configured admission and independent review. Local
-supervision still disables providers. Sanitized provider status exposes only the
-review owner's counters, policy/head hashes and accounting basis, never paths,
-prompts or credentials. Older logical-call schemas retain their original meaning.
+Trusted embedded callers explicitly inject spend_store and spend_owner. Both
+adapter constructors now reject an omitted ledger even when a custom HTTP
+transport is injected; local test transports use temporary audited ledgers as
+well. Local supervision still disables providers. Sanitized provider status
+exposes only the review owner's counters, policy/head hashes and accounting
+basis, never paths, prompts or credentials. Older logical-call schemas retain
+their original meaning.
 
 ## Evidence and remaining scope
 

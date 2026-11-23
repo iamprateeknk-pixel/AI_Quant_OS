@@ -246,7 +246,7 @@ checkers expect; if this block and `architecture.json` ever disagree,
       ]
     },
     "application": {
-      "module_count": 195,
+      "module_count": 196,
       "modules": [
         "src/ai_quant_os/adversarial.py",
         "src/ai_quant_os/adversarial_service.py",
@@ -330,6 +330,7 @@ checkers expect; if this block and `architecture.json` ever disagree,
         "src/ai_quant_os/health_repair_sources.py",
         "src/ai_quant_os/health_timeline_contracts.py",
         "src/ai_quant_os/health_watchdog.py",
+        "src/ai_quant_os/holdout_data_cli.py",
         "src/ai_quant_os/hypothesis_review_contracts.py",
         "src/ai_quant_os/incident_evaluation.py",
         "src/ai_quant_os/incident_policy.py",

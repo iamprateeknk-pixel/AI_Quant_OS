@@ -16,7 +16,7 @@ def main() -> None:
     register = commands.add_parser("register")
     register.add_argument("csv", type=Path)
     register.add_argument("--source-id", required=True)
-    register.add_argument("--resource-class", required=True, choices=("TRAINING", "HOLDOUT"))
+    register.add_argument("--resource-class", required=True, choices=("TRAINING",))
     commands.add_parser("list")
     args = parser.parse_args()
     try:

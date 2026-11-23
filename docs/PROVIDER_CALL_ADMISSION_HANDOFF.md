@@ -10,6 +10,13 @@ journal covers graph tools, context fetches and these logical provider attempts.
 Versions and both routes share the declared role's daily/monthly routine capacity;
 protected recovery capacity remains unavailable to routine calls.
 
+The Jev and OpenAI adapter public `classify()` / `review()` methods now refuse
+direct dispatch. `AdmittedClassifier` and `AdmittedReviewer` reserve the durable
+logical call before invoking the adapters' private guarded implementation methods.
+This prevents ordinary direct adapter use from bypassing an enabled or retained
+call budget. Python private methods are an application boundary, not an OS sandbox
+against arbitrary code running inside the process.
+
 Declare server accounting ownership using `AI_QUANT_CLASSIFICATION_OWNER` and
 `AI_QUANT_REVIEW_OWNER`, each `agent@version`, or typed `ProviderOwner` application
 configuration. Only cataloged versions of roles with MODEL_REVIEW capability can
@@ -52,7 +59,9 @@ wiring, sanitized public status and emergency controls after corruption.
 
 No paid provider, broker, credential or live-capital call was made. No client
 workflow or immutable schema changed. Independent browser acceptance remains
-pending from the earlier rejected preview launch. Direct standalone adapter use,
-pre-compilation snapshot preparation, token and monetary admission/settlement,
-recovery spending and full cost governance remain outside this increment.
-See evaluations/provider-call-admission-0102.json for final verification evidence.
+pending from the earlier rejected preview launch. Pre-compilation snapshot
+preparation, other direct library work, token and monetary admission/settlement,
+recovery spending and full cost governance remain outside this increment. The
+2026-11-23 follow-up closes the direct public Jev/OpenAI adapter path only; see
+the current build status for its regression evidence. See
+evaluations/provider-call-admission-0102.json for the original increment evidence.

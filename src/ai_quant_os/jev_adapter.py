@@ -116,6 +116,8 @@ class JevClassifier:
             spend_owner is not None and type(spend_owner) is not ProviderOwner
         ):
             raise ValueError("Jev spending ledger requires a declared typed owner")
+        if spend_store is None:
+            raise ValueError("Jev network calls require durable spending admission")
         self._spend_store, self.spend_owner, self._utc_clock = spend_store, spend_owner, utc_clock
         if spend_store is not None:
             retained = spend_store.status(utc_clock(), model=model)
@@ -244,7 +246,7 @@ class JevClassifier:
                 self._probe = False
 
     async def classify(self, snapshot: WorldState, instrument_id: str) -> ClassificationCandidate:
-        return await self.classify_with_admission(snapshot, instrument_id, lambda: None)
+        raise PermissionError("Jev provider call admission is required")
 
     def _check_admission(self, snapshot: WorldState, guard: Callable[[], None]) -> None:
         guard()
@@ -254,7 +256,7 @@ class JevClassifier:
         ):
             raise ValueError("Jev source unavailable or expired")
 
-    async def classify_with_admission(
+    async def _classify_with_admission(
         self, snapshot: WorldState, instrument_id: str, guard: Callable[[], None]
     ) -> ClassificationCandidate:
         item = next(

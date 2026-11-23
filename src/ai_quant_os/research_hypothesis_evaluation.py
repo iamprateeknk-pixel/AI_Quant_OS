@@ -76,8 +76,12 @@ async def _replay_case(root: Path, case: HypothesisCase) -> dict:
                     "/api/v1/paper/research/datasets",
                     json={"source_id": case.id, "resource_class": case.resource_class, "csv": csv},
                 )
-                response.raise_for_status()
-                dataset_ref = response.json()["receipt"]["dataset_ref"]
+                if case.resource_class == "HOLDOUT":
+                    if response.status_code != 422:
+                        raise ValueError("PAPER research route accepted HOLDOUT data")
+                else:
+                    response.raise_for_status()
+                    dataset_ref = response.json()["receipt"]["dataset_ref"]
             if case.archive_spread:
                 response = await client.post(
                     "/api/v1/paper/quotes",
@@ -94,9 +98,8 @@ async def _replay_case(root: Path, case: HypothesisCase) -> dict:
                 response.raise_for_status()
             context, receipt = await _run(client, case.id)
             output = HypothesisSpec.model_validate_json(receipt["output_json"])
-            serialized = json.dumps({"context": context, "output": output.model_dump(mode="json")})
             holdout_excluded = case.resource_class != "HOLDOUT" or (
-                dataset_ref not in serialized and output.training_dataset_count == 0
+                dataset_ref is None and output.training_dataset_count == 0
             )
             controls_unchanged = before == (await client.get("/api/v1/system/status")).json()
     app = create_app(**settings)

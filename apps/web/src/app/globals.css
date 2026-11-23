@@ -49,3 +49,19 @@ button,input{font:inherit}
 .graph-run-table { min-width: 760px; table-layout: fixed; }
 .trace-pagination { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
 .trace-lookup label{font-weight:600;color:var(--text)}.trace-lookup input{min-height:44px;width:min(100%,25rem);max-width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:5px;background:var(--page);color:var(--text);font-size:16px}.trace-lookup button{min-height:44px;padding:8px 12px;border:1px solid var(--border-strong);border-radius:5px;background:var(--panel-2);cursor:pointer}.trace-lookup input:focus-visible,.trace-lookup button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+@media(max-width:760px){
+  .brand{min-height:44px}
+  .navigation-command-trigger{min-height:44px}
+  .mobile-nav summary{display:flex;align-items:center;min-height:44px}
+  .nav-link{display:flex;align-items:center;min-height:44px}
+  .navigation-command-heading button{min-width:44px;min-height:44px}
+  .operator-console input,.operator-console select{min-height:44px}
+  .operator-control-form input,.operator-control-form select,.operator-control-form textarea{min-height:44px}
+  .operator-control-form button{min-height:48px}
+  .filter-form select,.filter-form button{min-height:44px}
+  .dashboard-grid a,.panel-heading a,.panel-foot a,.trace-pagination a{display:inline-flex;align-items:center;min-height:44px}
+  .empty-list a,.page-heading a{display:inline-flex;align-items:center;min-height:44px}
+  .reconciliation-confirm,.session-admin .session-confirm{min-height:44px;padding-block:4px;align-items:center}
+  .reconciliation-confirm input,.session-admin .session-confirm input{width:24px;height:24px;min-height:24px}
+}

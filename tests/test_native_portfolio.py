@@ -55,7 +55,9 @@ def test_four_pairs_share_one_native_engine_and_actual_usd_fees(tmp_path, monkey
     )
     assert len(engines) == 1
     assert report.engine_version == "1.221.0"
-    assert report.replay_model == "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1"
+    assert report.schema_version == "1.1"
+    assert report.replay_model == "SYNCHRONIZED_BAR_PORTFOLIO_USD_V2"
+    assert report.liquidation is None
     assert report.promotion_allowed is False
     assert report.native_order_count == 12
     assert report.total_fees_usd == Decimal("1.20")
@@ -84,6 +86,79 @@ def test_shared_collateral_rejects_basket_that_each_separate_leg_can_afford(tmp_
             inputs(10000, ("EURUSD", "GBPUSD")),
             StrategyRegistry(tmp_path / "sources"),
             initial_balance_usd=Decimal(20000),
+        )
+
+
+def test_native_portfolio_liquidates_short_when_maintenance_margin_is_breached(tmp_path):
+    from dataclasses import replace
+    import json
+    from pathlib import Path
+    from jsonschema import Draft202012Validator
+    from ai_quant_os.market_data import Bar, BarDataset
+    from ai_quant_os.native_portfolio import (
+        PortfolioInput,
+        PortfolioReport,
+        run_native_portfolio,
+        verify_portfolio_report,
+    )
+    from ai_quant_os.strategy_registry import StrategyRegistry
+    from ai_quant_os.strategy_contracts import StrategyGenome
+    from pydantic import TypeAdapter
+
+    prices = tuple(Decimal(value) for value in ("1", ".9", ".8", ".7", ".6", "1.2", "2", "2.5"))
+    genome = StrategyGenome("moving-average-directional@1.0.0", "BAR", (("fast", 1), ("slow", 2)))
+    legs = tuple(
+        PortfolioInput(
+            BarDataset(
+                Bar(
+                    instrument,
+                    datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(minutes=index),
+                    price,
+                    price,
+                    price,
+                    price,
+                    Decimal(100),
+                )
+                for index, price in enumerate(prices)
+            ),
+            genome,
+            10,
+        )
+        for instrument in ("EURUSD", "GBPUSD")
+    )
+
+    report = run_native_portfolio(
+        legs, StrategyRegistry(tmp_path / "sources"), initial_balance_usd=Decimal("40")
+    )
+
+    assert report.liquidation is not None
+    assert report.liquidation.triggered_at == datetime(2026, 1, 1, 0, 6, tzinfo=timezone.utc)
+    assert report.liquidation.equity_usd == Decimal("16.0")
+    assert report.liquidation.required_margin_usd == Decimal("40")
+    assert report.liquidation.instruments == ("EURUSD", "GBPUSD")
+    assert all(leg.final_position == 0 for leg in report.legs)
+    assert all(leg.fills[-1].side == "BUY" for leg in report.legs)
+    schema = json.loads(
+        (Path(__file__).parents[1] / "docs/schemas/native-portfolio-export.schema.json").read_text()
+    )
+    export = {
+        "report": TypeAdapter(PortfolioReport).dump_python(report, mode="json"),
+        "source_lineage": [],
+    }
+    Draft202012Validator(schema).validate(export)
+    with pytest.raises(ValueError, match="liquidation"):
+        verify_portfolio_report(
+            replace(
+                report,
+                liquidation=replace(report.liquidation, instruments=("USDJPY",)),
+            )
+        )
+    with pytest.raises(ValueError, match="liquidation"):
+        verify_portfolio_report(
+            replace(
+                report,
+                liquidation=replace(report.liquidation, equity_usd=Decimal("15")),
+            )
         )
 
 
@@ -126,6 +201,8 @@ def test_portfolio_command_preserves_inputs_lineage_and_immutable_export(tmp_pat
     import subprocess
     import sys
     from hashlib import sha256
+    from pathlib import Path
+    from jsonschema import Draft202012Validator
 
     source = inputs()
     paths, entries = [], []
@@ -167,7 +244,12 @@ def test_portfolio_command_preserves_inputs_lineage_and_immutable_export(tmp_pat
     assert proc.returncode == 0, proc.stderr
     encoded = output.read_bytes()
     saved = json.loads(encoded)
+    schema = json.loads(
+        (Path(__file__).parents[1] / "docs/schemas/native-portfolio-export.schema.json").read_text()
+    )
+    Draft202012Validator(schema).validate(saved)
     assert saved["report"]["native_order_count"] == 12
+    assert saved["report"]["schema_version"] == "1.1"
     assert {row["source_sha256"] for row in saved["source_lineage"]} == {
         sha256(path.read_bytes()).hexdigest() for path in paths
     }
@@ -259,8 +341,10 @@ def test_current_fx_open_is_available_before_first_cross_pair_decision(tmp_path)
 
 
 def test_saved_native_portfolio_replays_actual_shared_engine(tmp_path):
+    import copy
     import json
     from pathlib import Path
+    from jsonschema import Draft202012Validator
     from pydantic import TypeAdapter
     from ai_quant_os.native_portfolio import (
         PortfolioReport,
@@ -274,8 +358,21 @@ def test_saved_native_portfolio_replays_actual_shared_engine(tmp_path):
     payload = json.loads(
         (Path(__file__).parents[1] / "docs/evaluations/native-portfolio-baseline.json").read_text()
     )
-    saved = TypeAdapter(PortfolioReport).validate_python(payload["report"])
+    adapter = TypeAdapter(PortfolioReport)
+    saved = adapter.validate_python(payload["report"])
     verify_portfolio_report(saved)
+    schema = json.loads(
+        (Path(__file__).parents[1] / "docs/schemas/native-portfolio-export.schema.json").read_text()
+    )
+    validator = Draft202012Validator(schema)
+    validator.validate(payload)
+    legacy = copy.deepcopy(payload)
+    legacy["report"]["schema_version"] = "1.0"
+    legacy["report"]["replay_model"] = "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1"
+    legacy["report"].pop("maintenance_model")
+    legacy["report"].pop("liquidation")
+    validator.validate(legacy)
+    verify_portfolio_report(adapter.validate_python(legacy["report"]))
     source = tuple(
         PortfolioInput(
             BarDataset(leg.source_bars), leg.binding.genome, leg.quantity, leg.slippage_bps

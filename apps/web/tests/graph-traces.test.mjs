@@ -9,6 +9,7 @@ const {parseGraphTrace,parseGraphRunPage}=await import(`data:text/javascript;bas
 const identity={run_id:'run_1',agent_id:'A01',agent_version:'0.4.0',task_id:'review',scope:'PAPER',status:'COMPLETED',context_ref:'agent-context:'+ 'a'.repeat(64),manifest_ref:'agent-manifest:'+'b'.repeat(64),trace_id:'graph-trace:'+'c'.repeat(64),context_observed_at:'2026-10-09T12:00:00Z',context_valid_until:'2026-10-09T12:00:05Z'};
 const events=['CREATED','RUNNING','COMPLETED'].map((status,index)=>({sequence:index+1,status,record_hash:'d'.repeat(64),event_hash:'e'.repeat(64),observed_at:index===2?'2026-10-09T12:00:01.250000Z':'2026-10-09T12:00:01Z'}));
 const trace={schema_version:'1.0',mode:'PAPER',archival_only:true,requires_escalation:true,...identity,input_refs:['evidence:test'],output_trace_id:'original-envelope-trace',output_sha256:'f'.repeat(64),events,timing_state:'AVAILABLE',elapsed_seconds:'0.25'};
+const routing={schema_version:'1.0',agent_id:'A01',agent_version:'0.4.0',task_id:'review',squad:'SUPERVISOR',criticality:'material',kind:'llm',governor_decision:'ADMIT',routed_tier:'ROUTINE',execution_path:'PROVIDER',provider_id:'fixture-provider',attempted_provider_id:'fixture-provider',fallback_reasons:[],input_tokens:100,output_tokens:50};
 const page={schema_version:'1.0',mode:'PAPER',archival_only:true,head_hash:'a'.repeat(64),total:1,after_run_id:'',remaining:0,next_after:null,records:[identity]};
 
 test('projects only original trace and page metadata and binds requested run',()=>{
@@ -32,6 +33,20 @@ test('keeps legacy, partial and regressing timing explicit',()=>{
 });
 test('rejects forged states, event identities, times and output claims',()=>{
   for(const value of [{...trace,mode:'LIVE'},{...trace,status:'FAILED'},{...trace,elapsed_seconds:'10'},{...trace,output_sha256:null},{...trace,events:events.slice(1)},{...trace,events:events.map(row=>({...row,sequence:1}))},{...trace,events:events.map(row=>({...row,observed_at:'2026-02-30T00:00:00Z'}))},{...trace,events:events.map(row=>({...row,observed_at:'2026-10-09T12:00:01+05:30'}))},{...trace,input_refs:Array(129).fill('x')},{...trace,context_valid_until:trace.context_observed_at}]) assert.equal(parseGraphTrace(value),null);
+});
+test('accepts bound 1.1 route evidence and rejects contradictory or sensitive route shapes',()=>{
+  const routed={...trace,schema_version:'1.1',routing};
+  assert.deepEqual(parseGraphTrace(routed),routed);
+  for(const bad of [{...routed,routing:{...routing,task_id:'other'}},{...routed,routing:{...routing,provider_id:null}},{...routed,routing:{...routing,input_tokens:10000001}},{...routed,routing:{...routing,prompt:'private'}},{...trace,routing}]) assert.equal(parseGraphTrace(bad),null);
+  const fallback={...routing,execution_path:'DETERMINISTIC',provider_id:null,attempted_provider_id:'fixture-provider',fallback_reasons:['PROVIDER_FAILED'],input_tokens:null,output_tokens:null};
+  assert.deepEqual(parseGraphTrace({...routed,routing:fallback}).routing,fallback);
+});
+test('accepts verified child references only in bounded 1.2 completed traces',()=>{
+  const children=[{run_id:'child_1',agent_id:'A02',agent_version:'0.2.0',status:'COMPLETED',trace_available:true},{run_id:'child_2',agent_id:'A03',agent_version:'0.2.0',status:'NOT_STARTED_PERMISSION',trace_available:false}];
+  const nested={...trace,schema_version:'1.2',children};
+  assert.deepEqual(parseGraphTrace(nested),nested);
+  for(const bad of [{...nested,children:[children[0],children[0]]},{...nested,children:[{...children[0],trace_available:false,status:'COMPLETED'}]},{...nested,children:[{...children[1],trace_available:true}]},{...nested,children:Array(8).fill(children[0])},{...nested,children:[{...children[0],secret:'private'}]},{...nested,status:'FAILED'}]) assert.equal(parseGraphTrace(bad),null);
+  assert.equal(parseGraphTrace({...trace,schema_version:'1.2'}),null);
 });
 test('rejects omitted, duplicate, unsorted, or inconsistent page records',()=>{
   for(const value of [{...page,total:2},{...page,records:[]},{...page,remaining:1,next_after:null},{...page,total:2,records:[identity,identity]},{...page,total:2,records:[{...identity,run_id:'z'},identity]},{...page,after_run_id:'run_2'},{...page,next_after:'https://invalid.example'},{...page,records:[{...identity,run_id:'../private'}]}]) assert.equal(parseGraphRunPage(value),null);

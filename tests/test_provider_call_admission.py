@@ -98,8 +98,7 @@ def test_api_zero_quota_blocks_both_mock_transports_and_keeps_paper_control(tmp_
     import httpx
     from fastapi.testclient import TestClient
     from ai_quant_os.api import create_app
-    from ai_quant_os.jev_adapter import JevClassifier
-    from ai_quant_os.openai_reviewer import OpenAIReviewer
+    from provider_test_adapters import jev_with_fixture_spending, reviewer_with_fixture_spending
     from test_jev_adapter import MODEL as JEV_MODEL
     from test_openai_reviewer import MODEL as REVIEW_MODEL
 
@@ -112,8 +111,10 @@ def test_api_zero_quota_blocks_both_mock_transports_and_keeps_paper_control(tmp_
         paper_db_path=tmp_path / "paper.sqlite3",
         clock=lambda: NOW,
         agent_call_policy=policy,
-        fast_classifier=JevClassifier(api_key="fixture-key", model=JEV_MODEL, transport=transport),
-        deep_reviewer=OpenAIReviewer(
+        fast_classifier=jev_with_fixture_spending(
+            api_key="fixture-key", model=JEV_MODEL, transport=transport
+        ),
+        deep_reviewer=reviewer_with_fixture_spending(
             api_key="fixture-key", model=REVIEW_MODEL, transport=transport
         ),
         classification_owner=admission.ProviderOwner("A02", "0.2.0"),
@@ -163,6 +164,26 @@ def test_api_zero_quota_blocks_both_mock_transports_and_keeps_paper_control(tmp_
     assert calls == []
 
 
+def test_direct_jev_adapter_call_cannot_bypass_durable_call_admission():
+    import httpx
+    from provider_test_adapters import jev_with_fixture_spending
+    from test_jev_adapter import MODEL, response
+
+    requests = []
+    provider = jev_with_fixture_spending(
+        api_key="fixture-only-key",
+        model=MODEL,
+        transport=httpx.MockTransport(
+            lambda request: requests.append(request) or httpx.Response(200, json=response())
+        ),
+    )
+
+    with pytest.raises(PermissionError, match="call admission"):
+        asyncio.run(provider.classify(world(), "EURUSD"))
+
+    assert requests == []
+
+
 def test_classification_and_review_concurrently_share_last_call(tmp_path):
     from ai_quant_os.decision_gateway import DecisionGateway
 
@@ -208,12 +229,12 @@ def test_classification_and_review_concurrently_share_last_call(tmp_path):
 
 def test_direct_mock_reviewer_zero_quota_never_reaches_transport(tmp_path):
     import httpx
-    from ai_quant_os.openai_reviewer import OpenAIReviewer
+    from provider_test_adapters import reviewer_with_fixture_spending
     from test_openai_reviewer import MODEL, inputs
 
     admission = module()
     calls = []
-    provider = OpenAIReviewer(
+    provider = reviewer_with_fixture_spending(
         api_key="fixture-key",
         model=MODEL,
         transport=httpx.MockTransport(lambda request: calls.append(request) or httpx.Response(500)),

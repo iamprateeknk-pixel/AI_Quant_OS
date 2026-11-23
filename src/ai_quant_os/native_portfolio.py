@@ -1,15 +1,16 @@
 """Trusted synchronized FX strategies sharing one native USD margin account."""
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from decimal import Context, Decimal, ROUND_CEILING, ROUND_FLOOR, localcontext
-from typing import Literal
+from typing import Callable, Literal
 
 from nautilus_trader.backtest.engine import BacktestEngine
 from nautilus_trader.backtest.models import FixedFeeModel, PerContractFeeModel
 from nautilus_trader.config import BacktestEngineConfig, LoggingConfig
 from nautilus_trader.model.enums import AccountType, OmsType
 from nautilus_trader.model.identifiers import TraderId, Venue
-from nautilus_trader.model.objects import Currency, Money
+from nautilus_trader.model.objects import Currency, Money, Quantity
 from nautilus_trader.model.data import QuoteTick
 
 from ai_quant_os.backtest import BacktestCosts
@@ -53,6 +54,36 @@ class PortfolioLeg:
 
 
 @dataclass(frozen=True)
+class MaintenanceLiquidation:
+    triggered_at: datetime
+    equity_usd: Decimal
+    required_margin_usd: Decimal
+    instruments: tuple[str, ...]
+
+    def __post_init__(self):
+        if (
+            not isinstance(self.triggered_at, datetime)
+            or self.triggered_at.tzinfo is None
+            or self.triggered_at.utcoffset() is None
+        ):
+            raise ValueError("Maintenance liquidation time must be timezone-aware")
+        object.__setattr__(self, "triggered_at", self.triggered_at.astimezone(timezone.utc))
+        if (
+            type(self.equity_usd) is not Decimal
+            or not self.equity_usd.is_finite()
+            or type(self.required_margin_usd) is not Decimal
+            or not self.required_margin_usd.is_finite()
+            or self.required_margin_usd <= 0
+            or self.equity_usd >= self.required_margin_usd
+            or type(self.instruments) is not tuple
+            or not self.instruments
+            or any(not isinstance(value, str) or not value for value in self.instruments)
+            or tuple(sorted(set(self.instruments))) != self.instruments
+        ):
+            raise ValueError("Invalid maintenance liquidation evidence")
+
+
+@dataclass(frozen=True)
 class PortfolioReport:
     initial_balance_usd: Decimal
     fee_per_order_usd: Decimal
@@ -61,11 +92,13 @@ class PortfolioReport:
     total_fees_usd: Decimal
     net_pnl_usd: Decimal
     native_balance_usd: Decimal
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.0", "1.1"] = "1.1"
     engine: Literal["NAUTILUS_BACKTEST"] = "NAUTILUS_BACKTEST"
     venue: Literal["PAPER"] = "PAPER"
     engine_version: Literal["1.221.0"] = "1.221.0"
-    replay_model: Literal["SYNCHRONIZED_BAR_PORTFOLIO_USD_V1"] = "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1"
+    replay_model: Literal[
+        "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1", "SYNCHRONIZED_BAR_PORTFOLIO_USD_V2"
+    ] = "SYNCHRONIZED_BAR_PORTFOLIO_USD_V2"
     valuation_model: Literal["FINAL_QUOTE_PNL_SIGN_FX_DECIMAL28_V1"] = (
         "FINAL_QUOTE_PNL_SIGN_FX_DECIMAL28_V1"
     )
@@ -76,12 +109,36 @@ class PortfolioReport:
     decision_model: Literal["ALL_CURRENT_OPENS_BEFORE_CAUSAL_DECISIONS_V1"] = (
         "ALL_CURRENT_OPENS_BEFORE_CAUSAL_DECISIONS_V1"
     )
+    maintenance_model: Literal["ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1"] = (
+        "ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1"
+    )
+    liquidation: MaintenanceLiquidation | None = None
 
 
 class _PortfolioReplay(_ReplayStrategy):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.maintenance_check: Callable[[int], MaintenanceLiquidation | None] | None = None
+        self.liquidated = False
+
     def on_quote_tick(self, tick):
-        if self.phases[tick.ts_event][0] != "PRICE":
-            super().on_quote_tick(tick)
+        phase, _ = self.phases[tick.ts_event]
+        if phase == "PRICE":
+            return
+        if phase in ("OPEN", "TICK") and self.maintenance_check is not None:
+            self.liquidated = self.maintenance_check(tick.ts_event) is not None
+        if self.liquidated:
+            if self.position:
+                from nautilus_trader.model.enums import OrderSide
+
+                order = self.order_factory.market(
+                    instrument_id=self.instrument.id,
+                    order_side=OrderSide.SELL if self.position > 0 else OrderSide.BUY,
+                    quantity=Quantity.from_int(int(abs(self.position))),
+                )
+                self.submit_order(order)
+            return
+        super().on_quote_tick(tick)
 
     def submit_order(self, order, **kwargs):
         if not self.collateral_check(self, order):
@@ -140,6 +197,110 @@ def _usd_value(amount, quote_currency, legs):
     bid = (close * (1 - slip)).quantize(Decimal(".001"), rounding=ROUND_FLOOR)
     ask = (close * (1 + slip)).quantize(Decimal(".001"), rounding=ROUND_CEILING)
     return amount / (ask if amount >= 0 else bid)
+
+
+def _quote_value_usd(amount, quote_currency, usd_jpy_quote):
+    if quote_currency == "USD":
+        return amount
+    if quote_currency != "JPY" or usd_jpy_quote is None:
+        raise ValueError("Native maintenance conversion requires current USDJPY evidence")
+    bid, ask = usd_jpy_quote
+    denominator = ask if amount >= 0 else bid
+    return amount / denominator
+
+
+def _maintenance_metrics(initial_balance_usd, legs, usd_jpy_quote):
+    equity = initial_balance_usd
+    required_margin = Decimal(0)
+    open_instruments = []
+    with localcontext(Context(prec=28)):
+        for instrument_id, currency, position, fills, bid, ask, ratio in legs:
+            cash_flow = sum(
+                (fill.quantity * fill.price * (1 if fill.side == "SELL" else -1) for fill in fills),
+                Decimal(0),
+            )
+            equity -= sum((fill.fee for fill in fills), Decimal(0))
+            marked_cash = cash_flow
+            if position:
+                open_instruments.append(instrument_id)
+                marked_cash += position * (bid if position > 0 else ask)
+                maintenance_quote = abs(position) * ask * ratio
+                if currency == "JPY":
+                    if usd_jpy_quote is None:
+                        raise ValueError(
+                            "Native maintenance conversion requires current USDJPY evidence"
+                        )
+                    required_margin += maintenance_quote / usd_jpy_quote[0]
+                else:
+                    required_margin += _quote_value_usd(maintenance_quote, currency, usd_jpy_quote)
+            equity += _quote_value_usd(marked_cash, currency, usd_jpy_quote)
+    return equity, required_margin, tuple(sorted(open_instruments))
+
+
+def _synthetic_open_quote(bar, quote_currency, slippage_bps):
+    precision = 3 if quote_currency == "JPY" else 5
+    increment = Decimal(1).scaleb(-precision)
+    slip = slippage_bps / 10000
+    bid = (bar.open * (1 - slip)).quantize(increment, rounding=ROUND_FLOOR)
+    ask = (bar.open * (1 + slip)).quantize(increment, rounding=ROUND_CEILING)
+    if bid <= 0:
+        raise ValueError("Invalid retained maintenance quote")
+    return bid, ask
+
+
+class _MaintenanceController:
+    def __init__(self, engine, prepared, initial_balance_usd):
+        self.engine = engine
+        self.prepared = prepared
+        self.initial_balance_usd = initial_balance_usd
+        self.liquidation: MaintenanceLiquidation | None = None
+
+    def check(self, ts_event):
+        if self.liquidation is not None:
+            return self.liquidation
+        open_bridges = tuple(row[4] for row in self.prepared if row[4].position)
+        if not open_bridges:
+            return None
+        quotes = tuple((row, self.engine.cache.quote_tick(row[3].id)) for row in self.prepared)
+        if any(quote is None for _, quote in quotes):
+            raise ValueError("Native maintenance check is missing a current synchronized quote")
+        quote_times = tuple(quote.ts_event for _, quote in quotes)
+        if max(quote_times) - min(quote_times) > 1:
+            raise ValueError("Native maintenance check requires synchronized current quotes")
+        usd_jpy_quote = next(
+            (quote for row, quote in quotes if row[2].instrument_id == "USDJPY"), None
+        )
+        metrics = tuple(
+            (
+                row[2].instrument_id,
+                row[2].quote_currency,
+                row[4].position,
+                tuple(row[4].fills),
+                quote.bid_price.as_decimal(),
+                quote.ask_price.as_decimal(),
+                row[3].margin_maint,
+            )
+            for row, quote in quotes
+        )
+        equity, required_margin, open_instruments = _maintenance_metrics(
+            self.initial_balance_usd,
+            metrics,
+            None
+            if usd_jpy_quote is None
+            else (usd_jpy_quote.bid_price.as_decimal(), usd_jpy_quote.ask_price.as_decimal()),
+        )
+        if required_margin <= 0 or equity >= required_margin:
+            return None
+        timestamp = datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(
+            microseconds=ts_event // 1000
+        )
+        self.liquidation = MaintenanceLiquidation(
+            timestamp,
+            equity,
+            required_margin,
+            open_instruments,
+        )
+        return self.liquidation
 
 
 def run_native_portfolio(
@@ -220,7 +381,9 @@ def _run(legs, registry, fee, balance):
             use_message_queue=False,
             bar_execution=False,
         )
+        maintenance = _MaintenanceController(engine, prepared, balance)
         for _, _, _, instrument, bridge in prepared:
+            bridge.maintenance_check = maintenance.check
             bridge.collateral_check = lambda active, order: _collateral_admitted(
                 engine, prepared, active, order, fee
             )
@@ -286,6 +449,7 @@ def _run(legs, registry, fee, balance):
             total_fees,
             sum((row.gross_pnl_usd - row.fees_usd for row in completed), Decimal(0)),
             account.balance_total(usd).as_decimal(),
+            liquidation=maintenance.liquidation,
         )
         verify_portfolio_report(report)
         return report
@@ -307,16 +471,31 @@ def verify_portfolio_report(report):
             or report.fee_per_order_usd.quantize(Decimal(".01")) != report.fee_per_order_usd
         ):
             raise ValueError("Native portfolio balance/fee policy mismatch")
+        expected_replay = (
+            "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1"
+            if report.schema_version == "1.0"
+            else "SYNCHRONIZED_BAR_PORTFOLIO_USD_V2"
+        )
         if (
-            report.schema_version != "1.0"
+            report.schema_version not in ("1.0", "1.1")
             or report.engine != "NAUTILUS_BACKTEST"
             or report.venue != "PAPER"
             or report.engine_version != "1.221.0"
-            or report.replay_model != "SYNCHRONIZED_BAR_PORTFOLIO_USD_V1"
+            or report.replay_model != expected_replay
             or report.valuation_model != "FINAL_QUOTE_PNL_SIGN_FX_DECIMAL28_V1"
             or report.promotion_allowed is not False
             or report.collateral_model != "GROSS_TARGET_NOTIONAL_USD_NATIVE_BALANCE_V1"
             or report.decision_model != "ALL_CURRENT_OPENS_BEFORE_CAUSAL_DECISIONS_V1"
+            or (report.schema_version == "1.0" and report.liquidation is not None)
+            or (
+                report.schema_version == "1.1"
+                and report.maintenance_model
+                != "ADVERSE_QUOTE_NATIVE_MAINTENANCE_MARGIN_LIQUIDATION_V1"
+            )
+            or (
+                report.liquidation is not None
+                and type(report.liquidation) is not MaintenanceLiquidation
+            )
         ):
             raise ValueError("Native portfolio model mismatch")
         sources = tuple(
@@ -365,6 +544,78 @@ def verify_portfolio_report(report):
             or not report.native_balance_usd.is_finite()
         ):
             raise ValueError("Native portfolio total mismatch")
+        if report.liquidation is not None:
+            positions_at_trigger = {}
+            maintenance_legs = []
+            usd_jpy_quote = None
+            for row in report.legs:
+                bar = next(
+                    (
+                        item
+                        for item in row.source_bars
+                        if item.observed_at == report.liquidation.triggered_at
+                    ),
+                    None,
+                )
+                if bar is None:
+                    raise ValueError("Native liquidation time has no retained synchronized bar")
+                bid, ask = _synthetic_open_quote(bar, row.quote_currency, row.slippage_bps)
+                position = sum(
+                    (
+                        fill.quantity if fill.side == "BUY" else -fill.quantity
+                        for fill in row.fills
+                        if fill.observed_at < report.liquidation.triggered_at
+                    ),
+                    Decimal(0),
+                )
+                if position:
+                    positions_at_trigger[row.instrument_id] = position
+                prior_fills = tuple(
+                    fill for fill in row.fills if fill.observed_at < report.liquidation.triggered_at
+                )
+                maintenance_legs.append(
+                    (
+                        row.instrument_id,
+                        row.quote_currency,
+                        position,
+                        prior_fills,
+                        bid,
+                        ask,
+                        Decimal(1),
+                    )
+                )
+                if row.instrument_id == "USDJPY":
+                    usd_jpy_quote = (bid, ask)
+            equity, required_margin, instruments = _maintenance_metrics(
+                report.initial_balance_usd, tuple(maintenance_legs), usd_jpy_quote
+            )
+            liquidation_fills = {
+                row.instrument_id: row.fills[-1] for row in report.legs if row.fills
+            }
+            if (
+                instruments != report.liquidation.instruments
+                or equity != report.liquidation.equity_usd
+                or required_margin != report.liquidation.required_margin_usd
+                or tuple(sorted(positions_at_trigger)) != report.liquidation.instruments
+                or any(row.final_position != 0 for row in report.legs)
+                or any(
+                    fill.observed_at > report.liquidation.triggered_at
+                    for row in report.legs
+                    for fill in row.fills
+                )
+                or any(
+                    row.instrument_id not in liquidation_fills
+                    or liquidation_fills[row.instrument_id].observed_at
+                    != report.liquidation.triggered_at
+                    or liquidation_fills[row.instrument_id].side
+                    != ("SELL" if positions_at_trigger[row.instrument_id] > 0 else "BUY")
+                    or liquidation_fills[row.instrument_id].quantity
+                    != abs(positions_at_trigger[row.instrument_id])
+                    for row in report.legs
+                    if row.instrument_id in report.liquidation.instruments
+                )
+            ):
+                raise ValueError("Native maintenance liquidation does not reconcile")
 
 
 def _collateral_admitted(engine, prepared, active, order, fee):

@@ -16,6 +16,7 @@ delete globalThis.traceTestLink;
 const identity={run_id:'run_1',agent_id:'A01',agent_version:'0.4.0',task_id:'review',scope:'PAPER',status:'COMPLETED',context_ref:'agent-context:'+ 'a'.repeat(64),manifest_ref:'agent-manifest:'+'b'.repeat(64),trace_id:'graph-trace:'+'c'.repeat(64),context_observed_at:'2026-10-09T12:00:00Z',context_valid_until:'2026-10-09T12:00:05Z'};
 const page={schema_version:'1.0',mode:'PAPER',archival_only:true,head_hash:'a'.repeat(64),total:1,after_run_id:'',remaining:0,next_after:null,records:[identity]};
 const trace={schema_version:'1.0',mode:'PAPER',archival_only:true,requires_escalation:true,...identity,input_refs:['evidence:test'],output_trace_id:null,output_sha256:'f'.repeat(64),events:['CREATED','RUNNING','COMPLETED'].map((status,index)=>({sequence:index+1,status,record_hash:'d'.repeat(64),event_hash:'e'.repeat(64),observed_at:index===2?'2026-10-09T12:00:01.250Z':'2026-10-09T12:00:01Z'})),timing_state:'AVAILABLE',elapsed_seconds:'0.25'};
+const routing={schema_version:'1.0',agent_id:'A01',agent_version:'0.4.0',task_id:'review',squad:'SUPERVISOR',criticality:'material',kind:'llm',governor_decision:'ADMIT',routed_tier:'ROUTINE',execution_path:'PROVIDER',provider_id:'fixture-provider',attempted_provider_id:'fixture-provider',fallback_reasons:[],input_tokens:100,output_tokens:50};
 test('list opens actual saved runs and handles empty, sign-in, changed and damaged data',()=>{
   const html=renderToStaticMarkup(React.createElement(GraphRunListPanel,{result:{ok:true,value:{...page,credential:'private',records:[{...identity,output_json:'private'}]}}}));
   assert.match(html,/href="\/traces\/run_1"/);assert.match(html,/Context observed/);assert.doesNotMatch(html,/private/);
@@ -40,4 +41,14 @@ test('timeline keeps observation and reservation timing separate with metadata o
     const output=renderToStaticMarkup(React.createElement(GraphTracePanel,{runId:'run_1',result}));
     assert.match(output,/role="status"/);assert.doesNotMatch(output,/<tbody>/);
   }
+});
+test('timeline displays governed route evidence without model input',()=>{
+  const routed={...trace,schema_version:'1.1',routing};
+  const html=renderToStaticMarkup(React.createElement(GraphTracePanel,{runId:'run_1',result:{ok:true,value:routed}}));
+  assert.match(html,/Model route/);assert.match(html,/fixture-provider/);assert.match(html,/ROUTINE/);assert.match(html,/100 input · 50 output/);assert.doesNotMatch(html,/prompt|credential/i);
+});
+test('parent timeline links only children with saved traces',()=>{
+  const nested={...trace,schema_version:'1.2',children:[{run_id:'child_1',agent_id:'A02',agent_version:'0.2.0',status:'COMPLETED',trace_available:true},{run_id:'child_2',agent_id:'A03',agent_version:'0.2.0',status:'NOT_STARTED_PERMISSION',trace_available:false}]};
+  const html=renderToStaticMarkup(React.createElement(GraphTracePanel,{runId:'run_1',result:{ok:true,value:nested}}));
+  assert.match(html,/Child executions/);assert.match(html,/href="\/traces\/child_1"/);assert.match(html,/No saved trace/);assert.match(html,/Not started: permission/);
 });

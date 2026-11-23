@@ -317,11 +317,11 @@ def test_one_native_reviewer_hold_blocks_actual_jev_dispatch_until_native_settle
 
     async def invoke():
         world, decision = await review_inputs()
-        review = asyncio.create_task(reviewer.review(world, decision))
+        review = asyncio.create_task(reviewer._review_with_admission(world, decision, lambda: None))
         await entered.wait()
         try:
             with pytest.raises(ValueError):
-                await classifier.classify(world, "EURUSD")
+                await classifier._classify_with_admission(world, "EURUSD", lambda: None)
             assert calls == [
                 "https://api.openai.com/v1/responses/input_tokens",
                 "https://api.openai.com/v1/responses",
@@ -329,7 +329,7 @@ def test_one_native_reviewer_hold_blocks_actual_jev_dispatch_until_native_settle
         finally:
             release.set()
         await review
-        result = await classifier.classify(world, "EURUSD")
+        result = await classifier._classify_with_admission(world, "EURUSD", lambda: None)
         assert result.classification == "RANGING"
 
     asyncio.run(invoke())

@@ -258,9 +258,7 @@ class ValidationPackage(BaseModel):
             "captured_at": self.captured_at.isoformat(),
             "training": self.training.receipt.model_dump(mode="json"),
             "holdout": self.holdout.receipt.model_dump(mode="json"),
-            "sdk_source_pins": [
-                {"path": row.path, "sha256": row.sha256} for row in self.sdk_files
-            ],
+            "sdk_source_pins": [{"path": row.path, "sha256": row.sha256} for row in self.sdk_files],
             "plan": self.plan.model_dump(mode="json"),
             "status": self.status,
             "validation_status": self.validation_status,

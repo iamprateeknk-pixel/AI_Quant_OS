@@ -99,12 +99,23 @@ original engine and may be lost/reset by restart; this is not a durable incident
 journal or acknowledgement queue. A scrape recovering clears these alerts
 without a human acknowledgement and without changing any order/safety state.
 
-No Alertmanager, notification receiver, external message, paging service or
-automatic repair/control action is configured. If Prometheus itself stops, it
-cannot evaluate or deliver its own missing-source alert. External engine-health
-monitoring and durable notification/acknowledgement require separate acceptance.
-This runbook does not supply production recovery authority, failover, complete
-platform incident coverage or independent operating evidence.
+External delivery is disabled by default. When the local operator explicitly
+configures a private HTTPS URL file, pinned Alertmanager forwards the fixed
+Prometheus alert payload to that URL. The payload contains alert names, fixed
+severity/summary/runbook annotations, and timestamps; it excludes API response
+bodies, credentials, account data, orders, fills and trace contents. The
+operator-selected receiver may retain messages under its own policy. Review its
+destination and retention before enabling delivery. URL file contents are copied
+into temporary private configuration and removed on normal shutdown; same-account
+malware can still read local files. Alertmanager sends resolved notifications,
+and can retry or repeat after an ambiguous response, so receiver-side duplicate
+handling is expected. A local TLS mock receiver has been exercised; no real
+provider endpoint or provider-specific acceptance is configured. If Prometheus
+itself stops, it cannot evaluate or deliver its own missing-source alert.
+External engine-health monitoring and durable notification/acknowledgement
+require separate acceptance. This runbook does not supply production recovery
+authority, failover, complete platform incident coverage or independent
+operating evidence.
 
 Rule semantics and native tests follow the official [alert rules](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/)
 and [rule testing](https://prometheus.io/docs/prometheus/latest/configuration/unit_testing_rules/) documentation.

@@ -29,7 +29,7 @@
       "title": "CollectorFilePrefix",
       "type": "object"
     },
-    "CollectorSpan": {
+    "CollectorSourceSpan": {
       "additionalProperties": false,
       "properties": {
         "trace_id": {
@@ -142,6 +142,32 @@
           "default": null,
           "title": "Risk Decision"
         },
+        "intent_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Intent Id"
+        },
+        "risk_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Risk Id"
+        },
         "order_id": {
           "anyOf": [
             {
@@ -238,6 +264,12 @@
           ],
           "default": null,
           "title": "Review Status"
+        },
+        "source_ordinal": {
+          "maximum": 3,
+          "minimum": 0,
+          "title": "Source Ordinal",
+          "type": "integer"
         }
       },
       "required": [
@@ -246,17 +278,18 @@
         "name",
         "start_ns",
         "end_ns",
-        "status"
+        "status",
+        "source_ordinal"
       ],
-      "title": "CollectorSpan",
+      "title": "CollectorSourceSpan",
       "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "1.0",
-      "default": "1.0",
+      "const": "1.2",
+      "default": "1.2",
       "title": "Schema Version",
       "type": "string"
     },
@@ -307,7 +340,7 @@
     "spans": {
       "default": [],
       "items": {
-        "$ref": "#/$defs/CollectorSpan"
+        "$ref": "#/$defs/CollectorSourceSpan"
       },
       "maxItems": 128,
       "title": "Spans",

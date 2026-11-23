@@ -10,12 +10,13 @@ from ai_quant_os.health_contracts import AGENT_CODES, FAILURE_STATES
 
 class HealthIncidentTransition(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    action: Literal["CLOSED", "REOPENED"]
+    action: Literal["CLOSED", "REOPENED", "REPAIR_CLOSURE_AUTHORIZED"]
     at: datetime
     command_id: str | None = Field(min_length=1, max_length=128)
     incident_id: str = Field(pattern=r"^[a-f0-9]{64}$")
     reason: str | None = Field(max_length=256)
     transition_id: str = Field(min_length=1, max_length=160)
+    closure_ref: str | None = Field(default=None, min_length=79, max_length=79)
 
     @model_validator(mode="after")
     def utc_transition(self):
@@ -25,6 +26,19 @@ class HealthIncidentTransition(BaseModel):
             raise ValueError("Closure must carry operator command evidence")
         if self.action == "REOPENED" and (self.command_id is not None or self.reason is not None):
             raise ValueError("Reopening cannot carry operator command evidence")
+        if self.action == "REOPENED" and self.closure_ref is not None:
+            raise ValueError("Reopening cannot carry repair closure evidence")
+        if self.action == "CLOSED" and self.closure_ref is not None:
+            raise ValueError("Quote closure cannot carry repair closure evidence")
+        if self.action == "REPAIR_CLOSURE_AUTHORIZED":
+            if (
+                self.command_id != self.closure_ref
+                or self.reason != "CATALOG_RELEASE_REQUIRED"
+                or self.closure_ref is None
+                or not self.closure_ref.startswith("repair-closure:")
+                or any(char not in "0123456789abcdef" for char in self.closure_ref[15:])
+            ):
+                raise ValueError("Repair authorization must carry its closure reference")
         return self
 
 
@@ -39,6 +53,7 @@ class HealthIncidentSummary(BaseModel):
         "WATCHDOG_FAILURE",
         "CLOCK_REGRESSION",
         "BROKER_UNCONFIRMED",
+        "QUOTE_MISSING",
         "QUOTE_STALE",
         "QUOTE_FUTURE",
         "QUOTE_UNTRUSTED",
@@ -76,6 +91,15 @@ class HealthIncidentSummary(BaseModel):
             raise ValueError("Incident manifest pins mismatch")
         if any(event.incident_id != self.incident_id for event in self.transitions):
             raise ValueError("Incident transition identity mismatch")
+        repair_authorizations = [
+            event for event in self.transitions if event.action == "REPAIR_CLOSURE_AUTHORIZED"
+        ]
+        if repair_authorizations and (
+            not self.quarantine
+            or len(repair_authorizations) != 1
+            or repair_authorizations[0].closure_ref is None
+        ):
+            raise ValueError("Repair authorization must identify one quarantined incident")
         if self.status != (
             "CLOSED" if self.transitions and self.transitions[-1].action == "CLOSED" else "OPEN"
         ):

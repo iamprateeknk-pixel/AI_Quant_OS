@@ -38,6 +38,55 @@ def test_native_sdk_histogram_has_exact_cumulative_buckets_without_exemplars():
         metrics.close()
 
 
+def test_native_sdk_agent_metrics_use_fixed_status_labels_and_exact_duration_buckets():
+    from ai_quant_os.paper_http_metrics import PaperHttpMetrics
+
+    metrics = PaperHttpMetrics()
+    try:
+        metrics.record_agent("A02", "COMPLETED", 5_000_000)
+        metrics.record_agent("A02", "FAILED", 15_000_000)
+        text = metrics.render()
+        labels = 'agent_id="A02",status="COMPLETED"'
+        assert (
+            f'ai_quant_paper_agent_execution_duration_seconds_bucket{{{labels},le="0.005"}} 1\n'
+            in text
+        )
+        assert f"ai_quant_paper_agent_execution_duration_seconds_count{{{labels}}} 1\n" in text
+        assert f"ai_quant_paper_agent_execution_duration_seconds_sum{{{labels}}} 0.005\n" in text
+        assert f"ai_quant_paper_agent_executions_total{{{labels}}} 1\n" in text
+        assert 'status="FAILED"' in text
+        assert "run_id" not in text and "context_ref" not in text
+    finally:
+        metrics.close()
+
+
+def test_native_sdk_agent_metrics_reject_unknown_agent_and_outcome_labels():
+    from ai_quant_os.paper_http_metrics import PaperHttpMetrics
+
+    metrics = PaperHttpMetrics()
+    try:
+        for values in [("A99", "COMPLETED", 100), ("A02", "PRIVATE", 100), ("A02", "FAILED", -1)]:
+            with pytest.raises(ValueError):
+                metrics.record_agent(*values)
+        assert "ai_quant_paper_agent_executions_total{" not in metrics.render()
+    finally:
+        metrics.close()
+
+
+def test_uncertain_agent_recovery_is_counted_without_inventing_execution_latency():
+    from ai_quant_os.paper_http_metrics import PaperHttpMetrics
+
+    metrics = PaperHttpMetrics()
+    try:
+        metrics.record_agent("A02", "UNCERTAIN", None)
+        text = metrics.render()
+        labels = 'agent_id="A02",status="UNCERTAIN"'
+        assert f"ai_quant_paper_agent_executions_total{{{labels}}} 1\n" in text
+        assert f"ai_quant_paper_agent_execution_duration_seconds_count{{{labels}}}" not in text
+    finally:
+        metrics.close()
+
+
 def test_native_metrics_bound_all_label_combinations_and_retain_overflow_counts():
     from ai_quant_os.paper_http_metrics import PaperHttpMetrics
 

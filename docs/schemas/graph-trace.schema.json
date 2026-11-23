@@ -1,5 +1,232 @@
 {
   "$defs": {
+    "AgentExecutionRoute": {
+      "additionalProperties": false,
+      "description": "One bounded model-routing outcome; prompts and context are never stored.",
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "agent_id": {
+          "pattern": "^A(?:0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "task_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Task Id",
+          "type": "string"
+        },
+        "squad": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Squad",
+          "type": "string"
+        },
+        "criticality": {
+          "enum": [
+            "low",
+            "material",
+            "critical",
+            "incident"
+          ],
+          "title": "Criticality",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "llm",
+            "deterministic"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "governor_decision": {
+          "enum": [
+            "ADMIT",
+            "DOWNGRADE",
+            "DEFER",
+            "DENY"
+          ],
+          "title": "Governor Decision",
+          "type": "string"
+        },
+        "routed_tier": {
+          "enum": [
+            "DETERMINISTIC",
+            "ROUTINE",
+            "DEEP",
+            "FRONTIER"
+          ],
+          "title": "Routed Tier",
+          "type": "string"
+        },
+        "execution_path": {
+          "enum": [
+            "DETERMINISTIC",
+            "PROVIDER"
+          ],
+          "title": "Execution Path",
+          "type": "string"
+        },
+        "provider_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Id"
+        },
+        "attempted_provider_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempted Provider Id"
+        },
+        "fallback_reasons": {
+          "items": {
+            "enum": [
+              "BUDGET_DEFER",
+              "BUDGET_DENY",
+              "TOKEN_STORM",
+              "PROVIDER_UNAVAILABLE",
+              "PROVIDER_FAILED"
+            ],
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Fallback Reasons",
+          "type": "array"
+        },
+        "input_tokens": {
+          "anyOf": [
+            {
+              "maximum": 10000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Tokens"
+        },
+        "output_tokens": {
+          "anyOf": [
+            {
+              "maximum": 10000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Tokens"
+        }
+      },
+      "required": [
+        "agent_id",
+        "agent_version",
+        "task_id",
+        "squad",
+        "criticality",
+        "kind",
+        "governor_decision",
+        "routed_tier",
+        "execution_path",
+        "fallback_reasons"
+      ],
+      "title": "AgentExecutionRoute",
+      "type": "object"
+    },
+    "GraphTraceChild": {
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "pattern": "^[A-Za-z0-9_-]{1,128}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "agent_id": {
+          "pattern": "^A(?:0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "maxLength": 32,
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "CREATED",
+                "RUNNING",
+                "COMPLETED",
+                "UNAVAILABLE",
+                "EXPIRED",
+                "DENIED",
+                "WAIT_FOR_DATA",
+                "INVALID",
+                "FAILED",
+                "TIMEOUT",
+                "UNCERTAIN"
+              ],
+              "type": "string"
+            },
+            {
+              "enum": [
+                "NOT_STARTED_PERMISSION",
+                "NOT_STARTED_SOURCE"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Status"
+        },
+        "trace_available": {
+          "title": "Trace Available",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "run_id",
+        "agent_id",
+        "agent_version",
+        "status",
+        "trace_available"
+      ],
+      "title": "GraphTraceChild",
+      "type": "object"
+    },
     "GraphTraceEvent": {
       "additionalProperties": false,
       "properties": {
@@ -62,8 +289,12 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "1.0",
       "default": "1.0",
+      "enum": [
+        "1.0",
+        "1.1",
+        "1.2"
+      ],
       "title": "Schema Version",
       "type": "string"
     },
@@ -224,6 +455,33 @@
         }
       ],
       "title": "Elapsed Seconds"
+    },
+    "routing": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AgentExecutionRoute"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "children": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/GraphTraceChild"
+          },
+          "maxItems": 7,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Children"
     }
   },
   "required": [

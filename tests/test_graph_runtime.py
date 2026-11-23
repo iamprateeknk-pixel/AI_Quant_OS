@@ -6,6 +6,9 @@ from pydantic import BaseModel, ConfigDict, create_model
 
 from ai_quant_os.agent_context import ContextCompiler, EvidenceRecord, SourceBinding
 from ai_quant_os.agent_registry import AgentToolBoundary, load_agent_catalog
+from ai_quant_os.agent_model_router import AgentModelRouter, LlmResult
+from ai_quant_os.cost_governor import ModelTier
+from ai_quant_os.paper_telemetry import PaperTelemetry
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -36,7 +39,13 @@ async def context(registry):
 
 
 async def open_runtime(
-    path, registry, handlers, clock=lambda: NOW, output_schema=RegimeDistribution
+    path,
+    registry,
+    handlers,
+    clock=lambda: NOW,
+    output_schema=RegimeDistribution,
+    tool_handlers=None,
+    **runtime_options,
 ):
     # Import inside the test so missing implementation is an explicit failing assertion.
     import importlib.util
@@ -59,8 +68,9 @@ async def open_runtime(
         path,
         registry=registry,
         implementations=implementations,
-        tools=AgentToolBoundary(registry, {}),
+        tools=AgentToolBoundary(registry, tool_handlers or {}),
         clock=clock,
+        **runtime_options,
     )
 
 
@@ -117,6 +127,218 @@ def test_real_graph_executes_once_and_survives_restart(tmp_path):
             assert await runtime.run("run-1", evidence) == result
             assert runtime.quality_receipts() == observations
         assert calls == [evidence.context_ref]
+
+    asyncio.run(run())
+
+
+def test_graph_and_tool_spans_keep_only_bounded_metadata_and_parentage(tmp_path):
+    pytest.importorskip("opentelemetry.sdk.trace.export.in_memory_span_exporter")
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    async def run():
+        registry = load_agent_catalog()
+        evidence = await context(registry)
+        exporter = InMemorySpanExporter()
+        telemetry = PaperTelemetry(exporter=exporter)
+        tool_calls = []
+
+        async def read_tool(invocation):
+            tool_calls.append(invocation.tool)
+            return {"private_payload": "must-not-be-an-attribute"}
+
+        async def handler(invocation):
+            await invocation.tools.call(
+                "WORLD_STATE_READ",
+                {"instrument_id": "EURUSD", "private_input": "must-not-be-an-attribute"},
+            )
+            return RegimeDistribution(label="TRENDING")
+
+        try:
+            async with await open_runtime(
+                tmp_path / "traced.sqlite3",
+                registry,
+                handler,
+                telemetry=telemetry,
+                tool_handlers={"WORLD_STATE_READ": read_tool},
+            ) as runtime:
+                with telemetry.span("paper.http", root=True):
+                    receipt = await runtime.run("trace-run", evidence)
+                assert receipt.status == "COMPLETED"
+                assert tool_calls == ["WORLD_STATE_READ"]
+                assert telemetry.flush()
+                assert (
+                    'ai_quant_paper_agent_executions_total{agent_id="A02",status="COMPLETED"} 1\n'
+                    in telemetry.metrics_text()
+                )
+
+            spans = exporter.get_finished_spans()
+            by_name = {span.name: span for span in spans}
+            assert set(by_name) == {
+                "paper.http",
+                "paper.agent.graph.admit",
+                "paper.agent.graph.execute",
+                "paper.agent.invoke",
+                "paper.agent.tool.call",
+                "paper.agent.source.read",
+                "paper.agent.graph.finalize",
+            }
+            root = by_name["paper.http"]
+            execute = by_name["paper.agent.graph.execute"]
+            invoke = by_name["paper.agent.invoke"]
+            tool = by_name["paper.agent.tool.call"]
+            source = by_name["paper.agent.source.read"]
+            assert execute.parent.span_id == root.context.span_id
+            assert invoke.parent.span_id == execute.context.span_id
+            assert tool.parent.span_id == invoke.context.span_id
+            assert source.parent.span_id == tool.context.span_id
+            assert all(span.context.trace_id == root.context.trace_id for span in spans)
+            assert execute.attributes["ai_quant.agent.phase"] == "EXECUTE"
+            assert invoke.attributes["ai_quant.agent.id"] == "A02"
+            assert invoke.attributes["ai_quant.agent.version"] == "0.1.0"
+            assert tool.attributes["ai_quant.agent.tool"] == "WORLD_STATE_READ"
+            assert source.attributes["ai_quant.agent.phase"] == "SOURCE"
+            assert all(
+                "private" not in str(value) for span in spans for value in span.attributes.values()
+            )
+            assert all(
+                key
+                in {
+                    "ai_quant.mode",
+                    "ai_quant.agent.id",
+                    "ai_quant.agent.version",
+                    "ai_quant.agent.phase",
+                    "ai_quant.agent.tool",
+                }
+                for span in spans
+                for key in span.attributes
+            )
+        finally:
+            telemetry.close()
+
+    asyncio.run(run())
+
+
+def test_graph_model_route_is_typed_durable_and_injected_only_for_allowlisted_agent(tmp_path):
+    async def run():
+        registry = load_agent_catalog()
+        evidence = await context(registry)
+        calls = []
+
+        async def deterministic(invocation):
+            calls.append("deterministic")
+            return RegimeDistribution(label="TRENDING")
+
+        async def provider(task, tier, invocation):
+            calls.append("provider")
+            assert task.agent_id == "A02"
+            assert task.task_id == "task"
+            assert tier is ModelTier.ROUTINE
+            assert invocation.context.context_ref == evidence.context_ref
+            return LlmResult(RegimeDistribution(label="RANGING"), input_tokens=17, output_tokens=3)
+
+        router = AgentModelRouter()
+        router.register_contextual_provider(
+            "fixture-provider", tiers={ModelTier.ROUTINE}, invoke=provider
+        )
+        path = tmp_path / "runtime.sqlite3"
+        async with await open_runtime(
+            path,
+            registry,
+            deterministic,
+            model_router=router,
+            model_routing={("A02", "0.1.0"): (100, 50)},
+        ) as runtime:
+            receipt = await runtime.run("model-run", evidence)
+            assert receipt.status == "COMPLETED"
+            assert receipt.output_json == '{"label":"RANGING"}'
+            trace = runtime.trace("model-run")
+            assert trace.schema_version == "1.1"
+            assert trace.routing.execution_path == "PROVIDER"
+            assert trace.routing.provider_id == "fixture-provider"
+            assert trace.routing.attempted_provider_id == "fixture-provider"
+            assert trace.routing.routed_tier == "ROUTINE"
+            assert trace.routing.input_tokens == 17
+            assert trace.routing.output_tokens == 3
+        async with await open_runtime(path, registry, deterministic) as runtime:
+            durable_trace = runtime.trace("model-run")
+            assert durable_trace.model_dump_json() == trace.model_dump_json()
+            assert durable_trace.events[0].status == "CREATED"
+            assert durable_trace.events[1].status == "RUNNING"
+            assert durable_trace.events[2].status == "COMPLETED"
+
+        async def unavailable_provider(task, tier, invocation):
+            raise RuntimeError("provider credential must not escape into the receipt")
+
+        failing_router = AgentModelRouter()
+        failing_router.register_contextual_provider(
+            "failing-provider", tiers={ModelTier.ROUTINE}, invoke=unavailable_provider
+        )
+        async with await open_runtime(
+            path,
+            registry,
+            deterministic,
+            model_router=failing_router,
+            model_routing={("A02", "0.1.0"): (100, 50)},
+        ) as runtime:
+            fallback = await runtime.run("fallback-run", evidence)
+            assert fallback.status == "COMPLETED"
+            assert fallback.output_json == '{"label":"TRENDING"}'
+            fallback_trace = runtime.trace("fallback-run")
+            assert fallback_trace.routing.execution_path == "DETERMINISTIC"
+            assert fallback_trace.routing.provider_id is None
+            assert fallback_trace.routing.attempted_provider_id == "failing-provider"
+            assert fallback_trace.routing.fallback_reasons == ("PROVIDER_FAILED",)
+            assert "credential" not in fallback_trace.model_dump_json().lower()
+
+        assert calls == ["provider", "deterministic"]
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize(
+    "input_tokens,output_tokens",
+    [(True, 1), (1.5, 1), (10_000_001, 1), (1, False), (1, 1.5), (1, 10_000_001)],
+)
+def test_invalid_provider_token_usage_falls_back_without_stranding_graph_run(
+    tmp_path, input_tokens, output_tokens
+):
+    async def run():
+        registry = load_agent_catalog()
+        evidence = await context(registry)
+        calls = []
+
+        async def deterministic(invocation):
+            calls.append("deterministic")
+            return RegimeDistribution(label="TRENDING")
+
+        async def malformed_provider(task, tier, invocation):
+            return LlmResult(
+                RegimeDistribution(label="RANGING"),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
+        router = AgentModelRouter()
+        router.register_contextual_provider(
+            "malformed-provider", tiers={ModelTier.ROUTINE}, invoke=malformed_provider
+        )
+        async with await open_runtime(
+            tmp_path / "runtime.sqlite3",
+            registry,
+            deterministic,
+            model_router=router,
+            model_routing={("A02", "0.1.0"): (100, 50)},
+        ) as runtime:
+            receipt = await runtime.run("malformed-usage", evidence)
+            trace = runtime.trace("malformed-usage")
+            assert receipt.status == "COMPLETED"
+            assert receipt.output_json == '{"label":"TRENDING"}'
+            assert trace.routing.execution_path == "DETERMINISTIC"
+            assert trace.routing.attempted_provider_id == "malformed-provider"
+            assert trace.routing.fallback_reasons == ("PROVIDER_FAILED",)
+            assert trace.routing.input_tokens is None
+            assert trace.routing.output_tokens is None
+        assert calls == ["deterministic"]
 
     asyncio.run(run())
 
@@ -183,9 +405,13 @@ def test_failures_withhold_output_and_never_repeat(tmp_path, kind, expected):
 
 
 def test_cancelled_invocation_is_uncertain_after_restart_not_reexecuted(tmp_path):
+    pytest.importorskip("opentelemetry.sdk.trace.export.in_memory_span_exporter")
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
     async def run():
         registry = load_agent_catalog()
         evidence = await context(registry)
+        telemetry = PaperTelemetry(exporter=InMemorySpanExporter())
         entered = asyncio.Event()
         calls = []
 
@@ -195,17 +421,26 @@ def test_cancelled_invocation_is_uncertain_after_restart_not_reexecuted(tmp_path
             await asyncio.sleep(30)
 
         path = tmp_path / "runtime.sqlite3"
-        async with await open_runtime(path, registry, handler) as runtime:
-            task = asyncio.create_task(runtime.run("run-1", evidence))
-            await entered.wait()
-            task.cancel()
-            with pytest.raises(asyncio.CancelledError):
-                await task
-        async with await open_runtime(path, registry, handler) as runtime:
-            result = await runtime.resume("run-1")
-            assert result.status == "UNCERTAIN"
-            assert result.output_json is None
-        assert calls == [1]
+        try:
+            async with await open_runtime(path, registry, handler, telemetry=telemetry) as runtime:
+                task = asyncio.create_task(runtime.run("run-1", evidence))
+                await entered.wait()
+                task.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await task
+            async with await open_runtime(path, registry, handler, telemetry=telemetry) as runtime:
+                result = await runtime.resume("run-1")
+                assert result.status == "UNCERTAIN"
+                assert result.output_json is None
+            metrics = telemetry.metrics_text()
+            labels = 'agent_id="A02",status="UNCERTAIN"'
+            assert f"ai_quant_paper_agent_executions_total{{{labels}}} 1\n" in metrics
+            assert (
+                f"ai_quant_paper_agent_execution_duration_seconds_count{{{labels}}}" not in metrics
+            )
+            assert calls == [1]
+        finally:
+            telemetry.close()
 
     asyncio.run(run())
 

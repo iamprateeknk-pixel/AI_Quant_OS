@@ -12,11 +12,12 @@ from ai_quant_os.api import create_app
 from ai_quant_os.paper_telemetry import PaperTelemetry, telemetry_from_environment
 
 NOW = datetime(2026, 10, 11, tzinfo=timezone.utc)
+INTENT_ID = "9f0385a1-2c4a-4b62-9d73-429062a645fe"
 
 
 def payload():
     return {
-        "intent_id": "secret-intent",
+        "intent_id": INTENT_ID,
         "strategy_id": "secret-strategy",
         "strategy_version": "1",
         "instrument_id": "EURUSD",
@@ -80,18 +81,37 @@ def test_native_sdk_order_trace_links_risk_dispatch_and_replay_without_input_sec
         next(s for s in children if s.name == "paper.order.submit").attributes["ai_quant.order.id"]
         == response.json()["order_id"]
     )
-    assert any(s.name == "paper.order.replay" for s in spans)
+    assert {s.attributes["ai_quant.intent.id"] for s in children} == {INTENT_ID}
+    risk = next(s for s in children if s.name == "paper.risk.evaluate")
+    submit = next(s for s in children if s.name == "paper.order.submit")
+    assert risk.attributes["ai_quant.risk.id"] == response.json()["risk_id"]
+    assert submit.attributes["ai_quant.risk.id"] == response.json()["risk_id"]
+    replay = next(s for s in spans if s.name == "paper.order.replay")
+    assert replay.attributes["ai_quant.intent.id"] == INTENT_ID
+    assert replay.attributes["ai_quant.risk.id"] == response.json()["risk_id"]
     wire = " ".join(s.to_json() for s in spans)
     for private in (
         "private-key",
         "private-idempotency",
-        "secret-intent",
         "secret-strategy",
         "private-world",
         "private-evidence",
         "traceparent",
     ):
         assert private not in wire
+    telemetry.close()
+
+
+def test_correlation_attributes_accept_only_bounded_uuid_references():
+    exporter = InMemorySpanExporter()
+    telemetry = PaperTelemetry(exporter=exporter)
+    with telemetry.span("paper.order.submit") as span:
+        span.set("ai_quant.intent.id", "private-input")
+        span.set("ai_quant.risk.id", "f6a87d91-504b-4ca1-8a92-37412eae489d")
+    assert telemetry.flush()
+    attributes = exporter.get_finished_spans()[0].attributes
+    assert "ai_quant.intent.id" not in attributes
+    assert attributes["ai_quant.risk.id"] == "f6a87d91-504b-4ca1-8a92-37412eae489d"
     telemetry.close()
 
 

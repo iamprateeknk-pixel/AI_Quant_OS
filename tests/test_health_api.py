@@ -170,6 +170,27 @@ def test_quote_incident_close_route_requires_operator_and_fresh_quote(tmp_path):
         assert item["transitions"][0]["action"] == "CLOSED"
 
 
+def test_expected_quote_catalog_reports_only_declared_missing_instruments(tmp_path, monkeypatch):
+    monkeypatch.setenv("AI_QUANT_EXPECTED_PAPER_INSTRUMENTS", " EURUSD, GBPUSD,,")
+    headers = {"X-Operator-Token": "operator"}
+    with TestClient(
+        create_app(
+            operator_token="operator",
+            clock=lambda: NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+            health_watchdog_enabled=True,
+        )
+    ) as client:
+        assert client.post("/api/v1/paper/health/scan", headers=headers).status_code == 200
+        incidents = client.get("/api/v1/paper/health/incidents", headers=headers).json()[
+            "incidents"
+        ]
+        assert [(item["code"], item["subject"]) for item in incidents] == [
+            ("QUOTE_MISSING", "EURUSD"),
+            ("QUOTE_MISSING", "GBPUSD"),
+        ]
+
+
 def test_persistent_api_lifespan_has_one_crash_released_owner(tmp_path):
     options = {
         "operator_token": "operator",

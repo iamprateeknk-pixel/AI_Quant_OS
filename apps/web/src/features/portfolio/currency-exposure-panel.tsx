@@ -1,4 +1,4 @@
-import { getCurrencyPortfolio } from "@/lib/control-api";
+import type { CurrencyPortfolio, PortfolioRead } from "./portfolio-live-read";
 import { TableScrollRegion } from "../shared/table-scroll-region";
 
 function issueLabel(issue: string | null): string {
@@ -11,8 +11,7 @@ function issueLabel(issue: string | null): string {
   }
 }
 
-export async function CurrencyExposurePanel() {
-  const result = await getCurrencyPortfolio();
+export function CurrencyExposurePanel({ result }: { result: PortfolioRead<CurrencyPortfolio> }) {
   return <section className="panel content-panel">
     <div className="panel-heading"><h2>Currency exposure</h2><span>{result.ok ? result.value.reporting_currency : "UNAVAILABLE"}</span></div>
     {result.ok ? <>

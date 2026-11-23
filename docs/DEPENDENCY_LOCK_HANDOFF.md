@@ -73,7 +73,13 @@ replacement sources or promoting agents. The full regression run completed with
 required. The tenth focused test was added after full-suite collection and was
 verified separately with all ten dependency tests. The pinned Ruff checks pass
 and all 213 Python files satisfy formatting. Service-dependent skips remain;
-Linux wheel execution and hosted CI remain unverified.
+Hosted run
+[40836433785](https://github.com/iamprateeknk-pixel/AI_Quant_OS/actions/runs/40836433785)
+passed all 17 jobs on code revision `0dfd881`, including the locked Windows and
+Linux application jobs; their full suite results are recorded in `BUILD_STATUS.md`.
+This verifies the checked dependency profiles on those CI runners, not an arbitrary
+production deployment environment. Linux wheel execution outside the tested runner
+remains unverified.
 
 A fresh Windows index checkout reproduced both lock checks, verifying the LF
 attributes rather than relying only on current worktree bytes. The retained
