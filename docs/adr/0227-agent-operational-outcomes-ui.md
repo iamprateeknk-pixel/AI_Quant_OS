@@ -37,4 +37,8 @@ schema migration, so rollback requires no data repair.
 
 The increment reuses the existing operational quality aggregation and graph
 integrity checks. Verification for the API/UI wiring is recorded in
-`docs/BUILD_STATUS.md`; this change adds no new local test cases.
+`docs/BUILD_STATUS.md`. The skewed-duration regression confirms a valid mean
+above p95 is accepted; the six agent-quality tests pass. The browser parser and
+panel tests cover exponent-form duration strings, honest operational labeling,
+and withholding rows when the archive cannot be verified. The full web suite,
+lint, production build, and six-state visual regression pass locally.
