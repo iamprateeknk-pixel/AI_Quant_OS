@@ -131,6 +131,8 @@ class PaperSpan:
                 "ai_quant.order.id",
                 "ai_quant.agent.envelope_id",
                 "ai_quant.agent.parent_envelope_id",
+                "ai_quant.intent.id",
+                "ai_quant.risk.id",
             }
             and isinstance(value, str)
             and re.fullmatch(r"[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}", value)

@@ -60,7 +60,7 @@ from pending browser keyboard, layout, focus and responsive acceptance.
 Parent/child navigation is available for verified saved child graphs. Optional
 OpenTelemetry now captures durable graph admission/execution, implementation
 invocation, authorized tool calls, read-tool source access and finalization as
-nested spans. Collector observation schema 1.1 binds each selected span to the
+nested spans. Collector observation schema 1.2 binds each selected span to the
 ordinal of the retained file prefix it came from; the UI shows that prefix's
 observed byte length and digest prefix. Schema 1.0 remains readable, with source
 shown as unavailable for legacy spans. Prefix identity is local observation
@@ -69,7 +69,10 @@ lookup now supports case-insensitive text search over
 the selected trace's returned spans and a status filter. Results are scoped to
 the single trace and retained observations loaded for that read; this is not an
 archive-wide search and cannot recover unobserved spans. Market-intent-risk-order
-correlation, provider-specific export/retention and complete quality/latency
-metrics remain unfinished. No execution, retry, recovery,
+spans now carry UUID intent and risk references when available, enabling local
+cross-span and replay correlation without recording prompt, context or market
+payloads. Schema 1.0/1.1 reads remain supported. Provider-specific
+export/retention and complete quality/latency metrics remain unfinished. No
+execution, retry, recovery,
 promotion or risk action is added on these pages. Full P00-P13 development/release
 acceptance remains incomplete.

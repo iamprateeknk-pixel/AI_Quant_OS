@@ -18,9 +18,10 @@ async function modules(){
 test("native saved spans select metadata and preserve exact nanoseconds and requested identity",async()=>{
  const {parseCollectorTrace:parse}=await modules(),v=fixture();
  assert.deepEqual(parse({...v,path:"private",spans:v.spans.map(s=>({...s,secret:"private"}))},v.trace_id),v);
- const legacy=structuredClone(v);legacy.schema_version="1.0";legacy.spans.forEach(span=>delete span.source_ordinal);assert.deepEqual(parse(legacy,v.trace_id),legacy);
+ const legacy=structuredClone(v);legacy.schema_version="1.0";legacy.spans.forEach(span=>{delete span.source_ordinal;delete span.intent_id;delete span.risk_id;});assert.deepEqual(parse(legacy,v.trace_id),legacy);
  const wrongSource=structuredClone(v);wrongSource.spans[0].source_ordinal=1;assert.equal(parse(wrongSource,v.trace_id),null);
  const fractionalSource=structuredClone(v);fractionalSource.spans[0].source_ordinal=0.5;assert.equal(parse(fractionalSource,v.trace_id),null);
+ const malformedCorrelation=structuredClone(v);malformedCorrelation.spans[0].intent_id="private-input";assert.equal(parse(malformedCorrelation,v.trace_id),null);
  assert.equal(parse(v,"f".repeat(32)),null);
  assert.equal(parse({...v,complete_trace:true},v.trace_id),null);assert.equal(parse({...v,delivery_verified:true},v.trace_id),null);
  assert.equal(parse({...v,spans:[...v.spans,v.spans[0]]},v.trace_id),null);
@@ -32,12 +33,14 @@ test("saved span filters search only the selected trace and retain structural de
  const {filterCollectorSpans,CollectorTracePanel:Panel}=await modules(),v=fixture();
  const matches=filterCollectorSpans(v.spans,"approve","ALL");
  assert.deepEqual(matches.map(item=>[item.span.name,item.depth]),[["paper.risk.evaluate",1]]);
+ assert.equal(filterCollectorSpans(v.spans,"9f0385a1-2c4a-4b62-9d73-429062a645fe").length,3);
  assert.deepEqual(filterCollectorSpans(v.spans,"","ERROR"),[]);
  assert.equal(filterCollectorSpans(v.spans,"","UNSET").length,v.spans.length);
  const html=renderToStaticMarkup(React.createElement(Panel,{traceId:v.trace_id,result:{ok:true,value:v},search:"api/v1",status:"ALL"}));
  assert.match(html,/name="span_query" value="api\/v1"/);assert.match(html,/name="span_status"/);
  assert.match(html,/1 matching saved step/);assert.match(html,/Search is limited to this trace/);
- assert.match(html,/Source prefix/);assert.match(html,/Prefix 1/);assert.match(html,/3d299ba06ceaa390/);
+ assert.match(html,/Source prefix/);assert.match(html,/Prefix 1/);assert.match(html,/cf2d8f57422020a4/);
+ const correlatedHtml=renderToStaticMarkup(React.createElement(Panel,{traceId:v.trace_id,result:{ok:true,value:v},search:"9f0385a1-2c4a-4b62-9d73-429062a645fe",status:"ALL"}));assert.match(correlatedHtml,/Intent ID/);assert.match(correlatedHtml,/Risk ID/);
  const childHtml=renderToStaticMarkup(React.createElement(Panel,{traceId:v.trace_id,result:{ok:true,value:v},search:"approve",status:"ALL"}));assert.match(childHtml,/Parent excluded by filters/);assert.match(childHtml,/data-span-depth="1"/);
 });
 test("saved spans render in deterministic parent-first order even when collector order is scrambled",async()=>{

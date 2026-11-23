@@ -11,6 +11,8 @@ from ai_quant_os.paper_telemetry import PaperTelemetry
 TRACE = "1" * 32
 ROOT = "2" * 16
 CHILD = "3" * 16
+INTENT = "9f0385a1-2c4a-4b62-9d73-429062a645fe"
+RISK = "f6a87d91-504b-4ca1-8a92-37412eae489d"
 NOW = datetime(2026, 10, 11, tzinfo=timezone.utc)
 HEADERS = {"X-Operator-Token": "private-token"}
 URL = "/api/v1/observability/traces/" + TRACE
@@ -54,6 +56,11 @@ def document():
                                 "attributes": [
                                     {"key": "ai_quant.mode", "value": {"stringValue": "PAPER"}},
                                     {
+                                        "key": "ai_quant.intent.id",
+                                        "value": {"stringValue": INTENT},
+                                    },
+                                    {"key": "ai_quant.risk.id", "value": {"stringValue": RISK}},
+                                    {
                                         "key": "ai_quant.risk.decision",
                                         "value": {"stringValue": "APPROVE"},
                                     },
@@ -91,7 +98,7 @@ def test_protected_selected_trace_preserves_original_parentage_and_source(tmp_pa
         assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
         value = response.json()
         assert value["state"] == "RECORDED_SPANS"
-        assert value["schema_version"] == "1.1"
+        assert value["schema_version"] == "1.2"
         assert value["trace_id"] == TRACE and value["delivery_verified"] is False
         assert value["independently_attested"] is False and value["complete_trace"] is False
         assert {span["span_id"] for span in value["spans"]} == {ROOT, CHILD}
@@ -99,6 +106,7 @@ def test_protected_selected_trace_preserves_original_parentage_and_source(tmp_pa
         assert child["parent_span_id"] == ROOT and child["end_ns"] == "1791676800000000200"
         assert child["source_ordinal"] == 0
         assert child["risk_decision"] == "APPROVE"
+        assert child["intent_id"] == INTENT and child["risk_id"] == RISK
         assert "private" not in response.text and str(path) not in response.text
         assert value["files"][0]["prefix_bytes"] == path.stat().st_size
 
@@ -231,7 +239,7 @@ def test_original_prefix_append_is_accepted_but_rewrite_is_withheld(tmp_path, mo
 
 def test_invalid_nanoseconds_cycles_and_retention_inventory_are_withheld(tmp_path):
     path = tmp_path / "traces.jsonl"
-    for modification in ["time", "zero", "cycle", "source"]:
+    for modification in ["time", "zero", "cycle", "source", "id"]:
         data = document()
         spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
         if modification == "time":
@@ -240,8 +248,12 @@ def test_invalid_nanoseconds_cycles_and_retention_inventory_are_withheld(tmp_pat
             spans[1]["spanId"] = "0" * 16
         elif modification == "cycle":
             spans[0]["parentSpanId"] = CHILD
-        else:
+        elif modification == "source":
             data["resourceSpans"][0]["scopeSpans"][0]["scope"]["name"] = "foreign"
+        else:
+            spans[1]["attributes"].append(
+                {"key": "ai_quant.intent.id", "value": {"stringValue": "not-a-uuid"}}
+            )
         write(path, data)
         with TestClient(app(path)) as client:
             assert client.get(URL, headers=HEADERS).json()["state"] == "UNAVAILABLE"

@@ -142,6 +142,32 @@
           "default": null,
           "title": "Risk Decision"
         },
+        "intent_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Intent Id"
+        },
+        "risk_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Risk Id"
+        },
         "order_id": {
           "anyOf": [
             {
@@ -262,8 +288,8 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "1.1",
-      "default": "1.1",
+      "const": "1.2",
+      "default": "1.2",
       "title": "Schema Version",
       "type": "string"
     },

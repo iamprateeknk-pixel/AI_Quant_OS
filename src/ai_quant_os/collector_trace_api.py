@@ -20,7 +20,7 @@ class CollectorFilePrefix(BaseModel):
 
 class CollectorTraceObservation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    schema_version: Literal["1.1"] = "1.1"
+    schema_version: Literal["1.2"] = "1.2"
     mode: Literal["PAPER"] = "PAPER"
     delivery_verified: Literal[False] = False
     independently_attested: Literal[False] = False

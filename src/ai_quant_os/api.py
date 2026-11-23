@@ -2826,6 +2826,8 @@ def create_app(
             raise HTTPException(status_code=409, detail=str(error)) from error
         if previous is not None:
             with configured_telemetry.span("paper.order.replay") as span:
+                span.set("ai_quant.intent.id", intent.intent_id)
+                span.set("ai_quant.risk.id", previous.risk_id)
                 span.set("ai_quant.order.id", previous.order_id)
                 span.set("ai_quant.order.status", previous.status)
             if previous.status == "PENDING":
@@ -2840,6 +2842,7 @@ def create_app(
                     raise HTTPException(status_code=409, detail="No paper market quote")
                 try:
                     with configured_telemetry.span("paper.order.recover") as span:
+                        span.set("ai_quant.intent.id", intent.intent_id)
                         previous = execution.recover_pending(
                             intent,
                             idempotency_key=idempotency_key,
@@ -2848,6 +2851,7 @@ def create_app(
                             currency_context=currency_context(quote),
                             candidate_assignment_id=payload.candidate_assignment_id,
                         )
+                        span.set("ai_quant.risk.id", previous.risk_id)
                         span.set("ai_quant.order.id", previous.order_id)
                         span.set("ai_quant.order.status", previous.status)
                 except ValueError as error:
@@ -2868,13 +2872,15 @@ def create_app(
             )
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        with configured_telemetry.span("paper.market.snapshot"):
+        with configured_telemetry.span("paper.market.snapshot") as span:
+            span.set("ai_quant.intent.id", intent.intent_id)
             quote = quotes.get(intent.instrument_id)
         if quote is None:
             raise HTTPException(status_code=409, detail="No paper market quote")
         now = current_time()
         try:
             with configured_telemetry.span("paper.risk.evaluate") as span:
+                span.set("ai_quant.intent.id", intent.intent_id)
                 decision = risk.evaluate(
                     intent,
                     quote,
@@ -2882,8 +2888,11 @@ def create_app(
                     portfolio=execution.exposure_for(intent.instrument_id),
                     currency_context=currency_context(quote),
                 )
+                span.set("ai_quant.risk.id", decision.risk_id)
                 span.set("ai_quant.risk.decision", decision.decision)
             with configured_telemetry.span("paper.order.submit") as span:
+                span.set("ai_quant.intent.id", intent.intent_id)
+                span.set("ai_quant.risk.id", decision.risk_id)
                 order = execution.submit(
                     intent,
                     decision,
