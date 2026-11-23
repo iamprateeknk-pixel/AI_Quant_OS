@@ -50,6 +50,19 @@ def test_graph_api_uses_archived_context_and_retains_failure_on_restart(tmp_path
         assert response.status_code == 200
         assert response.json()["archival_only"] is True
         assert response.json()["receipt"] == receipt
+        assert client.get("/api/v1/agents/operational-quality").status_code == 401
+        quality = client.get("/api/v1/agents/operational-quality", headers=HEADERS)
+        assert quality.status_code == 200
+        assert quality.headers["cache-control"] == "no-store"
+        quality_body = quality.json()
+        assert quality_body["availability"] == "AVAILABLE"
+        assert quality_body["source_receipt_count"] == 1
+        assert quality_body["rows"][0]["agent_id"] == "A02"
+        assert quality_body["rows"][0]["agent_version"] == "0.1.0"
+        assert quality_body["rows"][0]["status_counts"]["WAIT_FOR_DATA"] == 1
+        assert quality_body["metric_scope"] == "OPERATIONAL_OUTCOME_COUNTS"
+        assert quality_body["calibration_established"] is False
+        assert quality_body["promotion_allowed"] is False
         response = client.post("/api/v1/paper/agents/graph-runs/run-1/resume", headers=HEADERS)
         assert response.status_code == 200
         assert response.json()["receipt"] == receipt

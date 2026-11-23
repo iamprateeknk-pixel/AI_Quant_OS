@@ -147,7 +147,7 @@ export async function readHealth(resource: "status" | "incidents", offset = 0, h
   return protectedRead(path);
 }
 
-async function protectedRead(path: string, distinguishMissing = false, maxBytes = 131072): Promise<ProtectedRead> {
+export async function protectedRead(path: string, distinguishMissing = false, maxBytes = 131072): Promise<ProtectedRead> {
   try {
     const token = (await cookies()).get(COOKIE)?.value;
     if (!token) return { ok: false, reason: "SIGN_IN" };

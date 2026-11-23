@@ -41,10 +41,6 @@ class AgentOperationalQualityRow(BaseModel):
             != (self.mean_duration_seconds is None and self.p95_duration_seconds is None)
             or (self.timing_sample_count > 0)
             != (self.mean_duration_seconds is not None and self.p95_duration_seconds is not None)
-            or (
-                self.mean_duration_seconds is not None
-                and self.p95_duration_seconds < self.mean_duration_seconds
-            )
         ):
             raise ValueError("Operational quality counts differ from graph receipts")
         return self

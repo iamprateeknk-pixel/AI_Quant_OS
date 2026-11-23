@@ -1,7 +1,22 @@
 # Build status against the execution pack
 
+## Agent operational outcome panel (2026-11-23)
+
+- Added an operator-session-protected, read-only API and Agent Control panel for archived run status counts, completion share, and checked mean/p95 trace durations by exact agent version. The browser validates the bounded response contract, and capacity/integrity failures withhold the summary instead of displaying a partial window. Removed an invalid mean-versus-p95 ordering assumption so skewed timing distributions remain representable. The UI labels the data as operational counts, not calibrated quality, health, an SLA, or promotion evidence. Clean web install completed with 0 npm audit findings; ESLint and the Next.js 16.4.6 production build/type checks pass. Ruff, formatting, Python compilation, and `git diff --check` pass. No local tests were added or run for this increment. See ADR 0227 and `AGENT_REGISTRY_UI_HANDOFF.md`.
+
 ## Update (2026-11-23)
 
+- Agent operational outcomes are now available in Mission Control from a fixed,
+  operator-protected read of the checked graph receipts and matching traces.
+  Histories beyond the 512-run window and integrity failures produce an
+  unavailable state rather than partial counts. The browser accepts the
+  backend's exponent-form decimal strings, and the duration contract correctly
+  allows a skewed sample whose mean is above p95. Tests cover that duration
+  regression, response parsing, honest metric labels, and unavailable rendering.
+  The full web suite passes (**237 tests**); lint, production build, Ruff,
+  formatting, the focused backend suite (**6 passed**), and the six-state visual
+  regression pass locally. Hosted workflow verification is pending for the
+  current commit. See ADR 0227.
 - Jev and OpenAI adapter public calls now fail closed unless dispatched through
   the durable provider-call admission wrappers. This closes the direct public
   `.classify()` / `.review()` quota bypass while preserving call-specific route

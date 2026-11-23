@@ -33,7 +33,7 @@ def receipt(registry, run_id, status):
 
 def trace_for(row, duration_seconds, status=None):
     start = NOW + timedelta(seconds=1)
-    finish = start + timedelta(seconds=duration_seconds)
+    finish = start + timedelta(seconds=float(duration_seconds))
     status = status or row.status
     events = tuple(
         GraphTraceEvent(
@@ -131,6 +131,26 @@ def test_operational_quality_reports_verified_trace_duration_without_calibration
     )
     assert snapshot.calibration_established is False
     assert snapshot.promotion_allowed is False
+
+
+def test_operational_quality_accepts_mean_above_p95_for_skewed_trace_durations():
+    registry = load_agent_catalog()
+    receipts = tuple(receipt(registry, f"run-{index:02}", "FAILED") for index in range(20))
+    durations = (Decimal("0.1"),) * 19 + (Decimal("4"),)
+
+    snapshot = operational_quality_observation(
+        registry,
+        receipts,
+        traces=tuple(
+            trace_for(row, duration) for row, duration in zip(receipts, durations, strict=True)
+        ),
+        now=NOW + timedelta(seconds=10),
+    )
+
+    row = snapshot.rows[0]
+    assert row.mean_duration_seconds == Decimal("0.295")
+    assert row.p95_duration_seconds == Decimal("0.1")
+    assert row.mean_duration_seconds > row.p95_duration_seconds
 
 
 def test_operational_quality_rejects_trace_that_does_not_match_receipt():

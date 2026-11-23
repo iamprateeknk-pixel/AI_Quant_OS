@@ -36,8 +36,8 @@ that executable handlers exist. The page performs no agent action or capital act
 ## Remaining requirements
 
 This advances the FINAL frontend pack's Agent Control page; it does not complete
-it. Health, current tasks, genome/model routes, latency, cost, calibration, last
-errors, evidence/tool/memory/evaluation histories, controlled diagnostics,
+it. Health, current tasks, genome/model routes, cost attribution, calibration,
+last errors, evidence/tool/memory/evaluation histories, controlled diagnostics,
 quarantine/restart requests and challenger comparisons remain unwired. Saved graph
 execution summaries link to the existing trace view. No action controls are offered
 without their backend admission and audited outcome workflow.
@@ -52,3 +52,15 @@ complete validated pair, keeps the archive head bound across pages, and returns
 metadata summaries only. Each page is checked so every row matches the selected
 version before it is rendered. This is historical advisory evidence; it does not
 show current eligibility or provide execution controls. See ADR 0226.
+
+## Update: operational outcomes and trace timing
+
+The Agent Control page now includes a protected, read-only summary rebuilt from the
+existing audit-checked graph receipt and trace inventory. It groups retained run
+statuses, completed-run share, and available mean/p95 trace durations by exact
+agent version. The browser strictly validates the summary before rendering it;
+raw traces and input payloads are not included. More than 512 retained runs or an
+unverifiable archive produces an explicit unavailable state instead of a partial
+summary. The panel labels these as operational counts, not calibrated quality,
+current health, an SLA, or promotion evidence. It refreshes with the page. See
+ADR 0227.
