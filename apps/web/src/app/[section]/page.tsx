@@ -21,8 +21,7 @@ import { GenomePanel } from "@/features/evolution/genome-panel";
 import { DossierPanel } from "@/features/research/dossier-panel";
 import { StrategyArchivePanel } from "@/features/strategies/archive-panel";
 import { SessionAdminPanel } from "@/features/operator-session/session-admin-panel";
-import { CallBudgetPanel } from "@/features/costs/call-budget-panel";
-import { SpendingPanels } from "@/features/costs/shared-spending-panel";
+import {CostsLivePanel} from "@/features/costs/costs-live-panel";
 import {MonitoringLivePanel} from "@/features/incidents/monitoring-live-panel";
 import {selectMonitoringRead} from "@/features/incidents/monitoring-alerts";
 import {RISK_INSTRUMENTS} from "@/features/risk/read-model";
@@ -68,8 +67,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
     {health && <MonitoringLivePanel initialResult={selectMonitoringRead(health[2])} observedAt={new Date().toISOString()} />}
     {genomes && <GenomePanel result={genomes} />}
     {strategies && <StrategyArchivePanel result={strategies} />}
-    {costReads && <SpendingPanels reviewResult={costReads[1]} sharedResult={costReads[2]} />}
-    {costReads && <CallBudgetPanel result={costReads[0]} />}
+    {costReads && <CostsLivePanel initialReads={costReads} />}
     {sessions && <SessionAdminPanel result={sessions} />}
     {dossiers && <DossierPanel result={dossiers} />}
     {section === "risk" && <OperatorConsole initialSession={operatorSession} safetyState={risk?.ok ? risk.value.safety_state : null} />}

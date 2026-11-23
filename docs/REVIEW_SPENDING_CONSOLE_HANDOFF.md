@@ -56,11 +56,19 @@ The additive observation schema is separate from every original schema.
 Evaluation 0136 records fresh staged identity, focused regressions, all frontend
 Node tests, build and lint evidence.
 
+The Costs page now refreshes call capacity and both provider spending observations
+every 15 seconds while the shared authenticated PAPER stream is current. A fixed
+same-origin, no-store route performs the three protected reads; the browser bounds
+the response and withholds the displayed rows on stream loss, read timeout, expired
+or future observation, or a late response. The ledgers remain separate snapshots,
+not an atomic total or invoice. Focused live-store, route, parser and page-wiring
+tests cover this behavior.
+
 Native browser navigation, refresh, focus, table overflow, accessibility and visual
 acceptance remain pending under the earlier launch refusal; no alternate browser
-attempt is made. Realtime cost details, shared multi-provider/model governance,
-Jev budgets, actual provider/price/invoice acceptance, recovery spending, retention,
-throughput and independent critical review remain open. All P00–P13 remain incomplete.
+attempt is made. Shared multi-provider/model governance, Jev budgets, actual
+provider/price/invoice acceptance, recovery spending, retention, throughput and
+independent critical review remain open. All P00–P13 remain incomplete.
 
 ## Rollback
 
@@ -68,3 +76,8 @@ Revert 0136 to remove the protected observation endpoint and spending panels. Ke
 the 0135 ledger/pin and new fixtures/evidence. Existing call/order/world schemas
 and databases are unchanged; there is no data migration or quota reset. Review
 spending admission continues independently of its Cost Center presentation.
+
+To roll back the live-refresh follow-up only, revert its repository commit. The
+Costs page returns to its server-rendered snapshots and explicit refresh forms;
+the three existing protected source reads and ledgers are unchanged, with no
+client cache or persisted state to migrate.
