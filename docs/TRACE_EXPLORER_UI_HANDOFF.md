@@ -57,7 +57,11 @@ preview launch was blocked by policy; this increment does not bypass or retry th
 launch. Static React rendering and production compilation are recorded separately
 from pending browser keyboard, layout, focus and responsive acceptance.
 
-Parent/child causal navigation, node/tool/source spans, market-intent-risk-order
-correlation, filters/search, OTel/export/retention and complete quality/latency metrics
-remain unfinished. No execution, retry, recovery, promotion or risk action is added
-on these pages. Full P00-P13 development/release acceptance remains incomplete.
+Parent/child navigation is available for verified saved child graphs. Optional
+OpenTelemetry now captures durable graph admission/execution, implementation
+invocation, authorized tool calls, read-tool source access and finalization as
+nested spans. Market-intent-risk-order correlation, span search/filter UI,
+per-source provenance, provider-specific export/retention and complete
+quality/latency metrics remain unfinished. No execution, retry, recovery,
+promotion or risk action is added on these pages. Full P00-P13 development/release
+acceptance remains incomplete.
