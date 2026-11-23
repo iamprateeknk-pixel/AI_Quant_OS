@@ -82,6 +82,10 @@ class CollectorSpan(BaseModel):
         return self
 
 
+class CollectorSourceSpan(CollectorSpan):
+    source_ordinal: int = Field(strict=True, ge=0, le=3)
+
+
 def attributes(rows):
     if not isinstance(rows, list) or len(rows) > 16:
         raise ValueError("Bounded attributes required")

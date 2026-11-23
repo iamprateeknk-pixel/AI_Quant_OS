@@ -91,11 +91,13 @@ def test_protected_selected_trace_preserves_original_parentage_and_source(tmp_pa
         assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
         value = response.json()
         assert value["state"] == "RECORDED_SPANS"
+        assert value["schema_version"] == "1.1"
         assert value["trace_id"] == TRACE and value["delivery_verified"] is False
         assert value["independently_attested"] is False and value["complete_trace"] is False
         assert {span["span_id"] for span in value["spans"]} == {ROOT, CHILD}
         child = next(span for span in value["spans"] if span["span_id"] == CHILD)
         assert child["parent_span_id"] == ROOT and child["end_ns"] == "1791676800000000200"
+        assert child["source_ordinal"] == 0
         assert child["risk_decision"] == "APPROVE"
         assert "private" not in response.text and str(path) not in response.text
         assert value["files"][0]["prefix_bytes"] == path.stat().st_size
@@ -144,6 +146,10 @@ def test_rotated_original_prefixes_are_scanned_without_inferred_parent(tmp_path)
             and len(value["spans"]) == 2
             and len(value["files"]) == 2
         )
+        assert {span["span_id"]: span["source_ordinal"] for span in value["spans"]} == {
+            ROOT: 0,
+            CHILD: 1,
+        }
 
 
 def test_disabled_and_missing_file_infer_no_spans_or_prefix(tmp_path):
@@ -249,6 +255,7 @@ def test_invalid_nanoseconds_cycles_and_retention_inventory_are_withheld(tmp_pat
 def test_native_schema_and_actual_selected_response_are_exact(tmp_path):
     from pathlib import Path
     from jsonschema import Draft202012Validator
+    import pytest
     from ai_quant_os.collector_trace_api import CollectorTraceObservation
 
     schema = json.loads(
@@ -262,7 +269,12 @@ def test_native_schema_and_actual_selected_response_are_exact(tmp_path):
     path = tmp_path / "traces.jsonl"
     write(path)
     with TestClient(app(path)) as client:
-        Draft202012Validator(schema).validate(client.get(URL, headers=HEADERS).json())
+        value = client.get(URL, headers=HEADERS).json()
+        Draft202012Validator(schema).validate(value)
+        invalid = json.loads(json.dumps(value))
+        invalid["spans"][0]["source_ordinal"] = 1
+        with pytest.raises(ValueError, match="Coherent original prefixes"):
+            CollectorTraceObservation.model_validate(invalid)
 
 
 def test_bounds_ambiguous_json_and_remote_configuration_never_disable_halt(tmp_path, monkeypatch):

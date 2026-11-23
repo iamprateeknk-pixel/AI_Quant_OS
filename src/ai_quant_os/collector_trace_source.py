@@ -8,7 +8,7 @@ import re
 import stat
 from time import monotonic
 
-from ai_quant_os.collector_trace import select_spans
+from ai_quant_os.collector_trace import CollectorSourceSpan, select_spans
 
 MAX_FILE = 32 * 1024 * 1024
 MAX_LINE = 1024 * 1024
@@ -77,7 +77,10 @@ class CollectorTraceSource:
                         object_pairs_hook=unique_object,
                         parse_constant=reject_constant,
                     )
-                    spans.extend(select_spans(document, trace_id))
+                    spans.extend(
+                        CollectorSourceSpan(**span.model_dump(), source_ordinal=ordinal)
+                        for span in select_spans(document, trace_id)
+                    )
                     if len(spans) > 128:
                         raise ValueError("Selected trace exceeds span bound")
                 stream.seek(0)

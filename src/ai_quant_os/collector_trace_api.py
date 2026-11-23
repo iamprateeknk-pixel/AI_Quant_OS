@@ -6,7 +6,7 @@ from typing import Annotated, Callable, Literal
 from fastapi import Depends, FastAPI, Header, HTTPException, Path, Response
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-from ai_quant_os.collector_trace import CollectorSpan, TRACE_PATTERN
+from ai_quant_os.collector_trace import CollectorSourceSpan, TRACE_PATTERN
 from ai_quant_os.collector_trace_source import CollectorTraceSource, MAX_FILE
 from ai_quant_os.contracts import _require_aware
 
@@ -20,7 +20,7 @@ class CollectorFilePrefix(BaseModel):
 
 class CollectorTraceObservation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.1"] = "1.1"
     mode: Literal["PAPER"] = "PAPER"
     delivery_verified: Literal[False] = False
     independently_attested: Literal[False] = False
@@ -28,7 +28,7 @@ class CollectorTraceObservation(BaseModel):
     trace_id: str = Field(pattern=TRACE_PATTERN)
     observed_at: AwareDatetime
     state: Literal["RECORDED_SPANS", "NOT_OBSERVED", "DISABLED", "UNAVAILABLE"]
-    spans: tuple[CollectorSpan, ...] = Field(default=(), max_length=128)
+    spans: tuple[CollectorSourceSpan, ...] = Field(default=(), max_length=128)
     files: tuple[CollectorFilePrefix, ...] = Field(default=(), max_length=4)
 
     @model_validator(mode="after")
@@ -42,6 +42,7 @@ class CollectorTraceObservation(BaseModel):
             not self.files
             or tuple(file.ordinal for file in self.files) != tuple(range(len(self.files)))
             or any(span.trace_id != self.trace_id for span in self.spans)
+            or any(span.source_ordinal >= len(self.files) for span in self.spans)
             or len({span.span_id for span in self.spans}) != len(self.spans)
             or bool(self.spans) != (self.state == "RECORDED_SPANS")
         ):
