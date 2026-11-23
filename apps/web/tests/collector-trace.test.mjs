@@ -25,6 +25,17 @@ test("native saved spans select metadata and preserve exact nanoseconds and requ
  const cycle=structuredClone(v),parent=cycle.spans.find(s=>s.parent_span_id===null),child=cycle.spans.find(s=>s.parent_span_id===parent.span_id);parent.parent_span_id=child.span_id;assert.equal(parse(cycle,v.trace_id),null);
  for(const field of ["ordinal","prefix_bytes"]){const corrupt=structuredClone(v);corrupt.files[0][field]=true;assert.equal(parse(corrupt,v.trace_id),null);}
 });
+test("saved span filters search only the selected trace and retain structural depth",async()=>{
+ const {filterCollectorSpans,CollectorTracePanel:Panel}=await modules(),v=fixture();
+ const matches=filterCollectorSpans(v.spans,"approve","ALL");
+ assert.deepEqual(matches.map(item=>[item.span.name,item.depth]),[["paper.risk.evaluate",1]]);
+ assert.deepEqual(filterCollectorSpans(v.spans,"","ERROR"),[]);
+ assert.equal(filterCollectorSpans(v.spans,"","UNSET").length,v.spans.length);
+ const html=renderToStaticMarkup(React.createElement(Panel,{traceId:v.trace_id,result:{ok:true,value:v},search:"api/v1",status:"ALL"}));
+ assert.match(html,/name="span_query" value="api\/v1"/);assert.match(html,/name="span_status"/);
+ assert.match(html,/1 matching saved step/);assert.match(html,/Search is limited to this trace/);
+ const childHtml=renderToStaticMarkup(React.createElement(Panel,{traceId:v.trace_id,result:{ok:true,value:v},search:"approve",status:"ALL"}));assert.match(childHtml,/Parent excluded by filters/);assert.match(childHtml,/data-span-depth="1"/);
+});
 test("saved spans render in deterministic parent-first order even when collector order is scrambled",async()=>{
  const {CollectorTracePanel:Panel}=await modules(),v=fixture();
  const scrambled={...v,spans:[v.spans[3],v.spans[1],v.spans[0],v.spans[2]]};
@@ -72,7 +83,7 @@ test("Traces page requests exact SDK identity and rejects repeated SDK query bef
  try{
   globalThis.sdkPageReads={readCollectorTrace:async id=>{calls.push(id);return {ok:true,value:v};},readGraphRuns:async()=>({ok:false,reason:"UNAVAILABLE"}),readTracingStatus:async()=>({ok:false,reason:"UNAVAILABLE"}),readAgentTraceBinding:async()=>({ok:false,reason:"UNAVAILABLE"})};
   const {default:Page}=await import(compile(source,true));
-  assert.match(renderToStaticMarkup(await Page({searchParams:Promise.resolve({sdk:v.trace_id})})),/Duration \(ns\)/);assert.deepEqual(calls,[v.trace_id]);
+  const filtered=renderToStaticMarkup(await Page({searchParams:Promise.resolve({sdk:v.trace_id,span_query:"api/v1",span_status:"UNSET"})}));assert.match(filtered,/Duration \(ns\)/);assert.match(filtered,/1 matching saved step/);assert.match(filtered,/name="span_query"[^>]*value="api\/v1"/);assert.deepEqual(calls,[v.trace_id]);
   calls.length=0;const repeated=renderToStaticMarkup(await Page({searchParams:Promise.resolve({sdk:[v.trace_id,"f".repeat(32)]})}));assert.equal(calls.length,0);assert.match(repeated,/Enter a nonzero/);
   await Page({searchParams:Promise.resolve({})});assert.equal(calls.length,0);
  }finally{if(old===undefined)delete globalThis.sdkPageReads;else globalThis.sdkPageReads=old;}

@@ -24,6 +24,14 @@ export function orderCollectorSpans(spans: CollectorSpan[]): {span: CollectorSpa
   for(const root of roots.sort(chronological)) visit(root,0);
   return result;
 }
+export function filterCollectorSpans(spans: CollectorSpan[], query = "", status = "ALL"): {span: CollectorSpan; depth: number}[] {
+  const term = query.trim().slice(0, 80).toLocaleLowerCase("en-US");
+  return orderCollectorSpans(spans).filter(({span}) => {
+    const statusMatches = status === "ALL" || span.status === status;
+    const textMatches = !term || Object.values(span).some(value => typeof value === "string" && value.toLocaleLowerCase("en-US").includes(term));
+    return statusMatches && textMatches;
+  });
+}
 const object = (v: unknown): Record<string, unknown> | null => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : null;
 const hex = (v: unknown, size: number): v is string => typeof v === "string" && new RegExp(`^[a-f0-9]{${size}}$`).test(v);
 export const validSdkTraceId = (v: unknown): v is string => hex(v, 32) && /[1-9a-f]/.test(v);

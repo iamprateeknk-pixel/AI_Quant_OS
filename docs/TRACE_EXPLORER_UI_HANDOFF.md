@@ -60,8 +60,11 @@ from pending browser keyboard, layout, focus and responsive acceptance.
 Parent/child navigation is available for verified saved child graphs. Optional
 OpenTelemetry now captures durable graph admission/execution, implementation
 invocation, authorized tool calls, read-tool source access and finalization as
-nested spans. Market-intent-risk-order correlation, span search/filter UI,
-per-source provenance, provider-specific export/retention and complete
-quality/latency metrics remain unfinished. No execution, retry, recovery,
+nested spans. Saved span lookup now supports case-insensitive text search over
+the selected trace's returned spans and a status filter. Results are scoped to
+the single trace and retained observations loaded for that read; this is not an
+archive-wide search and cannot recover unobserved spans. Market-intent-risk-order
+correlation, per-source provenance, provider-specific export/retention and
+complete quality/latency metrics remain unfinished. No execution, retry, recovery,
 promotion or risk action is added on these pages. Full P00-P13 development/release
 acceptance remains incomplete.
