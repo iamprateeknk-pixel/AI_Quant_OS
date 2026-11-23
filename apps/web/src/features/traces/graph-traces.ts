@@ -50,8 +50,9 @@ function identity(value:unknown): GraphRun|null {
   return {run_id:value.run_id,agent_id:value.agent_id,agent_version:value.agent_version,task_id:value.task_id,scope:value.scope,status:value.status,context_ref:value.context_ref,manifest_ref:value.manifest_ref,trace_id:value.trace_id,context_observed_at:value.context_observed_at as string,context_valid_until:value.context_valid_until as string};
 }
 
-export function parseGraphRunPage(value:unknown,expectedAfter?:string,expectedHead?:string): GraphRunPage|null {
+export function parseGraphRunPage(value:unknown,expectedAfter?:string,expectedHead?:string,expectedAgentId?:string,expectedAgentVersion?:string): GraphRunPage|null {
   if (!record(value) || (expectedAfter !== undefined && value.after_run_id !== expectedAfter) || (expectedHead !== undefined && value.head_hash !== expectedHead)) return null;
+  if ((expectedAgentId === undefined) !== (expectedAgentVersion === undefined) || (expectedAgentId !== undefined && !/^A(?:0[1-9]|1[0-8])$/.test(expectedAgentId)) || (expectedAgentVersion !== undefined && (expectedAgentVersion.length > 32 || !/^\d+\.\d+\.\d+$/.test(expectedAgentVersion)))) return null;
   if (!record(value) || value.schema_version !== "1.0" || value.mode !== "PAPER" || value.archival_only !== true || !hash(value.head_hash) || !count(value.total) || !count(value.remaining) || typeof value.after_run_id !== "string" || (value.after_run_id !== "" && !validRunId(value.after_run_id)) || !Array.isArray(value.records) || value.records.length > 25) return null;
   const records:GraphRun[]=[];
   for (const input of value.records) {
@@ -59,6 +60,7 @@ export function parseGraphRunPage(value:unknown,expectedAfter?:string,expectedHe
     if (!row || row.run_id <= value.after_run_id || (records.length && records.at(-1)!.run_id >= row.run_id)) return null;
     records.push(row);
   }
+  if (expectedAgentId !== undefined && records.some(row => row.agent_id !== expectedAgentId || row.agent_version !== expectedAgentVersion)) return null;
   if ((value.remaining && !records.length) || value.total < records.length+value.remaining+Number(Boolean(value.after_run_id)) || (!value.after_run_id && value.total !== records.length+value.remaining)) return null;
   const next = value.remaining ? records.at(-1)!.run_id : null;
   if (value.next_after !== next) return null;

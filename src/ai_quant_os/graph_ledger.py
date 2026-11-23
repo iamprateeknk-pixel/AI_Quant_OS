@@ -354,7 +354,15 @@ class GraphLedger:
                         raise ValueError("Agent graph collection exceeds requested bound")
             return tuple(selected)
 
-    def page(self, *, after_run_id: str = "", head: str | None = None, limit: int = 25):
+    def page(
+        self,
+        *,
+        after_run_id: str = "",
+        head: str | None = None,
+        limit: int = 25,
+        agent_id: str | None = None,
+        agent_version: str | None = None,
+    ):
         from ai_quant_os.graph_archive import GraphArchiveChanged, GraphRunPage, summary
         from ai_quant_os.graph_trace import observation
 
@@ -368,6 +376,22 @@ class GraphLedger:
                 and (not isinstance(head, str) or re.fullmatch(r"[a-f0-9]{64}", head) is None)
             )
             or (after_run_id and head is None)
+            or (agent_id is None) != (agent_version is None)
+            or (
+                agent_id is not None
+                and (
+                    not isinstance(agent_id, str)
+                    or re.fullmatch(r"A(?:0[1-9]|1[0-8])", agent_id) is None
+                )
+            )
+            or (
+                agent_version is not None
+                and (
+                    not isinstance(agent_version, str)
+                    or len(agent_version) > 32
+                    or re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", agent_version) is None
+                )
+            )
         ):
             raise ValueError("Invalid graph archive page")
         with self._lock, self._db:
@@ -402,9 +426,20 @@ class GraphLedger:
             identities = [row[0] for row in rows]
             if audited != set(identities):
                 raise ValueError("Graph archive projection identity mismatch")
-            if after_run_id and after_run_id not in identities:
+            filtered = identities
+            if agent_id is not None:
+                filtered = [
+                    run_id
+                    for run_id in identities
+                    if (
+                        (record := self._read(run_id)) is not None
+                        and record.receipt.agent_id == agent_id
+                        and record.receipt.agent_version == agent_version
+                    )
+                ]
+            if after_run_id and after_run_id not in filtered:
                 raise KeyError("Graph archive cursor missing")
-            selected = [value for value in identities if value > after_run_id]
+            selected = [value for value in filtered if value > after_run_id]
             page = selected[:limit]
             remaining = len(selected) - len(page)
             return GraphRunPage(

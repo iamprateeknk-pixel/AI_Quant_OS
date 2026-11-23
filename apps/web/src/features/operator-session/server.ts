@@ -267,9 +267,10 @@ export async function submitMonitoringAcknowledgement(request:Request) {
   } catch { return json({detail:"Review outcome is unavailable. Refresh history before trying again."},503); }
 }
 
-export async function readGraphRuns(after = "", head?: string): Promise<ProtectedRead> {
-  if (typeof after !== "string" || (after !== "" && !/^[A-Za-z0-9_-]{1,128}$/.test(after)) || (head !== undefined && (typeof head !== "string" || !/^[a-f0-9]{64}$/.test(head))) || (after !== "" && head === undefined)) return {ok:false,reason:"INVALID_PAGE"};
-  return protectedRead(`/api/v1/agents/graph-runs?limit=25${after ? `&after_run_id=${encodeURIComponent(after)}` : ""}${head ? `&head=${head}` : ""}`);
+export async function readGraphRuns(after = "", head?: string, agentId?: string, agentVersion?: string): Promise<ProtectedRead> {
+  if (typeof after !== "string" || (after !== "" && !/^[A-Za-z0-9_-]{1,128}$/.test(after)) || (head !== undefined && (typeof head !== "string" || !/^[a-f0-9]{64}$/.test(head))) || (after !== "" && head === undefined) || ((agentId === undefined) !== (agentVersion === undefined)) || (agentId !== undefined && (typeof agentId !== "string" || !/^A(?:0[1-9]|1[0-8])$/.test(agentId))) || (agentVersion !== undefined && (typeof agentVersion !== "string" || agentVersion.length > 32 || !/^\d+\.\d+\.\d+$/.test(agentVersion)))) return {ok:false,reason:"INVALID_PAGE"};
+  const filter = agentId && agentVersion ? `&agent_id=${encodeURIComponent(agentId)}&agent_version=${encodeURIComponent(agentVersion)}` : "";
+  return protectedRead(`/api/v1/agents/graph-runs?limit=25${after ? `&after_run_id=${encodeURIComponent(after)}` : ""}${head ? `&head=${head}` : ""}${filter}`);
 }
 
 export async function readGraphTrace(runId: string): Promise<ProtectedRead> {

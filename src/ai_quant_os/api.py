@@ -2607,7 +2607,11 @@ def create_app(
         dependencies=[Depends(require_operator)],
     )
     def archived_graph_page(
-        after_run_id: str = "", head: str | None = None, limit: int = 25
+        after_run_id: str = "",
+        head: str | None = None,
+        limit: int = 25,
+        agent_id: str | None = None,
+        agent_version: str | None = None,
     ) -> dict[str, object]:
         if (
             not isinstance(after_run_id, str)
@@ -2615,12 +2619,30 @@ def create_app(
             or not 1 <= limit <= 25
             or (head is not None and re.fullmatch(r"[a-f0-9]{64}", head) is None)
             or (after_run_id and head is None)
+            or (agent_id is None) != (agent_version is None)
+            or (
+                agent_id is not None
+                and (len(agent_id) != 3 or re.fullmatch(r"A(?:0[1-9]|1[0-8])", agent_id) is None)
+            )
+            or (
+                agent_version is not None
+                and (
+                    len(agent_version) > 32
+                    or re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", agent_version) is None
+                )
+            )
         ):
             raise HTTPException(422, "Invalid graph archive page")
         try:
             return (
                 require_graph_runtime()
-                .archive_page(after_run_id=after_run_id, head=head, limit=limit)
+                .archive_page(
+                    after_run_id=after_run_id,
+                    head=head,
+                    limit=limit,
+                    agent_id=agent_id,
+                    agent_version=agent_version,
+                )
                 .model_dump(mode="json")
             )
         except GraphArchiveChanged as error:
