@@ -158,7 +158,8 @@ from ai_quant_os.research_hypothesis_sources import (
 )
 from ai_quant_os.research_hypothesis_contracts import hypothesis_recipe, hypothesis_recipe_v3
 from ai_quant_os.research_novelty import ResearchNoveltyReservations
-from ai_quant_os.graph_ledger import GraphLedger
+from ai_quant_os.graph_ledger import GraphLedger, GraphQualityCapacityExceeded
+from ai_quant_os.agent_quality import operational_quality_observation
 from ai_quant_os.strategy_build_store import StrategyBuildStore
 from ai_quant_os.strategy_builder_agent import builder_implementation
 from ai_quant_os.strategy_builder_api import install_builder_routes
@@ -1663,6 +1664,41 @@ def create_app(
                 for item in agent_registry.manifests()
             ],
         }
+
+    @app.get(
+        "/api/v1/agents/operational-quality",
+        dependencies=[Depends(require_operator)],
+    )
+    def agent_operational_quality() -> dict[str, object]:
+        receipts = None
+        traces = None
+        unavailable_reason = "GRAPH_LEDGER_UNAVAILABLE"
+        runtime = app.state.graph_runtime
+        if runtime is not None:
+            try:
+                receipts, traces = runtime.quality_inventory()
+            except GraphQualityCapacityExceeded:
+                unavailable_reason = "GRAPH_RUN_CAPACITY_EXCEEDED"
+            except (OSError, ValueError, sqlite3.Error):
+                unavailable_reason = "GRAPH_LEDGER_UNAVAILABLE"
+
+        now = current_time()
+        try:
+            observation = operational_quality_observation(
+                agent_registry,
+                receipts,
+                traces=traces,
+                now=now,
+                unavailable_reason=unavailable_reason,
+            )
+        except (TypeError, ValueError):
+            observation = operational_quality_observation(
+                agent_registry,
+                None,
+                now=now,
+                unavailable_reason="GRAPH_LEDGER_UNAVAILABLE",
+            )
+        return observation.model_dump(mode="json")
 
     @app.post("/api/v1/paper/agents/context", dependencies=[Depends(require_operator)])
     async def compile_agent_context(payload: AgentContextInput) -> dict[str, object]:

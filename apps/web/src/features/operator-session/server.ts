@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { backendOrigin, loginCredential, publicSession, publicSessionInventory, publicSessionRevocation, readJson, record, requireOrigin } from "./boundary";
 import type {MonitoringAcknowledgementInput} from "../incidents/monitoring-journal";
 import {parsePaperReconciliation} from "../orders/reconciliation";
+import {parseAgentOperationalQuality, type AgentOperationalQualityRead} from "../agents/operational-quality";
 
 const COOKIE = "ai_quant_operator";
 const origin = () => process.env.AI_QUANT_WEB_ORIGIN ?? "http://127.0.0.1:3000";
@@ -271,6 +272,13 @@ export async function readGraphRuns(after = "", head?: string, agentId?: string,
   if (typeof after !== "string" || (after !== "" && !/^[A-Za-z0-9_-]{1,128}$/.test(after)) || (head !== undefined && (typeof head !== "string" || !/^[a-f0-9]{64}$/.test(head))) || (after !== "" && head === undefined) || ((agentId === undefined) !== (agentVersion === undefined)) || (agentId !== undefined && (typeof agentId !== "string" || !/^A(?:0[1-9]|1[0-8])$/.test(agentId))) || (agentVersion !== undefined && (typeof agentVersion !== "string" || agentVersion.length > 32 || !/^\d+\.\d+\.\d+$/.test(agentVersion)))) return {ok:false,reason:"INVALID_PAGE"};
   const filter = agentId && agentVersion ? `&agent_id=${encodeURIComponent(agentId)}&agent_version=${encodeURIComponent(agentVersion)}` : "";
   return protectedRead(`/api/v1/agents/graph-runs?limit=25${after ? `&after_run_id=${encodeURIComponent(after)}` : ""}${head ? `&head=${head}` : ""}${filter}`);
+}
+
+export async function readAgentOperationalQuality(): Promise<AgentOperationalQualityRead> {
+  const response = await protectedRead("/api/v1/agents/operational-quality", false, 65536);
+  if (!response.ok) return response;
+  const value = parseAgentOperationalQuality(response.value);
+  return value ? { ok: true, value } : { ok: false, reason: "INVALID_RESPONSE" };
 }
 
 export async function readGraphTrace(runId: string): Promise<ProtectedRead> {
