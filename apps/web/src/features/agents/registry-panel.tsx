@@ -1,8 +1,8 @@
-import { read } from "@/lib/control-api";
-import { parseRegistry } from "./registry";
+import type { AgentManifest } from "./registry";
 
-export async function AgentRegistryPanel() {
-  const result = await read("/api/v1/agents/registry", parseRegistry);
+type Result = { ok: true; value: AgentManifest[] } | { ok: false; reason: string };
+
+export function AgentRegistryPanel({ result }: { result: Result }) {
   return <section className="panel content-panel">
     <div className="panel-heading"><h2>Registered agent versions</h2><span>{result.ok ? `${new Set(result.value.map((agent) => agent.agent_id)).size} ROLES · ${result.value.length} VERSIONS` : "UNAVAILABLE"}</span></div>
     <p className="panel-muted">Implementation status describes development coverage. Lifecycle is the backend restriction for this version. Registered tools are permission ceilings; they do not prove a handler is available. Agents have no capital authority.</p>

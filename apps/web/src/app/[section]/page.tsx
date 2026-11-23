@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getAudit, getBrokers, getCurrencyPortfolio, getFills, getOrders, getPositions, getRisk, getSystemStatus } from "@/lib/control-api";
+import { getAudit, getBrokers, getCurrencyPortfolio, getFills, getOrders, getPositions, getRisk, getSystemStatus, read } from "@/lib/control-api";
 import { sectionDetails, type SectionKey } from "@/lib/navigation";
 import { WorldStatePanel } from "@/features/world-state/world-state-panel";
 import { AuditIntegrityPanel } from "@/features/audit/audit-integrity-panel";
@@ -8,7 +8,8 @@ import { readBrokerCapabilities, readBrokerHealth, readDemoSyncHealth, readDemoP
 import { publicSession } from "@/features/operator-session/boundary";
 import { PortfolioLivePanel } from "@/features/portfolio/portfolio-live-panel";
 import { DemoPortfolioPanel } from "@/features/portfolio/demo-portfolio-panel";
-import { AgentRegistryPanel } from "@/features/agents/registry-panel";
+import { AgentsLivePanel } from "@/features/agents/agents-live-panel";
+import { parseRegistry } from "@/features/agents/registry";
 import { BrokerCapabilityPanel } from "@/features/brokers/capability-panel";
 import { BrokerHealthPanel } from "@/features/brokers/health-panel";
 import { BrokerRouteControlPanel } from "@/features/brokers/route-control-panel";
@@ -42,6 +43,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
   const operatorResponse = section === "risk" || section === "brokers" ? await sessionStatus() : null;
   const operatorSession = operatorResponse?.ok ? publicSession(await operatorResponse.json()) : null;
   const orderReads = section === "orders" ? await Promise.all([getOrders(), getFills()]) : null;
+  const agentRead = section === "agents" ? await read("/api/v1/agents/registry", parseRegistry) : null;
   const audit = section === "audit" ? await getAudit() : null;
   const brokerReads = section === "brokers" ? await Promise.all([getBrokers(), readDemoSyncHealth(), readBrokerCapabilities(), readBrokerHealth()]) : null;
   const brokers = brokerReads?.[0] ?? null;
@@ -58,7 +60,7 @@ export default async function SectionPage({ params, searchParams }: { params: Pr
   return <div className="page-content">
     <div className="page-heading"><div><p className="eyebrow">Mission Control</p><h1>{title}</h1><p>{description}</p></div><span className="mode-tag">PAPER ENVIRONMENT</span></div>
     {section === "world-state" && <WorldStatePanel />}
-    {section === "agents" && <AgentRegistryPanel />}
+    {agentRead && <AgentsLivePanel initialRead={agentRead} />}
     {brokerReads && <BrokerCapabilityPanel result={brokerReads[2]} observedAt={new Date().toISOString()} />}
     {brokers?.ok && <BrokerRouteControlPanel enabled={brokers.value.brokers.find((broker) => broker.broker_id === "PAPER")?.enabled === true} initialSession={operatorSession} />}
     {brokerReads && <BrokerHealthPanel result={brokerReads[3]} observedAt={new Date().toISOString()} />}
