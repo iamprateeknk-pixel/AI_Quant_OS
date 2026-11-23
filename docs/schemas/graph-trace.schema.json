@@ -165,6 +165,68 @@
       "title": "AgentExecutionRoute",
       "type": "object"
     },
+    "GraphTraceChild": {
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "pattern": "^[A-Za-z0-9_-]{1,128}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "agent_id": {
+          "pattern": "^A(?:0[1-9]|1[0-8])$",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "agent_version": {
+          "maxLength": 32,
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "CREATED",
+                "RUNNING",
+                "COMPLETED",
+                "UNAVAILABLE",
+                "EXPIRED",
+                "DENIED",
+                "WAIT_FOR_DATA",
+                "INVALID",
+                "FAILED",
+                "TIMEOUT",
+                "UNCERTAIN"
+              ],
+              "type": "string"
+            },
+            {
+              "enum": [
+                "NOT_STARTED_PERMISSION",
+                "NOT_STARTED_SOURCE"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Status"
+        },
+        "trace_available": {
+          "title": "Trace Available",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "run_id",
+        "agent_id",
+        "agent_version",
+        "status",
+        "trace_available"
+      ],
+      "title": "GraphTraceChild",
+      "type": "object"
+    },
     "GraphTraceEvent": {
       "additionalProperties": false,
       "properties": {
@@ -230,7 +292,8 @@
       "default": "1.0",
       "enum": [
         "1.0",
-        "1.1"
+        "1.1",
+        "1.2"
       ],
       "title": "Schema Version",
       "type": "string"
@@ -403,6 +466,22 @@
         }
       ],
       "default": null
+    },
+    "children": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/GraphTraceChild"
+          },
+          "maxItems": 7,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Children"
     }
   },
   "required": [

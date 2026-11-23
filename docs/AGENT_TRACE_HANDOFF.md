@@ -44,6 +44,22 @@ older binaries reject the additive audit field, so preserve compatible readers a
 never remove/rewrite timing or erase audit history to roll back. No source/worker
 execution or credentialed calls are added.
 
+## Nested supervisor navigation
+
+GraphTrace 1.2 adds at most seven metadata-only child references to completed
+supervisor traces. The parent output is parsed with its registered typed schema
+and its context binding is checked. A child's run, agent/version, manifest, status,
+context, expiry and output fingerprint must match the actual child record; the
+child's complete audit-checked trace must also load before the UI exposes a link.
+Only declared `NOT_STARTED_PERMISSION` or `NOT_STARTED_SOURCE` children may lack
+a saved record, and those rows remain unlinked. Child outputs and contexts are
+never included. Legacy 1.0 and routed 1.1 traces keep their existing shapes.
+
+The trace page now renders verified child execution links and explicit unavailable
+states. The parser rejects duplicate/unbounded child rows, invalid statuses and
+inconsistent trace availability. Schema parity is maintained in
+`docs/schemas/graph-trace.schema.json`.
+
 ## Verification and pending work
 
 See `evaluations/agent-trace-0106.json` for fresh staged-checkout scope, hashes and
@@ -52,7 +68,6 @@ Coverage includes real API graphs/restart, exact injected transition times, lega
 and mixed journals, backward time, failures/timeouts/cancellation/recovery, rehashed
 historical forgery, rollback, corruption isolation and typed schema claims.
 
-Nested parent/child trace navigation, node/tool/source spans, OTel/export/retention,
-aggregate quality/performance metrics, full UI workflows and independent acceptance
-remain open. No browser or full release acceptance is claimed. All P00-P13 remain
-incomplete.
+Node/tool/source spans, OTel/export/retention, aggregate quality/performance
+metrics, full UI workflows and independent acceptance remain open. No browser or
+full release acceptance is claimed. All P00-P13 remain incomplete.

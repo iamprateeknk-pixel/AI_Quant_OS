@@ -41,6 +41,13 @@ test('accepts bound 1.1 route evidence and rejects contradictory or sensitive ro
   const fallback={...routing,execution_path:'DETERMINISTIC',provider_id:null,attempted_provider_id:'fixture-provider',fallback_reasons:['PROVIDER_FAILED'],input_tokens:null,output_tokens:null};
   assert.deepEqual(parseGraphTrace({...routed,routing:fallback}).routing,fallback);
 });
+test('accepts verified child references only in bounded 1.2 completed traces',()=>{
+  const children=[{run_id:'child_1',agent_id:'A02',agent_version:'0.2.0',status:'COMPLETED',trace_available:true},{run_id:'child_2',agent_id:'A03',agent_version:'0.2.0',status:'NOT_STARTED_PERMISSION',trace_available:false}];
+  const nested={...trace,schema_version:'1.2',children};
+  assert.deepEqual(parseGraphTrace(nested),nested);
+  for(const bad of [{...nested,children:[children[0],children[0]]},{...nested,children:[{...children[0],trace_available:false,status:'COMPLETED'}]},{...nested,children:[{...children[1],trace_available:true}]},{...nested,children:Array(8).fill(children[0])},{...nested,children:[{...children[0],secret:'private'}]},{...nested,status:'FAILED'}]) assert.equal(parseGraphTrace(bad),null);
+  assert.equal(parseGraphTrace({...trace,schema_version:'1.2'}),null);
+});
 test('rejects omitted, duplicate, unsorted, or inconsistent page records',()=>{
   for(const value of [{...page,total:2},{...page,records:[]},{...page,remaining:1,next_after:null},{...page,total:2,records:[identity,identity]},{...page,total:2,records:[{...identity,run_id:'z'},identity]},{...page,after_run_id:'run_2'},{...page,next_after:'https://invalid.example'},{...page,records:[{...identity,run_id:'../private'}]}]) assert.equal(parseGraphRunPage(value),null);
 });

@@ -122,6 +122,18 @@
   acceptance, P12 manual accessibility/sign-off, and P13 legal/broker/risk/live
   release gates are also unresolved. The P13 NO-GO disposition remains active.
 
+## Update (2026-11-23)
+
+- P12 durable traces now include GraphTrace 1.2 parent-to-child navigation for
+  completed supervisors. The backend binds each child reference to its registered
+  typed parent output and audit-checked child trace; only permission/source
+  not-started rows may be unlinked. Mission Control displays linked child runs
+  and explicit unavailable states without exposing child payloads. Legacy 1.0
+  and routed 1.1 traces retain their shapes. Focused trace backend tests pass
+  (**18 passed**) and focused trace parser/panel tests pass (**11 passed**).
+  Node/tool/source spans, OTel/export/retention, aggregate quality/performance
+  metrics, full UI workflows and independent acceptance remain open.
+
 ## Current repository-wide verification (2026-10-29)
 
 - Latest completed hosted PR run for code commit `4ee3695` is **40858744164**; all **17 jobs passed**. The full Python suite reports **3,631 passed, 71 skipped in 739.67 seconds**; the locked Windows suite reports **3,638 passed, 64 skipped in 3,134.58 seconds**; Linux reports **3,633 passed, 69 skipped in 1,035.25 seconds**. The web suite, ESLint, production build, Ruff, formatting, and all other workflow jobs passed.

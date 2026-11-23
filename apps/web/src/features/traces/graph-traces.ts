@@ -4,7 +4,8 @@ export type GraphRun = {run_id:string; agent_id:string; agent_version:string; ta
 export type GraphRunPage = {schema_version:"1.0"; mode:"PAPER"; archival_only:true; head_hash:string; total:number; after_run_id:string; remaining:number; next_after:string|null; records:GraphRun[]};
 type TraceEvent = {sequence:number; status:Status; record_hash:string; event_hash:string; observed_at:string|null};
 export type GraphRoute = {schema_version:"1.0";agent_id:string;agent_version:string;task_id:string;squad:string;criticality:"low"|"material"|"critical"|"incident";kind:"llm"|"deterministic";governor_decision:"ADMIT"|"DOWNGRADE"|"DEFER"|"DENY";routed_tier:"DETERMINISTIC"|"ROUTINE"|"DEEP"|"FRONTIER";execution_path:"DETERMINISTIC"|"PROVIDER";provider_id:string|null;attempted_provider_id:string|null;fallback_reasons:string[];input_tokens:number|null;output_tokens:number|null};
-export type GraphTrace = GraphRun & {schema_version:"1.0"|"1.1"; mode:"PAPER"; archival_only:true; requires_escalation:true; input_refs:string[]; output_trace_id:string|null; output_sha256:string|null; events:TraceEvent[]; timing_state:"AVAILABLE"|"PARTIAL"|"UNAVAILABLE"|"CLOCK_REGRESSION"; elapsed_seconds:string|null; routing?:GraphRoute};
+export type GraphTraceChild = {run_id:string;agent_id:string;agent_version:string;status:Status|"NOT_STARTED_PERMISSION"|"NOT_STARTED_SOURCE";trace_available:boolean};
+export type GraphTrace = GraphRun & {schema_version:"1.0"|"1.1"|"1.2"; mode:"PAPER"; archival_only:true; requires_escalation:true; input_refs:string[]; output_trace_id:string|null; output_sha256:string|null; events:TraceEvent[]; timing_state:"AVAILABLE"|"PARTIAL"|"UNAVAILABLE"|"CLOCK_REGRESSION"; elapsed_seconds:string|null; routing?:GraphRoute;children?:GraphTraceChild[]};
 
 function record(value:unknown): value is Record<string,unknown> {return typeof value === "object" && value !== null && !Array.isArray(value);}
 function text(value:unknown,maximum=128): value is string {return typeof value === "string" && value.length > 0 && value.length <= maximum;}
@@ -66,9 +67,20 @@ export function parseGraphRunPage(value:unknown,expectedAfter?:string,expectedHe
 
 export function parseGraphTrace(value:unknown,expectedRunId?:string): GraphTrace|null {
   const base = identity(value);
-  if (!base || !record(value) || (expectedRunId !== undefined && base.run_id !== expectedRunId) || (value.schema_version !== "1.0" && value.schema_version !== "1.1") || (value.schema_version === "1.0" ? value.routing !== undefined : value.routing === undefined) || value.mode !== "PAPER" || value.archival_only !== true || value.requires_escalation !== true || !Array.isArray(value.input_refs) || value.input_refs.length > 128 || !value.input_refs.every(row=>text(row,2048)) || !Array.isArray(value.events) || value.events.length < 1 || value.events.length > 3) return null;
+  if (!base || !record(value) || (expectedRunId !== undefined && base.run_id !== expectedRunId) || !["1.0","1.1","1.2"].includes(value.schema_version as string) || (value.schema_version === "1.0" ? value.routing !== undefined || value.children !== undefined : value.schema_version === "1.1" ? value.routing === undefined || value.children !== undefined : value.children === undefined) || value.mode !== "PAPER" || value.archival_only !== true || value.requires_escalation !== true || !Array.isArray(value.input_refs) || value.input_refs.length > 128 || !value.input_refs.every(row=>text(row,2048)) || !Array.isArray(value.events) || value.events.length < 1 || value.events.length > 3) return null;
   const routing=value.routing===undefined?undefined:route(value.routing,base);
   if(value.schema_version==="1.1"&&!routing)return null;
+  let children:GraphTraceChild[]|undefined;
+  if(value.children!==undefined) {
+    if(base.status!=="COMPLETED"||!Array.isArray(value.children)||value.children.length>7)return null;
+    const seen=new Set<string>();
+    children=[];
+    for(const raw of value.children) {
+      if(!record(raw)||Object.keys(raw).length!==5||!validRunId(raw.run_id)||!text(raw.agent_id,3)||!/^A(?:0[1-9]|1[0-8])$/.test(raw.agent_id)||!text(raw.agent_version,32)||!/^\d+\.\d+\.\d+$/.test(raw.agent_version)||!(status(raw.status)||raw.status==="NOT_STARTED_PERMISSION"||raw.status==="NOT_STARTED_SOURCE")||typeof raw.trace_available!=="boolean"||(status(raw.status)!==raw.trace_available)||seen.has(raw.run_id))return null;
+      seen.add(raw.run_id);
+      children.push({run_id:raw.run_id,agent_id:raw.agent_id,agent_version:raw.agent_version,status:raw.status,trace_available:raw.trace_available});
+    }
+  }
   if ((value.output_trace_id !== null && !text(value.output_trace_id)) || (value.output_sha256 !== null && !hash(value.output_sha256)) || ((base.status === "COMPLETED") !== (value.output_sha256 !== null)) || (base.status !== "COMPLETED" && value.output_trace_id !== null)) return null;
   const events:TraceEvent[]=[];
   for (const raw of value.events) {
@@ -81,5 +93,5 @@ export function parseGraphTrace(value:unknown,expectedRunId?:string): GraphTrace
   if (value.timing_state !== state) return null;
   const expectedElapsed = state === "AVAILABLE" && events.length === 3 ? times[2]! - times[1]! : null;
   if (expectedElapsed === null ? value.elapsed_seconds !== null : elapsedMicros(value.elapsed_seconds) !== expectedElapsed) return null;
-  return {...base,schema_version:value.schema_version,mode:"PAPER",archival_only:true,requires_escalation:true,input_refs:value.input_refs as string[],output_trace_id:value.output_trace_id as string|null,output_sha256:value.output_sha256 as string|null,events,timing_state:state,elapsed_seconds:value.elapsed_seconds as string|null,...(routing?{routing}:{})};
+  return {...base,schema_version:value.schema_version as GraphTrace["schema_version"],mode:"PAPER",archival_only:true,requires_escalation:true,input_refs:value.input_refs as string[],output_trace_id:value.output_trace_id as string|null,output_sha256:value.output_sha256 as string|null,events,timing_state:state,elapsed_seconds:value.elapsed_seconds as string|null,...(routing?{routing}:{}),...(children?{children}:{})};
 }

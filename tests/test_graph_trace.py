@@ -69,6 +69,38 @@ def test_protected_trace_api_exposes_bound_metadata_without_context_payloads(tmp
         assert client.get(url, headers=HEADERS).json() == trace
 
 
+def test_parent_trace_links_only_verified_saved_child_runs(tmp_path):
+    with TestClient(
+        create_app(
+            operator_token="fixture-supervisor",
+            clock=lambda: API_NOW,
+            paper_db_path=tmp_path / "paper.sqlite3",
+        )
+    ) as client:
+        _, _, plan = task_run(client, "DATA_REVIEW")
+        child = plan["calls"][0]
+        assert child["status"] == "COMPLETED"
+
+        response = client.get("/api/v1/agents/graph-runs/task-review/trace", headers=HEADERS)
+        assert response.status_code == 200
+        trace = response.json()
+        assert trace["schema_version"] == "1.2"
+        assert trace["children"] == [
+            {
+                "run_id": child["run_id"],
+                "agent_id": child["agent_id"],
+                "agent_version": child["agent_version"],
+                "status": child["status"],
+                "trace_available": True,
+            }
+        ]
+        assert "output_json" not in response.text
+        child_trace = client.get(
+            f"/api/v1/agents/graph-runs/{child['run_id']}/trace", headers=HEADERS
+        )
+        assert child_trace.status_code == 200
+
+
 def rewrite_events(path, mutate):
     """Model an imported legacy journal or attacker able to rehash its local chain."""
     from ai_quant_os.audit_chain import event_hash, GENESIS

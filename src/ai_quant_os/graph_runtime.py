@@ -22,7 +22,7 @@ from ai_quant_os.agent_registry import AgentRegistry, AgentToolBoundary
 from ai_quant_os.agent_routing import AgentExecutionRoute
 from ai_quant_os.context_checkpoints import ContextCheckpoint
 from ai_quant_os.graph_ledger import GraphLedger, GraphReceipt, GraphRecord
-from ai_quant_os.graph_trace import GraphTrace
+from ai_quant_os.graph_trace import GraphTrace, GraphTraceChild
 
 
 class GraphState(TypedDict):
@@ -378,7 +378,70 @@ class GraphRuntime:
         return receipt, output
 
     def trace(self, run_id: str):
-        return self._ledger.trace(run_id)
+        trace = self._ledger.trace(run_id)
+        if trace.status != "COMPLETED":
+            return trace
+        record = self._ledger.get(run_id)
+        implementation = self._implementations.get(
+            (record.receipt.agent_id, record.receipt.agent_version)
+        )
+        if implementation is None or "calls" not in implementation.output_schema.model_fields:
+            return trace
+        if record.receipt.output_json is None:
+            raise ValueError("Completed supervisor output is unavailable")
+        output = implementation.output_schema.model_validate_json(record.receipt.output_json)
+        if isinstance(output, AgentEnvelope):
+            output.require_context(record.checkpoint.context)
+        calls = getattr(output, "calls", None)
+        if type(calls) is not tuple or len(calls) > 7:
+            raise ValueError("Supervisor child calls exceed trace bounds")
+        children = []
+        for call in calls:
+            if not all(
+                type(value) is str
+                for value in (call.run_id, call.agent_id, call.agent_version, call.status)
+            ):
+                raise ValueError("Supervisor child identity is invalid")
+            try:
+                child_trace = self._ledger.trace(call.run_id)
+            except KeyError:
+                if not call.status.startswith("NOT_STARTED"):
+                    raise ValueError("Supervisor child receipt is missing") from None
+                trace_available = False
+            else:
+                if call.status.startswith("NOT_STARTED") or (
+                    call.run_id,
+                    call.agent_id,
+                    call.agent_version,
+                    call.manifest_ref,
+                    call.status,
+                    call.context_ref,
+                    call.output_sha256,
+                ) != (
+                    child_trace.run_id,
+                    child_trace.agent_id,
+                    child_trace.agent_version,
+                    child_trace.manifest_ref,
+                    child_trace.status,
+                    child_trace.context_ref,
+                    child_trace.output_sha256,
+                ):
+                    raise ValueError("Supervisor child receipt binding mismatch")
+                if call.valid_until != child_trace.context_valid_until:
+                    raise ValueError("Supervisor child expiry binding mismatch")
+                trace_available = True
+            children.append(
+                GraphTraceChild(
+                    run_id=call.run_id,
+                    agent_id=call.agent_id,
+                    agent_version=call.agent_version,
+                    status=call.status,
+                    trace_available=trace_available,
+                )
+            )
+        payload = trace.model_dump(mode="python")
+        payload.update(schema_version="1.2", children=tuple(children))
+        return GraphTrace.model_validate(payload)
 
     def archive_page(self, *, after_run_id: str = "", head: str | None = None, limit: int = 25):
         return self._ledger.page(after_run_id=after_run_id, head=head, limit=limit)

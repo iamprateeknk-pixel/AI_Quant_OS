@@ -47,3 +47,8 @@ test('timeline displays governed route evidence without model input',()=>{
   const html=renderToStaticMarkup(React.createElement(GraphTracePanel,{runId:'run_1',result:{ok:true,value:routed}}));
   assert.match(html,/Model route/);assert.match(html,/fixture-provider/);assert.match(html,/ROUTINE/);assert.match(html,/100 input · 50 output/);assert.doesNotMatch(html,/prompt|credential/i);
 });
+test('parent timeline links only children with saved traces',()=>{
+  const nested={...trace,schema_version:'1.2',children:[{run_id:'child_1',agent_id:'A02',agent_version:'0.2.0',status:'COMPLETED',trace_available:true},{run_id:'child_2',agent_id:'A03',agent_version:'0.2.0',status:'NOT_STARTED_PERMISSION',trace_available:false}]};
+  const html=renderToStaticMarkup(React.createElement(GraphTracePanel,{runId:'run_1',result:{ok:true,value:nested}}));
+  assert.match(html,/Child executions/);assert.match(html,/href="\/traces\/child_1"/);assert.match(html,/No saved trace/);assert.match(html,/Not started: permission/);
+});

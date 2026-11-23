@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from decimal import Decimal
 from hashlib import sha256
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import (
     AwareDatetime,
@@ -52,6 +52,21 @@ class GraphTraceEvent(BaseModel):
         return self
 
 
+class GraphTraceChild(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    run_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,128}$")
+    agent_id: str = Field(pattern=r"^A(?:0[1-9]|1[0-8])$")
+    agent_version: str = Field(pattern=r"^\d+\.\d+\.\d+$", max_length=32)
+    status: RunStatus | Literal["NOT_STARTED_PERMISSION", "NOT_STARTED_SOURCE"]
+    trace_available: bool
+
+    @model_validator(mode="after")
+    def availability_matches_status(self):
+        if self.trace_available != (self.status in get_args(RunStatus)):
+            raise ValueError("Child trace availability does not match its status")
+        return self
+
+
 def timing(events: tuple[GraphTraceEvent, ...]):
     moments = [row.observed_at for row in events]
     if not any(moment is not None for moment in moments):
@@ -71,7 +86,7 @@ def timing(events: tuple[GraphTraceEvent, ...]):
 
 class GraphTrace(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    schema_version: Literal["1.0", "1.1"] = "1.0"
+    schema_version: Literal["1.0", "1.1", "1.2"] = "1.0"
     mode: Literal["PAPER"] = "PAPER"
     scope: Literal["PAPER", "SANDBOX"]
     archival_only: Literal[True] = True
@@ -93,12 +108,15 @@ class GraphTrace(BaseModel):
     timing_state: Literal["AVAILABLE", "PARTIAL", "UNAVAILABLE", "CLOCK_REGRESSION"]
     elapsed_seconds: Decimal | None = Field(ge=0)
     routing: AgentExecutionRoute | None = None
+    children: tuple[GraphTraceChild, ...] | None = Field(default=None, max_length=7)
 
     @model_serializer(mode="wrap")
     def preserve_legacy_trace_shape(self, handler):
         value = handler(self)
         if self.routing is None:
             value.pop("routing", None)
+        if self.children is None:
+            value.pop("children", None)
         return value
 
     @model_validator(mode="after")
@@ -112,8 +130,18 @@ class GraphTrace(BaseModel):
             raise ValueError("Graph trace context expiry mismatch")
         if self.trace_id != trace_identity(self.run_id, self.context_ref, self.manifest_ref):
             raise ValueError("Graph trace identity mismatch")
-        if (self.schema_version == "1.1") != (self.routing is not None):
+        if self.schema_version == "1.0" and (self.routing is not None or self.children is not None):
             raise ValueError("Graph trace routing version mismatch")
+        if self.schema_version == "1.1" and (self.routing is None or self.children is not None):
+            raise ValueError("Graph trace routing version mismatch")
+        if self.schema_version == "1.2" and self.children is None:
+            raise ValueError("Graph trace child version mismatch")
+        if self.children is not None and self.status != "COMPLETED":
+            raise ValueError("Incomplete graph trace cannot bind child calls")
+        if self.children is not None and len({row.run_id for row in self.children}) != len(
+            self.children
+        ):
+            raise ValueError("Graph trace child identities must be unique")
         if self.routing is not None and (
             self.routing.agent_id,
             self.routing.agent_version,
