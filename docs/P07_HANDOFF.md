@@ -24,9 +24,11 @@ before installation so SQLite snapshots have stable sources.
 Installation requires `--data-dir`, `--paper-db`, and `--research-workspace`;
 the HOLDOUT and two validation archives are derived from the PAPER database
 path, and the research archive is read from the workspace. Sources remain
-untouched. Staging requires an empty service data directory and refuses
-unrelated files. Existing complete service archives are preserved on
-re-install, and partial archive sets are refused.
+untouched. Install now checks that the supplied PAPER database and all four
+source archives exist before registering the service, so missing paths cannot
+leave a service registration behind. Staging requires an empty service data
+directory and refuses unrelated files. Existing complete service archives are
+preserved on re-install, and partial archive sets are refused.
 
 The 2026-10-23 workstation probe used only four explicitly synthetic empty
 SQLite archives. It verified the owner and final DACL on the staged files and

@@ -671,6 +671,7 @@ def test_stage_service_archives_verifies_copies_and_preserves_sources(tmp_path):
 def test_service_install_secures_staging_directory_before_copy_and_never_starts_on_acl_failure(
     tmp_path, monkeypatch
 ):
+    import sqlite3
     import sys
     from types import ModuleType
 
@@ -688,6 +689,8 @@ def test_service_install_secures_staging_directory_before_copy_and_never_starts_
     source_dir = (tmp_path / "sources").resolve()
     source_dir.mkdir()
     paper_db = source_dir / "paper.sqlite3"
+    with sqlite3.connect(paper_db):
+        pass
     research_workspace = (source_dir / "research-workspace").resolve()
     research_workspace.mkdir()
     with ResearchEvidenceCatalog(source_dir / "paper.research-data.sqlite3"):
@@ -772,6 +775,16 @@ def test_service_install_secures_staging_directory_before_copy_and_never_starts_
 
     events.clear()
     monkeypatch.setattr(service, "_require_service_runtime", lambda: events.append("runtime"))
+
+    missing_data_dir = (tmp_path / "service-missing-source").resolve()
+    with pytest.raises(FileNotFoundError, match="real PAPER and research archives"):
+        service._install_service(
+            missing_data_dir,
+            paper_db=source_dir / "missing-paper.sqlite3",
+            research_workspace=research_workspace,
+        )
+    assert events == []
+    assert not missing_data_dir.exists()
 
     good_data_dir = (tmp_path / "service-good").resolve()
     service._install_service(

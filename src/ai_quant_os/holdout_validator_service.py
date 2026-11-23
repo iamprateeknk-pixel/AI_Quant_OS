@@ -1180,6 +1180,15 @@ def _install_service(data_dir: Path, *, paper_db: Path, research_workspace: Path
     research_workspace = Path(research_workspace)
     if not paper_db.is_absolute() or not research_workspace.is_absolute():
         raise ValueError("PAPER and research source paths must be absolute")
+    source_archives = (
+        paper_db,
+        paper_db.with_name(paper_db.stem + ".research-data.holdout.sqlite3"),
+        paper_db.with_name(paper_db.stem + ".validation-packages.sqlite3"),
+        paper_db.with_name(paper_db.stem + ".candidate-validations.sqlite3"),
+        research_workspace / "research.sqlite3",
+    )
+    if any(not path.is_file() for path in source_archives):
+        raise FileNotFoundError("Required real PAPER and research archives are unavailable")
     _require_service_runtime()
     operator_sid = current_process_user_sid()
     _ensure_service_registered(win32service, win32serviceutil)

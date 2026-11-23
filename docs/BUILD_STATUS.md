@@ -10,6 +10,11 @@
   admission. Private adapter implementation methods are not an OS boundary
   against arbitrary code in the same Python process; call-budget-disabled mode
   remains explicitly unconfigured.
+- P07 HOLDOUT installation now verifies the supplied PAPER database and all four
+  derived/source SQLite archives are present before registering the Windows
+  service. Missing paths fail before service or staging state changes. The
+  installer/security regression group passes (**33 tests**); this path check
+  does not certify real archive contents or LocalService start/ACL behavior.
 
 ## Update (2026-11-21)
 
