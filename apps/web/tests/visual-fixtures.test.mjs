@@ -75,6 +75,11 @@ test('visual fixtures provide valid current PAPER frames and state-matched agent
   }
 });
 
+test('visual capture waits for the authenticated agent registry hydration state', () => {
+  const source = readFileSync(new URL('../scripts/capture-visual-suite.mjs', import.meta.url), 'utf8');
+  assert.match(source, /protected public agent registry refreshes every 15 seconds/);
+});
+
 test('visual fixture server rejects unknown states and non-fixture routes', async () => {
   const fixtures = createVisualFixtureServer();
   await fixtures.listen();

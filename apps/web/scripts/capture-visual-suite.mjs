@@ -97,6 +97,7 @@ async function captureStates(page, origin, fixtures) {
       await page.getByText(state.safetyState, { exact: true }).first().waitFor();
     } else if (state.path === '/agents') {
       await page.getByRole('heading', { name: 'Registered agent versions' }).waitFor();
+      await page.getByText(/The protected public agent registry refreshes every 15 seconds while the authenticated paper stream is current/).waitFor();
       try {
         await page.getByText(state.agentLifecycle, { exact: true }).waitFor();
       } catch (error) {
