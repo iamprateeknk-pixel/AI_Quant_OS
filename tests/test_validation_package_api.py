@@ -19,10 +19,11 @@ from test_strategy_builder_api import review, build
 
 
 @contextmanager
-def validation_service_environment(tmp_path):
+def validation_service_environment(tmp_path, holdout_raw=None):
     with ExitStack() as stack:
         service_research = tmp_path / "service.research-data.sqlite3"
-        holdout_raw = training_csv().replace("2026-10-01", "2026-10-02").encode()
+        if holdout_raw is None:
+            holdout_raw = training_csv().replace("2026-10-01", "2026-10-02").encode()
         with ResearchEvidenceCatalog(service_research) as catalog:
             holdout_receipt = catalog.publish(
                 holdout_raw,

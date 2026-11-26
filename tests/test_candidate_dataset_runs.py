@@ -111,7 +111,7 @@ def test_actual_development_windows_run_source_and_replay_with_pinned_identity(p
                 "-m",
                 "ai_quant_os.strategy_prefix_run_cli",
                 "--validation-archive",
-                str(tmp_path / "paper.validation-packages.sqlite3"),
+                str(tmp_path / "service.validation-packages.sqlite3"),
                 "--package-ref",
                 package.package_ref,
                 "--root",
