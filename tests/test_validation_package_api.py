@@ -19,10 +19,11 @@ from test_strategy_builder_api import review, build
 
 
 @contextmanager
-def validation_service_environment(tmp_path):
+def validation_service_environment(tmp_path, holdout_raw=None):
     with ExitStack() as stack:
         service_research = tmp_path / "service.research-data.sqlite3"
-        holdout_raw = training_csv().replace("2026-10-01", "2026-10-02").encode()
+        if holdout_raw is None:
+            holdout_raw = training_csv().replace("2026-10-01", "2026-10-02").encode()
         with ResearchEvidenceCatalog(service_research) as catalog:
             holdout_receipt = catalog.publish(
                 holdout_raw,
@@ -58,6 +59,33 @@ def validation_service_environment(tmp_path):
             "holdout_rpc_client": service_client,
         }
         yield settings, holdout_receipt, packages
+
+
+def service_rpc_client(root):
+    """Holdout RPC client backed by the service-owned stores under ``root``.
+
+    Opens the stores ``validation_service_environment`` creates for each call,
+    so tests can archive results before the app starts without holding handles.
+    """
+
+    class StoreBackedServiceClient:
+        def exchange(self, frame, *, timeout_ms):
+            assert timeout_ms > 0
+            with ExitStack() as stack:
+                holdouts = stack.enter_context(
+                    HoldoutEvidenceStore(root / "service.research-data.holdout.sqlite3")
+                )
+                packages = stack.enter_context(
+                    ValidationPackageStore(root / "service.validation-packages.sqlite3")
+                )
+                validations = stack.enter_context(
+                    CandidateValidationStore(root / "service.candidate-validations.sqlite3")
+                )
+                research = ResearchStore(root / "service.research.sqlite3")
+                handler = HoldoutRequestHandler(holdouts, packages, validations, research)
+                return process_rpc_frame(frame, handler)
+
+    return HoldoutRpcClient(StoreBackedServiceClient())
 
 
 def prepare(client, holdout_ref):
@@ -101,18 +129,23 @@ def test_package_retains_exact_sources_data_graph_plan_and_restarts_without_raw_
             assert "raw_base64" not in json.dumps(metadata)
             assert client.get("/api/v1/system/status").json() == before
             assert (
-                client.post("/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload)
-                .json()
+                client.post(
+                    "/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload
+                ).json()
                 == metadata
             )
         retained = packages.get(metadata["package_ref"])
         assert retained is not None
         assert retained.candidate.model_dump(mode="json") == candidate
         assert retained.graph.receipt.run_id == "build-1"
-        assert retained.training.receipt.dataset_ref == candidate["review"]["hypothesis"]["dataset_ref"]
-        assert base64.b64decode(retained.holdout.raw_base64) == training_csv().replace(
-            "2026-10-01", "2026-10-02"
-        ).encode()
+        assert (
+            retained.training.receipt.dataset_ref
+            == candidate["review"]["hypothesis"]["dataset_ref"]
+        )
+        assert (
+            base64.b64decode(retained.holdout.raw_base64)
+            == training_csv().replace("2026-10-01", "2026-10-02").encode()
+        )
         root = Path(__file__).resolve().parents[1] / "src/ai_quant_os"
         assert [row.path for row in retained.sdk_files] == [
             "ai_quant_os/__init__.py",
@@ -138,10 +171,14 @@ def test_package_plan_cannot_change_under_existing_identity(tmp_path):
     with validation_service_environment(tmp_path) as (settings, holdout, _packages):
         with TestClient(create_app(**settings)) as client:
             payload, _, _ = prepare(client, holdout.dataset_ref)
-            first = client.post("/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload)
+            first = client.post(
+                "/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload
+            )
             assert first.status_code == 200, first.text
             payload["plan"]["random_seed"] = 28
-            rejected = client.post("/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload)
+            rejected = client.post(
+                "/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload
+            )
             assert rejected.status_code == 409, rejected.text
             assert (
                 client.get(
@@ -158,12 +195,17 @@ def test_package_routes_require_operator_and_reject_client_authority(tmp_path):
     with validation_service_environment(tmp_path) as (settings, holdout, _packages):
         with TestClient(create_app(**settings)) as client:
             payload, _, _ = prepare(client, holdout.dataset_ref)
-            assert client.post("/api/v1/sandbox/validation/packages", json=payload).status_code == 401
-            assert client.post(
-                "/api/v1/sandbox/validation/packages",
-                headers=HEADERS,
-                json={**payload, "execution_authorized": True},
-            ).status_code == 422
+            assert (
+                client.post("/api/v1/sandbox/validation/packages", json=payload).status_code == 401
+            )
+            assert (
+                client.post(
+                    "/api/v1/sandbox/validation/packages",
+                    headers=HEADERS,
+                    json={**payload, "execution_authorized": True},
+                ).status_code
+                == 422
+            )
 
 
 @pytest.mark.parametrize("change", ["training_label", "wrong_graph", "bad_costs"])
@@ -177,6 +219,8 @@ def test_package_refuses_wrong_classification_graph_and_invalid_cost_plan(tmp_pa
                 payload["run_id"] = "research-1"
             else:
                 payload["plan"]["spread_bps"] = "NaN"
-            response = client.post("/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload)
+            response = client.post(
+                "/api/v1/sandbox/validation/packages", headers=HEADERS, json=payload
+            )
             expected_status = 422 if change == "bad_costs" else 409
             assert response.status_code == expected_status, response.text

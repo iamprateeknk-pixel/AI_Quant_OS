@@ -384,9 +384,7 @@ class RepairTrialStore:
         entered_at: datetime,
         min_soak_seconds: int = DEFAULT_CANARY_SOAK_SECONDS,
     ) -> RepairTrialRecord:
-        canary = CanaryRecord(
-            scope=scope, entered_at=entered_at, min_soak_seconds=min_soak_seconds
-        )
+        canary = CanaryRecord(scope=scope, entered_at=entered_at, min_soak_seconds=min_soak_seconds)
         return self._transition(
             trial_id, {"SHADOW_PASSED"}, state="CANARY_ACTIVE", canary=canary, updated_at=entered_at
         )
@@ -407,7 +405,9 @@ class RepairTrialStore:
         """
         record = self.get(trial_id)
         if record.state != "CANARY_ACTIVE" or record.canary is None:
-            raise ValueError(f"Repair trial in state {record.state} has no active canary to evaluate")
+            raise ValueError(
+                f"Repair trial in state {record.state} has no active canary to evaluate"
+            )
         for incident in incidents:
             if (
                 incident.agent_id == record.agent_id

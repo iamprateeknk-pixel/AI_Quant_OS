@@ -382,8 +382,9 @@ def test_validation_context_exhaustion_cannot_restore_failed_candidate_evidence(
     from ai_quant_os.candidate_validation_store import CandidateValidationStore
     from test_candidate_validation_store import failed_tests
     from test_research_hypothesis_api import NOW as RESEARCH_NOW, HEADERS
+    from test_validation_package_api import service_rpc_client
 
-    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
+    with CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3") as archive:
         failure = archive.put_failure(package, failed_tests(package))
     with TestClient(
         create_app(
@@ -391,6 +392,7 @@ def test_validation_context_exhaustion_cannot_restore_failed_candidate_evidence(
             operator_token="fixture-hypothesis",
             clock=lambda: RESEARCH_NOW,
             agent_call_policy=exhausted_role_policy("A10"),
+            holdout_rpc_client=service_rpc_client(tmp_path),
         )
     ) as client:
         result = client.post(

@@ -390,8 +390,9 @@ def test_service_prepares_and_retains_validation_package_without_returning_holdo
 
     research = ResearchStore(tmp_path / "service.research.sqlite3")
     with (
-        HoldoutEvidenceStore(service_research.with_name("service.research-data.holdout.sqlite3"))
-        as holdouts,
+        HoldoutEvidenceStore(
+            service_research.with_name("service.research-data.holdout.sqlite3")
+        ) as holdouts,
         ValidationPackageStore(tmp_path / "service.validation-packages.sqlite3") as packages,
         CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3") as validations,
     ):

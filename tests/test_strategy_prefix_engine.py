@@ -9,9 +9,14 @@ import sys
 
 import pytest
 
-from ai_quant_os.strategy_prefix_run import prepare_strategy_prefix_run, run_strategy_prefixes
-from ai_quant_os.repair_sandbox import local_docker_command
-from test_strategy_prefix_worker import package as package
+pytest.importorskip("nautilus_trader")
+
+from ai_quant_os.strategy_prefix_run import (  # noqa: E402
+    prepare_strategy_prefix_run,
+    run_strategy_prefixes,
+)
+from ai_quant_os.repair_sandbox import local_docker_command  # noqa: E402
+from test_strategy_prefix_worker import package as package  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,7 +66,7 @@ def test_real_engine_full_prefix_run_and_restart(package, tmp_path):
             "-m",
             "ai_quant_os.strategy_prefix_run_cli",
             "--validation-archive",
-            str(tmp_path / "paper.validation-packages.sqlite3"),
+            str(tmp_path / "service.validation-packages.sqlite3"),
             "--package-ref",
             package.package_ref,
             "--root",

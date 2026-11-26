@@ -24,6 +24,16 @@ from ai_quant_os.validation_fortress import FortressVerdict, GateResult
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 LATER = NOW + timedelta(hours=1)
 
+# promotion_lifecycle.py targets the Phase 3 PromotionDecision contract
+# (PROMOTED / approved_by_policy / fortress_* / council_* fields). main keeps
+# the fail-closed contract that cannot authorize promotion, so the lifecycle
+# is dormant (no caller in src). strict=True makes these XPASS loudly if the
+# contract is later unlocked, so the markers are removed deliberately.
+LOCKED_CONTRACT = pytest.mark.xfail(
+    reason="PromotionDecision is fail-closed on main; Phase 3 contract not adopted",
+    strict=True,
+)
+
 
 def _gate_result(name: str, passed: bool) -> GateResult:
     return GateResult(
@@ -77,6 +87,7 @@ def stores(tmp_path):
     return registry, evidence_store
 
 
+@LOCKED_CONTRACT
 def test_failed_fortress_refuses_and_records_attempt(stores):
     registry, evidence_store = stores
     outcome = request_promotion(
@@ -97,6 +108,7 @@ def test_failed_fortress_refuses_and_records_attempt(stores):
     assert decision.offline_eval.evidence_refs == (fortress_verdict_ref(_failing_verdict()),)
 
 
+@LOCKED_CONTRACT
 def test_missing_fortress_verdict_refuses_and_records_attempt(stores):
     registry, evidence_store = stores
     outcome = request_promotion(
@@ -115,6 +127,7 @@ def test_missing_fortress_verdict_refuses_and_records_attempt(stores):
     assert decision.fortress_verdict_ref is None
 
 
+@LOCKED_CONTRACT
 def test_rejected_council_refuses_despite_passing_fortress(stores):
     registry, evidence_store = stores
     outcome = request_promotion(registry, evidence_store, _request(verifier_passed=False), now=NOW)
@@ -129,6 +142,7 @@ def test_rejected_council_refuses_despite_passing_fortress(stores):
     assert decision.offline_eval.status == "PASS"
 
 
+@LOCKED_CONTRACT
 def test_escalated_council_refuses_despite_passing_fortress(stores):
     registry, evidence_store = stores
     outcome = request_promotion(
@@ -144,6 +158,7 @@ def test_escalated_council_refuses_despite_passing_fortress(stores):
     assert evidence_store.get(outcome.decision_ref).approved_by_policy is False
 
 
+@LOCKED_CONTRACT
 def test_fortress_verdict_for_wrong_hypothesis_refuses(stores):
     registry, evidence_store = stores
     outcome = request_promotion(
@@ -159,6 +174,7 @@ def test_fortress_verdict_for_wrong_hypothesis_refuses(stores):
     assert decision.fortress_hypothesis_id == "hypothesis-2"
 
 
+@LOCKED_CONTRACT
 def test_both_legs_green_promotes_to_paper_active(stores):
     registry, evidence_store = stores
     verdict = _passing_verdict()
@@ -207,6 +223,7 @@ def test_both_legs_green_promotes_to_paper_active(stores):
     assert reopened.status_for("strategy-1") == PAPER_ACTIVE
 
 
+@LOCKED_CONTRACT
 def test_repeat_request_is_idempotent(stores):
     registry, evidence_store = stores
     first = request_promotion(registry, evidence_store, _request(), now=NOW)
@@ -220,6 +237,7 @@ def test_repeat_request_is_idempotent(stores):
     assert evidence_store.list_refs() == (first.decision_ref,)
 
 
+@LOCKED_CONTRACT
 def test_repeat_refusal_is_idempotent(stores):
     registry, evidence_store = stores
     request = _request(fortress_verdict=_failing_verdict())
@@ -232,6 +250,7 @@ def test_repeat_refusal_is_idempotent(stores):
     assert len(registry.attempts_for("strategy-1")) == 1
 
 
+@LOCKED_CONTRACT
 def test_new_evidence_after_refusal_records_a_new_attempt(stores):
     registry, evidence_store = stores
     refused = request_promotion(
@@ -246,6 +265,7 @@ def test_new_evidence_after_refusal_records_a_new_attempt(stores):
     assert len(registry.attempts_for("strategy-1")) == 2
 
 
+@LOCKED_CONTRACT
 def test_second_strategy_promotion_does_not_affect_the_first(stores):
     registry, evidence_store = stores
     refused = request_promotion(
@@ -263,6 +283,7 @@ def test_second_strategy_promotion_does_not_affect_the_first(stores):
     assert len(registry.attempts_for("strategy-2")) == 1
 
 
+@LOCKED_CONTRACT
 def test_paper_active_strategy_stays_paper_active_after_later_refusal(stores):
     registry, evidence_store = stores
     request_promotion(registry, evidence_store, _request(), now=NOW)

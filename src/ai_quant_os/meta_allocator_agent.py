@@ -37,7 +37,9 @@ class AllocationProposal(AgentEnvelope):
     model_route: Literal["DETERMINISTIC_ONLY"] = "DETERMINISTIC_ONLY"
     state: Literal["WAIT_FOR_EVIDENCE"] = "WAIT_FOR_EVIDENCE"
     portfolio_snapshot_id: str = Field(min_length=1, max_length=128)
-    safety_state: Literal["NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"]
+    safety_state: Literal[
+        "NORMAL", "CAUTION", "REDUCED_RISK", "NO_NEW_RISK", "FLATTEN_ONLY", "HALT"
+    ]
     allocations: tuple[AllocationWeight, ...] = Field(max_length=100)
     blockers: tuple[str, ...] = Field(min_length=1, max_length=16)
     execution_authorized: Literal[False] = False
