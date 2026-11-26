@@ -275,13 +275,15 @@ def test_research_supervisor_plan_is_bound_to_exact_sandbox_child(tmp_path):
 def test_validation_review_supervisor_dispatches_only_a10_for_selected_archive(package, tmp_path):
     from test_candidate_validation_store import failed_tests
     from ai_quant_os.candidate_validation_store import CandidateValidationStore
+    from test_validation_package_api import service_rpc_client
 
-    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
+    with CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3") as archive:
         failure = archive.put_failure(package, failed_tests(package))
     args = dict(
         operator_token="fixture-hypothesis",
         clock=lambda: NOW,
         paper_db_path=tmp_path / "paper.sqlite3",
+        holdout_rpc_client=service_rpc_client(tmp_path),
     )
     with TestClient(create_app(**args)) as client:
         before_orders = client.get("/api/v1/orders").json()

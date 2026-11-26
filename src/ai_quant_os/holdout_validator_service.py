@@ -227,17 +227,21 @@ class HoldoutRequestHandler:
                 package.holdout.receipt.dataset_ref,
             )
         )
-        request_scope = (
-            (None, None, None, None)
-            if request.operation == "VALIDATION_CONTEXT"
-            else (
+        if request.operation == "VALIDATION_CONTEXT":
+            # A context read carries no candidate/dataset scope of its own; the
+            # archived artifact must still be bound to its own package.
+            scope_matches = (
+                package is not None and artifact.candidate_ref == package.candidate.candidate_ref
+            )
+        else:
+            request_scope = (
                 request.candidate_ref,
                 request.candidate_ref,
                 request.training_ref,
                 request.holdout_ref,
             )
-        )
-        if package is None or package_scope != request_scope:
+            scope_matches = package_scope == request_scope
+        if package is None or not scope_matches:
             raise PermissionError("Validation evidence scope mismatch")
         holdout_ref = package.holdout.receipt.dataset_ref
         held = self._holdouts.get(holdout_ref)

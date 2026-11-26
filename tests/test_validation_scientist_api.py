@@ -17,12 +17,16 @@ from test_strategy_prefix_worker import package as package
 from test_strategy_prefix_run import scripted as scripted
 from test_strategy_image_loading import assembled as assembled, inputs as inputs, daemon as daemon
 from test_research_hypothesis_api import NOW, HEADERS
+from test_validation_package_api import service_rpc_client
 
 
-def settings(tmp_path, clock=lambda: NOW):
-    return dict(
+def settings(tmp_path, clock=lambda: NOW, service=True):
+    values = dict(
         operator_token="fixture-hypothesis", clock=clock, paper_db_path=tmp_path / "paper.sqlite3"
     )
+    if service:
+        values["holdout_rpc_client"] = service_rpc_client(tmp_path)
+    return values
 
 
 def run(client, reference, task="validate"):
@@ -43,7 +47,7 @@ def run(client, reference, task="validate"):
 
 
 def test_failed_candidate_completes_advisory_agent_graph_without_trading_metrics(package, tmp_path):
-    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
+    with CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3") as archive:
         failure = archive.put_failure(package, failed_tests(package))
     with TestClient(create_app(**settings(tmp_path))) as client:
         before = client.get("/api/v1/system/status").json()
@@ -81,7 +85,7 @@ def test_failed_candidate_completes_advisory_agent_graph_without_trading_metrics
 
 def test_complete_original_scorecard_is_summarized_with_every_gate(package, scripted, tmp_path):
     tested, holdout, windows = observed_reports(package, scripted)
-    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
+    with CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3") as archive:
         score = archive.put_evaluation(package, tested, holdout, windows)
     with TestClient(create_app(**settings(tmp_path))) as client:
         _, receipt = run(client, score.scorecard_ref)
@@ -106,7 +110,7 @@ def test_complete_original_scorecard_is_summarized_with_every_gate(package, scri
 
 def test_expired_context_and_changed_archive_withhold_agent_output(package, tmp_path):
     now = [NOW]
-    path = tmp_path / "paper.candidate-validations.sqlite3"
+    path = tmp_path / "service.candidate-validations.sqlite3"
     with CandidateValidationStore(path) as archive:
         failure = archive.put_failure(package, failed_tests(package))
     with TestClient(create_app(**settings(tmp_path, clock=lambda: now[0]))) as client:
@@ -209,7 +213,9 @@ def test_a10_context_is_compiled_from_service_snapshot_without_local_archive_rea
 
     monkeypatch.setattr(CandidateValidationStore, "get", forbidden_archive_read)
     monkeypatch.setattr(ValidationPackageStore, "get", forbidden_archive_read)
-    with TestClient(create_app(**settings(tmp_path), holdout_rpc_client=client)) as api:
+    with TestClient(
+        create_app(**settings(tmp_path, service=False), holdout_rpc_client=client)
+    ) as api:
         response = api.post(
             "/api/v1/sandbox/validation-scientist/context",
             headers=HEADERS,
@@ -234,7 +240,7 @@ def test_agent_malfunction_enters_health_quarantine_without_confusing_candidate_
     import asyncio
     from ai_quant_os import validation_scientist_agent
 
-    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
+    with CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3") as archive:
         failure = archive.put_failure(package, failed_tests(package))
 
     async def malfunction(invocation):
@@ -266,7 +272,7 @@ def test_agent_malfunction_enters_health_quarantine_without_confusing_candidate_
 
 
 def test_checked_candidate_failure_does_not_create_agent_health_incident(package, tmp_path):
-    with CandidateValidationStore(tmp_path / "paper.candidate-validations.sqlite3") as archive:
+    with CandidateValidationStore(tmp_path / "service.candidate-validations.sqlite3") as archive:
         failure = archive.put_failure(package, failed_tests(package))
     with TestClient(create_app(**settings(tmp_path), health_watchdog_enabled=True)) as client:
         _, receipt = run(client, failure.failure_ref)

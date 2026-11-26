@@ -61,6 +61,33 @@ def validation_service_environment(tmp_path, holdout_raw=None):
         yield settings, holdout_receipt, packages
 
 
+def service_rpc_client(root):
+    """Holdout RPC client backed by the service-owned stores under ``root``.
+
+    Opens the stores ``validation_service_environment`` creates for each call,
+    so tests can archive results before the app starts without holding handles.
+    """
+
+    class StoreBackedServiceClient:
+        def exchange(self, frame, *, timeout_ms):
+            assert timeout_ms > 0
+            with ExitStack() as stack:
+                holdouts = stack.enter_context(
+                    HoldoutEvidenceStore(root / "service.research-data.holdout.sqlite3")
+                )
+                packages = stack.enter_context(
+                    ValidationPackageStore(root / "service.validation-packages.sqlite3")
+                )
+                validations = stack.enter_context(
+                    CandidateValidationStore(root / "service.candidate-validations.sqlite3")
+                )
+                research = ResearchStore(root / "service.research.sqlite3")
+                handler = HoldoutRequestHandler(holdouts, packages, validations, research)
+                return process_rpc_frame(frame, handler)
+
+    return HoldoutRpcClient(StoreBackedServiceClient())
+
+
 def prepare(client, holdout_ref):
     reviewed = review(client)
     _, _, output, candidate = build(client, reviewed)
