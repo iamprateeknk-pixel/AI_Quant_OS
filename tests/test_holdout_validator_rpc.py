@@ -111,19 +111,21 @@ def test_validation_package_preparation_request_can_transfer_only_checked_inputs
         HoldoutRequest.model_validate(request(operation="VALIDATION_RUN", preparation=payload))
 
 
-def test_installed_client_fails_closed_off_windows(monkeypatch):
+def test_installed_client_fails_closed_off_windows(monkeypatch, patch_os_name):
     from ai_quant_os import holdout_validator_rpc as rpc
 
-    monkeypatch.setattr(rpc.os, "name", "posix")
+    patch_os_name(rpc, "posix")
     client = rpc.installed_windows_holdout_client()
     with pytest.raises(ConnectionError, match="service is unavailable"):
         client.call(HoldoutRequest.model_validate(request()))
 
 
-def test_installed_client_fails_closed_when_service_identity_is_unregistered(monkeypatch):
+def test_installed_client_fails_closed_when_service_identity_is_unregistered(
+    monkeypatch, patch_os_name
+):
     from ai_quant_os import holdout_service_security, holdout_validator_rpc as rpc
 
-    monkeypatch.setattr(rpc.os, "name", "nt")
+    patch_os_name(rpc, "nt")
     monkeypatch.setattr(
         holdout_service_security,
         "service_sid_for_name",

@@ -29,7 +29,9 @@ def test_disabled_demo_order_worker_does_not_load_native_sdk(tmp_path):
     assert reply.report.state == "DISABLED"
 
 
-def test_worker_dispatches_reconciliation_without_dispatching_submission(monkeypatch, tmp_path):
+def test_worker_dispatches_reconciliation_without_dispatching_submission(
+    monkeypatch, tmp_path, patch_os_name
+):
     module = implementation()
     import sys
     from types import ModuleType
@@ -50,7 +52,7 @@ def test_worker_dispatches_reconciliation_without_dispatching_submission(monkeyp
             account_scope_ref=module.account_scope(enrollment_value.connection),
         )
 
-    monkeypatch.setattr(module.os, "name", "nt")
+    patch_os_name(module, "nt")
     monkeypatch.setattr(module.Path, "is_file", lambda self: True)
     monkeypatch.setattr(module, "reconcile_demo_order", reconcile)
     monkeypatch.setattr(module, "submit_demo_order", lambda *a, **k: pytest.fail("Must not submit"))

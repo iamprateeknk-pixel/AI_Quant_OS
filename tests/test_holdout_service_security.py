@@ -122,7 +122,7 @@ def test_directory_tree_verifier_checks_sidecars_and_nested_backups(tmp_path):
     raise AssertionError("Unexpected backup ACL was accepted")
 
 
-def test_secure_directory_adopts_only_the_staged_tree(tmp_path, monkeypatch):
+def test_secure_directory_adopts_only_the_staged_tree(tmp_path, monkeypatch, patch_os_name):
     import sys
 
     from ai_quant_os import holdout_service_security
@@ -147,7 +147,7 @@ def test_secure_directory_adopts_only_the_staged_tree(tmp_path, monkeypatch):
 
     security.SetNamedSecurityInfo = set_security
     monkeypatch.setitem(sys.modules, "win32security", security)
-    monkeypatch.setattr(holdout_service_security.os, "name", "nt")
+    patch_os_name(holdout_service_security, "nt")
     monkeypatch.setattr(
         holdout_service_security,
         "service_sid_for_name",
