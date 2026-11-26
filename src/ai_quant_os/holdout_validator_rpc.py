@@ -40,10 +40,7 @@ class HoldoutValidationPreparation(BaseModel):
             raw = base64.b64decode(value, validate=True)
         except (ValueError, UnicodeError) as error:
             raise ValueError("Invalid validation training snapshot") from error
-        if (
-            not 0 < len(raw) <= 1048576
-            or base64.b64encode(raw).decode("ascii") != value
-        ):
+        if not 0 < len(raw) <= 1048576 or base64.b64encode(raw).decode("ascii") != value:
             raise ValueError("Invalid validation training snapshot")
         return value
 
@@ -339,9 +336,9 @@ def verify_response(request: HoldoutRequest, response: HoldoutResponse) -> Holdo
     needs_snapshot = request.operation in {"VALIDATION_CONTEXT", "STRESS_CONTEXT"}
     if needs_snapshot != (response.context_snapshot is not None):
         raise ValueError("Validator context snapshot operation mismatch")
-    if (
-        request.operation in {"VALIDATION_PREPARE", "VALIDATION_PACKAGE_METADATA"}
-    ) != (response.package_metadata_json is not None):
+    if (request.operation in {"VALIDATION_PREPARE", "VALIDATION_PACKAGE_METADATA"}) != (
+        response.package_metadata_json is not None
+    ):
         raise ValueError("Validator package metadata operation mismatch")
     if (
         response.context_snapshot is not None

@@ -279,7 +279,9 @@ class EvolutionPromotionGate:
         agent_id: str,
         now: datetime,
     ) -> PromotionGateDecision:
-        def refused(reasons: tuple[str, ...], policy_sha256: str | None = None) -> PromotionGateDecision:
+        def refused(
+            reasons: tuple[str, ...], policy_sha256: str | None = None
+        ) -> PromotionGateDecision:
             return PromotionGateDecision(
                 decision="REFUSED",
                 reasons=reasons,
